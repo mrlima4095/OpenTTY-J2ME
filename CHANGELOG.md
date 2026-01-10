@@ -24,6 +24,7 @@ Lua
 
 - global functions caching
 - added `push` library
+- canvas screen api
 
 General
 
@@ -33,3 +34,11 @@ General
 Commands
 
 - added command `time`
+
+Packages
+
+- default - all features
+- lite - no ELF emulator and no LuaCanvas
+- emu-lite - no Lua Canvas
+- canvas-lite - no ELF emulator
+- 

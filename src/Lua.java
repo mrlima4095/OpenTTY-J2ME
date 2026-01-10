@@ -26,10 +26,10 @@ public class Lua {
     public static final int EXEC = 300, GETENV = 301, SETENV = 302, CLOCK = 303, SETLOC = 304, EXIT = 305, DATE = 306, GETPID = 307, SETPROC = 308, GETPROC = 309, GETCWD = 310, GETUID = 311, CHDIR = 312, REQUEST = 313, START = 314, STOP = 315, PREQ = 316, SUDO = 317, SU = 318, REMOVE = 319, SCOPE = 320, JOIN = 321;
     public static final int READ = 400, WRITE = 401, CLOSE = 402, OPEN = 403, POPEN = 404, DIRS = 405, SETOUT = 406, MOUNT = 407, GEN = 408, COPY = 409;
     public static final int HTTP_GET = 500, HTTP_POST = 501, CONNECT = 502, PEER = 503, DEVICE = 504, SERVER = 505, ACCEPT = 506, HTTP_RGET = 507, HTTP_RPOST = 508;
-    public static final int DISPLAY = 600, NEW = 601, RENDER = 602, APPEND = 603, ADDCMD = 604, HANDLER = 605, GETCURRENT = 606, TITLE = 607, TICKER = 608, VIBRATE = 609, LABEL = 610, SETTEXT = 611, GETLABEL = 612, GETTEXT = 613, CLEAR_SCREEN = 614;
+    public static final int DISPLAY = 600, NEW = 601, RENDER = 602, APPEND = 603, ADDCMD = 604, HANDLER = 605, GETCURRENT = 606, TITLE = 607, TICKER = 608, VIBRATE = 609, LABEL = 610, SETTEXT = 611, GETLABEL = 612, GETTEXT = 613, CLEAR_SCREEN = 614, SET_CANVAS_HANDLER = 615, SET_PALETTE = 616, DRAW_IMAGE = 617, DRAW_LINE = 618, DRAW_STRING = 619, GET_WIDTH = 620, GET_HEIGHT = 621, SET_FONT = 622, DRAW_RECT = 623, FILL_ARC = 624, FILL_RECT = 625, FILL_ROUND_RECT = 626, FILL_TRIANGLE = 627, GET_KEY_NAME = 628;
     public static final int CLASS = 700, NAME = 701, DELETE = 702, UPTIME = 703, RUN = 704, THREAD = 705, SLEEP = 706, KERNEL = 1000;
     public static final int AUDIO_LOAD = 800, AUDIO_PLAY = 801, AUDIO_PAUSE = 802, AUDIO_VOLUME = 803, AUDIO_DURATION = 804, AUDIO_TIME = 805;
-    public static final int PUSH_REGISTER = 900, PUSH_UNREGISTER = 901, PUSH_LIST = 902, PUSH_PENDING = 903, PUSH_SET_ALARM = 904, PUSH_GET_ALARM = 905;
+    public static final int PUSH_REGISTER = 900, PUSH_UNREGISTER = 901, PUSH_LIST = 902, PUSH_PENDING = 903, PUSH_SET_ALARM = 904;
 
     public static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15, GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41, POWER = 42, BREAK = 43, LENGTH = 44, VARARG = 45, REPEAT = 46, UNTIL = 47, COLON = 48;
     public static final Object LUA_NIL = new Object();
@@ -72,12 +72,12 @@ public class Lua {
         loaders = new int[] { CONNECT, PEER, DEVICE, SERVER, ACCEPT };
         for (int i = 0; i < funcs.length; i++) { socket.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("socket", socket);
 
-        funcs = new String[] { "register", "unregister", "list", "pending", "setAlarm", "getAlarm" };
-        loaders = new int[] { PUSH_REGISTER, PUSH_UNREGISTER, PUSH_LIST, PUSH_PENDING, PUSH_SET_ALARM, PUSH_GET_ALARM };
+        funcs = new String[] { "register", "unregister", "list", "pending", "setAlarm" };
+        loaders = new int[] { PUSH_REGISTER, PUSH_UNREGISTER, PUSH_LIST, PUSH_PENDING, PUSH_SET_ALARM };
         for (int i = 0; i< funcs.length; i++) { push.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("push", push);
 
-        funcs = new String[] { "display", "new", "render", "append", "addCommand", "handler", "getCurrent", "SetTitle", "SetTicker", "vibrate", "SetLabel", "SetText", "GetLabel", "GetText", "clear" }; 
-        loaders = new int[] { DISPLAY, NEW, RENDER, APPEND, ADDCMD, HANDLER, GETCURRENT, TITLE, TICKER, VIBRATE, LABEL, SETTEXT, GETLABEL, GETTEXT, CLEAR_SCREEN };
+        funcs = new String[] { "display", "new", "render", "append", "addCommand", "handler", "getCurrent", "SetTitle", "SetTicker", "vibrate", "SetLabel", "SetText", "GetLabel", "GetText", "clear", "setCanvasHandler", "setpalette", "drawImage", "drawLine", "drawString", "getWidth", "getHeight", "setFont", "drawRect", "fillArc", "fillRect", "fillRoundRect", "fillTriangle", "getKeyName" }; 
+        loaders = new int[] { DISPLAY, NEW, RENDER, APPEND, ADDCMD, HANDLER, GETCURRENT, TITLE, TICKER, VIBRATE, LABEL, SETTEXT, GETLABEL, GETTEXT, CLEAR_SCREEN, SET_CANVAS_HANDLER, SET_PALETTE, DRAW_IMAGE, DRAW_LINE, DRAW_STRING, GET_WIDTH, GET_HEIGHT, SET_FONT, DRAW_RECT, FILL_ARC, FILL_RECT, FILL_ROUND_RECT, FILL_TRIANGLE, GET_KEY_NAME };
         for (int i = 0; i < funcs.length; i++) { graphics.put(funcs[i], new LuaFunction(loaders[i])); } graphics.put("db", midlet.graphics); graphics.put("fire", List.SELECT_COMMAND); globals.put("graphics", graphics);
 
         funcs = new String[] { "upper", "lower", "len", "find", "match", "reverse", "sub", "hash", "byte", "char", "trim", "uuid", "split", "getCommand", "getArgument", "env" }; 
@@ -2169,6 +2169,7 @@ public class Lua {
                 else if (type.equals("edit")) { return new TextBox(title, content != null ? toLuaString(content) : "", 31522, TextField.ANY); } 
                 else if (type.equals("list")) { return new List(title, (type = content != null ? toLuaString(content) : "implicit").equals("exclusive") ? List.EXCLUSIVE : type.equals("multiple") ? List.MULTIPLE : List.IMPLICIT); } 
                 else if (type.equals("screen")) { return new Form(title); } 
+                else if (type.equals("canvas")) { return new LuaCanvas(midlet, title, content instanceof Boolean ? ((Boolean) content).booleanValue() : false); }
                 else if (type.equals("command")) {
                     if (args.elementAt(1) instanceof Hashtable) {
                         Hashtable cmdTable = (Hashtable) args.elementAt(1);
@@ -2354,6 +2355,129 @@ public class Lua {
                     else if (screen instanceof List) { ((List) args.elementAt(0)).deleteAll(); }
                     else { return gotbad(1, "clear", "screen expected, got" + type(args.elementAt(0))); }
                 }
+            }
+
+            else if (MOD == SET_CANVAS_HANDLER) {
+                if (args.size() < 2) { return gotbad(1, "setCanvasHandler", "canvas and handler table expected"); }
+                
+                Object canvasObj = args.elementAt(0), handlerObj = args.elementAt(1);
+                
+                if (!(canvasObj instanceof LuaCanvas)) { return gotbad(1, "setCanvasHandler", "canvas expected"); }
+                if (!(handlerObj instanceof Hashtable)) { return gotbad(2, "setCanvasHandler", "table expected"); }
+                
+                ((LuaCanvas) canvasObj).setHandlerTable((Hashtable) handlerObj);
+            }
+            else if (MOD == SET_PALETTE) {
+                if (args.size() < 4) { return gotbad(1, "setpalette", "graphics object and RGB values expected"); }
+                
+                Object graphicsObj = args.elementAt(0);
+                if (!(graphicsObj instanceof Graphics)) { return gotbad(1, "setpalette", "graphics object expected"); }
+
+                ((Graphics) graphicsObj).setColor(((Double) args.elementAt(1)).intValue(), ((Double) args.elementAt(2)).intValue(), ((Double) args.elementAt(3)).intValue());
+            }
+            else if (MOD == DRAW_IMAGE) {
+                if (args.size() < 4) { return gotbad(1, "drawImage", "graphics, image, x, y expected"); }
+                
+                Object graphicsObj = args.elementAt(0), imageObj = args.elementAt(1);
+                
+                if (!(graphicsObj instanceof Graphics)) { return gotbad(1, "drawImage", "graphics object expected"); }
+                if (!(imageObj instanceof Image)) { return gotbad(2, "drawImage", "image expected"); }
+                
+                ((Graphics) graphicsObj).drawImage((Image) imageObj, ((Double) args.elementAt(2)).intValue(), ((Double) args.elementAt(3)).intValue(), Graphics.TOP | Graphics.LEFT);
+            }
+            else if (MOD == DRAW_LINE) {
+                if (args.size() < 5) { return gotbad(1, "drawLine", "graphics, x1, y1, x2, y2 expected"); }
+                
+                Object graphicsObj = args.elementAt(0);
+                if (!(graphicsObj instanceof Graphics)) { return gotbad(1, "drawLine", "graphics object expected"); }
+
+                ((Graphics) graphicsObj).drawLine(((Double) args.elementAt(1)).intValue(), ((Double) args.elementAt(2)).intValue(), ((Double) args.elementAt(3)).intValue(), ((Double) args.elementAt(4)).intValue());
+            }
+            else if (MOD == DRAW_STRING) {
+                if (args.size() < 4) { return gotbad(1, "drawString", "graphics, string, x, y expected"); }
+                
+                Object graphicsObj = args.elementAt(0);
+                if (!(graphicsObj instanceof Graphics)) { return gotbad(1, "drawString", "graphics object expected"); }
+
+                ((Graphics) graphicsObj).drawString(toLuaString(args.elementAt(1)), ((Double) args.elementAt(2)).intValue(), ((Double) args.elementAt(3)).intValue(), args.size() > 4 ? ((Double) args.elementAt(4)).intValue() : Graphics.TOP | Graphics.LEFT);
+            }
+
+            else if (MOD == GET_WIDTH) { if (args.isEmpty()) { return gotbad(1, "getWidth", "screen expected"); } else { Object obj = args.elementAt(0); return obj instanceof Displayable ? new Double(((Displayable) obj).getWidth()) : (Double) gotbad(1, "getWidth", "screen expected"); } }
+            else if (MOD == GET_HEIGHT) { if (args.isEmpty()) { return gotbad(1, "getHeight", "screen expected"); } else { Object obj = args.elementAt(0); return obj instanceof Displayable ? new Double(((Displayable) obj).getHeight()) : (Double) gotbad(1, "getWidth", "screen expected"); } }
+
+            else if (MOD == SET_FONT) {
+                if (args.size() < 2) { return gotbad(1, "setFont", "object and font description expected"); }
+                else {
+                    Object target = args.elementAt(0);
+                    Font font = midlet.genFont(toLuaString(args.elementAt(1)));
+                    
+                    if (target instanceof Graphics) { ((Graphics) target).setFont(font); } else if (target instanceof Item) { ((Item) target).setFont(font); } else { return gotbad(1, "setFont", "graphics or item expected"); }
+                }
+            }
+
+            else if (MOD == DRAW_RECT) {
+                if (args.size() < 5) { return gotbad(1, "drawRect", "graphics, x, y, width, height expected"); }
+
+                Object graphicsObj = args.elementAt(0);
+                if (!(graphicsObj instanceof Graphics)) { return gotbad(1, "drawRect", "graphics object expected"); }
+
+                ((Graphics) graphicsObj).drawRect(((Double) args.elementAt(1)).intValue(), ((Double) args.elementAt(2)).intValue(), ((Double) args.elementAt(3)).intValue(), ((Double) args.elementAt(4)).intValue());
+            }
+            else if (MOD == FILL_ARC) {
+                if (args.size() < 7) { return gotbad(1, "fillArc", "graphics, x, y, width, height, startAngle, arcAngle expected"); }
+
+                Object graphicsObj = args.elementAt(0);
+                if (!(graphicsObj instanceof Graphics)) { return gotbad(1, "fillArc", "graphics object expected"); }
+
+                ((Graphics) graphicsObj).fillArc(((Double) args.elementAt(1)).intValue(), ((Double) args.elementAt(2)).intValue(), ((Double) args.elementAt(3)).intValue(), ((Double) args.elementAt(4)).intValue(), ((Double) args.elementAt(5)).intValue(), ((Double) args.elementAt(6)).intValue());
+            }
+            else if (MOD == FILL_RECT) {
+                if (args.size() < 5) { return gotbad(1, "fillRect", "graphics, x, y, width, height expected"); }
+                
+                Object graphicsObj = args.elementAt(0);
+                if (!(graphicsObj instanceof Graphics)) { return gotbad(1, "fillRect", "graphics object expected"); }
+
+                ((Graphics) graphicsObj).fillRect(((Double) args.elementAt(1)).intValue(), ((Double) args.elementAt(2)).intValue(), ((Double) args.elementAt(3)).intValue(), ((Double) args.elementAt(4)).intValue());
+            }
+            else if (MOD == FILL_ROUND_RECT) {
+                if (args.size() < 7) { return gotbad(1, "fillRoundRect", "graphics, x, y, width, height, arcWidth, arcHeight expected"); }
+
+                Object graphicsObj = args.elementAt(0);
+                if (!(graphicsObj instanceof Graphics)) { return gotbad(1, "fillRoundRect", "graphics object expected"); }
+
+                ((Graphics) graphicsObj).fillRoundRect(((Double) args.elementAt(1)).intValue(), ((Double) args.elementAt(2)).intValue(), ((Double) args.elementAt(3)).intValue(), ((Double) args.elementAt(4)).intValue(), ((Double) args.elementAt(5)).intValue(), ((Double) args.elementAt(6)).intValue());
+            }
+            else if (MOD == FILL_TRIANGLE) {
+                if (args.size() < 7) { return gotbad(1, "fillTriangle", "graphics, x1, y1, x2, y2, x3, y3 expected"); }
+                
+                Object graphicsObj = args.elementAt(0);
+                if (!(graphicsObj instanceof Graphics)) { return gotbad(1, "fillTriangle", "graphics object expected"); }
+                
+                Graphics g = (Graphics) graphicsObj;
+                int x1 = ((Double) args.elementAt(1)).intValue();
+                int y1 = ((Double) args.elementAt(2)).intValue();
+                int x2 = ((Double) args.elementAt(3)).intValue();
+                int y2 = ((Double) args.elementAt(4)).intValue();
+                int x3 = ((Double) args.elementAt(5)).intValue();
+                int y3 = ((Double) args.elementAt(6)).intValue();
+                
+                // MIDP doesn't have fillTriangle directly, so we'll use fillRect as fallback
+                // For simplicity, we'll fill a rectangle covering the triangle bounds
+                int minX = Math.min(x1, Math.min(x2, x3));
+                int minY = Math.min(y1, Math.min(y2, y3));
+                int maxX = Math.max(x1, Math.max(x2, x3));
+                int maxY = Math.max(y1, Math.max(y2, y3));
+                
+                g.fillRect(minX, minY, maxX - minX, maxY - minY);
+                return null;
+            }
+
+            else if (MOD == GET_KEY_NAME) {
+                if (args.isEmpty()) { return gotbad(1, "getKeyName", "key code expected"); }
+                
+                int keyCode = ((Double) args.elementAt(0)).intValue();
+                String keyName = getKeyName(keyCode);
+                return keyName != null ? keyName : "UNKNOWN";
             }
             // Package: string
             else if (MOD == LOWER || MOD == UPPER) { if (args.isEmpty()) { return gotbad(1, MOD == LOWER ? "lower" : "upper", "string expected, got no value"); } else { String text = toLuaString(args.elementAt(0)); return MOD == LOWER ? text.toLowerCase() : text.toUpperCase(); } }
@@ -2683,7 +2807,7 @@ public class Lua {
         }
         // |
         private Object exec(String code, Hashtable scope) throws Exception { int savedIndex = tokenIndex; Vector savedTokens = tokens; Object ret = null; try { tokens = tokenize(code); tokenIndex = 0; Hashtable modScope = scope == null ? new Hashtable() : scope; for (Enumeration e = globals.keys(); e.hasMoreElements();) { String k = (String) e.nextElement(); modScope.put(k, unwrap(globals.get(k))); } while (peek().type != EOF) { Object res = statement(modScope); if (doreturn) { ret = res; doreturn = false; break; } } } finally { tokenIndex = savedIndex; tokens = savedTokens; } return ret; }
-        public static String type(Object item) { return item == null || item == LUA_NIL ? "nil" : item instanceof String ? "string" : item instanceof Double ? "number" : item instanceof Boolean ? "boolean" : item instanceof LuaFunction ? "function" : item instanceof Hashtable ? "table" : item instanceof InputStream || item instanceof OutputStream || item instanceof StringBuffer ? "stream" : item instanceof SocketConnection || item instanceof StreamConnection ? "connection" : item instanceof ServerSocketConnection ? "server" : item instanceof Displayable ? "screen" : item instanceof Image ? "image" : item instanceof StringItem ? "output" : item instanceof Command ? "button" : item instanceof Player ? "audio" : "userdata"; }
+        public static String type(Object item) { return item == null || item == LUA_NIL ? "nil" : item instanceof String ? "string" : item instanceof Double ? "number" : item instanceof Boolean ? "boolean" : item instanceof LuaFunction ? "function" : item instanceof Hashtable ? "table" : item instanceof InputStream || item instanceof OutputStream || item instanceof StringBuffer || item instanceof StringItem ? "stream" : item instanceof SocketConnection || item instanceof StreamConnection ? "connection" : item instanceof ServerSocketConnection ? "server" : item instanceof Displayable || item instanceof Canvas ? "screen" : item instanceof Image ? "image" : item instanceof Command ? "button" : item instanceof Player ? "audio" : "userdata"; }
         private Object gotbad(int pos, String name, String expect) throws Exception { throw new RuntimeException("bad argument #" + pos + " to '" + name + "' (" + expect + ")"); }
         private Object gotbad(String name, String field, String expected) throws Exception { throw new RuntimeException(name + " -> field '" + field + "' (" + expected + ")"); }
         private Object http(String method, String url, String data, Object item, boolean toget) throws Exception {

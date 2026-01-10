@@ -182,3 +182,4 @@
 [2026-1.17.1-03x12] Added /proc/ filesystem
 [2026-1.17.1-03x13] Lua Global Template Caching
 [2026-1.17.1-03x14] ELF Objects
+[2026-1.17.1-03x15] Lua Canvas

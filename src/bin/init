@@ -12,6 +12,8 @@ local run = graphics.new("command", { label = "Run", type = "ok", priority = 1 }
 local function label() graphics.SetLabel(io.stdin, scope["USER"] .. " " .. os.getcwd() .. " " .. (os.getuid() == 0 and "#" or "$")) end
 
 
+
+
 io.mount(io.read("/etc/fstab"))
 print(string.env(io.read("/etc/motd")))
 
