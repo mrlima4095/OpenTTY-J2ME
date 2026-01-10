@@ -1,3 +1,9 @@
+import javax.microedition.io.*;
+import javax.microedition.io.file.*;
+import javax.microedition.rms.*;
+import java.util.*;
+import java.io.*;
+
 public class ELF {
     private Object stdout;
     private OpenTTY midlet;
