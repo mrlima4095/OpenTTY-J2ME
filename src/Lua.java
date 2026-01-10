@@ -2094,7 +2094,7 @@ public class Lua {
                 
                 try {
                     boolean result = PushRegistry.unregisterConnection(connection);
-                    return Boolean.valueOf(result);
+                    return new Boolean(result);
                 } catch (Exception e) {
                     return gotbad(1, "unregister", midlet.getCatch(e));
                 }
