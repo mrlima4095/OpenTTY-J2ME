@@ -15,7 +15,7 @@ public class Lua {
     public String PID = "";
     private long uptime = System.currentTimeMillis();
     private int id = 1000, tokenIndex, loopDepth = 0;
-    public Hashtable globals = new Hashtable(), proc, father, requireCache = new Hashtable(), marks = new Hashtable();;
+    public Hashtable globals = new Hashtable(), proc, father, requireCache = new Hashtable(), labels = new Hashtable();;
     public Vector tokens;
     // |
     public int status = 0;
@@ -142,7 +142,7 @@ public class Lua {
                 else { tokens.addElement(new Token(DOT, ".")); i++; }
             }
             else if (c == ':') {
-                /*if (i + 1 < code.length() && code.charAt(i + 1) == ':') {
+                if (i + 1 < code.length() && code.charAt(i + 1) == ':') {
                     i += 2;
                     
                     StringBuffer sb = new StringBuffer();
@@ -150,7 +150,7 @@ public class Lua {
                     
                     if (i + 1 < code.length() && code.charAt(i) == ':' && code.charAt(i + 1) == ':') { i += 2; tokens.addElement(new Token(LABEL, sb.toString())); }
                     else { i -= 2; tokens.addElement(new Token(COLON, ":")); i++; }
-                } else {*/ tokens.addElement(new Token(COLON, ":")); i++; //}
+                } else { tokens.addElement(new Token(COLON, ":")); i++; }
             }
 
             else if (isDigit(c) || (c == '.' && i + 1 < code.length() && isDigit(code.charAt(i + 1)))) {
@@ -328,18 +328,18 @@ public class Lua {
             }
         }
 
-        /*else if (current.type == LABEL) { marks.put(consume(LABEL).value, new Integer(tokenIndex)); return null; }
+        else if (current.type == LABEL) { labels.put(consume(LABEL).value, new Integer(tokenIndex)); return null; }
         else if (current.type == GOTO) {
             consume(GOTO);
             String labelName = (String) consume(IDENTIFIER).value;
 
-            if (marks.containsKey(labelName)) { } else { throw new Exception("undefined label '" + labelName + "'"); }
+            if (labels.containsKey(labelName)) { } else { throw new Exception("undefined label '" + labelName + "'"); }
 
-            Integer labelPos = (Integer) marks.get(labelName);
+            Integer labelPos = (Integer) labels.get(labelName);
 
             tokenIndex = labelPos.intValue();
             return null;
-        }*/
+        }
 
         else if (current.type == IF) {
             consume(IF);
@@ -1146,13 +1146,13 @@ public class Lua {
     // |
     private void collectLabels() throws Exception {
         int savedTokenIndex = tokenIndex;
-        if (marks.isEmpty()) { } else { marks.clear(); }
+        if (labels.isEmpty()) { } else { labels.clear(); }
 
         tokenIndex = 0;
         while (peek().type != EOF) {
             Token token = peek();
 
-            if (token.type == LABEL) { consume(LABEL); marks.put(token.value, new Integer(tokenIndex)); }
+            if (token.type == LABEL) { consume(LABEL); labels.put(token.value, new Integer(tokenIndex)); }
             else { consume(); }
         }
 
