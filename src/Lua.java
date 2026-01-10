@@ -2502,7 +2502,6 @@ public class Lua {
                     default: return "KEY_" + keyCode;
                 }
             }
-            }
             // Package: string
             else if (MOD == LOWER || MOD == UPPER) { if (args.isEmpty()) { return gotbad(1, MOD == LOWER ? "lower" : "upper", "string expected, got no value"); } else { String text = toLuaString(args.elementAt(0)); return MOD == LOWER ? text.toLowerCase() : text.toUpperCase(); } }
             else if (MOD == FIND || MOD == MATCH || MOD == LEN) {
