@@ -153,34 +153,4 @@ public class LuaCanvas extends Canvas implements Runnable {
     public void requestRepaint() {
         needsRepaint = true;
     }
-    
-    private String getKeyName(int keyCode) {
-        String name = getKeyName(keyCode);
-        if (name != null) return name;
-        
-        switch (keyCode) {
-            case KEY_NUM0: return "0";
-            case KEY_NUM1: return "1";
-            case KEY_NUM2: return "2";
-            case KEY_NUM3: return "3";
-            case KEY_NUM4: return "4";
-            case KEY_NUM5: return "5";
-            case KEY_NUM6: return "6";
-            case KEY_NUM7: return "7";
-            case KEY_NUM8: return "8";
-            case KEY_NUM9: return "9";
-            case KEY_STAR: return "*";
-            case KEY_POUND: return "#";
-            case UP: return "UP";
-            case DOWN: return "DOWN";
-            case LEFT: return "LEFT";
-            case RIGHT: return "RIGHT";
-            case FIRE: return "FIRE";
-            case GAME_A: return "GAME_A";
-            case GAME_B: return "GAME_B";
-            case GAME_C: return "GAME_C";
-            case GAME_D: return "GAME_D";
-            default: return "KEY_" + keyCode;
-        }
-    }
 }

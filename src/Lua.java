@@ -2476,8 +2476,32 @@ public class Lua {
                 if (args.isEmpty()) { return gotbad(1, "getKeyName", "key code expected"); }
                 
                 int keyCode = ((Double) args.elementAt(0)).intValue();
-                String keyName = getKeyName(keyCode);
-                return keyName != null ? keyName : "UNKNOWN";
+                
+                switch (keyCode) {
+                    case Canvas.KEY_NUM0: return "0";
+                    case Canvas.KEY_NUM1: return "1";
+                    case Canvas.KEY_NUM2: return "2";
+                    case Canvas.KEY_NUM3: return "3";
+                    case Canvas.KEY_NUM4: return "4";
+                    case Canvas.KEY_NUM5: return "5";
+                    case Canvas.KEY_NUM6: return "6";
+                    case Canvas.KEY_NUM7: return "7";
+                    case Canvas.KEY_NUM8: return "8";
+                    case Canvas.KEY_NUM9: return "9";
+                    case Canvas.KEY_STAR: return "*";
+                    case Canvas.KEY_POUND: return "#";
+                    case Canvas.UP: return "UP";
+                    case Canvas.DOWN: return "DOWN";
+                    case Canvas.LEFT: return "LEFT";
+                    case Canvas.RIGHT: return "RIGHT";
+                    case Canvas.FIRE: return "FIRE";
+                    case Canvas.GAME_A: return "GAME_A";
+                    case Canvas.GAME_B: return "GAME_B";
+                    case Canvas.GAME_C: return "GAME_C";
+                    case Canvas.GAME_D: return "GAME_D";
+                    default: return "KEY_" + keyCode;
+                }
+            }
             }
             // Package: string
             else if (MOD == LOWER || MOD == UPPER) { if (args.isEmpty()) { return gotbad(1, MOD == LOWER ? "lower" : "upper", "string expected, got no value"); } else { String text = toLuaString(args.elementAt(0)); return MOD == LOWER ? text.toLowerCase() : text.toUpperCase(); } }
