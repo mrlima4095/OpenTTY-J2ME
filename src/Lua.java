@@ -15,7 +15,7 @@ public class Lua {
     public String PID = "";
     private long uptime = System.currentTimeMillis();
     private int id = 1000, tokenIndex, loopDepth = 0;
-    public Hashtable globals = new Hashtable(), proc, father, requireCache = new Hashtable();
+    public Hashtable globals = new Hashtable(), proc, father, requireCache = new Hashtable(), labels = new Hashtable();
     public Vector tokens;
     // |
     public int status = 0;
@@ -341,6 +341,58 @@ public class Lua {
                 else if (peek().type == LPAREN) { return callFunction(varName, scope); } 
                 else { return unwrap(scope.get(varName)); }
             }
+        }
+
+        else if (current.type == LABEL) {
+            String labelName = (String) current.value;
+            consume(LABEL);
+            
+            labels.put(labelName, new Integer(tokenIndex));
+            
+            return null;
+        }
+        else if (current.type == GOTO) {
+            consume(GOTO);
+            String labelName = (String) consume(IDENTIFIER).value;
+
+            if (labels.containsKey(labelName)) { }
+            else {
+                // Procura o label no restante do código (forward reference)
+                int savedIndex = tokenIndex;
+                while (peek().type != EOF) {
+                    if (peek().type == LABEL && peek().value.equals(labelName)) {
+                        labels.put(labelName, new Integer(tokenIndex));
+                        break;
+                    }
+                    consume();
+                }
+                
+                // Se não encontrou, procura do início
+                if (!labels.containsKey(labelName)) {
+                    int originalIndex = tokenIndex;
+                    tokenIndex = 0;
+                    
+                    while (peek().type != EOF) {
+                        if (peek().type == LABEL && peek().value.equals(labelName)) {
+                            labels.put(labelName, new Integer(tokenIndex));
+                            break;
+                        }
+                        consume();
+                    }
+                    
+                    tokenIndex = originalIndex;
+                }
+                
+                // Se ainda não encontrou, é um erro
+                if (!labels.containsKey(labelName)) { throw new RuntimeException("undefined label '" + labelName + "'"); }
+            }
+            
+            // Salta para a posição do label
+            Integer labelPos = (Integer) labels.get(labelName);
+            tokenIndex = labelPos.intValue();
+            
+            // Não é necessário consumir o token LABEL aqui, pois já está no label
+            return null;
         }
 
         else if (current.type == IF) {
