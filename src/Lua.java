@@ -2476,31 +2476,7 @@ public class Lua {
                 if (args.isEmpty()) { return gotbad(1, "getKeyName", "key code expected"); }
                 
                 int keyCode = ((Double) args.elementAt(0)).intValue();
-                
-                switch (keyCode) {
-                    case Canvas.KEY_NUM0: return "0";
-                    case Canvas.KEY_NUM1: return "1";
-                    case Canvas.KEY_NUM2: return "2";
-                    case Canvas.KEY_NUM3: return "3";
-                    case Canvas.KEY_NUM4: return "4";
-                    case Canvas.KEY_NUM5: return "5";
-                    case Canvas.KEY_NUM6: return "6";
-                    case Canvas.KEY_NUM7: return "7";
-                    case Canvas.KEY_NUM8: return "8";
-                    case Canvas.KEY_NUM9: return "9";
-                    case Canvas.KEY_STAR: return "*";
-                    case Canvas.KEY_POUND: return "#";
-                    case Canvas.UP: return "UP";
-                    case Canvas.DOWN: return "DOWN";
-                    case Canvas.LEFT: return "LEFT";
-                    case Canvas.RIGHT: return "RIGHT";
-                    case Canvas.FIRE: return "FIRE";
-                    case Canvas.GAME_A: return "GAME_A";
-                    case Canvas.GAME_B: return "GAME_B";
-                    case Canvas.GAME_C: return "GAME_C";
-                    case Canvas.GAME_D: return "GAME_D";
-                    default: return "KEY_" + keyCode;
-                }
+                return keyCode == Canvas.KEY_NUM0 ? "0" : keyCode == Canvas.KEY_NUM1 ? "1" : keyCode == Canvas.KEY_NUM2 ? "2" : keyCode == Canvas.KEY_NUM3 ? "3" : keyCode == Canvas.KEY_NUM4 ? "4" : keyCode == Canvas.KEY_NUM5 ? "5" : keyCode == Canvas.KEY_NUM6 ? "6" : keyCode == Canvas.KEY_NUM7 ? "7" : keyCode == Canvas.KEY_NUM8 ? "8" : keyCode == Canvas.KEY_NUM9 ? "9" : keyCode == Canvas.KEY_STAR ? "*" : keyCode == Canvas.KEY_POUND ? "#" : keyCode == Canvas.UP ? "UP" : keyCode == Canvas.DOWN ? "DOWN" : keyCode == Canvas.LEFT ? "LEFT" : keyCode == Canvas.RIGHT ? "RIGHT" : keyCode == Canvas.FIRE ? "FIRE" : keyCode == Canvas.GAME_A ? "GAME_A" : keyCode == Canvas.GAME_B ? "GAME_B" : keyCode == Canvas.GAME_C ? "GAME_C" : keyCode == Canvas.GAME_D ? "GAME_D" : "KEY_" + keyCode;
             }
             // Package: string
             else if (MOD == LOWER || MOD == UPPER) { if (args.isEmpty()) { return gotbad(1, MOD == LOWER ? "lower" : "upper", "string expected, got no value"); } else { String text = toLuaString(args.elementAt(0)); return MOD == LOWER ? text.toLowerCase() : text.toUpperCase(); } }
