@@ -2,7 +2,7 @@
 
 local version = "1.5"
 
-local proxy = "http://opentty.xyz/"
+local proxy = os.getenv("SERVER")
 local server = os.getenv("REPO") or "socket://opentty.xyz:31522"
 local mirror = {
     ["appmenu"] = { remote = "sys/appmenu/main.lua", here = "/bin/init", description = "Application Menu" },
@@ -123,14 +123,7 @@ local function remove(pkg, verbose)
 end
 
 local function main()
-    local x = 1
-
-    if arg[1] == "--proxy" then
-        proxy = getAppProperty("MIDlet-Proxy")
-        x = 2
-    end
-
-    if arg[x] == nil or arg[x] == "help" then
+    if arg[1] == nil or arg[1] == "help" then
         print("Yang Package Manager v" .. version)
         print("Usage: yang <command> [package]")
         print("Commands:")
@@ -140,14 +133,14 @@ local function main()
         print("  list               - List available packages")
         print("  info <package>     - Show package information")
         print("  help               - Show this help")
-    elseif arg[x] == "install" then
+    elseif arg[1] == "install" then
         if os.getuid() > 0 then
             print("Permission denied!")
             os.exit(13)
         end
 
-        if arg[x + 1] then
-            for i = (x + 1), #arg - x do
+        if arg[2] then
+            for i = 2, #arg - 1 do
                 local pkg = arg[i]
 
                 if mirror[pkg] then
@@ -179,16 +172,16 @@ local function main()
                 end
             end
         else
-            print("yang: usage: yang remove [package]")
+            print("yang: usage: yang install [package]")
         end
-    elseif arg[x] == "remove" then
+    elseif arg[1] == "remove" then
         if os.getuid() > 0 then
             print("Permission denied!")
             os.exit(13)
         end
 
-        if arg[x + 1] then
-            for i = (x + 1), #arg - x do
+        if arg[2] then
+            for i = 2, #arg - 1 do
                 local pkg = arg[i]
 
                 if mirror[pkg] then
@@ -219,7 +212,7 @@ local function main()
         else
             print("yang: usage: yang remove [package]")
         end
-    elseif arg[x] == "update" then
+    elseif arg[1] == "update" then
         local response = connect("fetch")
         if response then
             print(":: " .. response)
@@ -227,16 +220,16 @@ local function main()
             print(":: Connection error")
             os.exit(101)
         end
-    elseif arg[x] == "list" then
+    elseif arg[1] == "list" then
         print("Available packages:")
         for name, info in pairs(mirror) do
             if not info.packages then
                 print("- " .. name .. ": " .. info.description)
             end
         end
-    elseif arg[x] == "info" then
-        if arg[x + 1] then
-            local pkg = arg[x + 1]
+    elseif arg[1] == "info" then
+        if arg[2] then
+            local pkg = arg[2]
 
             if mirror[pkg] then
                 local info = mirror[pkg]
