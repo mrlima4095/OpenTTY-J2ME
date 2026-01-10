@@ -2078,11 +2078,8 @@ public class Lua {
                 String midletClass = toLuaString(args.elementAt(2)), sender = args.size() > 3 ? toLuaString(args.elementAt(3)) : null;
                 
                 try {
-                    if (sender != null && sender.length() > 0) {
-                        PushRegistry.registerConnection(connection, midletClass, filter, sender);
-                    } else {
-                        PushRegistry.registerConnection(connection, midletClass, filter);
-                    }
+                    PushRegistry.registerConnection(connection, midletClass, filter);
+                    
                     return Boolean.TRUE;
                 } catch (ClassNotFoundException e) {
                     return gotbad(3, "register", "MIDlet class not found: " + midletClass);
