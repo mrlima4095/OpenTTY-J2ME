@@ -15,7 +15,7 @@ public class Lua {
     public String PID = "";
     private long uptime = System.currentTimeMillis();
     private int id = 1000, tokenIndex, loopDepth = 0;
-    public Hashtable globals = new Hashtable(), proc, father, requireCache = new Hashtable(), labels = new Hashtable();
+    public Hashtable globals = new Hashtable(), proc, father, requireCache = new Hashtable();
     public Vector tokens;
     // |
     public int status = 0;
@@ -342,8 +342,6 @@ public class Lua {
                 else { return unwrap(scope.get(varName)); }
             }
         }
-
-
 
         else if (current.type == IF) {
             consume(IF);
