@@ -1572,7 +1572,7 @@ public class ELF {
             if (midlet.isPureText(data)) {
                 String code = new String(data, "UTF-8");
                 Lua lua = new Lua(midlet, id, null, null, stdout, scope);
-                lua.run(program, code, arg);
+                lua.run(path, code, arg);
                 registers[REG_R0] = 0;
             }
             else {
