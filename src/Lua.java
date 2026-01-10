@@ -2411,7 +2411,7 @@ public class Lua {
                     Object target = args.elementAt(0);
                     Font font = midlet.genFont(toLuaString(args.elementAt(1)));
                     
-                    if (target instanceof Graphics) { ((Graphics) target).setFont(font); } else if (target instanceof StringItem) { ((Item) target).setFont(font); } else { return gotbad(1, "setFont", "graphics or item expected"); }
+                    if (target instanceof Graphics) { ((Graphics) target).setFont(font); } else if (target instanceof StringItem) { ((StringItem) target).setFont(font); } else { return gotbad(1, "setFont", "graphics or item expected"); }
                 }
             }
 
