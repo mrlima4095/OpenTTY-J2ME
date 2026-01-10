@@ -2144,20 +2144,6 @@ public class Lua {
                     return gotbad(1, "setAlarm", "Connection not found: " + e.getMessage());
                 }
             }
-            else if (MOD == PUSH_GET_ALARM) {
-                if (args.isEmpty()) {
-                    return gotbad(1, "getAlarm", "MIDlet class expected");
-                }
-                
-                String midletClass = toLuaString(args.elementAt(0));
-                
-                try {
-                    long alarmTime = PushRegistry.getMIDlet(midletClass);
-                    return new Double(alarmTime);
-                } catch (Exception e) {
-                    return gotbad(1, "getAlarm", "error: " + e.getMessage());
-                }
-            }
             // Package: graphics 
             else if (MOD == DISPLAY) {
                 if (args.isEmpty()) { }
