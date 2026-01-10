@@ -1556,6 +1556,9 @@ public class ELF {
         StringBuffer argsStr = new StringBuffer();
         for (i = 1; i < argsVec.size(); i++) { if (i > 1) argsStr.append(" "); argsStr.append((String) argsVec.elementAt(i)); }
         try {
+            InputStream is = midlet.getInputStream(path);
+            if (is == null) { registers[REG_R0] = -2; return; }
+
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             byte[] buffer = new byte[1024];
             int length;
