@@ -74,7 +74,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         menu.append("System Info", null);
         menu.append("Questions", null);
         menu.setCommandListener(this);
-        display.setCurrent(menu).
+        display.setCurrent(menu);
     }
     // | (Installation)
     private void login(boolean user, boolean pword) {
