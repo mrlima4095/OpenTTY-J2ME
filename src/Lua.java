@@ -2106,19 +2106,12 @@ public class Lua {
                 
                 try {
                     String[] connections = PushRegistry.listConnections(false);
-                    Hashtable result = new Hashtable();
+                    Hashtable result = new Hashtable(); int j = 1;
                     
                     if (connections != null) {
                         for (int i = 0; i < connections.length; i++) {
-                            if (connections[i].startsWith(connection) || connection.equals("*")) {
-                                String midlet = PushRegistry.getMidlet(connections[i]);
-                                String filter = PushRegistry.getFilter(connections[i]);
-                                
-                                Hashtable connInfo = new Hashtable();
-                                connInfo.put("midlet", midlet != null ? midlet : "");
-                                connInfo.put("filter", filter != null ? filter : "");
-                                
-                                result.put(connections[i], connInfo);
+                            if (connections[i].startsWith(connection) || connection.equals("*")) {result.put(connections[i], connInfo);
+                                result.put(new Double(j), connections[i]); j++;
                             }
                         }
                     }
