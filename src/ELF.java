@@ -518,23 +518,11 @@ public class ELF {
     private void loadDefaultLibraries() {
         Hashtable libc = new Hashtable();
         
-        libc.put("printf", new Integer(createSyscallStub("write")));
-        libc.put("puts", new Integer(createSyscallStub("write")));
-        libc.put("malloc", new Integer(createSyscallStub("brk")));
-        libc.put("free", new Integer(createSyscallStub("brk")));
-        libc.put("strlen", new Integer(createSimpleStub(16)));
-        libc.put("strcpy", new Integer(createSimpleStub(32)));
-        libc.put("strcmp", new Integer(createSimpleStub(32)));
-        libc.put("memcpy", new Integer(createSimpleStub(48)));
-        libc.put("memset", new Integer(createSimpleStub(32)));
-        libc.put("exit", new Integer(createSyscallStub("exit")));
-        libc.put("open", new Integer(createSyscallStub("open")));
-        libc.put("read", new Integer(createSyscallStub("read")));
-        libc.put("write", new Integer(createSyscallStub("write")));
-        libc.put("close", new Integer(createSyscallStub("close")));
+        libc.put("printf", new Integer(createSyscallStub("write"))); libc.put("puts", new Integer(createSyscallStub("write"))); libc.put("malloc", new Integer(createSyscallStub("brk"))); libc.put("free", new Integer(createSyscallStub("brk"))); 
+        libc.put("strlen", new Integer(createSimpleStub(16))); libc.put("strcpy", new Integer(createSimpleStub(32))); libc.put("strcmp", new Integer(createSimpleStub(32))); libc.put("memcpy", new Integer(createSimpleStub(48))); libc.put("memset", new Integer(createSimpleStub(32)));
+        libc.put("exit", new Integer(createSyscallStub("exit"))); libc.put("open", new Integer(createSyscallStub("open"))); libc.put("read", new Integer(createSyscallStub("read"))); libc.put("write", new Integer(createSyscallStub("write"))); libc.put("close", new Integer(createSyscallStub("close")));
         
-        globalSymbols.put("libc.so.6", libc);
-        loadedLibraries.addElement("libc.so.6");
+        globalSymbols.put("libc.so.6", libc); loadedLibraries.addElement("libc.so.6");
         
         if (midlet.debug) { midlet.print("Loaded default libraries", stdout); }
     }
