@@ -8,6 +8,16 @@ public class ELF {
     private Object stdout;
     private OpenTTY midlet;
 
+    private static final int EI_NIDENT = 16;
+    private static final int ELFCLASS32 = 1;
+    private static final int ELFDATA2LSB = 1;
+    private static final int EM_ARM = 40;
+    private static final int ET_EXEC = 2;
+    private static final int PT_LOAD = 1;
+    private static final int PT_DYNAMIC = 2;
+    private static final int PT_INTERP = 3;
+    private static final int PT_NOTE = 4;
+    
     public ELF(OpenTTY midlet, Object stdout, Hashtable scope, int id, String pid, Hashtable proc) { this.midlet = midlet; this.stdout = stdout; }
     
     public String getPid() { return ""; }
