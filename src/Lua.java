@@ -15,7 +15,7 @@ public class Lua {
     public String PID = "";
     private long uptime = System.currentTimeMillis();
     private int id = 1000, tokenIndex, loopDepth = 0;
-    public Hashtable globals = new Hashtable(), proc, father, requireCache = new Hashtable(), labels = new Hashtable();;
+    public Hashtable globals = new Hashtable(), proc, father, requireCache = new Hashtable(), marks = new Hashtable();;
     public Vector tokens;
     // |
     public int status = 0;
@@ -328,14 +328,14 @@ public class Lua {
             }
         }
 
-        else if (current.type == LABEL) { labels.put(consume(LABEL).value, new Integer(tokenIndex)); return null; }
+        else if (current.type == LABEL) { marks.put(consume(LABEL).value, new Integer(tokenIndex)); return null; }
         else if (current.type == GOTO) {
             consume(GOTO);
             String labelName = (String) consume(IDENTIFIER).value;
 
-            if (labels.containsKey(labelName)) { } else { throw new Exception("undefined label '" + labelName + "'"); }
+            if (marks.containsKey(labelName)) { } else { throw new Exception("undefined label '" + labelName + "'"); }
 
-            Integer labelPos = (Integer) labels.get(labelName);
+            Integer labelPos = (Integer) marks.get(labelName);
 
             tokenIndex = labelPos.intValue();
             return null;
@@ -1146,13 +1146,13 @@ public class Lua {
     // |
     private void collectLabels() throws Exception {
         int savedTokenIndex = tokenIndex;
-        if (labels.isEmpty()) { } else { labels.clear(); }
+        if (marks.isEmpty()) { } else { marks.clear(); }
 
         tokenIndex = 0;
         while (peek().type != EOF) {
             Token token = peek();
 
-            if (token.type == LABEL) { consume(LABEL); labels.put(token.value, new Integer(tokenIndex)); }
+            if (token.type == LABEL) { consume(LABEL); marks.put(token.value, new Integer(tokenIndex)); }
             else { consume(); }
         }
 
