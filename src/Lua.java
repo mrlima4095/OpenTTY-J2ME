@@ -142,7 +142,7 @@ public class Lua {
                 else { tokens.addElement(new Token(DOT, ".")); i++; }
             }
             else if (c == ':') {
-                if (i + 1 < code.length() && code.charAt(i + 1) == ':') {
+                /*if (i + 1 < code.length() && code.charAt(i + 1) == ':') {
                     i += 2;
                     
                     StringBuffer sb = new StringBuffer();
@@ -150,7 +150,7 @@ public class Lua {
                     
                     if (i + 1 < code.length() && code.charAt(i) == ':' && code.charAt(i + 1) == ':') { i += 2; tokens.addElement(new Token(LABEL, sb.toString())); }
                     else { i -= 2; tokens.addElement(new Token(COLON, ":")); i++; }
-                } else { tokens.addElement(new Token(COLON, ":")); i++; }
+                } else {*/ tokens.addElement(new Token(COLON, ":")); i++; //}
             }
 
             else if (isDigit(c) || (c == '.' && i + 1 < code.length() && isDigit(code.charAt(i + 1)))) {
