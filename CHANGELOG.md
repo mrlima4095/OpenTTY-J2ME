@@ -24,7 +24,7 @@ Lua
 
 - global functions caching
 - added `push` library
-- canvas screen api
+- added support for labels
 
 General
 

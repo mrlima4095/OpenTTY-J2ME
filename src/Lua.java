@@ -15,7 +15,7 @@ public class Lua {
     public String PID = "";
     private long uptime = System.currentTimeMillis();
     private int id = 1000, tokenIndex, loopDepth = 0;
-    public Hashtable globals = new Hashtable(), proc, father, requireCache = new Hashtable();
+    public Hashtable globals = new Hashtable(), proc, father, requireCache = new Hashtable(), labels = new Hashtable();
     public Vector tokens;
     // |
     public int status = 0;
@@ -31,7 +31,7 @@ public class Lua {
     public static final int AUDIO_LOAD = 800, AUDIO_PLAY = 801, AUDIO_PAUSE = 802, AUDIO_VOLUME = 803, AUDIO_DURATION = 804, AUDIO_TIME = 805;
     public static final int PUSH_REGISTER = 900, PUSH_UNREGISTER = 901, PUSH_LIST = 902, PUSH_PENDING = 903, PUSH_SET_ALARM = 904;
 
-    public static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15, GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41, POWER = 42, BREAK = 43, LENGTH = 44, VARARG = 45, REPEAT = 46, UNTIL = 47, COLON = 48;
+    public static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15, GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41, POWER = 42, BREAK = 43, LENGTH = 44, VARARG = 45, REPEAT = 46, UNTIL = 47, COLON = 48, GOTO = 49, LABEL = 50;
     public static final Object LUA_NIL = new Object();
     // |
     public static class Token { int type; Object value; Token(int type, Object value) { this.type = type; this.value = value; } public String toString() { return "Token(type=" + type + ", value=" + value + ")"; } }
@@ -141,6 +141,31 @@ public class Lua {
                 else if (i + 1 < code.length() && code.charAt(i + 1) == '.') { tokens.addElement(new Token(CONCAT, "..")); i += 2; } 
                 else { tokens.addElement(new Token(DOT, ".")); i++; }
             }
+
+            else if (c == ':' && i + 1 < code.length() && code.charAt(i + 1) == ':') {
+                i += 2; // Consome "::"
+                
+                // Verifica se há um identificador
+                if (i < code.length() && isLetter(code.charAt(i))) {
+                    StringBuffer sb = new StringBuffer();
+                    while (i < code.length() && isLetterOrDigit(code.charAt(i))) {
+                        sb.append(code.charAt(i));
+                        i++;
+                    }
+                    
+                    // Verifica se termina com "::"
+                    if (i + 1 < code.length() && code.charAt(i) == ':' && code.charAt(i + 1) == ':') {
+                        i += 2; // Consome "::" final
+                        tokens.addElement(new Token(LABEL, sb.toString()));
+                    } else {
+                        // Se não for um label válido, é um erro
+                        i -= sb.length() + 2; // Volta para antes do "::"
+                        throw new Exception("Malformed label: expected '::identifier::'");
+                    }
+                } else {
+                    throw new Exception("Malformed label: expected identifier after '::'");
+                }
+            }
             else if (c == ':') { tokens.addElement(new Token(COLON, ":")); i++; }
 
             else if (isDigit(c) || (c == '.' && i + 1 < code.length() && isDigit(code.charAt(i + 1)))) {
@@ -181,7 +206,7 @@ public class Lua {
             else if (c == '"' || c == '\'') { char quoteChar = c; StringBuffer sb = new StringBuffer(); i++; while (i < code.length() && code.charAt(i) != quoteChar) { sb.append(code.charAt(i)); i++; } if (i < code.length() && code.charAt(i) == quoteChar) { i++; } tokens.addElement(new Token(STRING, sb.toString())); }
             else if (c == '[' && i + 1 < code.length() && code.charAt(i + 1) == '[') { i += 2; StringBuffer sb = new StringBuffer(); while (i + 1 < code.length() && !(code.charAt(i) == ']' && code.charAt(i + 1) == ']')) { sb.append(code.charAt(i)); i++; } if (i + 1 < code.length()) { i += 2; } tokens.addElement(new Token(STRING, sb.toString())); }
 
-            else if (isLetter(c)) { StringBuffer sb = new StringBuffer(); while (i < code.length() && isLetterOrDigit(code.charAt(i))) { sb.append(code.charAt(i)); i++; } String word = sb.toString(); tokens.addElement(new Token((word.equals("true") || word.equals("false")) ? BOOLEAN : word.equals("nil") ? NIL : word.equals("and") ? AND : word.equals("or") ? OR : word.equals("not") ? NOT : word.equals("if") ? IF : word.equals("then") ? THEN : word.equals("else") ? ELSE : word.equals("elseif") ? ELSEIF : word.equals("end") ? END : word.equals("while") ? WHILE : word.equals("do") ? DO : word.equals("return") ? RETURN : word.equals("function") ? FUNCTION : word.equals("local") ? LOCAL : word.equals("for") ? FOR : word.equals("in") ? IN : word.equals("break") ? BREAK : word.equals("repeat") ? REPEAT : word.equals("until") ? UNTIL : IDENTIFIER, word)); }
+            else if (isLetter(c)) { StringBuffer sb = new StringBuffer(); while (i < code.length() && isLetterOrDigit(code.charAt(i))) { sb.append(code.charAt(i)); i++; } String word = sb.toString(); tokens.addElement(new Token((word.equals("true") || word.equals("false")) ? BOOLEAN : word.equals("nil") ? NIL : word.equals("and") ? AND : word.equals("or") ? OR : word.equals("not") ? NOT : word.equals("if") ? IF : word.equals("then") ? THEN : word.equals("else") ? ELSE : word.equals("elseif") ? ELSEIF : word.equals("end") ? END : word.equals("while") ? WHILE : word.equals("do") ? DO : word.equals("return") ? RETURN : word.equals("function") ? FUNCTION : word.equals("local") ? LOCAL : word.equals("for") ? FOR : word.equals("in") ? IN : word.equals("break") ? BREAK : word.equals("repeat") ? REPEAT : word.equals("until") ? UNTIL : word.equals("goto") ? GOTO : IDENTIFIER, word)); }
     
             else if (c == '+') { tokens.addElement(new Token(PLUS, "+")); i++; }
             else if (c == '-') { tokens.addElement(new Token(MINUS, "-")); i++; }
@@ -316,6 +341,58 @@ public class Lua {
                 else if (peek().type == LPAREN) { return callFunction(varName, scope); } 
                 else { return unwrap(scope.get(varName)); }
             }
+        }
+
+        else if (current.type == LABEL) {
+            String labelName = (String) current.value;
+            consume(LABEL);
+            
+            labels.put(labelName, new Integer(tokenIndex));
+            
+            return null;
+        }
+        else if (current.type == GOTO) {
+            consume(GOTO);
+            String labelName = (String) consume(IDENTIFIER).value;
+
+            if (labels.containsKey(labelName)) { }
+            else {
+                // Procura o label no restante do código (forward reference)
+                int savedIndex = tokenIndex;
+                while (peek().type != EOF) {
+                    if (peek().type == LABEL && peek().value.equals(labelName)) {
+                        labels.put(labelName, new Integer(tokenIndex));
+                        break;
+                    }
+                    consume();
+                }
+                
+                // Se não encontrou, procura do início
+                if (!labels.containsKey(labelName)) {
+                    int originalIndex = tokenIndex;
+                    tokenIndex = 0;
+                    
+                    while (peek().type != EOF) {
+                        if (peek().type == LABEL && peek().value.equals(labelName)) {
+                            labels.put(labelName, new Integer(tokenIndex));
+                            break;
+                        }
+                        consume();
+                    }
+                    
+                    tokenIndex = originalIndex;
+                }
+                
+                // Se ainda não encontrou, é um erro
+                if (!labels.containsKey(labelName)) { throw new RuntimeException("undefined label '" + labelName + "'"); }
+            }
+            
+            // Salta para a posição do label
+            Integer labelPos = (Integer) labels.get(labelName);
+            tokenIndex = labelPos.intValue();
+            
+            // Não é necessário consumir o token LABEL aqui, pois já está no label
+            return null;
         }
 
         else if (current.type == IF) {
