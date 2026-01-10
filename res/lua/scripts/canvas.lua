@@ -3,12 +3,13 @@
 
 -- Primeiro, vamos criar um canvas
 local canvas = graphics.new("canvas", "Meu Canvas Interativo", false)
-
+local gx
 -- Criar uma tabela de handlers para os eventos
 local handlers = {}
 
 -- Handler para pintar na tela
 function handlers.paint(g)
+    gx = g
     -- Configurar cor de fundo (preto)
     graphics.setpalette(g, 0, 0, 0)
     g:fillRect(0, 0, g:getWidth(), g:getHeight())
@@ -59,7 +60,7 @@ function handlers.keyPressed(keyCode)
     end
     
     -- Forçar repaint
-    canvas:requestRepaint()
+    handlers.paint(gx)
 end
 
 -- Handler para tecla liberada
@@ -84,7 +85,7 @@ function handlers.pointerPressed(x, y)
         table.remove(handlers.touchPoints, 1)
     end
     
-    canvas:requestRepaint()
+    handlers.paint(gx)
 end
 
 -- Handler para arrastar na tela
@@ -99,7 +100,7 @@ function handlers.pointerDragged(x, y)
         end
     end
     
-    canvas:requestRepaint()
+    handlers.paint(gx)
 end
 
 -- Handler para toque liberado
@@ -130,7 +131,7 @@ graphics.setCanvasHandler(canvas, handlers)
 
 -- Adicionar um botão de comando
 local cmdBack = graphics.new("command", {label = "Voltar", type = "back"})
-canvas:addCommand(cmdBack)
+graphics.addCommand(canvas, cmdBack)
 
 -- Handler para comandos
 local commandHandlers = {}
@@ -139,7 +140,7 @@ function commandHandlers[cmdBack](args)
     -- Aqui você poderia mudar para outra tela
 end
 
-canvas:handler(commandHandlers)
+graphics.handler(canvas, commandHandlers)
 
 -- Exibir o canvas
 graphics.display(canvas)
