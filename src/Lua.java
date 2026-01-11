@@ -1547,6 +1547,20 @@ public class Lua {
                 }
             }
             else if (MOD == JOIN) { return args.isEmpty() ? (String) gotbad(1, "join", "string expected, got no value") : (String) midlet.joinpath(toLuaString(args.elementAt(0)), father); }
+            else if (MOD == MKDIR) {
+                if (args.isEmpty()) { }
+                else {
+                    FileConnection fc = null;
+                    try {
+                        fc = (FileConnection) Connector.open("file:///Card", Connector.READ_WRITE);
+                        
+                        if (fc.exists()) { return 128; } else { fc.mkdir(); return 0; }
+                    }
+                    catch (Exception e) { return e instanceof SecurityException ? 13 : 1; }
+                    finally { if (fc != null) { try { fc.close(); } catch (Exception e) { } } }
+                }
+                    
+            }
             // Package: io
             else if (MOD == READ) {
                 if (args.isEmpty()) { return stdout instanceof StringItem ? ((StringItem) stdout).getText() : stdout instanceof StringBuffer ? ((StringBuffer) stdout).toString() : stdout instanceof String ? midlet.getcontent((String) stdout, father) : ""; }

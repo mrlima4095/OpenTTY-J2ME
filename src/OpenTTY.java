@@ -394,7 +394,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         return 0; 
     }
-    // | (Directories Tools)
     // | (Normalize Path)
     public String joinpath(String file, Hashtable scope) {
         String pwd = scope.containsKey("PWD") ? (String) scope.get("PWD") : "/";
