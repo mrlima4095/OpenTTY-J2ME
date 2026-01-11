@@ -203,7 +203,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             String current = ((StringItem) stdout).getText(), output = current == null || current.length() == 0 ? message : current + "\n" + message; 
             ((StringItem) stdout).setText(output); }
         else if (stdout instanceof StringBuffer) { ((StringBuffer) stdout).append("\n").append(message); }
-        else if (stdout instanceof String) { write((String) stdout, read((String) stdout) + "\n" + message, 1000, scope); }
+        else if (stdout instanceof String) { write((String) stdout, read((String) stdout, scope) + "\n" + message, 1000, scope); }
         else if (stdout instanceof OutputStream) {
             try { ((OutputStream) stdout).write((message + "\n").getBytes()); ((OutputStream) stdout).flush(); } 
             catch (Exception e) { }
@@ -300,6 +300,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
     }
     public Image readImg(String filename, Hashtable scope) { try { InputStream is = getInputStream(filename); Image img = Image.createImage(is); is.close(); return img; } catch (Exception e) { return Image.createImage(16, 16); } }
+    public String read(String filename) { return read(filename, globals); }
     public String read(String filename, Hashtable scope) {
         try {
             InputStream is = getInputStream(filename);
