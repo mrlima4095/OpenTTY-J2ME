@@ -120,7 +120,7 @@ local function shell(args, enable, aliases, stdout, scope)
                 print("su: permission denied")
             end
         end
-
+    
     -- Session
     -- (User Information)
     -- | prints information about your account
