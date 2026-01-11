@@ -491,7 +491,7 @@ public class ELF {
         
         for (int i = 0; i < paths.length; i++) {
             try {
-                InputStream is = midlet.getInputStream(paths[i]);
+                InputStream is = midlet.getInputStream(paths[i], scope);
                 if (is != null) {
                     // Biblioteca encontrada - criar símbolos simulados
                     Hashtable libSyms = new Hashtable();
@@ -1543,7 +1543,7 @@ public class ELF {
         StringBuffer argsStr = new StringBuffer();
         for (i = 1; i < argsVec.size(); i++) { if (i > 1) argsStr.append(" "); argsStr.append((String) argsVec.elementAt(i)); }
         try {
-            InputStream is = midlet.getInputStream(path);
+            InputStream is = midlet.getInputStream(path, scope);
             if (is == null) { registers[REG_R0] = -2; return; }
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -2151,14 +2151,14 @@ public class ELF {
             
             // Resto do código para arquivos...
             if (forReading) {
-                InputStream is = midlet.getInputStream(fullPath);
+                InputStream is = midlet.getInputStream(fullPath, scope);
                 if (is != null) {
                     Integer fd = new Integer(nextFd++);
                     fileDescriptors.put(fd, is);
                     registers[REG_R0] = fd.intValue();
                 } else if (create) {
-                    midlet.write(fullPath, "", id);
-                    InputStream is2 = midlet.getInputStream(fullPath);
+                    midlet.write(fullPath, "", id, scope);
+                    InputStream is2 = midlet.getInputStream(fullPath, scope);
                     if (is2 != null) {
                         Integer fd = new Integer(nextFd++);
                         fileDescriptors.put(fd, is2);
@@ -2171,7 +2171,7 @@ public class ELF {
                 
                 // Se for append, carregar conteúdo existente
                 if (append && !truncate) {
-                    InputStream existing = midlet.getInputStream(fullPath);
+                    InputStream existing = midlet.getInputStream(fullPath, scope);
                     if (existing != null) {
                         int b;
                         while ((b = existing.read()) != -1) { baos.write(b); }
@@ -2344,7 +2344,7 @@ public class ELF {
         int st_size = 0;
         if (!path.endsWith("/")) {
             try {
-                InputStream is = midlet.getInputStream(path);
+                InputStream is = midlet.getInputStream(path, scope);
                 if (is != null) {
                     int available = is.available();
                     if (available > 0) {
