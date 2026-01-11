@@ -2641,7 +2641,7 @@ public class Lua {
                     if (payload.equals("kill")) {
                         if (arg == null || arg.equals("")) { return new Double(2); }
                         else if (midlet.sys.containsKey(arg)) {
-                            if (midlet.getobject((String) arg, "owner").equals(((Hashtable) scope).get("USER")) || id == 0) { 
+                            if (midlet.getobject((String) arg, "owner").equals(((Hashtable) scope).get("USER")) || ((Double) uid).intValue() == 0) { 
                                 midlet.sys.remove(arg); 
                                 if (arg.equals("1")) { midlet.destroyApp(true); } 
                                 return new Double(0); 
@@ -2653,8 +2653,7 @@ public class Lua {
                     else if (payload.equals("proc")) {
                         if (arg == null || arg.equals("")) { return new Double(2); }
                         else if (midlet.sys.containsKey(arg)) {
-                            if (id == 0) { return midlet.sys.get(arg); } 
-                            if (midlet.getobject((String) arg, "owner").equals(((Hashtable) scope).get("USER")) || id == 0) { return midlet.sys.get(arg); } 
+                            if (midlet.getobject((String) arg, "owner").equals(((Hashtable) scope).get("USER")) || ((Double) uid).intValue() == 0) { return midlet.sys.get(arg); } 
                             else { return new Double(13); }
                         }
                         else { return new Double(127); }
@@ -2666,7 +2665,7 @@ public class Lua {
                             String old = (String) query.get("old"), newpw = (String) query.get("new");
 
                             if (old == null || newpw == null || old.equals("") || newpw.equals("")) { return new Double(2); }
-                            else if (id == 0 || midlet.passwd(old)) { return new Double(midlet.writeRMS("OpenRMS", String.valueOf(newpw.hashCode()).getBytes(), 2)); }
+                            else if (((Double) uid).intValue() == 0 || midlet.passwd(old)) { return new Double(midlet.writeRMS("OpenRMS", String.valueOf(newpw.hashCode()).getBytes(), 2)); }
                             else { return new Double(13); }
                         }
                     }
@@ -2718,7 +2717,7 @@ public class Lua {
                     else if (payload.equals("chroot")) {
                         if (arg == null || arg.equals("")) { return new Double(2); }
                         else if (((Double) uid).intValue() > 0) { return new Double(13); }
-                        else if (toLuaString(arg).startsWith("/mnt/")) { midlet.root = toLuaString(arg); }
+                        else if (arg.toString().startsWith("/mnt/")) { midlet.root = arg.toString(); }
                         else { return new Double(2); }
                     }
                 }
