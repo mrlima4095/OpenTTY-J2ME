@@ -2718,7 +2718,7 @@ public class Lua {
                     else if (payload.equals("chroot")) {
                         if (arg == null || arg.equals("")) { return new Double(2); }
                         else if (((Double) uid).intValue() > 0) { return new Double(13); }
-                        else if (arg.startsWith("/mnt/")) { midlet.root = arg; }
+                        else if (toLuaString(arg).startsWith("/mnt/")) { midlet.root = arg; }
                         else { return new Double(2); }
                     }
                 }
