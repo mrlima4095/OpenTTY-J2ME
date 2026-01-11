@@ -21,7 +21,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Object shell;
 
     public Hashtable attributes = new Hashtable(), fs = new Hashtable(), sys = new Hashtable(), tmp = new Hashtable(), cache = new Hashtable(), cacheLua = new Hashtable(), graphics = new Hashtable(), network = new Hashtable(), globals = new Hashtable(), funcs = null;
-    public String username = read("/home/OpenRMS"), build = "2026-1.17.1-03x15", root = "/";
+    public String username = read("/home/OpenRMS"), build = "2026-1.17.1-03x16", root = "/";
     // |
     // Graphics
     public Display display = Display.getDisplay(this);
@@ -214,7 +214,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // API 003 - File System
     // |
     private boolean file(String filename) {
-        if (filename.startsWith("/home/")) {
+        if ((filename = solvepath(filename)).startsWith("/home/")) {
             String[] recordStores = RecordStore.listRecordStores();
             if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { if (recordStores[i].equals(filename.substring(6))) { return true; } } }
         }
@@ -241,7 +241,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }    
     // | (Read)
     public InputStream getInputStream(String filename) throws Exception {
-        if (filename.startsWith("/home/")) {
+        if ((filename = solvepath(filename)).startsWith("/home/")) {
             RecordStore rs = null;
             try {
                 rs = RecordStore.openRecordStore(filename.substring(6), false);
@@ -318,8 +318,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public static String loadRMS(String filename, int index) { try { RecordStore RMS = RecordStore.openRecordStore(filename, true); if (RMS.getNumRecords() >= index) { byte[] data = RMS.getRecord(index); if (data != null) { return new String(data); } } if (RMS != null) { RMS.closeRecordStore(); } } catch (RecordStoreException e) { } return ""; }
     // | (Write)
     public int write(String filename, String data, int id) { return write(filename, data.getBytes(), id); }
-    public int write(String filename, byte[] data, int id) { 
-        if (filename == null || filename.length() == 0) { return 2; } 
+    public int write(String filename, byte[] data, int id) {
+        if ((filename = solvepath(filename)) == null || filename.length() == 0) { return 2; } 
         else if (filename.startsWith("/mnt/")) { FileConnection fs = null; OutputStream out = null; try { fs = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (!fs.exists()) { fs.create(); } out = fs.openOutputStream(); out.write(data); out.flush(); } catch (Exception e) { return (e instanceof SecurityException) ? 13 : 1; } finally { out.close(); fs.close(); } } 
         else if (filename.startsWith("/home/")) { return writeRMS(filename.substring(6), data, 1); } 
         else if (filename.startsWith("/bin/") || filename.startsWith("/etc/") || filename.startsWith("/lib/")) {
@@ -350,7 +350,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     public int writeRMS(String filename, byte[] data, int index) { try { RecordStore CONN = RecordStore.openRecordStore(filename, true); while (CONN.getNumRecords() < index) { CONN.addRecord("".getBytes(), 0, 0); } CONN.setRecord(index, data, 0, data.length); if (CONN != null) { CONN.closeRecordStore(); } } catch (Exception e) { return 1; } return 0; }
     public int deleteFile(String filename, int id) { 
-        if (filename == null || filename.length() == 0) { return 2; } 
+        if ((filename = solvepath(filename)) == null || filename.length() == 0) { return 2; } 
         else if (filename.startsWith("/home/")) { 
             try { 
                 filename = filename.substring(6); 
@@ -449,6 +449,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         
         return result.toString();
+    }
+    public String solvepath(String path) {
+        if (root.equals("/") || path.startsWith("/dev/") || path.startsWith("/mnt/") || path.startsWith("/proc/") || path.startsWith("/tmp/")) { return path; }
+        else if (path.startsWith("/")) { return root.endsWith("/") ? root.substring(1, root.length() - 1) + path : root + path; } return path;
     }
     // | (Archive Structures)
     public int addFile(String filename, String content, String archive, String base) { return addFile(filename, content.getBytes(), archive, base); }

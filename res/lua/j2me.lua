@@ -37,7 +37,9 @@ os = {
     --[=[Delete files]=]
     remove = function (file) return 0 end,
     --[=[Build PATH questions]=]
-    join = function (pwd) return "/bin/sh" end
+    join = function (pwd) return "/bin/sh" end,
+    --[=[Create directories]=]
+    mkdir = function (path) return 0 end
 }
 
 package = { loadlib = function (libname, funcname) end, loaded = {} }

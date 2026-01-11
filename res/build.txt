@@ -183,3 +183,4 @@
 [2026-1.17.1-03x13] Lua Global Template Caching
 [2026-1.17.1-03x14] ELF Objects
 [2026-1.17.1-03x15] Lua Canvas (reverted)
+[2026-1.17.1-03x16] Experimental Resource (Change ROOT) | Lua can create directories

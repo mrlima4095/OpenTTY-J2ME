@@ -25,6 +25,7 @@ Lua
 - global functions caching
 - added `push` library
 - added support for labels
+- added function `os.mkdir()`
 
 General
 

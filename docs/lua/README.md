@@ -66,6 +66,7 @@ This is a complete implementation of the Lua language for the J2ME (Java Micro E
 | `os.su(user, password)` | Change current user |
 | `os.remove(file)` | Remove files and directories |
 | `os.join(file)` | Get absolute path of a file |
+| `os.mkdir(dir)` | Create directories |
 
 ### 📁 IO Library
 
