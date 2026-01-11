@@ -318,7 +318,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     public static String loadRMS(String filename, int index) { try { RecordStore RMS = RecordStore.openRecordStore(filename, true); if (RMS.getNumRecords() >= index) { byte[] data = RMS.getRecord(index); if (data != null) { return new String(data); } } if (RMS != null) { RMS.closeRecordStore(); } } catch (RecordStoreException e) { } return ""; }
     // | (Write)
-    public int write(String filename, String data, int id, Hashtable scope) { return write(filename, data.getBytes(), id); }
+    public int write(String filename, String data, int id, Hashtable scope) { return write(filename, data.getBytes(), id, scope); }
     public int write(String filename, byte[] data, int id, Hashtable scope) {
         if ((filename = solvepath(filename, scope)) == null || filename.length() == 0) { return 2; } 
         else if (filename.startsWith("/mnt/")) { FileConnection fs = null; OutputStream out = null; try { fs = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (!fs.exists()) { fs.create(); } out = fs.openOutputStream(); out.write(data); out.flush(); } catch (Exception e) { return (e instanceof SecurityException) ? 13 : 1; } finally { out.close(); fs.close(); } } 
