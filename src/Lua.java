@@ -1647,7 +1647,11 @@ public class Lua {
                     }
                 } 
             }
-            else if (MOD == OPEN) { if (args.isEmpty()) { return new ByteArrayOutputStream(); } else { return midlet.getInputStream(toLuaString(args.elementAt(0)), father); } }
+            else if (MOD == OPEN) { if (args.isEmpty()) { return new ByteArrayOutputStream(); } else { 
+                try { return midlet.getInputStream(toLuaString(args.elementAt(0)), father); }
+                catch (Exception e) { return null; }
+                
+            } }
             else if (MOD == POPEN) { 
                 if (args.isEmpty()) { } 
                 else {
