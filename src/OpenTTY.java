@@ -299,7 +299,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             return is;
         }
     }
-    public Image readImg(String filename, Hashtable scope) { try { InputStream is = getInputStream(filename); Image img = Image.createImage(is); is.close(); return img; } catch (Exception e) { return Image.createImage(16, 16); } }
+    public Image readImg(String filename, Hashtable scope) { try { InputStream is = getInputStream(filename, scope); Image img = Image.createImage(is); is.close(); return img; } catch (Exception e) { return Image.createImage(16, 16); } }
     public String read(String filename) { return read(filename, globals); }
     public String read(String filename, Hashtable scope) {
         try {
