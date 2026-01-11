@@ -395,18 +395,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return 0; 
     }
     // | (Directories Tools)
-    public int mkdir(String path) {
-        if (path == null) { return 2; }
-
-        FileConnection fc = null;
-        try {
-            fc = (FileConnection) Connector.open("file://" + path, Connector.READ_WRITE);
-            
-            if (fc.exists()) { return 128; } else { fc.mkdir(); return 0; }
-        }
-        catch (Exception e) { return e instanceof SecurityException ? 13 : 1; }
-        finally { if (fc != null) { try { fc.close(); } catch (Exception e) { } } }
-    }
     // | (Normalize Path)
     public String joinpath(String file, Hashtable scope) {
         String pwd = scope.containsKey("PWD") ? (String) scope.get("PWD") : "/";
@@ -453,7 +441,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return result.toString();
     }
     public String solvepath(String path) {
-        return path;
+        if (path == null) { return "/"; }
+        else if (root.equals("/") || path.startsWith("/dev/") || path.startsWith("/mnt/") || path.startsWith("/proc/") || path.startsWith("/tmp/")) { return path; }
+        else if (path.startsWith("/")) { return root.endsWith("/") ? (root.length() > 1 ? root + path.substring(1) : root) : root + path; } return path;
     }
     // | (Archive Structures)
     public int addFile(String filename, String content, String archive, String base) { return addFile(filename, content.getBytes(), archive, base); }
