@@ -21,7 +21,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Object shell;
 
     public Hashtable attributes = new Hashtable(), fs = new Hashtable(), sys = new Hashtable(), tmp = new Hashtable(), cache = new Hashtable(), cacheLua = new Hashtable(), graphics = new Hashtable(), network = new Hashtable(), globals = new Hashtable(), funcs = null;
-    public String username = read("/home/OpenRMS"), build = "2026-1.17.1-03x15";
+    public String username = read("/home/OpenRMS"), build = "2026-1.17.1-03x15", root = "/";
     // |
     // Graphics
     public Display display = Display.getDisplay(this);
@@ -393,6 +393,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (filename.startsWith("/")) { return 5; }
         
         return 0; 
+    }
+    // | (Directories Tools)
+    public int mkdir(String path) {
+        FileConnection fc = null;
+        try {
+            fc = (FileConnection) Connector.open("file://" + path, Connector.READ_WRITE);
+            
+            if (fc.exists()) { return 128; } else { fc.mkdir(); return 0; }
+        }
+        catch (Exception e) { return e instanceof SecurityException ? 13 : 1; }
+        finally { if (fc != null) { try { fc.close(); } catch (Exception e) { } } }
     }
     // | (Normalize Path)
     public String joinpath(String file, Hashtable scope) {
