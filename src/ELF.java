@@ -539,7 +539,7 @@ public class ELF {
                 midlet.print("=== ELF START DEBUG ===", stdout, id, scope);
                 midlet.print("PC start: " + toHex(pc), stdout, id, scope);
                 midlet.print("SP: " + toHex(registers[REG_SP]), stdout, id, scope);
-                midlet.print("Memory: " + memory.length + " bytes", stdout, id), scope;
+                midlet.print("Memory: " + memory.length + " bytes", stdout, id, scope);
             }
             
             int instructionCount = 0;
