@@ -1005,7 +1005,7 @@ public class ELF {
     
     private void processDynamicSegment(byte[] elfData, int phdrOffset) {
         int p_offset = readIntLE(elfData, phdrOffset + 4), p_vaddr = readIntLE(elfData, phdrOffset + 8), p_filesz = readIntLE(elfData, phdrOffset + 16);
-        if (midlet.debug) { midlet.print("Dynamic segment at " + toHex(p_vaddr), stdout), id, scope; } 
+        if (midlet.debug) { midlet.print("Dynamic segment at " + toHex(p_vaddr), stdout, id, scope); } 
 
         for (int offset = 0; offset < p_filesz; offset += 8) {
             int tag = readIntLE(elfData, p_offset + offset), val = readIntLE(elfData, p_offset + offset + 4);
