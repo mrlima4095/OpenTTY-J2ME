@@ -2215,7 +2215,7 @@ public class ELF {
                         if (fileDescriptors.containsKey(pathKey)) {
                             String path = (String) fileDescriptors.get(pathKey);
                             byte[] data = baos.toByteArray();
-                            midlet.write(path, data, id);
+                            midlet.write(path, data, id, scope);
                         }
                     }
                 }
