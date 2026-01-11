@@ -455,7 +455,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public String solvepath(String path) {
         if (path == null) { return "/"; }
         else if (root.equals("/") || path.startsWith("/dev/") || path.startsWith("/mnt/") || path.startsWith("/proc/") || path.startsWith("/tmp/")) { return path; }
-        else if (path.startsWith("/")) { return root.endsWith("/") ? root.substring(1, root.length() - 1) + path : root + path; } return path;
+        else if (path.startsWith("/")) { return root + path.substring(1); } return path;
     }
     // | (Archive Structures)
     public int addFile(String filename, String content, String archive, String base) { return addFile(filename, content.getBytes(), archive, base); }
