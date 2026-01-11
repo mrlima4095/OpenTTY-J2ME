@@ -1710,7 +1710,7 @@ public class Lua {
                 if (pwd.endsWith("/")) { } 
                 else { pwd = pwd + "/"; }
 
-                if (pwd.equals("/tmp/")) { for (Enumeration files = midlet.tmp.keys(); files.hasMoreElements();) { list.put(new Double(index), (String) files.nextElement()); index++; } }
+                if ((pwd = midlet.solvepath(pwd)).equals("/tmp/")) { for (Enumeration files = midlet.tmp.keys(); files.hasMoreElements();) { list.put(new Double(index), (String) files.nextElement()); index++; } }
                 else if (pwd.equals("/mnt/")) { for (Enumeration roots = FileSystemRegistry.listRoots(); roots.hasMoreElements();) { list.put(new Double(index), (String) roots.nextElement()); index++; } } 
                 else if (pwd.startsWith("/mnt/")) { 
                     FileConnection CONN = (FileConnection) Connector.open("file:///" + pwd.substring(5), Connector.READ); 
@@ -2373,7 +2373,6 @@ public class Lua {
 
                 ((Displayable) screen).setCommandListener(new LuaFunction((Hashtable) table));
             }
-
             else if (MOD == TITLE) { ((Displayable) args.elementAt(0)).setTitle(args.isEmpty() ? null : toLuaString(args.elementAt(1))); }
             else if (MOD == TICKER) { ((Displayable) args.elementAt(0)).setTicker(args.isEmpty() ? null : new Ticker(toLuaString(args.elementAt(1)))); }
             else if (MOD == GETCURRENT) { return midlet.display.getCurrent(); }
