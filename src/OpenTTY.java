@@ -197,13 +197,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Font genFont(String params) { if (params == null || params.length() == 0 || params.equals("default")) { return Font.getDefaultFont(); } int face = Font.FACE_SYSTEM, style = Font.STYLE_PLAIN, size = Font.SIZE_MEDIUM; String[] tokens = split(params, ' '); for (int i = 0; i < tokens.length; i++) { String token = tokens[i].toLowerCase(); if (token.equals("system")) { face = Font.FACE_SYSTEM; } else if (token.equals("monospace")) { face = Font.FACE_MONOSPACE; } else if (token.equals("proportional")) { face = Font.FACE_PROPORTIONAL; } else if (token.equals("bold")) { style |= Font.STYLE_BOLD; } else if (token.equals("italic")) { style |= Font.STYLE_ITALIC; } else if (token.equals("ul") || token.equals("underline") || token.equals("underlined")) { style |= Font.STYLE_UNDERLINED; } else if (token.equals("small")) { size = Font.SIZE_SMALL; } else if (token.equals("medium")) { size = Font.SIZE_MEDIUM; } else if (token.equals("large")) { size = Font.SIZE_LARGE; } } Font f = Font.getFont(face, style, size); return f == null ? Font.getDefaultFont() : f; }
     // |
     public void print(String message, Object stdout) { print(message, stdout, 1000); } 
-    public void print(String message, Object stdout, int id) { 
+    public void print(String message, Object stdout, int id, Hashtable scope) { 
         if (stdout == null) { }
         else if (stdout instanceof StringItem) { 
             String current = ((StringItem) stdout).getText(), output = current == null || current.length() == 0 ? message : current + "\n" + message; 
             ((StringItem) stdout).setText(output); }
         else if (stdout instanceof StringBuffer) { ((StringBuffer) stdout).append("\n").append(message); }
-        else if (stdout instanceof String) { write((String) stdout, read((String) stdout) + "\n" + message, 1000); }
+        else if (stdout instanceof String) { write((String) stdout, read((String) stdout) + "\n" + message, 1000, scope); }
         else if (stdout instanceof OutputStream) {
             try { ((OutputStream) stdout).write((message + "\n").getBytes()); ((OutputStream) stdout).flush(); } 
             catch (Exception e) { }
@@ -240,7 +240,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return false;
     }    
     // | (Read) 
-    public InputStream getInputStream(String filename) throws Exception {
+    public InputStream getInputStream(String filename, Hashtable scope) throws Exception {
         if (filename.startsWith("/home/")) {
             RecordStore rs = null;
             try {
@@ -299,8 +299,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             return is;
         }
     }
-    public Image readImg(String filename) { try { InputStream is = getInputStream(filename); Image img = Image.createImage(is); is.close(); return img; } catch (Exception e) { return Image.createImage(16, 16); } }
-    public String read(String filename) {
+    public Image readImg(String filename, Hashtable scope) { try { InputStream is = getInputStream(filename); Image img = Image.createImage(is); is.close(); return img; } catch (Exception e) { return Image.createImage(16, 16); } }
+    public String read(String filename, Hashtable scope) {
         try {
             InputStream is = getInputStream(filename);
             if (is == null) { return ""; }
@@ -317,8 +317,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     public static String loadRMS(String filename, int index) { try { RecordStore RMS = RecordStore.openRecordStore(filename, true); if (RMS.getNumRecords() >= index) { byte[] data = RMS.getRecord(index); if (data != null) { return new String(data); } } if (RMS != null) { RMS.closeRecordStore(); } } catch (RecordStoreException e) { } return ""; }
     // | (Write)
-    public int write(String filename, String data, int id) { return write(filename, data.getBytes(), id); }
-    public int write(String filename, byte[] data, int id) {
+    public int write(String filename, String data, int id, Hashtable scope) { return write(filename, data.getBytes(), id); }
+    public int write(String filename, byte[] data, int id, Hashtable scope) {
         if ((filename = solvepath(filename)) == null || filename.length() == 0) { return 2; } 
         else if (filename.startsWith("/mnt/")) { FileConnection fs = null; OutputStream out = null; try { fs = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (!fs.exists()) { fs.create(); } out = fs.openOutputStream(); out.write(data); out.flush(); } catch (Exception e) { return (e instanceof SecurityException) ? 13 : 1; } finally { out.close(); fs.close(); } } 
         else if (filename.startsWith("/home/")) { return writeRMS(filename.substring(6), data, 1); } 
@@ -349,7 +349,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return 0; 
     }
     public int writeRMS(String filename, byte[] data, int index) { try { RecordStore CONN = RecordStore.openRecordStore(filename, true); while (CONN.getNumRecords() < index) { CONN.addRecord("".getBytes(), 0, 0); } CONN.setRecord(index, data, 0, data.length); if (CONN != null) { CONN.closeRecordStore(); } } catch (Exception e) { return 1; } return 0; }
-    public int deleteFile(String filename, int id) { 
+    public int deleteFile(String filename, int id, Hashtable scope) { 
         if ((filename = solvepath(filename)) == null || filename.length() == 0) { return 2; } 
         else if (filename.startsWith("/home/")) { 
             try { 
@@ -439,7 +439,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         return result.toString();
     }
-    public String solvepath(String path) {
+    public String solvepath(String path, Hashtable scope) {
+        String root = (String) scope.get("ROOT");
+
         if (path == null) { return "/"; }
         else if (root.equals("/") || path.startsWith("/dev/") || path.startsWith("/mnt/") || path.startsWith("/proc/") || path.startsWith("/tmp/")) { return path; }
         else if (path.startsWith("/")) { return root.endsWith("/") ? (root.length() > 1 ? root + path.substring(1) : root) : root + path; } return path;

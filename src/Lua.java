@@ -104,8 +104,8 @@ public class Lua {
             
             while (peek().type != EOF) { Object res = statement(globals); if (doreturn) { if (res != null) { ITEM.put("object", res); } doreturn = false; break; } }
         } 
-        catch (Exception e) { midlet.print(midlet.getCatch(e), stdout); status = 1; } 
-        catch (Error e) { if (e.getMessage() != null) { midlet.print(e.getMessage(), stdout); } status = 1; }
+        catch (Exception e) { midlet.print(midlet.getCatch(e), stdout, id, father); status = 1; } 
+        catch (Error e) { if (e.getMessage() != null) { midlet.print(e.getMessage(), stdout, id, father); } status = 1; }
 
         if (kill) { midlet.sys.remove(PID); }
         ITEM.put("status", status);
@@ -1247,7 +1247,7 @@ public class Lua {
                         if (i < args.size() - 1) buffer.append("\t");
                     }
 
-                    midlet.print(buffer.toString(), stdout); 
+                    midlet.print(buffer.toString(), stdout, id, father); 
                 } 
             }
             else if (MOD == ERROR) { String msg = toLuaString((args.size() > 0) ? args.elementAt(0) : null); throw new Exception(msg.equals("nil") ? "error" : msg); } 
@@ -1465,7 +1465,7 @@ public class Lua {
 
                         try { response = ((Lua.LuaFunction) proc.get("handler")).call(arg); }
                         catch (Exception e) { return midlet.getCatch(e); } 
-                        catch (Error e) { if (e.getMessage() != null) { midlet.print(e.getMessage(), stdout); } return lua.status; }
+                        catch (Error e) { if (e.getMessage() != null) { midlet.print(e.getMessage(), stdout, id, father); } return lua.status; }
 
                         return response;
                     } 
@@ -1496,7 +1496,7 @@ public class Lua {
                         if (exist && dir) { father.put("PWD", target); return new Double(0); } 
                         else { return new Double(exist ? 20 : 127); }
                     }
-                    else if (midlet.getInputStream(target.substring(target.length() - 1)) != null) { return new Double(20); }
+                    else if (midlet.getInputStream(target.substring(target.length() - 1), father) != null) { return new Double(20); }
 
                     return new Double(127);
                 }
@@ -1527,7 +1527,7 @@ public class Lua {
                     else { return new Double(13); }
                 }
             }
-            else if (MOD == REMOVE) { return args.isEmpty() ? (Double) gotbad(1, "remove", "string expected, got no value") : new Double(midlet.deleteFile(toLuaString(args.elementAt(0)), id)); }
+            else if (MOD == REMOVE) { return args.isEmpty() ? (Double) gotbad(1, "remove", "string expected, got no value") : new Double(midlet.deleteFile(toLuaString(args.elementAt(0)), id, father)); }
             else if (MOD == SCOPE) {
                 if (args.isEmpty()) { return father; }
                 else {
@@ -1620,12 +1620,12 @@ public class Lua {
                         ByteArrayOutputStream baos = (ByteArrayOutputStream) buffer;
                         byte[] bytes = baos.toByteArray();
                         String filename = target != null ? toLuaString(target) : "/dev/stdout";
-                        if (mode) { return new Double(midlet.write(filename, midlet.getcontent(filename, father) + new String(bytes, "UTF-8"), id)); }
-                        else { return new Double(midlet.write(filename, bytes, id)); }
+                        if (mode) { return new Double(midlet.write(filename, midlet.getcontent(filename, father) + new String(bytes, "UTF-8"), id, father)); }
+                        else { return new Double(midlet.write(filename, bytes, id, father)); }
                     }
                     else {
                         String content = toLuaString(buffer), filename = target != null ? toLuaString(target) : "/dev/stdout";
-                        return new Double(midlet.write(filename, mode ? midlet.getcontent(filename, father) + content : content, id));
+                        return new Double(midlet.write(filename, mode ? midlet.getcontent(filename, father) + content : content, id, father));
                     }
                 }
             }
@@ -1647,7 +1647,7 @@ public class Lua {
                     }
                 } 
             }
-            else if (MOD == OPEN) { if (args.isEmpty()) { return new ByteArrayOutputStream(); } else { return midlet.getInputStream(toLuaString(args.elementAt(0))); } }
+            else if (MOD == OPEN) { if (args.isEmpty()) { return new ByteArrayOutputStream(); } else { return midlet.getInputStream(toLuaString(args.elementAt(0)), father); } }
             else if (MOD == POPEN) { 
                 if (args.isEmpty()) { } 
                 else {
@@ -1656,7 +1656,7 @@ public class Lua {
                     int owner = (args.size() < 3) ? new Integer(id) : ((args.elementAt(2) instanceof Boolean) ? new Integer((Boolean) args.elementAt(2) ? id : 1000) : (Integer) gotbad(3, "popen", "boolean expected, got " + type(args.elementAt(2))));
                     Object out = (args.size() < 4) ? new StringBuffer() : args.elementAt(3);
                     Hashtable scope = (args.size() < 5) ? father : (args.elementAt(4) instanceof Hashtable ? (Hashtable) args.elementAt(4) : (Hashtable) gotbad(5, "popen", "table expected, got " + type(args.elementAt(4))));
-                    InputStream is = (args.size() < 6) ? midlet.getInputStream(program) : (InputStream) args.elementAt(5);
+                    InputStream is = (args.size() < 6) ? midlet.getInputStream(program, father) : (InputStream) args.elementAt(5);
 
                     Vector result = new Vector();
                     if (is == null) { return new Double(127); }
@@ -1811,7 +1811,7 @@ public class Lua {
                         data = baos.toByteArray(); baos.close();    
                     
                         if (target instanceof StringBuffer) { ((StringBuffer) target).append(new String(data, "UTF-8")); return new Double(0); }
-                        else { return new Double(midlet.write(toLuaString(target), data, id)); }
+                        else { return new Double(midlet.write(toLuaString(target), data, id, father)); }
                     }
                 }
                 else if (source instanceof StringBuffer) {
@@ -1825,7 +1825,7 @@ public class Lua {
                     }
                     else if (target instanceof StringBuffer || target instanceof String) {
                         if (target instanceof StringBuffer) { ((StringBuffer) target).append(in.toString()); return new Double(0); }
-                        else { return new Double(midlet.write(toLuaString(target), in.toString().getBytes("UTF-8"), id)); }
+                        else { return new Double(midlet.write(toLuaString(target), in.toString().getBytes("UTF-8"), id, father)); }
                     }
                 }
                 else if (source instanceof String) {
@@ -1834,7 +1834,7 @@ public class Lua {
                     if (target instanceof OutputStream) {
                         OutputStream os = (OutputStream) target;
                         
-                        InputStream is = midlet.getInputStream(file);
+                        InputStream is = midlet.getInputStream(file, father);
                         if (is == null) { return new Double(127); }
                         
                         byte[] buffer = new byte[1024];
@@ -1844,20 +1844,18 @@ public class Lua {
                         return new Double(0);
                     }
                     else if (target instanceof StringBuffer || target instanceof String) {
-
-
-                        if (target instanceof StringBuffer) { ((StringBuffer) target).append(midlet.read(file)); }
+                        if (target instanceof StringBuffer) { ((StringBuffer) target).append(midlet.read(file, father)); }
                         else { 
                             ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
-                            InputStream is = midlet.getInputStream(file);
+                            InputStream is = midlet.getInputStream(file, father);
                             if (is == null) { return new Double(127); }
 
                             byte[] buffer = new byte[1024];
                             int bytesRead;
                             while ((bytesRead = is.read(buffer)) != -1) { baos.write(buffer, 0, bytesRead); }
 
-                            return new Double(midlet.write(toLuaString(target), baos.toByteArray(), id));
+                            return new Double(midlet.write(toLuaString(target), baos.toByteArray(), id, father));
                         }
                     }
                 }
@@ -1867,7 +1865,7 @@ public class Lua {
                     
                     if (target instanceof OutputStream) { OutputStream os = (OutputStream) target; os.write(data); os.flush(); } 
                     else if (target instanceof StringBuffer) { ((StringBuffer) target).append(new String(data, "UTF-8")); } 
-                    else if (target instanceof String) { return new Double(midlet.write(toLuaString(target), data, id)); }
+                    else if (target instanceof String) { return new Double(midlet.write(toLuaString(target), data, id, father)); }
                 }
 
                 return new Double(0);
@@ -2270,7 +2268,7 @@ public class Lua {
                 }
                 else { return gotbad(1, "new", "invalid type: " + type); } 
             }
-            else if (MOD == RENDER) { return args.isEmpty() || args.elementAt(0) == null ? gotbad(1, "render", "string expected, got" + type(args.elementAt(0))) : midlet.readImg(toLuaString(args.elementAt(0))); }
+            else if (MOD == RENDER) { return args.isEmpty() || args.elementAt(0) == null ? gotbad(1, "render", "string expected, got" + type(args.elementAt(0))) : midlet.readImg(toLuaString(args.elementAt(0)), father); }
             else if (MOD == APPEND) {
                 if (args.size() < 2) { return gotbad(1, "append", "wrong number of arguments"); }
                 
@@ -2288,7 +2286,7 @@ public class Lua {
                                 form.append((Image) field.get("img"));
                             } else {
                                 String imgPath = getFieldValue(field, "img", "");
-                                if (!imgPath.equals("")) { form.append(midlet.readImg(imgPath)); }
+                                if (!imgPath.equals("")) { form.append(midlet.readImg(imgPath, father)); }
                             }
                             
                         } 
@@ -2347,7 +2345,7 @@ public class Lua {
                     
                     if (args.size() > 2) {
                         Object imgObj = args.elementAt(2);
-                        image = imgObj instanceof Image ? (Image) imgObj : midlet.readImg(toLuaString(imgObj));
+                        image = imgObj instanceof Image ? (Image) imgObj : midlet.readImg(toLuaString(imgObj), father);
                     }
                     
                     list.append(toLuaString(itemObj), image);
@@ -2570,7 +2568,7 @@ public class Lua {
             else if (MOD == AUDIO_LOAD) {
                 if (args.isEmpty()) { return gotbad(1, "load", "string expected, got no value"); }
                 else {
-                    InputStream is = midlet.getInputStream(toLuaString(args.elementAt(0)));
+                    InputStream is = midlet.getInputStream(toLuaString(args.elementAt(0)), father);
                     if (is != null) {
                         Player player = Manager.createPlayer(is, args.size() > 1 ? toLuaString(args.elementAt(1)) : "audio/mpeg"); 
                         player.prefetch();
@@ -2698,7 +2696,7 @@ public class Lua {
                     else if (payload.equals("serve")) {
                         if (arg == null || arg.equals("")) { return new Double(2); }
                         else {
-                            String program = toLuaString(arg), code = midlet.read(program), pid = midlet.genpid();
+                            String program = toLuaString(arg), code = midlet.read(program, father), pid = midlet.genpid();
                             Hashtable process = midlet.genprocess("lua", id, null);
 
                             Lua lua = new Lua(midlet, id, pid, process, stdout, father); lua.kill = false;
@@ -2818,7 +2816,7 @@ public class Lua {
 
         private String getFieldValue(Hashtable table, String key, String fallback) { Object val = table.get(key); return val != null ? toLuaString(val) : fallback; }
 
-        public void run() { if (root instanceof LuaFunction) { Vector arg = new Vector(); try { ((LuaFunction) root).call(arg); } catch (Throwable e) { midlet.print(midlet.getCatch(e), stdout); } } }
+        public void run() { if (root instanceof LuaFunction) { Vector arg = new Vector(); try { ((LuaFunction) root).call(arg); } catch (Throwable e) { midlet.print(midlet.getCatch(e), stdout, id, father); } } }
 
         public void commandAction(Command c, Displayable d) {
             try {
@@ -2853,7 +2851,7 @@ public class Lua {
             catch (Exception e) { midlet.print(midlet.getCatch(e), stdout); midlet.sys.remove(PID); } 
             catch (Error e) { midlet.sys.remove(PID); }
         }
-        public void commandAction(Command c, Item item) { try { if (root instanceof LuaFunction) { ((LuaFunction) root).call(new Vector()); } } catch (Exception e) { midlet.print(midlet.getCatch(e), stdout); midlet.sys.remove(PID); } catch (Error e) { midlet.sys.remove(PID); } }
+        public void commandAction(Command c, Item item) { try { if (root instanceof LuaFunction) { ((LuaFunction) root).call(new Vector()); } } catch (Exception e) { midlet.print(midlet.getCatch(e), stdout, id, father); midlet.sys.remove(PID); } catch (Error e) { midlet.sys.remove(PID); } }
         public void itemStateChanged(Item item) {
             try {
                 if (root == LUA_NIL) { }
@@ -2869,7 +2867,7 @@ public class Lua {
 
                     ((LuaFunction) root).call(args); 
                 }
-            } catch (Exception e) { midlet.print(midlet.getCatch(e), stdout); midlet.sys.remove(PID); } catch (Error e) { midlet.sys.remove(PID); } 
+            } catch (Exception e) { midlet.print(midlet.getCatch(e), stdout, id, father); midlet.sys.remove(PID); } catch (Error e) { midlet.sys.remove(PID); } 
         }
     }
 }
