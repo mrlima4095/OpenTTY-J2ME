@@ -340,14 +340,14 @@ public class ELF {
         return load(baos.toByteArray());
     }
     public boolean load(byte[] elfData) throws Exception {
-        if (elfData.length < 4 || elfData[0] != 0x7F || elfData[1] != 'E' || elfData[2] != 'L' || elfData[3] != 'F') { midlet.print("Not a valid ELF file", stdout); return false; }
-        if (elfData[4] != ELFCLASS32) { midlet.print("Only 32-bit ELF supported", stdout); return false; }
-        if (elfData[5] != ELFDATA2LSB) { midlet.print("Only little-endian ELF supported", stdout); return false; }
+        if (elfData.length < 4 || elfData[0] != 0x7F || elfData[1] != 'E' || elfData[2] != 'L' || elfData[3] != 'F') { midlet.print("Not a valid ELF file", stdout, id, scope); return false; }
+        if (elfData[4] != ELFCLASS32) { midlet.print("Only 32-bit ELF supported", stdout, id, scope); return false; }
+        if (elfData[5] != ELFDATA2LSB) { midlet.print("Only little-endian ELF supported", stdout, id, scope); return false; }
         
         int e_type = readShortLE(elfData, 16), e_machine = readShortLE(elfData, 18), e_entry = readIntLE(elfData, 24), e_phoff = readIntLE(elfData, 28), e_shoff = readIntLE(elfData, 32), e_phnum = readShortLE(elfData, 44), e_shnum = readShortLE(elfData, 48), e_phentsize = readShortLE(elfData, 42), e_shentsize = readShortLE(elfData, 46);
         
-        if (e_type != ET_EXEC) { midlet.print("Not an executable ELF", stdout); return false; }
-        if (e_machine != EM_ARM) { midlet.print("Not an ARM executable", stdout); return false; }
+        if (e_type != ET_EXEC) { midlet.print("Not an executable ELF", stdout, id, scope); return false; }
+        if (e_machine != EM_ARM) { midlet.print("Not an ARM executable", stdout, id, scope); return false; }
         
         // Armazenar informações do ELF
         elfInfo.put("entry", new Integer(e_entry)); elfInfo.put("phoff", new Integer(e_phoff));
@@ -382,7 +382,7 @@ public class ELF {
                 // Interpretador (loader dinâmico) - ignorado por enquanto
                 int p_offset = readIntLE(elfData, phdrOffset + 4);
                 String interp = readString(elfData, p_offset, 256);
-                if (midlet.debug) { midlet.print("Interpreter: " + interp, stdout); }
+                if (midlet.debug) { midlet.print("Interpreter: " + interp, stdout, id, scope); }
             }
         }
 
@@ -419,12 +419,12 @@ public class ELF {
                 case DT_NEEDED:
                     String libName = readString(elfData, val, 256);
                     neededLibraries.put(libName, new Integer(val));
-                    if (midlet.debug) { midlet.print("Needed library: " + libName, stdout); }
+                    if (midlet.debug) { midlet.print("Needed library: " + libName, stdout, id, scope); }
                     break;
                     
                 case DT_PLTGOT:
                     pltGotAddr = val;
-                    if (midlet.debug) { midlet.print("PLT/GOT at: " + toHex(val), stdout); }
+                    if (midlet.debug) { midlet.print("PLT/GOT at: " + toHex(val), stdout, id, scope); }
                     break;
                     
                 case DT_STRTAB:
@@ -483,7 +483,7 @@ public class ELF {
             String libName = (String) libNames.nextElement();
             
             if (loadedLibraries.contains(libName)) { }
-            else { if (loadLibrary(libName)) { loadedLibraries.addElement(libName); if (midlet.debug) { midlet.print("Loaded library: " + libName, stdout); } } else { if (midlet.debug) { midlet.print("Failed to load: " + libName, stdout); } } }
+            else { if (loadLibrary(libName)) { loadedLibraries.addElement(libName); if (midlet.debug) { midlet.print("Loaded library: " + libName, stdout, id, scope); } } else { if (midlet.debug) { midlet.print("Failed to load: " + libName, stdout, id, scope); } } }
         }
     }
     private boolean loadLibrary(String libName) {
@@ -524,7 +524,7 @@ public class ELF {
         
         globalSymbols.put("libc.so.6", libc); loadedLibraries.addElement("libc.so.6");
         
-        if (midlet.debug) { midlet.print("Loaded default libraries", stdout); }
+        if (midlet.debug) { midlet.print("Loaded default libraries", stdout, id, scope); }
     }
 
     // Runtime
@@ -536,16 +536,16 @@ public class ELF {
         
         try {
             if (midlet.debug) { 
-                midlet.print("=== ELF START DEBUG ===", stdout, id);
-                midlet.print("PC start: " + toHex(pc), stdout, id);
-                midlet.print("SP: " + toHex(registers[REG_SP]), stdout, id);
-                midlet.print("Memory: " + memory.length + " bytes", stdout, id);
+                midlet.print("=== ELF START DEBUG ===", stdout, id, scope);
+                midlet.print("PC start: " + toHex(pc), stdout, id, scope);
+                midlet.print("SP: " + toHex(registers[REG_SP]), stdout, id, scope);
+                midlet.print("Memory: " + memory.length + " bytes", stdout, id), scope;
             }
             
             int instructionCount = 0;
             while (running && pc < memory.length - 3 && midlet.sys.containsKey(pid)) {
                 if (instructionCount++ > 100000) {
-                    if (midlet.debug) midlet.print("DEBUG: Stopping after 100000 instructions", stdout, id);
+                    if (midlet.debug) midlet.print("DEBUG: Stopping after 100000 instructions", stdout, id, scope);
                     break;
                 }
                 
@@ -554,20 +554,20 @@ public class ELF {
                 
                 // Debug avançado
                 if (midlet.debug && instructionCount % 10000 == 0) {
-                    midlet.print("DEBUG: PC=" + toHex(pc) + ", R7=" + registers[REG_R7], stdout, id);
+                    midlet.print("DEBUG: PC=" + toHex(pc) + ", R7=" + registers[REG_R7], stdout, id, scope);
                 }
                 
                 // Executar instrução com cache
                 int instruction = fetchInstruction(pc);
                 if (midlet.debug && instructionCount < 10) {
-                    midlet.print("DEBUG: Instr at PC " + toHex(pc) + ": " + toHex(instruction), stdout, id);
+                    midlet.print("DEBUG: Instr at PC " + toHex(pc) + ": " + toHex(instruction), stdout, id, scope);
                 }
                 pc += 4;
                 
                 try {
                     executeInstruction(instruction);
                 } catch (Exception e) {
-                    if (midlet.debug) midlet.print("DEBUG: Exception in executeInstruction: " + e, stdout, id);
+                    if (midlet.debug) midlet.print("DEBUG: Exception in executeInstruction: " + e, stdout, id, scope);
                     e.printStackTrace();
                     handleSignal(SIGSEGV);
                     running = false;
@@ -576,17 +576,16 @@ public class ELF {
             }
             
             if (midlet.debug) {
-                midlet.print("=== ELF END DEBUG ===", stdout, id);
-                midlet.print("Instructions executed: " + instructionCount, stdout, id);
+                midlet.print("=== ELF END DEBUG ===\nInstructions executed: " + instructionCount, stdout, id, scope);
             }
         } 
         catch (Throwable e) { 
-            if (midlet.debug) midlet.print("=== ELF CRASH DEBUG ===\nCRASH: " + e.getClass().getName() + ": " + e.getMessage(), stdout, id);
+            if (midlet.debug) midlet.print("=== ELF CRASH DEBUG ===\nCRASH: " + e.getClass().getName() + ": " + e.getMessage(), stdout, id, scope);
             e.printStackTrace();
             running = false; 
         } 
         finally { 
-            if (midlet.debug) midlet.print("=== ELF FINALLY DEBUG ===", stdout, id);
+            if (midlet.debug) midlet.print("=== ELF FINALLY DEBUG ===", stdout, id, scope);
             if (midlet.sys.containsKey(pid)) { 
                 midlet.sys.remove(pid); 
             } 
@@ -613,7 +612,7 @@ public class ELF {
         if ((instruction & 0x0F000000) == 0x02800000 || (instruction & 0x0F000000) == 0x02400000) { handleAdrSub(instruction); return; }
         if (instruction == 0xE1A00000) { return; }
         
-        if (midlet.debug) { midlet.print("[WARN] Unrecognized instruction: " + toHex(instruction) + " at PC: " + toHex(pc-4), stdout); }
+        if (midlet.debug) { midlet.print("[WARN] Unrecognized instruction: " + toHex(instruction) + " at PC: " + toHex(pc-4), stdout, id, scope); }
     }
     private void executeInitFunctions() {
         if (elfInfo.containsKey("init")) {
@@ -623,7 +622,7 @@ public class ELF {
                 
                 registers[REG_LR] = savedPC;pc = initAddr;
                 
-                if (midlet.debug) { midlet.print("Calling .init at " + toHex(initAddr), stdout); }
+                if (midlet.debug) { midlet.print("Calling .init at " + toHex(initAddr), stdout, id, scope); }
                 
                 for (int i = 0; i < 100 && running; i++) {
                     int instruction = fetchInstruction(pc);
@@ -711,7 +710,7 @@ public class ELF {
 
         if (writeBack) { if (increment) { registers[rn] = startAddress + 4 * regCount; } else { registers[rn] = startAddress - 4 * regCount; } }
     }
-    private void handleCoprocessor(int instruction) { int cpNum = (instruction >> 8) & 0xF; if (cpNum == 10 || cpNum == 11) { handleFPU(instruction); } else { midlet.print("[WARN] Coprocessor " + cpNum + " not implemented", stdout); } }
+    private void handleCoprocessor(int instruction) { int cpNum = (instruction >> 8) & 0xF; if (cpNum == 10 || cpNum == 11) { handleFPU(instruction); } else { midlet.print("[WARN] Coprocessor " + cpNum + " not implemented", stdout, id, scope); } }
 
     private void handleFPU(int instruction) {
         int opcode1 = (instruction >> 20) & 0xF, opcode2 = (instruction >> 16) & 0xF, crd = (instruction >> 12) & 0xF, crn = (instruction >> 16) & 0xF, crm = instruction & 0xF, cpNum = (instruction >> 8) & 0xF;
@@ -747,7 +746,7 @@ public class ELF {
                 fpscr = (fpscr & ~0xF) | flags;
                 return;
             default:
-                midlet.print("[WARN] FPU opcode " + opcode + " not implemented", stdout);
+                midlet.print("[WARN] FPU opcode " + opcode + " not implemented", stdout, id, scope);
                 return;
         }
         
@@ -983,7 +982,7 @@ public class ELF {
             section.put("offset", new Integer(sh_offset)); section.put("size", new Integer(sh_size)); section.put("link", new Integer(sh_link));
             section.put("info", new Integer(sh_info)); section.put("addralign", new Integer(sh_addralign)); section.put("entsize", new Integer(sh_entsize));
 
-            if (sh_name != 0 && elfInfo.containsKey(".shstrtab")) { int strtabOffset = ((Integer)elfInfo.get(".shstrtab")).intValue(); String name = readString(elfData, strtabOffset + sh_name, 64); sections.put(name, section); if (midlet.debug) { midlet.print("Section: " + name + " at " + toHex(sh_addr), stdout); } }
+            if (sh_name != 0 && elfInfo.containsKey(".shstrtab")) { int strtabOffset = ((Integer)elfInfo.get(".shstrtab")).intValue(); String name = readString(elfData, strtabOffset + sh_name, 64); sections.put(name, section); if (midlet.debug) { midlet.print("Section: " + name + " at " + toHex(sh_addr), stdout, id, scope); } }
             if (sh_type == 3) { elfInfo.put(".shstrtab", new Integer(sh_offset)); }
         }
         
@@ -999,14 +998,14 @@ public class ELF {
                 int addr = ((Integer)section.get("addr")).intValue(), size = ((Integer)section.get("size")).intValue();
 
                 for (int i = 0; i < size && addr + i < memory.length; i++) { memory[addr + i] = 0; }
-                if (midlet.debug) { midlet.print("Zeroed " + name + " at " + toHex(addr) + " size " + size, stdout); }
+                if (midlet.debug) { midlet.print("Zeroed " + name + " at " + toHex(addr) + " size " + size, stdout, id, scope); }
             }
         }
     }
     
     private void processDynamicSegment(byte[] elfData, int phdrOffset) {
         int p_offset = readIntLE(elfData, phdrOffset + 4), p_vaddr = readIntLE(elfData, phdrOffset + 8), p_filesz = readIntLE(elfData, phdrOffset + 16);
-        if (midlet.debug) { midlet.print("Dynamic segment at " + toHex(p_vaddr), stdout); } 
+        if (midlet.debug) { midlet.print("Dynamic segment at " + toHex(p_vaddr), stdout), id, scope; } 
 
         for (int offset = 0; offset < p_filesz; offset += 8) {
             int tag = readIntLE(elfData, p_offset + offset), val = readIntLE(elfData, p_offset + offset + 4);
@@ -1015,7 +1014,7 @@ public class ELF {
             switch (tag) {
                 case 1:
                     String libname = readString(elfData, val, 64);
-                    if (midlet.debug) { midlet.print("Needs library: " + libname, stdout); }
+                    if (midlet.debug) { midlet.print("Needs library: " + libname, stdout, id, scope); }
                     break;
                 case 5:
                     elfInfo.put("dynstr", new Integer(val));
@@ -1059,7 +1058,7 @@ public class ELF {
                 
                 if (symAddr != null) {
                     writeIntLE(memory, r_offset, symAddr.intValue() + addend);
-                    if (midlet.debug) { midlet.print("Reloc: " + symName + " -> " + toHex(symAddr.intValue()) + " at " + toHex(r_offset), stdout); }
+                    if (midlet.debug) { midlet.print("Reloc: " + symName + " -> " + toHex(symAddr.intValue()) + " at " + toHex(r_offset), stdout, id, scope); }
                 }
                 break;
             case R_ARM_RELATIVE:
@@ -1078,7 +1077,7 @@ public class ELF {
             pltInfo.put("symIndex", new Integer(symIndex)); pltInfo.put("gotOffset", new Integer(gotOffset)); pltInfo.put("resolved", Boolean.FALSE);
             pltEntries.put("plt_" + slotIndex, pltInfo);
             
-            if (midlet.debug) { midlet.print("Lazy binding: slot " + slotIndex + " at GOT " + toHex(gotOffset), stdout); }
+            if (midlet.debug) { midlet.print("Lazy binding: slot " + slotIndex + " at GOT " + toHex(gotOffset), stdout, id, scope); }
         }
     }
 
@@ -1123,7 +1122,7 @@ public class ELF {
             writeIntLE(memory, gotOffset, resolvedAddr.intValue());
             pltInfo.put("resolved", Boolean.TRUE);
             
-            if (midlet.debug) { midlet.print("Resolved: " + symName + " -> " + toHex(resolvedAddr.intValue()), stdout); }
+            if (midlet.debug) { midlet.print("Resolved: " + symName + " -> " + toHex(resolvedAddr.intValue()), stdout, id, scope); }
             
             return resolvedAddr.intValue();
         }
@@ -1202,9 +1201,9 @@ public class ELF {
         registers[REG_SP] = sp;
         
         if (midlet.debug) {
-            midlet.print("Stack setup: SP=" + toHex(registers[REG_SP]), stdout);
-            midlet.print("argc=" + argsVec.size(), stdout);
-            for (int i = 0; i < argsVec.size(); i++) { midlet.print("argv[" + i + "]=" + argsVec.elementAt(i), stdout); }
+            midlet.print("Stack setup: SP=" + toHex(registers[REG_SP]), stdout, id, scope);
+            midlet.print("argc=" + argsVec.size(), stdout, id, scope);
+            for (int i = 0; i < argsVec.size(); i++) { midlet.print("argv[" + i + "]=" + argsVec.elementAt(i), stdout, id, scope); }
         }
     }
 
@@ -1219,28 +1218,28 @@ public class ELF {
             
             registers[REG_LR] = pc; pc = realAddr;
             
-            if (midlet.debug) { midlet.print("PLT call via slot " + pltIndex + " to " + toHex(realAddr), stdout); }
+            if (midlet.debug) { midlet.print("PLT call via slot " + pltIndex + " to " + toHex(realAddr), stdout, id, scope); }
         }
     }
     public void dumpDynamicInfo(Object stdout) {
-        midlet.print("=== Dynamic Linking Info ===", stdout);
-        midlet.print("PLT/GOT: " + toHex(pltGotAddr), stdout);
-        midlet.print("PLT Base: " + toHex(pltBase), stdout);
-        midlet.print("GOT Base: " + toHex(gotBase), stdout);
+        midlet.print("=== Dynamic Linking Info ===", stdout, id, scope);
+        midlet.print("PLT/GOT: " + toHex(pltGotAddr), stdout, id, scope);
+        midlet.print("PLT Base: " + toHex(pltBase), stdout, id, scope);
+        midlet.print("GOT Base: " + toHex(gotBase), stdout, id, scope);
         
-        midlet.print("\nLoaded Libraries (" + loadedLibraries.size() + "):", stdout);
+        midlet.print("\nLoaded Libraries (" + loadedLibraries.size() + "):", stdout, id, scope);
         for (int i = 0; i < loadedLibraries.size(); i++) {
-            midlet.print("  " + loadedLibraries.elementAt(i), stdout);
+            midlet.print("  " + loadedLibraries.elementAt(i), stdout, id, scope);
         }
         
-        midlet.print("\nDynamic Symbols (" + dynamicSymbols.size() + "):", stdout);
+        midlet.print("\nDynamic Symbols (" + dynamicSymbols.size() + "):", stdout, id, scope);
         Enumeration keys = dynamicSymbols.keys();
         int count = 0;
         while (keys.hasMoreElements() && count < 20) {
             String name = (String) keys.nextElement();
             Hashtable sym = (Hashtable) dynamicSymbols.get(name);
             int value = ((Integer)sym.get("value")).intValue();
-            midlet.print("  " + name + " -> " + toHex(value), stdout);
+            midlet.print("  " + name + " -> " + toHex(value), stdout, id, scope);
             count++;
         }
     }
@@ -1253,7 +1252,7 @@ public class ELF {
     // Syscalls Handler
     // |
     private void handleSyscall(int number) {
-        if (midlet.debug && number != SYS_GETTIMEOFDAY && number != SYS_GETPID) { midlet.print("Syscall " + number + " (R7=" + registers[REG_R7] + ")", stdout, id); }
+        if (midlet.debug && number != SYS_GETTIMEOFDAY && number != SYS_GETPID) { midlet.print("Syscall " + number + " (R7=" + registers[REG_R7] + ")", stdout, id, scope); }
         int savedPC = pc;
 
         switch (number) {
@@ -1504,7 +1503,7 @@ public class ELF {
                 break;
             default:
                 registers[REG_R0] = -38; // ENOSYS - Syscall não implementada
-                if (midlet.debug) { midlet.print("Unimplemented syscall: " + number, stdout, id); }
+                if (midlet.debug) { midlet.print("Unimplemented syscall: " + number, stdout, id, scope); }
                 break;
         }
     }
@@ -1583,7 +1582,7 @@ public class ELF {
             switch (sig) {
                 case SIGSEGV:
                     running = false;
-                    if (midlet.debug) { midlet.print("Segmentation fault", stdout, id); }
+                    if (midlet.debug) { midlet.print("Segmentation fault", stdout, id, scope); }
                     break;
                 case SIGINT:
                     running = false;
@@ -1679,7 +1678,7 @@ public class ELF {
     private void handleMmap() {
         int addr = registers[REG_R0], length = registers[REG_R1], prot = registers[REG_R2], flags = registers[REG_R3], fd = getSyscallParam(4), offset = getSyscallParam(5);
         
-        if (midlet.debug) { midlet.print("mmap: addr=" + toHex(addr) + " length=" + length + " prot=" + prot + " flags=" + toHex(flags) + " fd=" + fd + " offset=" + offset, stdout, id); }
+        if (midlet.debug) { midlet.print("mmap: addr=" + toHex(addr) + " length=" + length + " prot=" + prot + " flags=" + toHex(flags) + " fd=" + fd + " offset=" + offset, stdout, id, scope); }
         if (length <= 0) { registers[REG_R0] = -22; return; }
 
         length = (length + 4095) & ~4095;
@@ -1723,7 +1722,7 @@ public class ELF {
     }
     private void handleMremap() {
         int old_addr = registers[REG_R0], old_size = registers[REG_R1], new_size = registers[REG_R2], flags = registers[REG_R3], new_addr = getSyscallParam(4);
-        if (midlet.debug) { midlet.print("mremap: old=" + toHex(old_addr) + " oldsize=" + old_size + " newsize=" + new_size + " flags=" + flags + " newaddr=" + toHex(new_addr), stdout, id); }
+        if (midlet.debug) { midlet.print("mremap: old=" + toHex(old_addr) + " oldsize=" + old_size + " newsize=" + new_size + " flags=" + flags + " newaddr=" + toHex(new_addr), stdout, id, scope); }
         if (new_addr == 0) { 
             for (int i = 0; i < memoryMappings.size(); i++) {
                 Hashtable mapping = (Hashtable) memoryMappings.elementAt(i);
@@ -2290,7 +2289,7 @@ public class ELF {
             StringBuffer sb = new StringBuffer();
             for (int i = 0; i < count && buf + i < memory.length; i++) { sb.append((char)(memory[buf + i] & 0xFF)); }
             
-            midlet.print(sb.toString(), stdout, id);
+            midlet.print(sb.toString(), stdout, id, scope);
             
             registers[REG_R0] = count;
             
@@ -2619,7 +2618,7 @@ public class ELF {
         
         if (midlet.debug) {
             midlet.print("futex: uaddr=" + toHex(uaddr) + " op=" + op +
-                        " val=" + val + " timeout=" + timeout, stdout, id);
+                        " val=" + val + " timeout=" + timeout, stdout, id, scope);
         }
         
         // Implementação simplificada
@@ -2870,5 +2869,5 @@ public class ELF {
         mem[addr + len] = 0;
     }
 
-    private void debugMemoryAccess(int addr, int size, boolean write, int value) { if (midlet.debug && addr < 0x10000) { String op = write ? "WRITE" : "READ"; midlet.print("MEM " + op + " at " + toHex(addr) + " size=" + size + (write ? " value=" + toHex(value) : ""), stdout, id); } }
+    private void debugMemoryAccess(int addr, int size, boolean write, int value) { if (midlet.debug && addr < 0x10000) { String op = write ? "WRITE" : "READ"; midlet.print("MEM " + op + " at " + toHex(addr) + " size=" + size + (write ? " value=" + toHex(value) : ""), stdout, id, scope); } }
 }
