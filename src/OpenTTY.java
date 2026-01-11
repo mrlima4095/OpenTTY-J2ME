@@ -441,7 +441,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return result.toString();
     }
     public String solvepath(String path, Hashtable scope) {
-        String root = (String) scope.get("ROOT");
+        String root = scope.containsKey("ROOT") ? (String) scope.get("ROOT") : "";
 
         if (path == null) { return "/"; }
         else if (root.equals("/") || path.startsWith("/dev/") || path.startsWith("/mnt/") || path.startsWith("/proc/") || path.startsWith("/tmp/")) { return path; }
