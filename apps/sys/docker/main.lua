@@ -64,7 +64,7 @@ elseif arg[1] == "--deamon" then
 
     return function (payload, args, scope, pid, uid)
         if payload == "run" then
-            
+            local 
         elseif payload == "exec" then
         elseif payload == "ps" then
         elseif payload == "login" then
