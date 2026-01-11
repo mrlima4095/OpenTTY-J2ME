@@ -2725,12 +2725,7 @@ public class Lua {
                             return new Double(13);
                         }
                     }
-                    else if (payload.equals("chroot")) {
-                        if (arg == null || arg.equals("")) { return new Double(2); }
-                        else if (((Double) uid).intValue() > 0) { return new Double(13); }
-                        else if (((String) arg).startsWith("/mnt/")) { midlet.root = (String) arg; }
-                        else { return new Double(2); }
-                    }
+                    
                 }
             }
 
