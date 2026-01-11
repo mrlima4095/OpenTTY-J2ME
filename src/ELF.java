@@ -2238,7 +2238,7 @@ public class ELF {
         }
         String path = pathBuf.toString();
 
-        int result = midlet.deleteFile(path, id);
+        int result = midlet.deleteFile(path, id, scope);
         
         // Converter código de retorno do OpenTTY para errno
         switch (result) {
