@@ -6,8 +6,6 @@ for k,v in pairs({ ["TYPE"] = "platform", ["CONFIG"] = "configuration", ["PROFIL
 local scope, db = { PWD = "/home/", USER = java.midlet.username }, {}
 
 io.mount(io.read("/etc/fstab"))
-print(string.env(io.read("/etc/motd")))
-
 os.request("1", "setsh", require("/bin/sh"))
 pcall(io.popen, "/home/.initrc")
 
@@ -100,3 +98,4 @@ graphics.handler(appmenu, {
 graphics.display(appmenu)
 
 os.su(java.midlet.username)
+os.scope(scope)
