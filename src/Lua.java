@@ -1555,7 +1555,7 @@ public class Lua {
                     if (!dir.equals("/mnt/") && dir.startsWith("/mnt/")) {
                         FileConnection fc = null;
                         try {
-                            fc = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE);
+                            fc = (FileConnection) Connector.open("file:///" + dir.substring(5), Connector.READ_WRITE);
                             
                             if (fc.exists()) { return new Double(128); } else { fc.mkdir(); return new Double(0); }
                         }
