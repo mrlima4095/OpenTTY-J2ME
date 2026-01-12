@@ -9,6 +9,7 @@ local mirror = {
     ["armitage"] = { remote = "net/armitage", here = "/bin/armitage", depends = { "ifconfig" }, description = "OpenTTY Network Tools" },
     ["audio"] = { remote = "file/audio.lua", here = "/bin/audio", description = "Audio Codec Manager" },
     ["autogc"] = { remote = "sys/autogc", here = "/bin/autogc", description = "Auto Clean Memory" },
+    ["chroot"] = { remote = "sys/chroot.lua", here = "/bin/chroot", description = "Change to a real File System" },
     ["cmatrix"] = { remote = "games/cmatrix", here = "/bin/cmatrix", description = "The Matrix Effect" },
     ["curl"] = { remote = "net/curl.lua", here = "/bin/curl", description = "Connect with a Server" },
     ["docker"] = { remote = "sys/docker/main.lua", here = "/bin/docker", description = "Conteiners on OpenTTY" },
