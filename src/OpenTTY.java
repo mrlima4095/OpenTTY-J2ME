@@ -199,15 +199,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public void print(String message, Object stdout) { print(message, stdout, 1000, globals); } 
     public void print(String message, Object stdout, int id, Hashtable scope) { 
         if (stdout == null) { }
-        else if (stdout instanceof StringItem) { 
-            String current = ((StringItem) stdout).getText(), output = current == null || current.length() == 0 ? message : current + "\n" + message; 
-            ((StringItem) stdout).setText(output); }
+        else if (stdout instanceof StringItem) { String current = ((StringItem) stdout).getText(), output = current == null || current.length() == 0 ? message : current + "\n" + message; ((StringItem) stdout).setText(output); }
         else if (stdout instanceof StringBuffer) { ((StringBuffer) stdout).append("\n").append(message); }
         else if (stdout instanceof String) { write((String) stdout, read((String) stdout, scope) + "\n" + message, 1000, scope); }
-        else if (stdout instanceof OutputStream) {
-            try { ((OutputStream) stdout).write((message + "\n").getBytes()); ((OutputStream) stdout).flush(); } 
-            catch (Exception e) { }
-        }
+        else if (stdout instanceof OutputStream) { try { ((OutputStream) stdout).write((message + "\n").getBytes()); ((OutputStream) stdout).flush(); } catch (Exception e) { } }
     }
     // |
     // | -=-=-=-=-=-=-=-=-=-=-
