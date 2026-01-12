@@ -46,7 +46,7 @@ local function loadApps()
     end
 end
 
-local function launcher(appName)
+local function launcher(\)
     if not appName or appName == "" then return end
 
     local appData = db[appName]
@@ -87,13 +87,8 @@ graphics.addCommand(appmenu, quit)
 
 graphics.handler(appmenu, {
     [menu] = function() graphics.display(graphics.new("alert", "Menu", "Application Launcher v1.0")) end,
-    [quit] = os.exit,
-
-    [config] = showConfig,
-    [refresh] = loadApps,
-
-    [launch] = launcher,
-    [graphics.fire] = launcher,
+    [quit] = os.exit, [config] = showConfig, [refresh] = loadApps,
+    [launch] = launcher, [graphics.fire] = launcher,
 })
 graphics.display(appmenu)
 
