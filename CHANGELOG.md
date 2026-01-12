@@ -31,6 +31,7 @@ General
 
 - added debug mode
 - input char changing `$` to normal user and `#` to root
+- scopes can change root dir
 
 Commands
 
