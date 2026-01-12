@@ -21,7 +21,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Object shell;
 
     public Hashtable attributes = new Hashtable(), fs = new Hashtable(), sys = new Hashtable(), tmp = new Hashtable(), cache = new Hashtable(), cacheLua = new Hashtable(), graphics = new Hashtable(), network = new Hashtable(), globals = new Hashtable(), funcs = null;
-    public String username = read("/home/OpenRMS"), build = "2026-1.17.1-03x16";
+    public String username = read("/home/OpenRMS", globals), build = "2026-1.17.1-03x16";
     // |
     // Graphics
     public Display display = Display.getDisplay(this);
@@ -45,7 +45,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             sys.put("1", proc); lua.globals.put("arg", args);
             proc.put("lua", lua); proc.put("handler", lua.getKernel());
 
-            lua.tokens = lua.tokenize(read("/bin/init"));
+            lua.tokens = lua.tokenize(read("/bin/init", globals));
 
             while (lua.peek().type != 0) { Object res = lua.statement(globals); if (lua.doreturn) { break; } }
         }
@@ -154,7 +154,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String basename(String path) { if (path == null || path.length() == 0) { return ""; } if (path.endsWith("/")) { path = path.substring(0, path.length() - 1); } int lastSlashIndex = path.lastIndexOf('/'); if (lastSlashIndex == -1) { return path; } return path.substring(lastSlashIndex + 1); }
     private String dirname(String path) { if (path == null || path.length() == 0) { return ""; } if (path.endsWith("/")) { path = path.substring(0, path.length() - 1); } int lastSlashIndex = path.lastIndexOf('/'); if (lastSlashIndex == -1) { return path; } return path.substring(0, lastSlashIndex + 1); }
     // |
-    public String getcontent(String file, Hashtable scope) { return file.startsWith("/") ? read(file) : read(((String) scope.get("PWD")) + file); }
+    public String getcontent(String file, Hashtable scope) { return file.startsWith("/") ? read(file, scope) : read(((String) scope.get("PWD")) + file, scope); }
     public String getpattern(String text) { return text.trim().startsWith("\"") && text.trim().endsWith("\"") ? replace(text, "\"", "") : text.trim(); }
     // | (Arrays)
     public String join(String[] array, String spacer, int start) { if (array == null || array.length == 0 || start >= array.length) { return ""; } StringBuffer sb = new StringBuffer(); for (int i = start; i < array.length; i++) { sb.append(array[i]).append(spacer); } return sb.toString().trim(); }
@@ -273,7 +273,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
     }
     public Image readImg(String filename, Hashtable scope) { try { InputStream is = getInputStream(filename, scope); Image img = Image.createImage(is); is.close(); return img; } catch (Exception e) { return Image.createImage(16, 16); } }
-    public String read(String filename) { return read(filename, globals); }
     public String read(String filename, Hashtable scope) {
         try {
             InputStream is = getInputStream(filename, scope);

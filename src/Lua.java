@@ -1550,14 +1550,19 @@ public class Lua {
             else if (MOD == MKDIR) {
                 if (args.isEmpty()) { }
                 else {
-                    /*FileConnection fc = null;
-                    try {
-                        fc = (FileConnection) Connector.open("file:///Card", Connector.READ_WRITE);
-                        
-                        if (fc.exists()) { return 128; } else { fc.mkdir(); return 0; }
-                    }
-                    catch (Exception e) { return e instanceof SecurityException ? 13 : 1; }
-                    finally { if (fc != null) { try { fc.close(); } catch (Exception e) { } } }*/
+                    String dir = toLuaString(args.elementAt(0));
+
+                    if (!dir.equals("/mnt/") && dir.startsWith("")) {
+                        FileConnection fc = null;
+                        try {
+                            fc = (FileConnection) Connector.open("file:///", Connector.READ_WRITE);
+                            
+                            if (fc.exists()) { return 128; } else { fc.mkdir(); return 0; }
+                        }
+                        catch (Exception e) { return e instanceof SecurityException ? 13 : 1; }
+                        finally { if (fc != null) { try { fc.close(); } catch (Exception e) { } } }
+                    } else { return new Double(5); }
+                    
                 }
                     
             }
