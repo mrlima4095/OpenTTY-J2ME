@@ -111,7 +111,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (item.equals("Clear data")) { deleteFile("/bin/init", 0, globals); writeRMS("OpenRMS", "".getBytes(), 1); writeRMS("OpenRMS", "".getBytes(), 2); warn("Clear Data", "User data cleared. Restart OpenTTY."); }
             else if (item.equals("Reset config")) {
                 String[] files = { "fstab", "hostname", "motd", "os-release", "services" };
-                for (int i = 0; i < files; i++) { deleteFile("/etc/" + files[i], 0, globals); }
+                for (int i = 0; i < files.length; i++) { deleteFile("/etc/" + files[i], 0, globals); }
                 warn("Reset Config", "Configuration reset to defaults.");
             }
             else if (item.equals("Factory reset")) {
