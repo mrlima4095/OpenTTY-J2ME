@@ -12,8 +12,7 @@ if not server then
     end
 end
 
-if arg[1] == "--deamon" then
-elseif arg[1] == "run" then
+if arg[1] == "run" then
     if arg[2] then
         local image = io.open(os.join(arg[2]))
         if image then
