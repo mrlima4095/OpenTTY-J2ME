@@ -35,8 +35,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public void destroyApp(boolean unconditional) { notifyDestroyed(); }
     // | (Boot)
     public void init() {
-        try { 
-            deleteFile("/bin/init", 0, globals);
+        try {
             Hashtable proc = new Hashtable(), args = new Hashtable();
             args.put(new Double(0), "/bin/init");
             globals.put("PWD", "/home/"); globals.put("USER", "root"); globals.put("ROOT", "/");
