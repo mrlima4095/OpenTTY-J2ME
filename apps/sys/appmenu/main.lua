@@ -52,26 +52,15 @@ local function loadApps()
 end
 
 -- Função para lançar aplicativo
-local function launcher()
-    local selected = graphics.getCurrent()
-    if not selected then return end
-    
-    local list = graphics.getCurrent()
-    if type(list) ~= "table" then return end
-    
-    local index = list.getSelectedIndex()
-    if index < 0 then return end
-    
-    local appName = list.getString(index)
+local function launcher(appName)
     if not appName or appName == "" then return end
-    
+
     local appData = db[appName]
-    if not appData then 
+    if not appData then
         graphics.display(graphics.new("alert", "Error", "App data not found: " .. appName))
         return
     end
-    
-    -- Executar aplicativo
+
     local result = io.popen(appData.app, appData.args)
     if result then
         if type(result) == "table" then
@@ -92,46 +81,7 @@ end
 
 -- Função de configuração
 local function showConfig()
-    local configForm = graphics.new("screen", "Launcher Configuration")
-    
-    -- Adicionar campo para arquivo .desktop
-    graphics.append(configForm, {
-        type = "field",
-        label = ".desktop file path",
-        value = "/home/.desktop",
-        length = 256,
-        mode = ""
-    })
 
-    
-    -- Adicionar botão de salvar
-    local saveCmd = graphics.new("command", { 
-        label = "Save", 
-        type = "ok", 
-        priority = 1 
-    })
-    
-    local backCmd = graphics.new("command", { 
-        label = "Back", 
-        type = "back", 
-        priority = 2 
-    })
-    
-    graphics.addCommand(configForm, saveCmd)
-    graphics.addCommand(configForm, backCmd)
-    
-    -- Handler de comandos
-    graphics.handler(configForm, {
-        [saveCmd] = function()
-            graphics.display(graphics.new("alert", "Info", "Configuration saved"))
-            graphics.display(appmenu)
-        end,
-        [backCmd] = function()
-            graphics.display(appmenu)
-        end
-    })
-    
-    graphics.display(configForm)
 end
 
 -- Carregar aplicativos inicialmente
@@ -146,14 +96,12 @@ graphics.addCommand(appmenu, quit)
 
 -- Configurar handler de comandos
 graphics.handler(appmenu, {
-    [menu] = function()
-        graphics.display(graphics.new("alert", "Menu", "Application Launcher v1.0"))
-    end,
+    [menu] = function() graphics.display(graphics.new("alert", "Menu", "Application Launcher v1.0")) end,
     [quit] = os.exit,
-    
+
     [config] = showConfig,
     [refresh] = loadApps,
-    
+
     [launch] = launcher,
     [graphics.fire] = launcher,
 })
