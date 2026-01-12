@@ -123,7 +123,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
             else if (item.equals("System Info")) {
                 StringBuffer info = new StringBuffer();
-                info.append("OpenTTY " + build + "\n").append("Uptime: " + ((System.currentTimeMillis() - uptime) / 1000) + "s\n").append("User: " + username + "\n").append("Memory: " + (runtime.freeMemory() / 1024) + "KB free\n").append("Processes: " + sys.size() + "\n").append("\nJVM Info:\n" + getName());
+                info.append("OpenTTY " + build + "\n").append("Uptime: " + ((System.currentTimeMillis() - uptime) / 1000) + "s\n").append("User: " + username + "\n").append("Memory: " + (runtime.freeMemory() / 1024) + " KB free\n").append("Processes: " + sys.size() + "\n").append("\nJVM Info:\n" + getName());
 
                 Form infoScreen = new Form("System Information");
                 infoScreen.append(info.toString());
