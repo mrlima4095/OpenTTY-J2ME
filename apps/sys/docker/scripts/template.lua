@@ -1,5 +1,6 @@
 return {
     name = "template-conteiner",
+    password = "gg",
     scope = {
         PWD = "/home/",
         USER = "guest",
