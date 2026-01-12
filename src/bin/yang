@@ -2,7 +2,6 @@
 
 local version = "1.5"
 
-local proxy
 local server = os.getenv("REPO") or "socket://opentty.xyz:31522"
 local mirror = {
     ["appmenu"] = { remote = "sys/appmenu/main.lua", here = "/bin/init", description = "Application Menu" },
@@ -47,22 +46,16 @@ local mirror = {
 }
 
 local function connect(payload)
-    if proxy and payload ~= "fetch" then
-        local cmd, args = string.getCommand(payload), string.getArgument(payload)
-
-        if cmd == "get" then
-            local ok, content, status = pcall(socket.http.get, proxy .. args)
-            return content
-        end
-    else
-        local ok, conn, i, o = pcall(socket.connect, server)
-
+    local ok, conn, i, o = pcall(socket.connect, server)
+    if ok then
         io.write(payload, o)
         local content = io.read(i, 8192)
 
         pcall(io.close, conn, i, o)
 
         return content
+    else
+        error("connection failed")
     end
 end
 
@@ -208,7 +201,7 @@ elseif arg[1] == "remove" then
     else
         print("yang: usage: yang remove [package]")
     end
-elseif arg[1] == "update" then\
+elseif arg[1] == "update" then
     local response = connect("fetch")
     if response then
         print(":: " .. response)
