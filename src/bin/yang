@@ -124,23 +124,6 @@ local function remove(pkg, verbose)
 end
 
 
-os.setproc("name", "yang")
-
-if not arg[1] or arg[1] == "help" then
-    print("Yang Package Manager v" .. version)
-    print("Usage: yang <command> [package]")
-    print("Commands:")
-    print("  install <package>  - Install a package")
-    print("  remove <package>   - Remove a package")
-    print("  update             - Check for updates")
-    print("  list               - List available packages")
-    print("  info <package>     - Show package information")
-    print("  help               - Show this help")
-elseif arg[1] == "install" then
-    if os.getuid() > 0 then
-        print("Permission denied!")
-        os.exit(13)
-    end
 
         if arg[2] then
             for i = 2, #arg - 1 do
@@ -178,10 +161,7 @@ elseif arg[1] == "install" then
             print("yang: usage: yang install [package]")
         end
     elseif arg[1] == "remove" then
-        if os.getuid() > 0 then
-            print("Permission denied!")
-            os.exit(13)
-        end
+        if os.getuid() > 0 then print("Permission denied!") os.exit(13) end
 
         if arg[2] then
             for i = 2, #arg - 1 do
