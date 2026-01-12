@@ -252,7 +252,7 @@ local function main()
             print("yang: usage: yang info [package]")
         end
     else
-        print("yang: " .. arg[x] .. ": not found")
+        print("yang: " .. arg[1] .. ": not found")
         os.exit(127)
     end
 end
