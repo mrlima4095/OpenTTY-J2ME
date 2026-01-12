@@ -65,7 +65,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     private void recovery() {
         List menu = new List("Recovery", List.IMPLICIT);
-        menu.append("Update", null); menu.append("---", null);
+        menu.append("Retry boot", null); menu.append("Update", null); menu.append("---", null);
         menu.append("Clear data", null); menu.append("Reset config", null); menu.append("Factory reset", null); menu.append("---", null);
         menu.append("System Info", null); menu.append("Questions", null);
         menu.addCommand(new Command("Exit", Command.BACK, 1));
@@ -103,7 +103,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             int selected = menu.getSelectedIndex();
             String item = menu.getString(selected);
             
-            if (item.equals("Update")) { try { platformRequest("http://opentty.xyz/dist/"); } catch (Exception e) { } }
+            if (item.equals("Retry boot")) { login(username.equals(""), passwd().equals("")); }
+            else if (item.equals("Update")) { try { platformRequest("http://opentty.xyz/dist/"); } catch (Exception e) { } }
             else if (item.equals("Clear data")) { deleteFile("/bin/init", 0, globals); writeRMS("OpenRMS", "".getBytes(), 1); writeRMS("OpenRMS", "".getBytes(), 2); warn("Clear Data", "User data cleared. Restart OpenTTY."); }
             else if (item.equals("Reset config")) {
                 String[] files = { "fstab", "hostname", "motd", "os-release", "services" };
