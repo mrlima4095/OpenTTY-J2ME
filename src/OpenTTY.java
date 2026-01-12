@@ -102,13 +102,44 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // | (Graphical Handler)
     public void commandAction(Command c, Displayable d) {
         if (c.getLabel() == "Exit") { destroyApp(true); }
-        else if (c.getLabel() == "Recovery" || c.getLabel() == "Back") { recovery(); }
-        else if (c.getLabel() == "Update") { try { platformRequest("http://opentty.xyz/dist/"); } catch (Exception e) { } }
-        else if (c.getLabel() == "Clear data") {  }
-        else if (c.getLabel() == "Reset config") {  }
-        else if (c.getLabel() == "Factory reset") {  }
-        else if (c.getLabel() == "System Info") {  }
-        else if (c.getLabel() == "Questions") {  }
+        else if (d instanceof List && c.getLabel() == "Open") {
+            List menu = (List) d;
+            int selected = menu.getSelectedIndex();
+            String item = menu.getString(selected);
+            
+            if (item.equals("Update")) { try { platformRequest("http://opentty.xyz/dist/"); } catch (Exception e) { } }
+            else if (item.equals("Clear data")) { deleteFile("/bin/init", 0, globals); writeRMS("OpenRMS", "".getBytes(), 1); writeRMS("OpenRMS", "".getBytes(), 2); warn("Clear Data", "User data cleared. Restart OpenTTY."); }
+            else if (item.equals("Reset config")) {
+                String[] files = { "fstab", "hostname", "motd", "os-release", "services" };
+                for (int i = 0; i < files; i++) { deleteFile("/etc/" + files[i], 0, globals); }
+                warn("Reset Config", "Configuration reset to defaults.");
+            }
+            else if (item.equals("Factory reset")) {
+                deleteFile("/bin/init", 0, globals);
+                try { RecordStore.deleteRecordStore("OpenRMS"); } catch (Exception e) { }
+
+                warn("Factory Reset", "All data cleared. Restart OpenTTY.");
+            }
+            else if (item.equals("System Info")) {
+                StringBuffer info = new StringBuffer();
+                info.append("OpenTTY " + build + "\n").append("Uptime: " + ((System.currentTimeMillis() - uptime) / 1000) + "s\n").append("User: " + username + "\n").append("Memory: " + (runtime.freeMemory() / 1024) + "KB free\n").append("Processes: " + sys.size() + "\n").append("\nJVM Info:\n" + getName());
+
+                Form infoScreen = new Form("System Information");
+                infoScreen.append(info.toString());
+                infoScreen.addCommand(new Command("Back", Command.BACK, 1));
+                infoScreen.setCommandListener(this);
+                display.setCurrent(infoScreen);
+            }
+            else if (item.equals("Questions")) {
+                Form faq = new Form("Frequently Asked Questions");
+                faq.append(new StringItem("Why am I seeing a Kernel Panic?", "A bug damage /bin/init - program that initialize OpenTTY or Lua Runtime"));
+                faq.append(new StringItem("I installed MIDlet and was already having problems.", "Report this Kernel Panic on Github and wait a bug fix. The package that you download may be corromped."));
+
+                faq.addCommand(new Command("Back", Command.BACK, 1));
+                faq.setCommandListener(this);
+                display.setCurrent(faq);
+            }
+        }
         else {
             int size = ((Form) d).size();
             if (size == 2) {
