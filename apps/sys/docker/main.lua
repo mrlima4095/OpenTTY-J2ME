@@ -39,7 +39,7 @@ elseif arg[1] == "pull" then
     end
 elseif arg[1] == "login" then
     if arg[2] and arg[3] and arg[4] then
-
+        
     else
         print("docker: usage: docker login [conteiner] [user] [password]")
     end
