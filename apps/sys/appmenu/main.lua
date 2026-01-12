@@ -46,7 +46,7 @@ local function loadApps()
     end
 end
 
-local function launcher(\)
+local function launcher(appName)
     if not appName or appName == "" then return end
 
     local appData = db[appName]
