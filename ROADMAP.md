@@ -9,6 +9,5 @@ release date: 15/01/2026
 - Applications Menu-like `/bin/init`
 - Documentation
 - Lua - Base64 Support
-- Better Kernel Panic Screens
 - OpenSSH J2ME
 - Assembly Building Tools
