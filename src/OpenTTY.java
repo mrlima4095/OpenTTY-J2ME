@@ -65,14 +65,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     private void recovery() {
         List menu = new List("Recovery", List.IMPLICIT);
-        menu.append("Update", null);
-        menu.append("---", null);
-        menu.append("Clear data", null);
-        menu.append("Reset config", null);
-        menu.append("Factory reset", null);
-        menu.append("---", null);
-        menu.append("System Info", null);
-        menu.append("Questions", null);
+        menu.append("Update", null); menu.append("---", null);
+        menu.append("Clear data", null); menu.append("Reset config", null); menu.append("Factory reset", null); menu.append("---", null);
+        menu.append("System Info", null); menu.append("Questions", null);
         menu.addCommand(new Command("Exit", Command.BACK, 1));
         menu.addCommand(new Command("Open", Command.OK, 1));
         menu.setCommandListener(this);
