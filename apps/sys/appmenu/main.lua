@@ -1,16 +1,16 @@
 #!/bin/lua
 
+-- Configurar variáveis de ambiente
 for k,v in pairs({ ["PATCH"] = "Fear Fog", ["VERSION"] = getAppProperty("MIDlet-Version"), ["RELEASE"] = "stable", ["SHELL"] = "/bin/sh" }) do os.setenv(k, v) end
 for k,v in pairs({ ["TYPE"] = "platform", ["CONFIG"] = "configuration", ["PROFILE"] = "profiles", ["LOCALE"] = "locale" }) do os.setenv(k, getAppProperty("/microedition." .. v)) end
 
-local scope = { PWD = "/home/", USER = java.midlet.username }
+local scope, db = { PWD = "/home/", USER = java.midlet.username }, {}
 
 io.mount(io.read("/etc/fstab"))
 print(string.env(io.read("/etc/motd")))
 
 os.request("1", "setsh", require("/bin/sh"))
 pcall(io.popen, "/home/.initrc")
-
 
 local appmenu = graphics.new("list", "OpenTTY " .. getAppProperty("MIDlet-Version"))
 local launch = graphics.new("command", { label = "Launch", type = "ok", priority = 1 })
@@ -19,49 +19,144 @@ local config = graphics.new("command", { label = "Config", type = "ok", priority
 local quit = graphics.new("command", { label = "Quit", type = "ok", priority = 1 })
 local menu = graphics.new("command", { label = "Menu", type = "ok", priority = 1 })
 
-local db = {}
 
-local function load()
+local function loadApps()
     graphics.clear(appmenu)
+    
+    local content = io.read("/home/.desktop")
+    if not content or content == "" then
+        content = "Lua,/bin/lua,"
 
-    local file = io.open("/home/.desktop")
-    if not file then
+        io.write(content, "/home/.desktop")
+    end
+    
+    local apps = string.split(content, "\n")
+    if type(apps) == "table" then
+        for i = 1, apps.n do
+            local entry = tostring(apps[i])
+            if entry and entry ~= "" then
+                local data = string.split(entry, ",")
+                if type(data) == "table" and data.n >= 3 then
+                    local appName = tostring(data[1])
+                    local appPath = tostring(data[2])
+                    local appArgs = tostring(data[3])
+                    
+                    if appName and appName ~= "" then
+                        graphics.append(appmenu, appName)
+                        db[appName] = { ["app"] = appPath, ["args"] = appArgs }
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- Função para lançar aplicativo
+local function launcher()
+    local selected = graphics.getCurrent()
+    if not selected then return end
+    
+    local list = graphics.getCurrent()
+    if type(list) ~= "table" then return end
+    
+    local index = list.getSelectedIndex()
+    if index < 0 then return end
+    
+    local appName = list.getString(index)
+    if not appName or appName == "" then return end
+    
+    local appData = db[appName]
+    if not appData then 
+        graphics.display(graphics.new("alert", "Error", "App data not found: " .. appName))
         return
     end
-
-    local content = io.read("/home/.desktop")
-    local apps = string.split(content, "\n")
-    for i = 1, #apps do
-        local entry = apps[i]
-        local data = string.split(entry, ",")
-
-        graphics.append(appmenu, entry[1])
-        db[entry[1]] = { ["app"] = entry[2], ["args"] = entry[3] }
+    
+    -- Executar aplicativo
+    local result = io.popen(appData.app, appData.args)
+    if result then
+        if type(result) == "table" then
+            local status = result[1]
+            local output = result[2]
+            if status and status.status and status.status == 0 then
+                graphics.display(graphics.new("alert", "Success", "App launched successfully"))
+            else
+                graphics.display(graphics.new("alert", "Error", "Failed to launch app"))
+            end
+        else
+            graphics.display(graphics.new("alert", "Result", tostring(result)))
+        end
+    else
+        graphics.display(graphics.new("alert", "Error", "Failed to execute: " .. appData.app))
     end
 end
-local function launcher(app)
-    local status, out = io.popen(db[app]["app"], db[app]["args"])
+
+-- Função de configuração
+local function showConfig()
+    local configForm = graphics.new("screen", "Launcher Configuration")
+    
+    -- Adicionar campo para arquivo .desktop
+    graphics.append(configForm, {
+        type = "field",
+        label = ".desktop file path",
+        value = "/home/.desktop",
+        length = 256,
+        mode = ""
+    })
+
+    
+    -- Adicionar botão de salvar
+    local saveCmd = graphics.new("command", { 
+        label = "Save", 
+        type = "ok", 
+        priority = 1 
+    })
+    
+    local backCmd = graphics.new("command", { 
+        label = "Back", 
+        type = "back", 
+        priority = 2 
+    })
+    
+    graphics.addCommand(configForm, saveCmd)
+    graphics.addCommand(configForm, backCmd)
+    
+    -- Handler de comandos
+    graphics.handler(configForm, {
+        [saveCmd] = function()
+            graphics.display(graphics.new("alert", "Info", "Configuration saved"))
+            graphics.display(appmenu)
+        end,
+        [backCmd] = function()
+            graphics.display(appmenu)
+        end
+    })
+    
+    graphics.display(configForm)
 end
 
-load()
+-- Carregar aplicativos inicialmente
+loadApps()
 
+-- Adicionar comandos ao menu
 graphics.addCommand(appmenu, menu)
 graphics.addCommand(appmenu, launch)
 graphics.addCommand(appmenu, refresh)
 graphics.addCommand(appmenu, config)
 graphics.addCommand(appmenu, quit)
-graphics.handler(appmenu, {
-    [menu] = function ()
-        graphics.display(graphics.new("alert", "Menu", "In development!"))
-    end,
-    [quit] = function () os.exit(nil) end,
-    [config] = function ()
 
+-- Configurar handler de comandos
+graphics.handler(appmenu, {
+    [menu] = function()
+        graphics.display(graphics.new("alert", "Menu", "Application Launcher v1.0"))
     end,
-    [refresh] = load,
+    [quit] = os.exit,
+    
+    [config] = showConfig,
+    [refresh] = loadApps,
+    
     [launch] = launcher,
     [graphics.fire] = launcher,
 })
-
+graphics.display(appmenu)
 
 os.su(java.midlet.username)
