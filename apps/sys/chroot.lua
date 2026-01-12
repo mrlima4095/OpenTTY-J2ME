@@ -4,6 +4,8 @@ if arg[1] then
     local pull, root = false, "/"
 
     if arg[1] == "--pull" then
+        pull = true
+
         if arg[2] then
             root = arg[2]
         else
@@ -25,16 +27,14 @@ if arg[1] then
     end
 
     if pull then
-        --[[ /bin/ /etc/ /lib/ ]]
-        os.mkdir(root + "bin/") os.mkdir(root + "dev/") os.mkdir(root + "etc/") os.mkdir(root + "home/")
-        os.mkdir(root + "lib/") os.mkdir(root + "mnt/") os.mkdir(root + "proc/") os.mkdir(root + "tmp/")
-        for _,file in pairs(io.dirs("/bin/")) do io.copy("/bin/" .. file, root .. "bin/" .. file) end
-        for _,file in pairs(io.dirs("/etc/")) do io.copy("/etc/" .. file, root .. "etc/" .. file) end
-        for _,file in pairs(io.dirs("/lib/")) do io.copy("/lib/" .. file, root .. "lib/" .. file) end
+        os.mkdir(root .. "bin/") os.mkdir(root .. "dev/") os.mkdir(root .. "etc/") os.mkdir(root .. "home/")
+        os.mkdir(root .. "lib/") os.mkdir(root .. "mnt/") os.mkdir(root .. "proc/") os.mkdir(root .. "tmp/")
+        for _,file in pairs(io.dirs("/bin/")) do pcall(io.copy, "/bin/" .. file, root .. "bin/" .. file) end
+        for _,file in pairs(io.dirs("/etc/")) do pcall(io.copy, "/etc/" .. file, root .. "etc/" .. file) end
+        for _,file in pairs(io.dirs("/lib/")) do pcall(io.copy, "/lib/" .. file, root .. "lib/" .. file) end
     end
-    
-    local scope = os.scope()
 
+    local scope = os.scope()
     scope["ROOT"] = root
 else
     print("chroot: usage: chroot [options] [root]")
