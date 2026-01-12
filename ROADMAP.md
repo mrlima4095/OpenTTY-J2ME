@@ -10,6 +10,5 @@ release date: 25/01/2026
 - Documentation
 - Lua - Base64 Support
 - Better Kernel Panic Screens
-- OpenTTY Recovery Mode
 - OpenSSH J2ME
 - Assembly Building Tools
