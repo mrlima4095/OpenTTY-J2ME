@@ -21,7 +21,7 @@ if arg[1] then
 
     root = os.join(root)
 
-    if string.sub(root, 1, 5) ~= "/mnt/" then
+    if string.sub(root, 1, 5) ~= "/mnt/" and root ~= "/" then
         print("chroot: invalid path, usage a mount point")
         os.exit(2)
     end
