@@ -1,6 +1,5 @@
 #!/bin/lua
 
--- Configurar variáveis de ambiente
 for k,v in pairs({ ["PATCH"] = "Fear Fog", ["VERSION"] = getAppProperty("MIDlet-Version"), ["RELEASE"] = "stable", ["SHELL"] = "/bin/sh" }) do os.setenv(k, v) end
 for k,v in pairs({ ["TYPE"] = "platform", ["CONFIG"] = "configuration", ["PROFILE"] = "profiles", ["LOCALE"] = "locale" }) do os.setenv(k, getAppProperty("/microedition." .. v)) end
 
@@ -22,14 +21,14 @@ local menu = graphics.new("command", { label = "Menu", type = "ok", priority = 1
 
 local function loadApps()
     graphics.clear(appmenu)
-    
+
     local content = io.read("/home/.desktop")
     if not content or content == "" then
         content = "Lua,/bin/lua,"
 
         io.write(content, "/home/.desktop")
     end
-    
+
     local apps = string.split(content, "\n")
     if type(apps) == "table" then
         for i = 1, apps.n do
@@ -37,10 +36,8 @@ local function loadApps()
             if entry and entry ~= "" then
                 local data = string.split(entry, ",")
                 if type(data) == "table" and data.n >= 3 then
-                    local appName = tostring(data[1])
-                    local appPath = tostring(data[2])
-                    local appArgs = tostring(data[3])
-                    
+                    local appName, appPath, appArgs = tostring(data[1]), tostring(data[2]), tostring(data[3])
+
                     if appName and appName ~= "" then
                         graphics.append(appmenu, appName)
                         db[appName] = { ["app"] = appPath, ["args"] = appArgs }
@@ -51,7 +48,6 @@ local function loadApps()
     end
 end
 
--- Função para lançar aplicativo
 local function launcher(appName)
     if not appName or appName == "" then return end
 
@@ -79,22 +75,18 @@ local function launcher(appName)
     end
 end
 
--- Função de configuração
 local function showConfig()
-
+    graphics.display(graphics.new("alert", "Config.", "Application Launcher v1.0"))
 end
 
--- Carregar aplicativos inicialmente
 loadApps()
 
--- Adicionar comandos ao menu
 graphics.addCommand(appmenu, menu)
 graphics.addCommand(appmenu, launch)
 graphics.addCommand(appmenu, refresh)
 graphics.addCommand(appmenu, config)
 graphics.addCommand(appmenu, quit)
 
--- Configurar handler de comandos
 graphics.handler(appmenu, {
     [menu] = function() graphics.display(graphics.new("alert", "Menu", "Application Launcher v1.0")) end,
     [quit] = os.exit,
