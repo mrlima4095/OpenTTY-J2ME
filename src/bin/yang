@@ -2,7 +2,7 @@
 
 local version = "1.5"
 
-local proxy = os.getenv("SERVER")
+local proxy
 local server = os.getenv("REPO") or "socket://opentty.xyz:31522"
 local mirror = {
     ["appmenu"] = { remote = "sys/appmenu/main.lua", here = "/bin/init", description = "Application Menu" },
