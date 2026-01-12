@@ -73,6 +73,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         menu.append("---", null);
         menu.append("System Info", null);
         menu.append("Questions", null);
+        menu.addCommand(new Command("Exit", Command.BACK, 1));
+        menu.addCommand(new Command("Open", Command.OK, 1));
         menu.setCommandListener(this);
         display.setCurrent(menu);
     }
@@ -407,7 +409,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         
         return result.toString();
     }
-    public String solvepath(String path, Hashtable scope) {
+    public String solvepath(String path, Hashtable scope) { 
         String root = scope.containsKey("ROOT") ? (String) scope.get("ROOT") : "";
 
         if (path == null) { return "/"; }
