@@ -46,7 +46,8 @@ local mirror = {
 }
 
 local function connect(payload)
-    local ok, conn, i, o = pcall(socket.connect, server)
+    local ok, conn, i, o = pcall(socket.connect, "socket://opentty.xyz:31522")
+
     if ok then
         io.write(payload, o)
         local content = io.read(i, 8192)
@@ -55,7 +56,7 @@ local function connect(payload)
 
         return content
     else
-        error("connection failed")
+        return nil
     end
 end
 
@@ -116,9 +117,9 @@ local function remove(pkg, verbose)
     return status == 0
 end
 
-os.setproc("name", "yang")
 
-if not arg[1] or arg[1] == "help" then
+os.setproc("name", "yang")
+if arg[1] == nil or arg[1] == "help" then
     print("Yang Package Manager v" .. version)
     print("Usage: yang <command> [package]")
     print("Commands:")
@@ -141,7 +142,8 @@ elseif arg[1] == "install" then
                     print(":: Description: " .. mirror[pkg].description)
                     print("")
 
-                    local sucess_count, total_count = 0, #mirror[pkg].packages
+                    local sucess_count = 0
+                    local total_count = #mirror[pkg].packages
 
                     for _, query in ipairs(mirror[pkg].packages) do
                         if install(query, false) then
@@ -152,9 +154,14 @@ elseif arg[1] == "install" then
                     print(":: Collection installation complete!")
                     print("-> Sucessfully installed: " .. sucess_count .. "/" .. total_count .. " packages")
                 elseif mirror[pkg].remote then
+                    if installed(pkg) then
+                        print(":: Package '" .. pkg .. "' already installed, updating...")
+                        print("")
+                    end
+
                     install(pkg, true)
                 else
-                    print("yang: install: " .. pkg .. ": invalid package (no remote source)")
+                    print("yang: install: " .. pkg .. ": invalid package (not remote source)")
                     os.exit(1)
                 end
             else
@@ -163,8 +170,7 @@ elseif arg[1] == "install" then
             end
         end
     else
-        print("yang: usage: yang install [package]")
-        os.exit(2)
+        print("yang: usage: yang remove [package]")
     end
 elseif arg[1] == "remove" then
     if os.getuid() > 0 then print("Permission denied!") os.exit(13) end
@@ -227,7 +233,7 @@ elseif arg[1] == "info" then
                 print("Package: " .. pkg)
                 print("Description: " .. info.description)
                 print("Path: " .. info.here)
-
+                
                 if info.depends then
                     print("Dependencies: " .. table.concat(info.depends, ", "))
                 end
@@ -239,7 +245,4 @@ elseif arg[1] == "info" then
     else
         print("yang: usage: yang info [package]")
     end
-else
-    print("yang: " .. arg[1] .. ": not found")
-    os.exit(127)
 end
