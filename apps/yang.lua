@@ -2,7 +2,6 @@
 
 local version = "1.5"
 
-local proxy = os.getenv("SERVER")
 local server = os.getenv("REPO") or "socket://opentty.xyz:31522"
 local mirror = {
     ["appmenu"] = { remote = "sys/appmenu/main.lua", here = "/bin/init", description = "Application Menu" },
@@ -29,7 +28,7 @@ local mirror = {
     ["ping"] = { remote = "net/ping.lua", here = "/bin/ping", description = "Test connection delay" },
     ["prg"] = { remote = "sys/push.lua", here = "/bin/prg", description = "PushRegister Manager" },
     ["sed"] = { remote = "file/sed.lua", here = "/bin/sed", description = "String Editor" },
-    ["sdk"] = { remote = "dev/sdkme", here = "/bin/sdk", description = "OpenTTY Application SDK" },
+    ["sdk"] = { remote = "dev/sdkme", here = "/bin/sdk", depends = { "forge" }, description = "OpenTTY Application SDK" },
     ["sync"] = { remote = "sys/sync", here = "/bin/sync", description = "OpenTTY Updater Checker" },
     ["svchost"] = { remote = "sys/svchost.lua", here = "/bin/svchost", description = "Quick Launch Services" },
     ["sudo"] = { remote = "sys/sudo.lua", here = "/bin/sudo", description = "" },
@@ -47,22 +46,17 @@ local mirror = {
 }
 
 local function connect(payload)
-    if proxy and payload ~= "fetch" then
-        local cmd, args = string.getCommand(payload), string.getArgument(payload)
+    local ok, conn, i, o = pcall(socket.connect, "socket://opentty.xyz:31522")
 
-        if cmd == "get" then
-            local ok, content, status = pcall(socket.http.get, proxy .. args)
-            return content
-        end
-    else
-        local ok, conn, i, o = pcall(socket.connect, server)
-
+    if ok then
         io.write(payload, o)
         local content = io.read(i, 8192)
 
         pcall(io.close, conn, i, o)
 
         return content
+    else
+        return nil
     end
 end
 
@@ -123,139 +117,127 @@ local function remove(pkg, verbose)
     return status == 0
 end
 
-local function main()
-    if arg[1] == nil or arg[1] == "help" then
-        print("Yang Package Manager v" .. version)
-        print("Usage: yang <command> [package]")
-        print("Commands:")
-        print("  install <package>  - Install a package")
-        print("  remove <package>   - Remove a package")
-        print("  update             - Check for updates")
-        print("  list               - List available packages")
-        print("  info <package>     - Show package information")
-        print("  help               - Show this help")
-    elseif arg[1] == "install" then
-        if os.getuid() > 0 then
-            print("Permission denied!")
-            os.exit(13)
-        end
-
-        if arg[2] then
-            for i = 2, #arg - 1 do
-                local pkg = arg[i]
-
-                if mirror[pkg] then
-                    if mirror[pkg].packages then
-                        print(":: Installing collection: " .. pkg)
-                        print(":: Description: " .. mirror[pkg].description)
-                        print("")
-
-                        local sucess_count = 0
-                        local total_count = #mirror[pkg].packages
-
-                        for _, query in ipairs(mirror[pkg].packages) do
-                            if install(query, false) then
-                                sucess_count = sucess_count + 1
-                            end
-                        end
-
-                        print(":: Collection installation complete!")
-                        print("-> Sucessfully installed: " .. sucess_count .. "/" .. total_count .. " packages")
-                    elseif mirror[pkg].remote then
-                        install(pkg, true)
-                    else
-                        print("yang: install: " .. pkg .. ": invalid package (not remote source)")
-                        os.exit(1)
-                    end
-                else
-                    print("yang: install: " .. pkg .. ": not found")
-                    os.exit(127)
-                end
-            end
-        else
-            print("yang: usage: yang install [package]")
-        end
-    elseif arg[1] == "remove" then
-        if os.getuid() > 0 then
-            print("Permission denied!")
-            os.exit(13)
-        end
-
-        if arg[2] then
-            for i = 2, #arg - 1 do
-                local pkg = arg[i]
-
-                if mirror[pkg] then
-                    if mirror[pkg].packages then
-                        print(":: Removing collection: " .. pkg)
-                        print("")
-
-                        local remove_count = 0
-
-                        for _, query in ipairs(mirror[pkg].packages) do
-                            if remove(query, false) then
-                                remove_count = remove_count + 1
-                            end
-                        end
-
-                        print(":: Removed " .. remove_count .. " packages from collection '" .. pkg .. "'")
-                    elseif mirror[pkg].remote then
-                        remove(pkg, true)
-                    else
-                        print("yang: remove: " .. pkg .. ": invalid package")
-                        os.exit(2)
-                    end
-                else
-                    print("yang: remove: " .. pkg .. ": not found")
-                    os.exit(127)
-                end
-            end
-        else
-            print("yang: usage: yang remove [package]")
-        end
-    elseif arg[1] == "update" then
-        local response = connect("fetch")
-        if response then
-            print(":: " .. response)
-        else
-            print(":: Connection error")
-            os.exit(101)
-        end
-    elseif arg[1] == "list" then
-        print("Available packages:")
-        for name, info in pairs(mirror) do
-            if not info.packages then
-                print("- " .. name .. ": " .. info.description)
-            end
-        end
-    elseif arg[1] == "info" then
-        if arg[2] then
-            local pkg = arg[2]
-
-            if mirror[pkg] then
-                local info = mirror[pkg]
-                if info.packages then
-                else
-                    print("Package: " .. pkg)
-                    print("Description: " .. info.description)
-                    print("Path: " .. info.here)
-
-                    if info.depends then
-                        print("Dependencies: " .. table.concat(info.depends, ", "))
-                    end
-                end
-            else
-                print(":: " .. pkg .. " not found")
-                os.exit(127)
-            end
-        else
-            print("yang: usage: yang info [package]")
-        end
-    else
-        print("yang: " .. arg[x] .. ": not found")
-        os.exit(127)
-    end
-end
 
 os.setproc("name", "yang")
-main()
+if arg[1] == nil or arg[1] == "help" then
+    print("Yang Package Manager v" .. version)
+    print("Usage: yang <command> [package]")
+    print("Commands:")
+    print("  install <package>  - Install a package")
+    print("  remove <package>   - Remove a package")
+    print("  update             - Check for updates")
+    print("  list               - List available packages")
+    print("  info <package>     - Show package information")
+    print("  help               - Show this help")
+elseif arg[1] == "install" then
+    if os.getuid() > 0 then print("Permission denied!") os.exit(13) end
+
+    if arg[2] then
+        for i = 2, #arg - 1 do
+            local pkg = arg[i]
+
+            if mirror[pkg] then
+                if mirror[pkg].packages then
+                    print(":: Installing collection: " .. pkg)
+                    print(":: Description: " .. mirror[pkg].description)
+                    print("")
+
+                    local sucess_count = 0
+                    local total_count = #mirror[pkg].packages
+
+                    for _, query in ipairs(mirror[pkg].packages) do
+                        if install(query, false) then
+                            sucess_count = sucess_count + 1
+                        end
+                    end
+
+                    print(":: Collection installation complete!")
+                    print("-> Sucessfully installed: " .. sucess_count .. "/" .. total_count .. " packages")
+                elseif mirror[pkg].remote then
+                    install(pkg, true)
+                else
+                    print("yang: install: " .. pkg .. ": invalid package (not remote source)")
+                    os.exit(1)
+                end
+            else
+                print("yang: install: " .. pkg .. ": not found")
+                os.exit(127)
+            end
+        end
+    else
+        print("yang: usage: yang remove [package]")
+    end
+elseif arg[1] == "remove" then
+    if os.getuid() > 0 then print("Permission denied!") os.exit(13) end
+
+    if arg[2] then
+        for i = 2, #arg - 1 do
+            local pkg = arg[i]
+
+            if mirror[pkg] then
+                if mirror[pkg].packages then
+                    print(":: Removing collection: " .. pkg)
+                    print("")
+
+                    local remove_count = 0
+
+                    for _, query in ipairs(mirror[pkg].packages) do
+                        if remove(query, false) then
+                            remove_count = remove_count + 1
+                        end
+                    end
+
+                    print(":: Removed " .. remove_count .. " packages from collection '" .. pkg .. "'")
+                elseif mirror[pkg].remote then
+                    remove(pkg, true)
+                else
+                    print("yang: remove: " .. pkg .. ": invalid package")
+                    os.exit(2)
+                end
+            else
+                print("yang: remove: " .. pkg .. ": not found")
+                os.exit(127)
+            end
+        end
+    else
+        print("yang: usage: yang remove [package]")
+    end
+elseif arg[1] == "update" then
+    local response = connect("fetch")
+    if response then
+        print(":: " .. response)
+    else
+        print(":: Connection error")
+        os.exit(101)
+    end
+elseif arg[1] == "list" then
+    print("Available packages:")
+    for name, info in pairs(mirror) do
+        if not info.packages then
+            print("- " .. name .. ": " .. info.description)
+        end
+    end
+elseif arg[1] == "info" then
+    if arg[2] then
+        local pkg = arg[2]
+
+        if mirror[pkg] then
+            local info = mirror[pkg]
+            if info.packages then
+            else
+                print("Package: " .. pkg)
+                print("Description: " .. info.description)
+                print("Path: " .. info.here)
+                
+                if info.depends then
+                    print("Dependencies: " .. table.concat(info.depends, ", "))
+                end
+            end
+        else
+            print(":: " .. pkg .. " not found")
+            os.exit(127)
+        end
+    else
+        print("yang: usage: yang info [package]")
+    end
+end
