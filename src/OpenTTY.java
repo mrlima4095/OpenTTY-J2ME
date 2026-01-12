@@ -212,33 +212,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // | -=-=-=-=-=-=-=-=-=-=-
     // API 003 - File System
-    // |
-    private boolean file(String filename) {
-        if ((filename = solvepath(filename, globals)).startsWith("/home/")) {
-            String[] recordStores = RecordStore.listRecordStores();
-            if (recordStores != null) { for (int i = 0; i < recordStores.length; i++) { if (recordStores[i].equals(filename.substring(6))) { return true; } } }
-        }
-        else if (filename.startsWith("/tmp/")) { return tmp.containsKey(filename.substring(5)); }
-        else if (filename.startsWith("/mnt/")) {
-            try {
-                FileConnection conn = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ);
-                boolean status = conn.exists(); conn.close(); 
-                return status;
-            } catch (Exception e) { return false; }
-        }
-        else if (filename.endsWith("/")) { return fs.containsKey(filename); }
-        else { 
-            String dir = dirname(filename); 
-            if (dir.equals("/bin/") || dir.equals("/etc/") || dir.equals("/lib/")) {
-                String content = loadRMS("OpenRMS", dir.equals("/bin/") ? 3 : dir.equals("/etc/") ? 5 : 4);
-                if (content.indexOf("[\1BEGIN:" + basename(filename) + "\1]") != -1) { return true; }
-            }
-            
-            return (fs.containsKey((dir)) && ((Vector) fs.get(dir)).indexOf(basename(filename)) != -1); 
-        }
-        
-        return false;
-    }    
     // | (Read) 
     public InputStream getInputStream(String filename, Hashtable scope) throws Exception {
         if ((filename = solvepath(filename, scope)).startsWith("/home/")) {
