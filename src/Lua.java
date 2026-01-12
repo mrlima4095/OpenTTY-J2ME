@@ -1552,12 +1552,12 @@ public class Lua {
                 else {
                     String dir = toLuaString(args.elementAt(0));
 
-                    if (!dir.equals("/mnt/") && dir.startsWith("")) {
+                    if (!dir.equals("/mnt/") && dir.startsWith("/mnt/")) {
                         FileConnection fc = null;
                         try {
-                            fc = (FileConnection) Connector.open("file:///", Connector.READ_WRITE);
+                            fc = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE);
                             
-                            if (fc.exists()) { return 128; } else { fc.mkdir(); return 0; }
+                            if (fc.exists()) { return new Double(128); } else { fc.mkdir(); return new Double(0); }
                         }
                         catch (Exception e) { return e instanceof SecurityException ? 13 : 1; }
                         finally { if (fc != null) { try { fc.close(); } catch (Exception e) { } } }
