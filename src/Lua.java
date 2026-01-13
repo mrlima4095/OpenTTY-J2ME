@@ -1473,7 +1473,10 @@ public class Lua {
                 } 
                 else { return gotbad(1, "request", "process not found"); }
             }
-            else if (MOD == GETUID) { return new Double(id); }
+            else if (MOD == GETUID) {
+                if (args.isEmpty()) { return new Double(id); }
+                else if (midlet.userID.containsKey(args.elementAt(0))) { return new Double((int) midlet.userID.get(args.elementAt(0))); }
+            }
             else if (MOD == CHDIR) {
                 if (args.isEmpty()) { return father.get("PWD"); }
                 else {
