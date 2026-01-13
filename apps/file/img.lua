@@ -15,6 +15,6 @@ if arg[1] then
     })
     graphics.display(viewer)
 else
-    print("img: usage: img [image]")
+    print("imgview: usage: imgview [image]")
     os.exit(2)
 end
