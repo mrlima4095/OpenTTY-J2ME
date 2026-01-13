@@ -10,4 +10,5 @@
 100 Data parsing error
 101 Network error
 127 Not found
+128 Found
 255 Caused by false
