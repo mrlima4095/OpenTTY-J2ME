@@ -26,12 +26,11 @@ os = {
     --[=[Make a request to a Service API]=]
     request = function(pid, payload, args) return {} end,
     --[=[Get UID of current user]=]
-    getuid = function () return 1000 end,
+    getuid = function (user) return 1000 end,
     --[=[Make a request to Device API to perform opening of URI]=]
     open = function (uri) return true end,
     --[=[Change current scope]=]
     scope = function (...) return {} end,
-    sudo = function (password) return 0 end,
     --[=[Change current user]=]
     su = function (username, password) return 0 end,
     --[=[Delete files]=]
