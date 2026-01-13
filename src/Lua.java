@@ -1475,7 +1475,7 @@ public class Lua {
             }
             else if (MOD == GETUID) {
                 if (args.isEmpty()) { return new Double(id); }
-                else if (midlet.userID.containsKey(args.elementAt(0))) { return new Double((int) midlet.userID.get(args.elementAt(0))); }
+                else if (midlet.userID.containsKey(args.elementAt(0))) { return new Double((Integer) midlet.userID.get(args.elementAt(0))); }
             }
             else if (MOD == CHDIR) {
                 if (args.isEmpty()) { return father.get("PWD"); }
