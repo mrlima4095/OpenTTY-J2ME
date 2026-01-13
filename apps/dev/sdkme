@@ -1,66 +1,7 @@
 #!/bin/lua
 
-local app = {
-    version = "1.2",
-    proxy = "http://opentty.xyz/proxy.php?",
-    mirror = "raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/assets/",
-}
-
-app.xwget = { title = "SmartME", message = "Downloading...", back = { root = function () graphics.display(graphics.Alert(app.xwget)) end }, indicator = true, }
-app.xpkg = {
-    title = "SmartME - Packages",
-    back = { root = app.main },
-    button = { label = "Install", root = app.install },
-    fields = { "audio.lua", "httpd.lua", "math.lua", "string.lua" },
-    type = "multiple"
-}
-app.xcfg = {
-    title = "SmartME SDK",
-    back = { root = os.exit },
-    button = { label = "Select", root = function(opt) app.handler(opt) end },
-
-    fields = { "Nano Editor", "---", "File Explorer", "Build Project", "---", "Download Libraries", "Documentation", "About" }
-}
-
-function app.new()
-    graphics.display(graphics.BuildList({
-        title = "SmartME - New",
-        back = { root = app.main },
-        button = {
-            label = "Create",
-            root = function (option)
-                os.execute("execute install /home/nano; touch;")
-
-                if option == "Lua source code" then os.execute('add #!/bin/lua; add; add print("Hello, World!")') else os.execute('add [ Config ]; add name=My Package; add version=1.0; add description=About Package; add; add config=execute echo Hello, World!"') end
-
-                os.execute("nano") os.exit()
-            end
-        },
-
-        fields = { "Lua source code", "OpenTTY Package" }
-    }))
-end
-function app.save() end
-function app.dpkg() if app.pkg == nil then app.pkg = graphics.BuildList(app.xpkg) end graphics.display(app.pkg) end
-function app.install(...)
-    graphics.display(graphics.Alert(app.xwget))
-
-    for k,pkg in pairs(...) do
-        local content, status = socket.http.get(app.proxy .. app.mirror .. "lib/" .. pkg)
-
-        if status == 200 then io.write(content, pkg)
-        else
-            graphics.display(graphics.Alert({ title = "SmartME", message = "Download failed!", back = { root = app.main } }))
-
-            return
-        end
-    end
-
-    graphics.display(graphics.Alert({ title = "SmartME", message = "Download complete!", back = { root = app.main } }))
-end
-
-function app.handler(option)
-    if option == "Nano Editor" then os.execute("nano") os.exit()
+--[[
+if option == "Nano Editor" then os.execute("nano") os.exit()
     elseif option == "---" then app.main()
     elseif option == "New" then app.new()
     elseif option == "Save" then app.save()
@@ -77,44 +18,35 @@ function app.handler(option)
             }
         }))
     elseif option == "About" then
-        graphics.display(graphics.Alert({
-            title = "SmartME SDK",
-            message = "SmartME " .. app.version,
-            back = { root = app.main },
-            button = {
-                label = "Update",
-                root = function()
-                    local sdkme, status = socket.http.get(app.proxy .. app.mirror .. "lib/sdkme")
+]]
 
-                    if string.hash(sdkme) == string.hash(io.read("/bin/sdk")) and status == 200 then
-                        graphics.display(graphics.Alert({
-                            title = "SmartME",
-                            message = "SmartME is already updated!",
-                            back = { root = function() app.handler("About") end }
-                        }))
-                    else
-                        io.write(sdkme, "/home/sdkme")
-                        graphics.display(graphics.Alert({
-                            title = "SmartME",
-                            message = "SmartME have been updated!",
-                            back = {
-                                label = "Reload",
-                                root = function() os.execute("lua /bin/sdk") os.exit() end
-                            }
-                        }))
-                    end
-                end
-            }
-        }))
+local app = {
+    version = "1.2",
+    proxy = getAppProperty("MIDlet-Proxy") or "http://opentty.xyz/proxy.php?",
+    mirror = "rwa.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/",
+}
+
+app.main = function ()
+    local previous = graphics.getCurrent()
+    local menu = graphics.new("screen", "SmartME SDK")
+    local back = graphics.new("command", { label = "Back", type = "ok", priority = 1 })
+    local open = graphics.new("command", { label = "Open", type = "ok", priority = 1 })
+
+    graphics.append(menu, "Download Libraries")
+    graphics.append(menu, "Documentation")
+    graphics.append(menu, "About")
+    graphics.addCommand(menu, back)
+    graphics.addCommand(menu, open)
+    graphics.handler(menu, { [back] = function () graphics.display(previous) os.exit(0) end, [open] = app.main_handler, [graphics.fire] = app.main_handler })
+    graphics.display(menu)
+end
+app.main_handler = function (opt)
+    if opt == "Download Libraries" then
+    elseif opt == "Documentation" then
+    elseif opt == "About" then
     end
 end
 
 
-function app.main()
-    if app.menu == nil then app.menu = graphics.BuildList(app.xcfg) end
-
-    graphics.display(app.menu)
-end
-
-os.setproc("name", "sdkme")
+os.setproc("name", "sdk")
 app.main()

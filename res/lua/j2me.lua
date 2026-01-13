@@ -151,6 +151,8 @@ graphics = {
     addCommand = function (screen, command) end,
     --[=[Set `Command Listener` for screen]=]
     handler = function (screen, actions) end,
+    --[=[Fire Button on List]=]
+    fire = -1,
     --[=[Table to save screens across programs]=]
     db = {}
 }
