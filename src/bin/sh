@@ -111,7 +111,7 @@ local function shell(args, enable, aliases, stdout, scope)
         elseif argument == "" then
             print("su: usage: su [user] [passwd]")
         else
-            status = os.su("root", argument)
+            status = os.su(args[1], args[2])
 
             if status == 0 then
                 graphics.SetText(io.stdout, "")
