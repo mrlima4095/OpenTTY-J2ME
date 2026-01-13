@@ -16,12 +16,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public boolean useCache = true, debug = false;
     // |
     // System Objects
+    public int lastID = 1000;
     public Random random = new Random();
     public Runtime runtime = Runtime.getRuntime();
     public Object shell;
 
-    public Hashtable attributes = new Hashtable(), fs = new Hashtable(), sys = new Hashtable(), tmp = new Hashtable(), cache = new Hashtable(), cacheLua = new Hashtable(), graphics = new Hashtable(), network = new Hashtable(), globals = new Hashtable(), funcs = null;
-    public String username = read("/home/OpenRMS", globals), build = "2026-1.17.1-03x16";
+    public Hashtable attributes = new Hashtable(), fs = new Hashtable(), sys = new Hashtable(), tmp = new Hashtable(), cache = new Hashtable(), cacheLua = new Hashtable(), graphics = new Hashtable(), network = new Hashtable(), globals = new Hashtable(), userID = new Hashtable();
+    public String username = read("/home/OpenRMS", globals), build = "2026-1.17.1-03x17";
     // |
     // Graphics
     public Display display = Display.getDisplay(this);
@@ -214,6 +215,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         return signal;
     }
+    // | (User Manager)
+    public int getUserID(String user) { return user.equals("root") ? 0 : user.equals(username) ? 1000 : userID.containsKey(user) ? (int) userID.get(user) : -1; }
     // | (Trackers)
     public Hashtable getprocess(String pid) { return sys.containsKey(pid) ? (Hashtable) sys.get(pid) : null; }
     public Object getobject(String pid, String item) { return sys.containsKey(pid) ? ((Hashtable) sys.get(pid)).get(item) : null; }

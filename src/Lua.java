@@ -23,7 +23,7 @@ public class Lua {
     public static final int PRINT = 0, ERROR = 1, PCALL = 2, REQUIRE = 3, LOADS = 4, PAIRS = 5, GC = 6, TOSTRING = 7, TONUMBER = 8, SELECT = 9, TYPE = 10, GETPROPERTY = 11, SETMETATABLE = 12, GETMETATABLE = 13, IPAIRS = 14, RANDOM = 15;
     public static final int UPPER = 100, LOWER = 101, LEN = 102, FIND = 103, MATCH = 104, REVERSE = 105, SUB = 106, HASH = 107, BYTE = 108, CHAR = 109, TRIM = 110, SPLIT = 111, UUID = 112, GETCMD = 113, GETARGS = 114, ENV = 115;
     public static final int TB_INSERT = 200, TB_CONCAT = 201, TB_REMOVE = 202, TB_SORT = 203, TB_MOVE = 204, TB_UNPACK = 205, TB_PACK = 206, TB_DECODE = 207;
-    public static final int EXEC = 300, GETENV = 301, SETENV = 302, CLOCK = 303, SETLOC = 304, EXIT = 305, DATE = 306, GETPID = 307, SETPROC = 308, GETPROC = 309, GETCWD = 310, GETUID = 311, CHDIR = 312, REQUEST = 313, START = 314, STOP = 315, PREQ = 316, SUDO = 317, SU = 318, REMOVE = 319, SCOPE = 320, JOIN = 321, MKDIR = 322;
+    public static final int EXEC = 300, GETENV = 301, SETENV = 302, CLOCK = 303, SETLOC = 304, EXIT = 305, DATE = 306, GETPID = 307, SETPROC = 308, GETPROC = 309, GETCWD = 310, GETUID = 311, CHDIR = 312, REQUEST = 313, START = 314, STOP = 315, PREQ = 316, SU = 318, REMOVE = 319, SCOPE = 320, JOIN = 321, MKDIR = 322;
     public static final int READ = 400, WRITE = 401, CLOSE = 402, OPEN = 403, POPEN = 404, DIRS = 405, SETOUT = 406, MOUNT = 407, GEN = 408, COPY = 409;
     public static final int HTTP_GET = 500, HTTP_POST = 501, CONNECT = 502, PEER = 503, DEVICE = 504, SERVER = 505, ACCEPT = 506, HTTP_RGET = 507, HTTP_RPOST = 508;
     public static final int DISPLAY = 600, NEW = 601, RENDER = 602, APPEND = 603, ADDCMD = 604, HANDLER = 605, GETCURRENT = 606, TITLE = 607, TICKER = 608, VIBRATE = 609, SETLABEL = 610, SETTEXT = 611, GETLABEL = 612, GETTEXT = 613, CLEAR_SCREEN = 614;
@@ -43,8 +43,8 @@ public class Lua {
         this.proc = proc == null ? midlet.genprocess("lua", id, null) : proc;
 
         Hashtable os = new Hashtable(), io = new Hashtable(), string = new Hashtable(), table = new Hashtable(), pkg = new Hashtable(), graphics = new Hashtable(), socket = new Hashtable(), http = new Hashtable(), java = new Hashtable(), jdb = new Hashtable(), math = new Hashtable(), audio = new Hashtable(), push = new Hashtable();
-        String[] funcs = new String[] { "getenv", "setenv", "clock", "setlocale", "exit", "date", "getpid", "setproc", "getproc", "getcwd", "request", "getuid", "chdir", "open", "sudo", "su", "remove", "scope", "join", "mkdir" }; 
-        int[] loaders = new int[] { GETENV, SETENV, CLOCK, SETLOC, EXIT, DATE, GETPID, SETPROC, GETPROC, GETCWD, REQUEST, GETUID, CHDIR, PREQ, SUDO, SU, REMOVE, SCOPE, JOIN, MKDIR };
+        String[] funcs = new String[] { "getenv", "setenv", "clock", "setlocale", "exit", "date", "getpid", "setproc", "getproc", "getcwd", "request", "getuid", "chdir", "open", "su", "remove", "scope", "join", "mkdir" }; 
+        int[] loaders = new int[] { GETENV, SETENV, CLOCK, SETLOC, EXIT, DATE, GETPID, SETPROC, GETPROC, GETCWD, REQUEST, GETUID, CHDIR, PREQ, SU, REMOVE, SCOPE, JOIN, MKDIR };
         for (int i = 0; i < funcs.length; i++) { os.put(funcs[i], new LuaFunction(loaders[i])); } os.put("execute", midlet.shell instanceof LuaFunction ? midlet.shell : new LuaFunction(EXEC)); globals.put("os", os);
 
         funcs = new String[] { "read", "write", "close", "open", "popen", "dirs", "setstdout", "mount", "new", "copy" }; 
@@ -1501,29 +1501,14 @@ public class Lua {
                     return new Double(127);
                 }
             }
-            else if (MOD == SUDO) {
-                if (args.isEmpty()) { Vector result = new Vector(); result.addElement(father.get("USER")); result.addElement(id); return result; }
-                else {
-                    String passwd = toLuaString(args.elementAt(0));
-                    if (midlet.loadRMS("OpenRMS", 2).equals(String.valueOf(passwd.hashCode()))) {
-                        id = 0;
-                        return new Double(0);
-                    } else {
-                        return new Double(13);
-                    }
-                }
-            }
             else if (MOD == SU) {
                 if (args.isEmpty()) { return gotbad(1, "su", "username and password expected"); } 
                 else {
                     String user = toLuaString(args.elementAt(0)), query = args.size() > 1 ? toLuaString(args.elementAt(1)) : null;
                     if (user.equals(midlet.username)) { id = 1000; father.put("USER", midlet.username); return new Double(0); }
+                    else if (midlet.userID.containsKey(user)) { id = midlet.getUserID(user); father.put("USER", midlet.username); return new Double(0); }
                     else if (query == null) { return gotbad(2, "su", "string expected, got nil"); }
-                    else if (user.equals("root") && midlet.passwd(query)) {
-                        id = 0;
-                        father.put("USER", "root");
-                        return new Double(0);
-                    }
+                    else if (user.equals("root") && midlet.passwd(query)) { id = 0; father.put("USER", "root"); return new Double(0); }
                     else { return new Double(13); }
                 }
             }
@@ -2726,11 +2711,23 @@ public class Lua {
                             else if (arg.equals("/bin/")) { midlet.writeRMS("OpenRMS", new byte[0], 3); }
                             else if (arg.equals("/etc/")) { midlet.writeRMS("OpenRMS", new byte[0], 5); }
                             else if (arg.equals("/lib/")) { midlet.writeRMS("OpenRMS", new byte[0], 4); }
-                        } else {
-                            return new Double(13);
-                        }
+                        } else { return new Double(13); }
                     }
-                    
+                    else if (payload.equals("useradd")) {
+                        if (arg == null || arg.equals("") || arg.equals("root")) { return new Double(2); }
+                        else if (midlet.userID.containsKey(arg)) { return new Double(128); }
+                        else { midlet.userID.put(arg, new Integer(lastID + 1)); midlet.lastID++; }
+                    }
+                    else if (payload.equals("userdel")) {
+                        if (arg == null || arg.equals("") || arg.equals("root") || arg.equals(midlet.username)) { return new Double(13); }
+                        else if (midlet.userID.containsKey(arg)) {
+                            if (((Double) uid).intValue() == 0) {
+                                midlet.userID.remove(arg);
+                                return new Double(0);
+                            } else { return new Double(13); }
+                        }
+                        else { return new Double(127); }
+                    }
                 }
             }
 

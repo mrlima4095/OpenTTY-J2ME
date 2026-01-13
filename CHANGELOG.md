@@ -34,6 +34,7 @@ General
 - scopes can change root dir
 - added recovery menu
 - improved Kernel Panic screen
+- added support for multi-user sessions
 
 Commands
 
