@@ -12,7 +12,7 @@ local open = graphics.new("command", { label = "Open", type = "screen", priority
 local function handler(opt)
     if opt == "Check for Updates" then
         local version = getAppProperty("MIDlet-Version")
-        local ok, online, status = pcall(socket.http.get, "http://opentty.xyz/assets/root/latest")
+        local ok, online, status = pcall(socket.http.get, "http://opentty.xyz/res/latest")
         graphics.display(previous)
 
         if ok then
