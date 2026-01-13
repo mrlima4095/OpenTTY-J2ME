@@ -14,6 +14,7 @@ class OpenTTY:
         self.uptime = time.time()
         self.useCache = True
         self.debug = False
+    
         
         # System objects
         self.random = random.Random()
