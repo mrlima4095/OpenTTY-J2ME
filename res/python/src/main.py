@@ -48,9 +48,8 @@ class OpenTTY:
             init_content = self.read("/bin/init")
             if init_content:
 
-                
         except Exception as e:
-            self.panic(e)
+            return
 
     # String utilities
     def get_command(self, text: str) -> str:
@@ -90,122 +89,12 @@ class OpenTTY:
             return error.__class__.__name__
         return f"{error.__class__.__name__}: {message}"
 
-    def read(self, filename: str, scope: Optional[Dict] = None) -> str:
-        """Read file content"""
-        if scope is None:
-            scope = self.globals
-        
-        # Resolve path
-        filename = self.solvepath(filename, scope)
-        
-        # Check cache first
-        if self.useCache and filename in self.cache:
-            content = self.cache[filename]
-            if isinstance(content, bytes):
-                return content.decode('utf-8', errors='ignore')
-            return content
-
-        if filename.startswith("/dev/"):
-            dev = filename[5:]
-            if dev == "random":
-                return str(random.randint(0, 256))
-            elif dev == "stdin":
-                return input()
-            elif dev == "null":
-                return ""
-            elif dev == "zero":
-                return "\0"
-
-        if filename in self.fs:
-            content = self.fs[filename]
-            if isinstance(content, bytes):
-                content = content.decode('utf-8', errors='ignore')
-            
-            # Apply environment expansion
-            content = self.env(content, scope)
-            
-            if self.useCache:
-                self.cache[filename] = content.encode('utf-8') if isinstance(content, str) else content
-            
-            return content if isinstance(content, str) else ""
-        
-        # Try to read from actual file system
-        try:
-            # Remove leading slash for relative path
-            rel_path = filename[1:] if filename.startswith("/") else filename
-            
-            if os.path.exists(rel_path):
-                with open(rel_path, 'r', encoding='utf-8') as f:
-                    content = f.read()
-                
-                # Apply environment expansion
-                content = self.env(content, scope)
-                
-                if self.useCache:
-                    self.cache[filename] = content.encode('utf-8')
-                
-                return content
-        except Exception:
-            pass
-        
-        return ""
-
-    def write(self, filename: str, data: Union[str, bytes], 
-              owner_id: int = 1000, scope: Optional[Dict] = None) -> int:
-        """Write data to file"""
-        if scope is None:
-            scope = self.globals
-        
-        filename = self.solvepath(filename, scope)
-        
-        if not filename:
-            return 2  # Invalid path
-        
-        # Convert data to bytes if needed
-        if isinstance(data, str):
-            data_bytes = data.encode('utf-8')
-        else:
-            data_bytes = data
-        
-        # Store in virtual file system
-        self.fs[filename] = data_bytes
-        
-        # Update cache
-        if self.useCache:
-            self.cache[filename] = data_bytes
-        
-        return 0  # Success
-
-    def delete_file(self, filename: str, owner_id: int = 1000, 
-                   scope: Optional[Dict] = None) -> int:
-        """Delete file"""
-        if scope is None:
-            scope = self.globals
-        
-        filename = self.solvepath(filename, scope)
-        
-        if not filename:
-            return 2  # Invalid path
-        
-        if filename in self.fs:
-            del self.fs[filename]
-            
-            # Remove from cache
-            if filename in self.cache:
-                del self.cache[filename]
-            
-            return 0  # Success
-        
-        # Check if file exists in actual file system
-        rel_path = filename[1:] if filename.startswith("/") else filename
-        if os.path.exists(rel_path):
-            try:
-                os.remove(rel_path)
-                return 0
-            except Exception:
-                return 1  # General error
-        
-        return 127  # File not found
+    def read(self, path, scope) -> str:
+        return
+    def write(self, path, content, id, scope) -> int:
+        return
+    def remove(self, path, id, scope) -> int:
+        return
 
     # Path resolution
     def joinpath(self, path: str, scope: Dict) -> str:
@@ -237,21 +126,6 @@ class OpenTTY:
                 else: return root + path
         
         return self.joinpath(path, scope)
-    def read(self, filename: str, index: int) -> str:
-        """Read from RMS-like storage"""
-        try:
-            storage_file = "opentty_storage.json"
-            
-            if os.path.exists(storage_file):
-                with open(storage_file, 'r') as f:
-                    storage = json.load(f)
-                
-                if filename in storage and str(index) in storage[filename]:
-                    return storage[filename][str(index)]
-            
-            return ""
-        except Exception:
-            return ""
 
     # Base64 utilities
     def encode_base64(self, data: bytes) -> str: return base64.b64encode(data).decode('ascii')
