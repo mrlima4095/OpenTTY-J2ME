@@ -2720,12 +2720,7 @@ public class Lua {
                     }
                     else if (payload.equals("userdel")) {
                         if (arg == null || arg.equals("") || arg.equals("root") || arg.equals(midlet.username)) { return new Double(13); }
-                        else if (midlet.userID.containsKey(arg)) {
-                            if (((Double) uid).intValue() == 0) {
-                                midlet.userID.remove(arg);
-                                return new Double(0);
-                            } else { return new Double(13); }
-                        }
+                        else if (midlet.userID.containsKey(arg)) { if (((Double) uid).intValue() == 0) { midlet.userID.remove(arg); return new Double(0); } else { return new Double(13); } }
                         else { return new Double(127); }
                     }
                 }
