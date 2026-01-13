@@ -259,9 +259,6 @@ local function shell(args, enable, aliases, stdout, scope)
     elseif cmd == "true" or string.sub(cmd, 1, 1) == "#" then
     elseif cmd == "false" then
         status = 255
-    elseif cmd == "chroot" then
-        x=os.scope()
-        x.ROOT = argument
     else
         print(cmd .. ": not found")
         status = 127
