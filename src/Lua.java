@@ -2776,14 +2776,14 @@ public class Lua {
                 Vector result = new Vector();
                 result.addElement(new String(baos.toByteArray(), "UTF-8"));
                 result.addElement(new Double(new Double(conn.getResponseCode())));
-                return result;
-            } 
-            catch (Exception e) { throw e; } 
-            finally {
+
                 if (is != null) { try { is.close(); } catch (Exception e) { } }
                 if (conn != null) { try { conn.close(); } catch (Exception e) { } }
                 if (baos != null) { try { baos.close(); } catch (Exception e) { } }
-            }
+
+                return result;
+            } 
+            catch (Exception e) { throw e; }
         }
         private int compareLua(Object a, Object b) { if (a == null && b == null) { return 0; } if (a == null) { return -1; } if (b == null) { return 1; } if (a instanceof Double && b instanceof Double) { double da = ((Double) a).doubleValue(), db = ((Double) b).doubleValue(); return da < db ? -1 : (da > db ? 1 : 0); } String sa = toLuaString(a), sb = toLuaString(b); return sa.compareTo(sb); }
         // |
