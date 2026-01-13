@@ -3,44 +3,38 @@ Copyright (C) 2026 - Mr. Lima
 
 ---
 
-ELF
+## 🧠 **ELF**
 
-- add support for fpu controller
-- add support for more operations
-- add support to accessing program arguments
-- add support for syscalls `execve` `mkdir` `rmdir` `stat` `fstat` `ioctl` `clone` `getpriority` `setpriority` `lseek` `getdents` `dup` `dup2` `unlink`, `socket`, `connect`, `send`, `recv`, `bind`, `listen`, `accept`, `shutdown`, `setsockopt`, `getsockopt`, `sendto`, `recvfrom`, `getsockname`, `getpeername`, `signal`, `sigaction`, `setjmp`, `longjmp`, `gettid`, `nanosleep`, `pipe`, `select`, `pool`, `fsync`
-- new debug mode - enable with `curl -s 1 debug true`
-- ELF symbols manager
+- 🎮 Added support for FPU controller  
+- ➕ Added support for more operations  
+- 🔧 Added support for accessing program arguments  
+- 📞 Added support for syscalls:  
+  `execve`, `mkdir`, `rmdir`, `stat`, `fstat`, `ioctl`, `clone`, `getpriority`, `setpriority`, `lseek`, `getdents`, `dup`, `dup2`, `unlink`, `socket`, `connect`, `send`, `recv`, `bind`, `listen`, `accept`, `shutdown`, `setsockopt`, `getsockopt`, `sendto`, `recvfrom`, `getsockname`, `getpeername`, `signal`, `sigaction`, `setjmp`, `longjmp`, `gettid`, `nanosleep`, `pipe`, `select`, `pool`, `fsync`  
+- 🐛 New debug mode — enable with `curl -s 1 debug true`  
+- 📦 ELF symbols manager  
 
-Bug fixes
+## 🐛 **Bug Fixes**
+- 🔧 Fixed a bug with invalid caching  
 
-- fixed a bug with invalid caching
+## 📁 **FileSystem**
+- 📂 Added `/proc/` support  
 
-FileSystem
+## 🦎 **Lua**
+- 📚 Added `push` library  
+- 🏷️ Added support for labels  
+- 📁 Added function `os.mkdir()`  
 
-- added `/proc/` support
+## 🖥️ **General**
+- 🐛 Added debug mode  
+- ⌨️ Input char changing: `$` for normal user, `#` for root  
+- 📁 Scopes can change root directory  
+- 🚑 Added recovery menu  
+- 💥 Improved Kernel Panic screen  
+- 👥 Added support for multi-user sessions  
 
-Lua
+## 💻 **Commands**
+- ⏱️ Added command `time`  
 
-- global functions caching
-- added `push` library
-- added support for labels
-- added function `os.mkdir()`
-
-General
-
-- added debug mode
-- input char changing `$` to normal user and `#` to root
-- scopes can change root dir
-- added recovery menu
-- improved Kernel Panic screen
-- added support for multi-user sessions
-
-Commands
-
-- added command `time`
-
-Packages
-
-- default - all features
-- lite - no ELF emulator and no LuaCanvas
+## 📦 **Packages**
+- ✅ **Default** — All features  
+- 🪶 **Lite** — No ELF emulator and no LuaCanvas  
