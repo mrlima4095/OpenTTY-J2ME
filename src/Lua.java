@@ -2719,7 +2719,7 @@ public class Lua {
                     else if (payload.equals("useradd")) {
                         if (arg == null || arg.equals("") || arg.equals("root")) { return new Double(2); }
                         else if (midlet.userID.containsKey(arg)) { return new Double(128); }
-                        else { midlet.userID.put(arg, new Integer(lastID + 1)); midlet.lastID++; }
+                        else { midlet.userID.put(arg, new Integer(midlet.lastID + 1)); midlet.lastID++; }
                     }
                     else if (payload.equals("userdel")) {
                         if (arg == null || arg.equals("") || arg.equals("root") || arg.equals(midlet.username)) { return new Double(13); }
