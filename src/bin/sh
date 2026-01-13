@@ -75,7 +75,7 @@ local function shell(args, enable, aliases, stdout, scope)
                 end
             end
         end
-    elseif cmd == "bg" then if argument ~= "" then java.run(function() shell(argument, true, aliases, stdout, scope) end, "Background") end
+    elseif cmd == "bg" then if argument ~= "" then java.run(function() shell(argument, enable, aliases, stdout, scope) end, "Background") end
     elseif cmd == "exec" then
         if argument == "" then
         else
