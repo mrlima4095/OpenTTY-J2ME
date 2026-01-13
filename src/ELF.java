@@ -15,12 +15,9 @@ public class ELF {
     private byte[] memory;
     private int[] registers;
     private int[] signalHandlers;
-    private int pc;
+    private int pc, cpsr;
     private boolean running;
     private int stackPointer;
-    
-    // Registrador de flags CPSR
-    private int cpsr;
     
     // File descriptors
     private Hashtable fileDescriptors, socketDescriptors;
@@ -30,8 +27,8 @@ public class ELF {
     private int nextJmpBufId;
 
     // Heap management
-    private int heapStart, heapEnd;
     private Hashtable allocatedBlocks;
+    private int heapStart, heapEnd;
 
     // Dynamic linking structures
     private Hashtable dynamicSymbols, neededLibraries, globalSymbols, pltEntries;
@@ -40,226 +37,52 @@ public class ELF {
 
     
     // Constantes ELF
-    private static final int EI_NIDENT = 16;
-    private static final int ELFCLASS32 = 1;
-    private static final int ELFDATA2LSB = 1;
-    private static final int EM_ARM = 40;
-    private static final int ET_EXEC = 2;
-    private static final int PT_LOAD = 1;
-    private static final int PT_DYNAMIC = 2;
-    private static final int PT_INTERP = 3;
-    private static final int PT_NOTE = 4;
+    private static final int EI_NIDENT = 16, ELFCLASS32 = 1, ELFDATA2LSB = 1, EM_ARM = 40, ET_EXEC = 2, PT_LOAD = 1, PT_DYNAMIC = 2, PT_INTERP = 3, PT_NOTE = 4;
     
     // Constantes ARM
     private static final int REG_R0 = 0, REG_R1 = 1, REG_R2 = 2, REG_R3 = 3, REG_R7 = 7, REG_SP = 13, REG_LR = 14, REG_PC = 15;
     
     // Bits do CPSR
-    private static final int CPSR_N = 31; // Negative/Less than
-    private static final int CPSR_Z = 30; // Zero
-    private static final int CPSR_C = 29; // Carry/Borrow/Extend
-    private static final int CPSR_V = 28; // Overflow
+    private static final int CPSR_V = 28, CPSR_C = 29, CPSR_Z = 30, CPSR_N = 31;
     
     // Máscaras para bits do CPSR
-    private static final int N_MASK = 1 << CPSR_N;
-    private static final int Z_MASK = 1 << CPSR_Z;
-    private static final int C_MASK = 1 << CPSR_C;
-    private static final int V_MASK = 1 << CPSR_V;
+    private static final int N_MASK = 1 << CPSR_N, Z_MASK = 1 << CPSR_Z, C_MASK = 1 << CPSR_C, V_MASK = 1 << CPSR_V;
     
     // Condições ARM
-    private static final int COND_EQ = 0;  // Equal (Z=1)
-    private static final int COND_NE = 1;  // Not equal (Z=0)
-    private static final int COND_CS = 2;  // Carry set (C=1)
-    private static final int COND_CC = 3;  // Carry clear (C=0)
-    private static final int COND_MI = 4;  // Minus/negative (N=1)
-    private static final int COND_PL = 5;  // Plus/positive or zero (N=0)
-    private static final int COND_VS = 6;  // Overflow (V=1)
-    private static final int COND_VC = 7;  // No overflow (V=0)
-    private static final int COND_HI = 8;  // Unsigned higher (C=1 & Z=0)
-    private static final int COND_LS = 9;  // Unsigned lower or same (C=0 | Z=1)
-    private static final int COND_GE = 10; // Signed greater or equal (N=V)
-    private static final int COND_LT = 11; // Signed less than (N!=V)
-    private static final int COND_GT = 12; // Signed greater than (Z=0 & N=V)
-    private static final int COND_LE = 13; // Signed less or equal (Z=1 | N!=V)
-    private static final int COND_AL = 14; // Always (unconditional)
-    private static final int COND_NV = 15; // Never
+    private static final int COND_EQ = 0, COND_NE = 1, COND_CS = 2, COND_CC = 3, COND_MI = 4, COND_PL = 5, COND_VS = 6, COND_VC = 7, COND_HI = 8, COND_LS = 9, COND_GE = 10, COND_LT = 11, COND_GT = 12, COND_LE = 13, COND_AL = 14, COND_NV = 15;
     
     // Syscalls Linux ARM (EABI)
-    private static final int SYS_EXIT = 1;
-    private static final int SYS_FORK = 2;
-    private static final int SYS_READ = 3;
-    private static final int SYS_WRITE = 4;
-    private static final int SYS_OPEN = 5;
-    private static final int SYS_CLOSE = 6;
-    private static final int SYS_CREAT = 8;
-    private static final int SYS_UNLINK = 10;
-    private static final int SYS_EXECVE = 11;
-    private static final int SYS_CHDIR = 12;
-    private static final int SYS_TIME = 13;
-    private static final int SYS_LSEEK = 19;
-    private static final int SYS_GETPID = 20;
-    private static final int SYS_MKDIR = 39;
-    private static final int SYS_RMDIR = 40;
-    private static final int SYS_DUP = 41;
-    private static final int SYS_DUP2 = 63;
-    private static final int SYS_GETPPID = 64;
-    private static final int SYS_IOCTL = 54;
-    private static final int SYS_KILL = 37;
-    private static final int SYS_BRK = 45;
-    private static final int SYS_GETTIMEOFDAY = 78;
-    private static final int SYS_GETCWD = 183;
-    private static final int SYS_GETUID32 = 199;
-    private static final int SYS_GETEUID32 = 201;
-    private static final int SYS_STAT = 106;
-    private static final int SYS_FSTAT = 108;
-    private static final int SYS_GETPRIORITY = 140;
-    private static final int SYS_SETPRIORITY = 141;
-    private static final int SYS_GETDENTS = 217;
-    private static final int SYS_SOCKET = 281;
-    private static final int SYS_BIND = 282;
-    private static final int SYS_CONNECT = 283;
-    private static final int SYS_LISTEN = 284;
-    private static final int SYS_ACCEPT = 285;
-    private static final int SYS_SEND = 289;
-    private static final int SYS_RECV = 291;
-    private static final int SYS_SHUTDOWN = 293;
-    private static final int SYS_SETSOCKOPT = 294;
-    private static final int SYS_GETSOCKOPT = 295;
-    private static final int SYS_SENDTO = 290;
-    private static final int SYS_RECVFROM = 292;
-    private static final int SYS_GETSOCKNAME = 286;
-    private static final int SYS_GETPEERNAME = 287;
-    private static final int SYS_SIGNAL = 48;
-    private static final int SYS_SIGACTION = 67;
-    private static final int SYS_SIGPROCMASK = 126;
-    private static final int SYS_SIGRETURN = 119;
-    private static final int SYS_SETJMP = 96;
-    private static final int SYS_LONGJMP = 97;
-    private static final int SYS_GETTID = 224;
-    private static final int SYS_NANOSLEEP = 162;
-    private static final int SYS_PIPE = 42;
-    private static final int SYS_SELECT = 142;
-    private static final int SYS_POLL = 168;
-    private static final int SYS_FSYNC = 118;
-    private static final int SYS_MMAP = 192;
-    private static final int SYS_MUNMAP = 91;
-    private static final int SYS_MPROTECT = 125;
-    private static final int SYS_MREMAP = 163;
-    private static final int SYS_FUTEX = 240;
-    private static final int SYS_SCHED_YIELD = 158;
-    private static final int SYS_UNAME = 122;
-    private static final int SYS_FCNTL = 55;
-    private static final int SYS_FTRUNCATE = 93;
-    private static final int SYS_TRUNCATE = 92;
-    private static final int SYS_GETRLIMIT = 191;
-    private static final int SYS_SYSCALL = 0;
+    private static final int SYS_EXIT = 1, SYS_FORK = 2, SYS_READ = 3, SYS_WRITE = 4, SYS_OPEN = 5, SYS_CLOSE = 6, SYS_CREAT = 8, SYS_UNLINK = 10, SYS_EXECVE = 11, SYS_CHDIR = 12, SYS_TIME = 13, SYS_LSEEK = 19, SYS_GETPID = 20, SYS_KILL = 37, SYS_MKDIR = 39, SYS_RMDIR = 40, SYS_DUP = 41, SYS_PIPE = 42, SYS_IOCTL = 54, SYS_FCNTL = 55, SYS_SIGNAL = 48, SYS_DUP2 = 63, SYS_GETPPID = 64, SYS_SIGACTION = 67, SYS_BRK = 45, SYS_TRUNCATE = 92, SYS_FTRUNCATE = 93, SYS_SETJMP = 96, SYS_LONGJMP = 97, SYS_FSYNC = 118, SYS_SIGRETURN = 119, SYS_UNAME = 122, SYS_MPROTECT = 125, SYS_SIGPROCMASK = 126, SYS_STAT = 106, SYS_FSTAT = 108, SYS_GETTIMEOFDAY = 78, SYS_GETPRIORITY = 140, SYS_SETPRIORITY = 141, SYS_SELECT = 142, SYS_SCHED_YIELD = 158, SYS_NANOSLEEP = 162, SYS_MREMAP = 163, SYS_POLL = 168, SYS_MUNMAP = 91, SYS_GETRLIMIT = 191, SYS_MMAP = 192, SYS_GETCWD = 183, SYS_GETUID32 = 199, SYS_GETEUID32 = 201, SYS_GETDENTS = 217, SYS_GETTID = 224, SYS_FUTEX = 240, SYS_SOCKET = 281, SYS_BIND = 282, SYS_CONNECT = 283, SYS_LISTEN = 284, SYS_ACCEPT = 285, SYS_GETSOCKNAME = 286, SYS_GETPEERNAME = 287, SYS_SEND = 289, SYS_SENDTO = 290, SYS_RECV = 291, SYS_RECVFROM = 292, SYS_SHUTDOWN = 293, SYS_SETSOCKOPT = 294, SYS_GETSOCKOPT = 295, SYS_SYSCALL = 0;
     
     // Constantes para socket
-    private static final int AF_INET = 2;
-    private static final int SOCK_STREAM = 1;
-    private static final int SOCK_DGRAM = 2;
-    private static final int IPPROTO_TCP = 6;
-    private static final int IPPROTO_UDP = 17;
+    private static final int SOCK_STREAM = 1, SOCK_DGRAM = 2, AF_INET = 2, IPPROTO_TCP = 6, IPPROTO_UDP = 17;
 
     // Constantes para sinal
-    private static final int SIG_DFL = 0;
-    private static final int SIG_IGN = 1;
-    private static final int SIG_ERR = -1;
-    private static final int SIGKILL = 9;
-    private static final int SIGTERM = 15;
-    private static final int SIGINT = 2;
-    private static final int SIGSEGV = 11;
-    private static final int SIGPIPE = 13;
-    private static final int SIGCHLD = 17;
-    private static final int SIGCONT = 18;
-    private static final int SIGSTOP = 19;
-    private static final int NSIG = 32;
+    private static final int SIG_ERR = -1, SIG_DFL = 0, SIG_IGN = 1, SIGINT = 2, SIGKILL = 9, SIGSEGV = 11, SIGPIPE = 13, SIGTERM = 15, SIGCHLD = 17, SIGCONT = 18, SIGSTOP = 19, NSIG = 32;
 
     // Adicionar constantes para flags de ioctl (simplificadas)
-    private static final int TCGETS = 0x5401;
-    private static final int TCSETS = 0x5402;
-    private static final int TIOCGWINSZ = 0x5413;
-    private static final int TIOCSWINSZ = 0x5414;
-    private static final int FIONREAD = 0x541B;
+    private static final int TCGETS = 0x5401, TCSETS = 0x5402, TIOCGWINSZ = 0x5413, TIOCSWINSZ = 0x5414, FIONREAD = 0x541B;
 
     // Adicionar constantes para mode de mkdir
-    private static final int S_IRWXU = 0700;
-    private static final int S_IRUSR = 0400;
-    private static final int S_IWUSR = 0200;
-    private static final int S_IXUSR = 0100;
-    private static final int S_IRWXG = 0070;
-    private static final int S_IRGRP = 0040;
-    private static final int S_IWGRP = 0020;
-    private static final int S_IXGRP = 0010;
-    private static final int S_IRWXO = 0007;
-    private static final int S_IROTH = 0004;
-    private static final int S_IWOTH = 0002;
-    private static final int S_IXOTH = 0001;
-    private static final int S_IFDIR = 0040000;
+    private static final int S_IRWXU = 0700, S_IRUSR = 0400, S_IWUSR = 0200, S_IXUSR = 0100, S_IRWXG = 0070, S_IRGRP = 0040, S_IWGRP = 0020, S_IXGRP = 0010, S_IRWXO = 0007, S_IROTH = 0004, S_IWOTH = 0002, S_IXOTH = 0001, S_IFDIR = 0040000;
     
     // Adicionar constante para SEEK
-    private static final int SEEK_SET = 0;
-    private static final int SEEK_CUR = 1;
-    private static final int SEEK_END = 2;
+    private static final int SEEK_SET = 0, SEEK_CUR = 1, SEEK_END = 2;
 
     // Flags de open
-    private static final int O_RDONLY = 0, O_WRONLY = 1, O_RDWR = 2;
-    private static final int O_CREAT = 64;
-    private static final int O_APPEND = 1024;
-    private static final int O_TRUNC = 512;
-    private static final int O_DIRECTORY = 0x10000;
+    private static final int O_RDONLY = 0, O_WRONLY = 1, O_RDWR = 2, O_CREAT = 64, O_TRUNC = 512, O_APPEND = 1024, O_DIRECTORY = 0x10000;
     
     // Flags mmap
-    private static final int PROT_READ = 1;
-    private static final int PROT_WRITE = 2;
-    private static final int PROT_EXEC = 4;
-    private static final int PROT_NONE = 0;
-    private static final int MAP_SHARED = 1;
-    private static final int MAP_PRIVATE = 2;
-    private static final int MAP_FIXED = 16;
-    private static final int MAP_ANONYMOUS = 32;
+    private static final int PROT_NONE = 0, PROT_READ = 1, PROT_WRITE = 2, PROT_EXEC = 4, MAP_SHARED = 1, MAP_PRIVATE = 2, MAP_FIXED = 16, MAP_ANONYMOUS = 32;
 
     // Dynamic linking constants - adicione com as outras constantes ELF
-    private static final int DT_NULL = 0;
-    private static final int DT_NEEDED = 1;
-    private static final int DT_PLTRELSZ = 2;
-    private static final int DT_PLTGOT = 3;
-    private static final int DT_HASH = 4;
-    private static final int DT_STRTAB = 5;
-    private static final int DT_SYMTAB = 6;
-    private static final int DT_RELA = 7;
-    private static final int DT_RELASZ = 8;
-    private static final int DT_RELAENT = 9;
-    private static final int DT_STRSZ = 10;
-    private static final int DT_SYMENT = 11;
-    private static final int DT_INIT = 12;
-    private static final int DT_FINI = 13;
-    private static final int DT_SONAME = 14;
-    private static final int DT_RPATH = 15;
-    private static final int DT_SYMBOLIC = 16;
-    private static final int DT_REL = 17;
-    private static final int DT_RELSZ = 18;
-    private static final int DT_RELENT = 19;
-    private static final int DT_PLTREL = 20;
-    private static final int DT_DEBUG = 21;
-    private static final int DT_TEXTREL = 22;
-    private static final int DT_JMPREL = 23;
-    private static final int DT_BIND_NOW = 24;
-    private static final int DT_INIT_ARRAY = 25;
-    private static final int DT_FINI_ARRAY = 26;
-    private static final int DT_INIT_ARRAYSZ = 27;
-    private static final int DT_FINI_ARRAYSZ = 28;
+    private static final int DT_NULL = 0, DT_NEEDED = 1, DT_PLTRELSZ = 2, DT_PLTGOT = 3, DT_HASH = 4, DT_STRTAB = 5, DT_SYMTAB = 6, DT_RELA = 7, DT_RELASZ = 8, DT_RELAENT = 9, DT_STRSZ = 10, DT_SYMENT = 11, DT_INIT = 12, DT_FINI = 13, DT_SONAME = 14, DT_RPATH = 15, DT_SYMBOLIC = 16, DT_REL = 17, DT_RELSZ = 18, DT_RELENT = 19, DT_PLTREL = 20, DT_DEBUG = 21, DT_TEXTREL = 22, DT_JMPREL = 23, DT_BIND_NOW = 24, DT_INIT_ARRAY = 25, DT_FINI_ARRAY = 26, DT_INIT_ARRAYSZ = 27, DT_FINI_ARRAYSZ = 28;
 
     // Relocation types
-    private static final int R_ARM_ABS32 = 2;
-    private static final int R_ARM_REL32 = 3;
-    private static final int R_ARM_GLOB_DAT = 21;
-    private static final int R_ARM_JUMP_SLOT = 22;
-    private static final int R_ARM_RELATIVE = 23;
+    private static final int R_ARM_ABS32 = 2, R_ARM_REL32 = 3, R_ARM_GLOB_DAT = 21, R_ARM_JUMP_SLOT = 22, R_ARM_RELATIVE = 23;
         
     // Constantes fcntl
-    private static final int F_GETFL = 3;
-    private static final int F_SETFL = 4;
-    private static final int O_NONBLOCK = 2048;
+    private static final int F_GETFL = 3, F_SETFL = 4, O_NONBLOCK = 2048;
     
     // Cache de instruções para otimização
     private Hashtable instructionCache;
