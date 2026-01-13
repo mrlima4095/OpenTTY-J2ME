@@ -37,6 +37,7 @@ local mirror = {
     ["viaversion"] = { remote = "sys/viaversion", here = "/bin/axrz", description = "Change OpenTTY API on Runtime" },
     ["webproxy"] = { remote = "net/proxy.lua", here = "/bin/shprxy", description = "Access OpenTTY on WebProxy" },
     ["wget"] = { remote = "net/wget", here = "/bin/wget", description = "Download files from Network" },
+    ["xterm"] = { remote = "xterm.lua", here = "/bin/xterm", description = "MIDlet Terminal" },
     ["yang"] = { remote = "yang.lua", here = "/bin/yang", description = "OpenTTY Package Manager" },
 
     ["net"] = { description = "Network Utilities", packages = { "curl", "ifconfig", "ping", "webproxy" } },
