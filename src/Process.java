@@ -6,7 +6,7 @@ public class Process {
     public boolean isAlive = true, isService = false;
     public Hashtable scope, db;
     public final long startTime;
-    public int uid;
+    public int uid, priority = 20;
 
     public Object stdout, stderr;
     public Object handler, sigterm;

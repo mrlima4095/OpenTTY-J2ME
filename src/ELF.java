@@ -1392,8 +1392,8 @@ public class ELF {
             }
         } catch (Exception e) { registers[REG_R0] = -1; }
     }
-    private void handleGetpriority() { int which = registers[REG_R0], who = registers[REG_R1]; if (who == 0) { Object priorityObj = proc.get("priority"); if (priorityObj instanceof Integer) { registers[REG_R0] = ((Integer) priorityObj).intValue(); } else { registers[REG_R0] = 20; } } else { registers[REG_R0] = -22; } }
-    private void handleSetpriority() { int which = registers[REG_R0], who = registers[REG_R1], prio = registers[REG_R2]; if (who == 0) { proc.put("priority", new Integer(prio)); registers[REG_R0] = 0; } else { registers[REG_R0] = -22; } }
+    private void handleGetpriority() { int which = registers[REG_R0], who = registers[REG_R1]; if (who == 0) { registers[REG_R0] = proc.priority; } else { registers[REG_R0] = 20; } } else { registers[REG_R0] = -22; } }
+    private void handleSetpriority() { int which = registers[REG_R0], who = registers[REG_R1], prio = registers[REG_R2]; if (who == 0) { proc.priority; registers[REG_R0] = 0; } else { registers[REG_R0] = -22; } }
     // |
     private void handleSignal() { int signum = registers[REG_R0], handler = registers[REG_R1]; if (signum <= 0 || signum >= NSIG) { registers[REG_R0] = SIG_ERR; return; } int oldHandler = signalHandlers[signum]; signalHandlers[signum] = handler; registers[REG_R0] = oldHandler; }
     private void handleSignal(int sig) {
