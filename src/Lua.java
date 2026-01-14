@@ -2717,7 +2717,7 @@ public class Lua {
                             Process process = new Process(midlet, program, "/bin/init ", midlet.getUser(uid), uid, midlet.genpid(), stdout, father);
 
                             Hashtable arg = new Hashtable(); arg.put(new Double(0), program); arg.put(new Double(1), "--deamon");
-                            Hashtable res = lua.run(program, code, arg);
+                            Hashtable res = process.lua.run(program, code, arg);
 
                             Object handler = res.get("object");
                             if (handler instanceof Vector) {
