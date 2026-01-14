@@ -2725,7 +2725,7 @@ public class Lua {
                                 handler = resx.elementAt(0);
                             }
 
-                            if (handler instanceof Lua.LuaFunction) { process.handler = lua; }
+                            if (handler instanceof Lua.LuaFunction) { process.handler = handler; }
                         }
                     }
 
