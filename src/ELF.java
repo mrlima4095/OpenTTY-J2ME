@@ -1380,7 +1380,7 @@ public class ELF {
 
             if (midlet.isPureText(data)) {
                 String code = new String(data, "UTF-8");
-                Process process = new Process(midlet, ("lua " + path).trim(), midlet.joinpath(program, scope), midlet.getUser(id), id, midlet.genpid(), stdout, scope);
+                Process process = new Process(midlet, ("lua " + path).trim(), midlet.joinpath(path, scope), midlet.getUser(id), id, midlet.genpid(), stdout, scope);
                 process.lua.run(path, code, arg);
                 registers[REG_R0] = 0;
             }
