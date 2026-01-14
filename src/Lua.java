@@ -2730,7 +2730,7 @@ public class Lua {
                     }
 
                     else if (payload.equals("rms")) {
-                        if (((Double) uid).intValue() == 0) {
+                        if (uid == 0) {
                             if (arg == null || arg.equals("")) { return new Double(2); }
                             else if (arg.equals("/bin/")) { midlet.writeRMS("OpenRMS", new byte[0], 3); }
                             else if (arg.equals("/etc/")) { midlet.writeRMS("OpenRMS", new byte[0], 5); }
@@ -2744,7 +2744,7 @@ public class Lua {
                     }
                     else if (payload.equals("userdel")) {
                         if (arg == null || arg.equals("") || arg.equals("root") || arg.equals(midlet.username)) { return new Double(13); }
-                        else if (midlet.userID.containsKey(arg)) { if (((Double) uid).intValue() == 0) { midlet.userID.remove(arg); return new Double(0); } else { return new Double(13); } }
+                        else if (midlet.userID.containsKey(arg)) { if (uid == 0) { midlet.userID.remove(arg); return new Double(0); } else { return new Double(13); } }
                         else { return new Double(127); }
                     }
                 }
