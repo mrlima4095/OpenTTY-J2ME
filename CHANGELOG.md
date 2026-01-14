@@ -10,3 +10,4 @@ bug fix
 general
 
 - process structure
+- recovery menu reading list select button to open tool
