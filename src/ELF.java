@@ -1386,7 +1386,7 @@ public class ELF {
             }
             else {
                 InputStream elfStream = new ByteArrayInputStream(data);
-                Process process = new Process(midlet, "elf", midlet.joinpath(path, scope), midlet.getUser(id), id, midlet.genpid(), out, arg, scope);
+                Process process = new Process(midlet, "elf", midlet.joinpath(path, scope), midlet.getUser(id), id, midlet.genpid(), stdout, arg, scope);
                 
                 if (process.elf.load(elfStream)) { process.elf.run(); registers[REG_R0] = 0; } else { registers[REG_R0] = -8; }
             }
