@@ -13,7 +13,7 @@ public class Process {
     public ELF elf;
     
     public Process(OpenTTY midlet, String name, String owner, int uid, String pid, Object stdout, Hashtable scope) {
-        this.lua = new Lua(midlet, id, pid, this, stdout, scope);
+        this.lua = new Lua(midlet, uid, pid, this, stdout, scope);
         this.name = name; this.owner = owner; this.uid = uid; this.pid = pid;
         this.stdout = stdout; this.stderr = stdout; this.scope = scope;
         this.startTime = System.currentTimeMillis();
