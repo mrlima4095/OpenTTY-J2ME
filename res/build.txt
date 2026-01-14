@@ -187,3 +187,4 @@
 [2026-1.17.1-03x17] Multi-User support
 [2026-1.17.1-03x18] Release 1.17.1
 [2026-1.17.1-03x19] 1.18 Suite case
+[2026-1.17.1-03x20] Process Structure
