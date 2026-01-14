@@ -38,10 +38,9 @@ public class Lua {
     public static class Token { int type; Object value; Token(int type, Object value) { this.type = type; this.value = value; } public String toString() { return "Token(type=" + type + ", value=" + value + ")"; } }
     // |
     // Main
-    public Lua(OpenTTY midlet, int id, String pid, Hashtable proc, Object stdout, Hashtable scope) {
-        this.midlet = midlet; this.id = id; this.stdout = stdout; this.father = scope;
-        this.tokenIndex = 0; this.PID = pid == null ? midlet.genpid() : pid;
-        this.proc = proc == null ? midlet.genprocess("lua", id, null) : proc;
+    public Lua(OpenTTY midlet, int id, String pid, Process proc, Object stdout, Hashtable scope) {
+        this.midlet = midlet; this.id = id; this.PID = pid; this.proc = proc; this.stdout = stdout; this.father = scope;
+        this.tokenIndex = 0; 
 
         Hashtable os = new Hashtable(), io = new Hashtable(), string = new Hashtable(), table = new Hashtable(), pkg = new Hashtable(), graphics = new Hashtable(), socket = new Hashtable(), http = new Hashtable(), java = new Hashtable(), jdb = new Hashtable(), math = new Hashtable(), audio = new Hashtable(), push = new Hashtable();
         String[] funcs = new String[] { "getenv", "setenv", "clock", "setlocale", "exit", "date", "getpid", "setproc", "getproc", "getcwd", "request", "getuid", "chdir", "open", "su", "remove", "scope", "join", "mkdir" }; 
@@ -95,7 +94,6 @@ public class Lua {
     }
     // | (Run Source code)
     public Hashtable run(String source, String code, Hashtable args) { 
-        proc.put("name", ("lua " + source).trim());
         midlet.sys.put(PID, proc); globals.put("arg", args);
 
         Hashtable ITEM = new Hashtable(); 
@@ -1429,7 +1427,12 @@ public class Lua {
                     Object value = args.size() < 2 ? null : args.elementAt(1);
 
                     if (attribute.equals("owner")) { return gotbad(1, "setproc", "permission denied"); } 
-                    else { if (value == null) { proc.remove(attribute); } else { proc.put(attribute, value); } }
+                    else if (attribute.equals("scope")) { if (value instanceof Hashtable) { proc.scope = (Hashtable) value; } else { return gotbad(1, "setproc", "table expected"); } }
+                    else if (attribute.equals("name")) { if (value != null) { proc.name = toLuaString(value); } else { return gotbad(1, "setproc", "string expected"); } }
+                    else if (attribute.equals("handler")) { if (value instanceof LuaFunction) { proc.handler = value; proc.isService = true; } else { return gotbad(1, "setproc", "function expected"); } }
+                    else if (attribute.equals("cmd")) { if (value != null) { proc.cmd = toLuaString(value); } else { return gotbad(1, "setproc", "string expected"); } }
+                    else if (attribute.equals("sigterm")) { if (value instanceof LuaFunction) { proc.sigterm = value; } else { return gotbad(1, "setproc", "function expected"); } }
+                    else { if (value == null) { proc.db.remove(attribute); } else { proc.db.put(attribute, value); } }
                 } 
             }
             else if (MOD == GETPROC) {
@@ -1438,17 +1441,18 @@ public class Lua {
                     for (Enumeration procs = midlet.sys.keys(); procs.hasMoreElements();) {
                         String pid = (String) procs.nextElement();
 
-                        result.put(pid, midlet.getobject(pid, "name"));
+                        result.put(pid, ((Process) midlet.sys.get(pid)).name);
                     }
                     return result;
                 }
                 else {
-                    String process = toLuaString(args.elementAt(0)).trim();
+                    String pid = toLuaString(args.elementAt(0)).trim();
+                    Process process = (Process) midlet.sys.get(pid);
 
-                    if (midlet.sys.containsKey(process)) {
-                        if (!((String) midlet.getobject(process, "owner")).equals(midlet.username) && id != 0) { return gotbad(1, "getproc", "permissiond denied"); }
+                    if (process != null) {
+                        if (process.uid != id && id != 0) { return gotbad(1, "getproc", "permissiond denied"); }
 
-                        if (args.size() > 1) { return (midlet.getprocess(process)).get(toLuaString(args.elementAt(1)).trim()); } 
+                        if (args.size() > 1) { return proc.db.get(toLuaString(args.elementAt(1)).trim()); } 
                         else { return gotbad(2, "getproc", "field expected, got no value"); }
                     } 
                 }

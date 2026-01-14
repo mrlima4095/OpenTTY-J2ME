@@ -37,15 +37,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // | (Boot)
     public void init() {
         try {
-            Hashtable proc = new Hashtable(), args = new Hashtable();
-            args.put(new Double(0), "/bin/init");
+            Hashtable args = new Hashtable(); args.put(new Double(0), "/bin/init");
             globals.put("PWD", "/home/"); globals.put("USER", "root"); globals.put("ROOT", "/");
-            proc.put("name", "init"); proc.put("owner", "root");
+            Process proc = new Process(this, "init", "/bin/init", "root", 0, "1", stdout, globals);
 
-            Lua lua = new Lua(this, 0, "1", proc, stdout, globals);
-            sys.put("1", proc); lua.globals.put("arg", args);
-            proc.put("lua", lua); proc.put("handler", lua.getKernel());
-
+            sys.put("1", proc); lua.globals.put("arg", args); proc.handler = lua.getKernel();
             lua.tokens = lua.tokenize(read("/bin/init", globals));
 
             while (lua.peek().type != 0) { Object res = lua.statement(globals); if (lua.doreturn) { break; } }
@@ -190,19 +186,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // | (Generators)
     public String genpid() { return String.valueOf(1000 + random.nextInt(9000)); }
-    public Hashtable genprocess(String name, int id, Hashtable signal) { 
-        Hashtable proc = new Hashtable(); 
-        proc.put("name", name); 
-        proc.put("owner", id == 0 ? "root" : username); 
-        if (signal != null) { proc.put("signals", signal); } 
-        
-        return proc;
-    }
     // | (User Manager)
     public int getUserID(String user) { return user.equals("root") ? 0 : user.equals(username) ? 1000 : userID.containsKey(user) ? ((Integer) userID.get(user)).intValue() : -1; }
     // | (Trackers)
-    public Object getobject(String pid, String item) { return sys.containsKey(pid) ? ((Hashtable) sys.get(pid)).get(item) : null; }
-    public Hashtable getprocess(String pid) { return sys.containsKey(pid) ? (Hashtable) sys.get(pid) : null; }
     public String getpid(String name) { for (Enumeration KEYS = sys.keys(); KEYS.hasMoreElements();) { String PID = (String) KEYS.nextElement(); if (name.equals((String) ((Hashtable) sys.get(PID)).get("name"))) { return PID; } } return null; } 
     // |
     // | -=-=-=-=-=-=-=-=-=-=-

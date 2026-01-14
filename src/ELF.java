@@ -7,7 +7,8 @@ import java.io.*;
 public class ELF {
     private OpenTTY midlet;
     private Object stdout;
-    private Hashtable scope, proc;
+    private Process proc;
+    private Hashtable scope;
     private String pid;
     private int id = 1000;
     
@@ -101,7 +102,7 @@ public class ELF {
     // Futex management
     private Hashtable futexWaiters, args;
     
-    public ELF(OpenTTY midlet, Hashtable args, Object stdout, Hashtable scope, int id, String pid, Hashtable proc) {
+    public ELF(OpenTTY midlet, Hashtable args, Object stdout, Hashtable scope, int id, String pid, Process proc) {
         this.midlet = midlet; this.stdout = stdout; this.id = id;
         this.scope = scope; this.proc = proc; this.args = args;
         this.pid = pid == null ? midlet.genpid() : pid;
