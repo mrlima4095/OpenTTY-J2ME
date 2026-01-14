@@ -10,8 +10,8 @@ public class Process {
 
     public Object stdout, stderr;
     public Object handler, sigterm;
-    public Lua lua;
-    public ELF elf;
+    public Lua lua = null;
+    public ELF elf = null;
     
     public Process(OpenTTY midlet, String name, String command, String owner, int uid, String pid, Object stdout, Hashtable scope) {
         this.lua = new Lua(midlet, uid, pid, this, stdout, scope);

@@ -2715,6 +2715,7 @@ public class Lua {
                         else {
                             String program = toLuaString(arg), code = midlet.read(program, father);
                             Process process = new Process(midlet, program, "/bin/init ", midlet.getUser(uid), uid, midlet.genpid(), stdout, father);
+                            process.lua.kill = false;
 
                             Hashtable arg = new Hashtable(); arg.put(new Double(0), program); arg.put(new Double(1), "--deamon");
                             Hashtable res = process.lua.run(program, code, arg);
@@ -2725,7 +2726,7 @@ public class Lua {
                                 handler = resx.elementAt(0);
                             }
 
-                            if (handler instanceof Lua.LuaFunction) { process.handler = handler; }
+                            if (handler instanceof Lua.LuaFunction) { proc.isService = true; process.handler = handler; }
                         }
                     }
 
