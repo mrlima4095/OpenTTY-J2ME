@@ -1463,7 +1463,7 @@ public class Lua {
                 else if (args.size() < 2) { return gotbad(2, "request", "value expected, got no value"); }
                 else if (midlet.sys.containsKey(toLuaString(args.elementAt(0)))) {
                     Process process = (Process) midlet.sys.get(toLuaString(args.elementAt(0)));
-                    if (process.lua != null && process.isService) {
+                    if (process.lua != null && process.handler != null) {
                         Lua lua = (Lua) process.lua;
                         Vector arg = new Vector(); arg.addElement(toLuaString(args.elementAt(1))); arg.addElement(args.size() > 2 ? args.elementAt(2) : null); arg.addElement(father); arg.addElement(PID); arg.addElement(new Double(id));
                         Object response = null;
@@ -2714,7 +2714,7 @@ public class Lua {
                         if (arg == null || arg.equals("")) { return new Double(2); }
                         else {
                             String program = toLuaString(arg), code = midlet.read(program, father);
-                            Process process = new Process(midlet, program, "/bin/init ", midlet.getUser(uid), uid, midlet.genpid(), stdout, father);
+                            Process process = new Process(midlet, program, "/bin/init --serve=" + program, midlet.getUser(uid), uid, midlet.genpid(), stdout, father);
                             process.lua.kill = false;
 
                             Hashtable arg = new Hashtable(); arg.put(new Double(0), program); arg.put(new Double(1), "--deamon");
