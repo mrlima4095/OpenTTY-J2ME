@@ -1689,7 +1689,7 @@ public class Lua {
                             Process process = new Process(midlet, program, midlet.joinpath(program, father), midlet.getUser(owner), owner, pid, stdout, arg, scope);
                             midlet.sys.put(pid, process);
                             
-                            if (process.elf.load(elfStream)) { result.addElement(procesself.run()); } else { result.addElement(1); }
+                            if (process.elf.load(elfStream)) { result.addElement(process.elf.run()); } else { result.addElement(1); }
                         }
                         
                         result.addElement(out instanceof StringBuffer ? out.toString() : out);
