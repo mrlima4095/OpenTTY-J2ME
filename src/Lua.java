@@ -1679,7 +1679,7 @@ public class Lua {
 
                         if (midlet.isPureText(data)) {
                             String code = new String(data, "UTF-8");
-                            Process process = new Process(midlet, ("lua " + program).trim(), midlet.joinpath(program), midlet.getUser(owner), "" + owner, pid, out, scope);
+                            Process process = new Process(midlet, ("lua " + program).trim(), midlet.joinpath(program, father), midlet.getUser(owner), "" + owner, pid, out, scope);
                             midlet.sys.put(pid, process);
 
                             result.addElement(process.lua.run(program, code, arg));
