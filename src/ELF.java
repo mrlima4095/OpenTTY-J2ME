@@ -1380,15 +1380,15 @@ public class ELF {
 
             if (midlet.isPureText(data)) {
                 String code = new String(data, "UTF-8");
-                Lua lua = new Lua(midlet, id, null, null, stdout, scope);
-                lua.run(path, code, arg);
+                Process process = new Process(midlet, ("lua " + program).trim(), midlet.joinpath(program, scope), midlet.getUser(id), id, midlet.genpid(), stdout, scope);
+                process.lua.run(path, code, arg);
                 registers[REG_R0] = 0;
             }
             else {
                 InputStream elfStream = new ByteArrayInputStream(data);
-                ELF elf = new ELF(midlet, arg, stdout, scope, id, null, null);
+                Process process = new Process(midlet, "elf", midlet.joinpath(program, scope), midlet.getUser(id), id, midlet.genpid(), out, arg, scope);
                 
-                if (elf.load(elfStream)) { elf.run(); registers[REG_R0] = 0; } else { registers[REG_R0] = -8; }
+                if (process.elf.load(elfStream)) { process.elf.run(); registers[REG_R0] = 0; } else { registers[REG_R0] = -8; }
             }
         } catch (Exception e) { registers[REG_R0] = -1; }
     }
