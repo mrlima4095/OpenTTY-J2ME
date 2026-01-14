@@ -2679,7 +2679,7 @@ public class Lua {
                         if (arg == null || arg.equals("")) { return new Double(2); }
                         else if (midlet.sys.containsKey(arg)) {
                             Process process = (Process) midlet.sys.get(arg);
-                            if (process.uid = uid || uid = 0) { return process; }
+                            if (process.uid == uid || uid == 0) { return process; }
                             else { return new Double(13); }
                         }
                         else { return new Double(127); }
