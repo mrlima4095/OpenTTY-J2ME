@@ -41,10 +41,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
             globals.put("PWD", "/home/"); globals.put("USER", "root"); globals.put("ROOT", "/");
             Process proc = new Process(this, "init", "/bin/init", "root", 0, "1", stdout, globals);
 
-            sys.put("1", proc); prc.lua.globals.put("arg", args); proc.handler = lua.getKernel();
+            sys.put("1", proc); proc.lua.globals.put("arg", args); proc.handler = proc.lua.getKernel();
             proc.lua.tokens = lua.tokenize(read("/bin/init", globals));
 
-            while (lua.peek().type != 0) { Object res = proc.lua.statement(globals); if (proc.lua.doreturn) { break; } }
+            while (proc.lua.peek().type != 0) { Object res = proc.lua.statement(globals); if (proc.lua.doreturn) { break; } }
         }
         catch (IllegalStateException e) { }
         catch (Throwable e) { panic(e); }
