@@ -2712,7 +2712,7 @@ public class Lua {
                         if (arg == null || arg.equals("")) { return new Double(2); }
                         else {
                             String program = toLuaString(arg), code = midlet.read(program, father);
-                            Process process = new Process(midlet, program, "/bin/init ", midlet.getUser(uid), uid, midlet.genpid(), stdout, father)
+                            Process process = new Process(midlet, program, "/bin/init ", midlet.getUser(uid), uid, midlet.genpid(), stdout, father);
 
                             Hashtable arg = new Hashtable(); arg.put(new Double(0), program); arg.put(new Double(1), "--deamon");
                             Hashtable res = lua.run(program, code, arg);
