@@ -1429,7 +1429,7 @@ public class Lua {
                     if (attribute.equals("owner")) { return gotbad(1, "setproc", "permission denied"); } 
                     else if (attribute.equals("scope")) { if (value instanceof Hashtable) { proc.scope = (Hashtable) value; } else { return gotbad(1, "setproc", "table expected"); } }
                     else if (attribute.equals("name")) { if (value != null) { proc.name = toLuaString(value); } else { return gotbad(1, "setproc", "string expected"); } }
-                    else if (attribute.equals("handler")) { if (value instanceof LuaFunction) { proc.handler = value; proc.isService = true; } else { return gotbad(1, "setproc", "function expected"); } }
+                    else if (attribute.equals("handler")) { if (value instanceof LuaFunction) { proc.handler = value; kill = false; } else { return gotbad(1, "setproc", "function expected"); } }
                     else if (attribute.equals("cmd")) { if (value != null) { proc.cmd = toLuaString(value); } else { return gotbad(1, "setproc", "string expected"); } }
                     else if (attribute.equals("sigterm")) { if (value instanceof LuaFunction) { proc.sigterm = value; } else { return gotbad(1, "setproc", "function expected"); } }
                     else { if (value == null) { proc.db.remove(attribute); } else { proc.db.put(attribute, value); } }

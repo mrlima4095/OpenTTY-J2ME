@@ -3,7 +3,6 @@ import java.util.*;
 public class Process {
     private OpenTTY midlet = null;
     public String name, owner, pid, cmd;
-    public boolean isAlive = true, isService = false;
     public Hashtable scope, db;
     public final long startTime;
     public int uid, priority = 20;
