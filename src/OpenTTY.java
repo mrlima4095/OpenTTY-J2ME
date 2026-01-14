@@ -95,7 +95,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public void commandAction(Command c, Displayable d) {
         if (c.getLabel() == "Exit") { destroyApp(true); }
         else if (c.getLabel() == "Recovery" || c.getLabel() == "Back") { recovery(); }
-        else if (d instanceof List && c.getLabel() == "Open") {
+        else if (d instanceof List && c.getLabel() == "Open" || c == List.SELECT_COMMAND) {
             List menu = (List) d;
             int selected = menu.getSelectedIndex();
             String item = menu.getString(selected);
