@@ -2670,7 +2670,7 @@ public class Lua {
                             if (process.uid == uid || uid == 0) {
                                 midlet.sys.remove(arg);
                                 if (arg.equals("1")) { midlet.destroyApp(true); }
-                                return new Double(0)
+                                return new Double(0);
                             } else { return new Double(13); }
                         }
                         else { return new Double(127); }
