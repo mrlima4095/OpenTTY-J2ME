@@ -1452,7 +1452,7 @@ public class Lua {
                     if (process != null) {
                         if (process.uid != id && id != 0) { return gotbad(1, "getproc", "permissiond denied"); }
 
-                        if (args.size() > 1) { return proc.db.get(toLuaString(args.elementAt(1)).trim()); } 
+                        if (args.size() > 1) { return process.db.get(toLuaString(args.elementAt(1)).trim()); } 
                         else { return gotbad(2, "getproc", "field expected, got no value"); }
                     } 
                 }
@@ -1462,15 +1462,15 @@ public class Lua {
                 if (args.isEmpty()) { return gotbad(1, "request", "string expected, got no value"); }
                 else if (args.size() < 2) { return gotbad(2, "request", "value expected, got no value"); }
                 else if (midlet.sys.containsKey(toLuaString(args.elementAt(0)))) {
-                    Hashtable proc = (Hashtable) midlet.sys.get(toLuaString(args.elementAt(0)));
-                    if (proc.containsKey("lua") && proc.containsKey("handler")) {
-                        Lua lua = (Lua) proc.get("lua");
+                    Process process = (Process) midlet.sys.get(toLuaString(args.elementAt(0)));
+                    if (process.lua != null && process.isService) {
+                        Lua lua = (Lua) process.lua;
                         Vector arg = new Vector(); arg.addElement(toLuaString(args.elementAt(1))); arg.addElement(args.size() > 2 ? args.elementAt(2) : null); arg.addElement(father); arg.addElement(PID); arg.addElement(new Double(id));
                         Object response = null;
 
-                        try { response = ((Lua.LuaFunction) proc.get("handler")).call(arg); }
+                        try { response = ((Lua.LuaFunction) process.handler).call(arg); }
                         catch (Exception e) { return midlet.getCatch(e); } 
-                        catch (Error e) { if (e.getMessage() != null) { midlet.print(e.getMessage(), stdout, id, father); } return lua.status; }
+                        catch (Error e) { if (e.getMessage() != null) { midlet.print(e.getMessage(), stdout, id, father); } return new Double(lua.status); }
 
                         return response;
                     } 
@@ -1679,15 +1679,15 @@ public class Lua {
 
                         if (midlet.isPureText(data)) {
                             String code = new String(data, "UTF-8");
-                            Lua lua = new Lua(midlet, owner, null, null, out, scope);
+                            Process process = new Process(midlet, ("lua " + program).trim(), midlet.joinpath(program), midlet.getUser(owner), "" + owner, midlet.genpid(), out, scope);
 
-                            result.addElement(lua.run(program, code, arg));
+                            result.addElement(process.lua.run(program, code, arg));
                         }
                         else {
                             InputStream elfStream = new ByteArrayInputStream(data);
-                            ELF elf = new ELF(midlet, arg, out, scope, owner, null, null);
+                            Process process = new Process(midlet, program, midlet.joinpath(program), midlet.getUser(owner), "" + owner, stdout, arg, scope);
                             
-                            if (elf.load(elfStream)) { result.addElement(elf.run()); } else { result.addElement(1); }
+                            if (process.elf.load(elfStream)) { result.addElement(procesself.run()); } else { result.addElement(1); }
                         }
                         
                         result.addElement(out instanceof StringBuffer ? out.toString() : out);
@@ -2658,26 +2658,28 @@ public class Lua {
             }
 
             else if (MOD == KERNEL) {
-                Object payload = args.elementAt(0), arg = args.elementAt(1), scope = args.elementAt(2), pid = args.elementAt(3), uid = args.elementAt(4);
+                Object payload = args.elementAt(0), arg = args.elementAt(1), scope = args.elementAt(2), pid = args.elementAt(3);
+                int uid = ((Double) args.elementAt(4)).intValue();
 
                 if (payload == null || payload.equals("")) { return null; }
                 if (payload instanceof String) {
                     if (payload.equals("kill")) {
                         if (arg == null || arg.equals("")) { return new Double(2); }
                         else if (midlet.sys.containsKey(arg)) {
-                            if (midlet.getobject((String) arg, "owner").equals(((Hashtable) scope).get("USER")) || ((Double) uid).intValue() == 0) { 
-                                midlet.sys.remove(arg); 
-                                if (arg.equals("1")) { midlet.destroyApp(true); } 
-                                return new Double(0); 
-                            } 
-                            else { return new Double(13); }
+                            Process process = (Process) midlet.sys.get(arg);
+                            if (process.uid == uid || uid == 0) {
+                                midlet.sys.remove(arg);
+                                if (arg.equals("1")) { midlet.destroyApp(true); }
+                                return new Double(0)
+                            } else { return new Double(13); }
                         }
                         else { return new Double(127); }
                     }
                     else if (payload.equals("proc")) {
                         if (arg == null || arg.equals("")) { return new Double(2); }
                         else if (midlet.sys.containsKey(arg)) {
-                            if (midlet.getobject((String) arg, "owner").equals(((Hashtable) scope).get("USER")) || ((Double) uid).intValue() == 0) { return midlet.sys.get(arg); } 
+                            Process process = (Process) midlet.sys.get(arg);
+                            if (process.uid = uid || uid = 0) { return process; }
                             else { return new Double(13); }
                         }
                         else { return new Double(127); }
@@ -2689,7 +2691,7 @@ public class Lua {
                             String old = (String) query.get("old"), newpw = (String) query.get("new");
 
                             if (old == null || newpw == null || old.equals("") || newpw.equals("")) { return new Double(2); }
-                            else if (((Double) uid).intValue() == 0 || midlet.passwd(old)) { return new Double(midlet.writeRMS("OpenRMS", String.valueOf(newpw.hashCode()).getBytes(), 2)); }
+                            else if (uid == 0 || midlet.passwd(old)) { return new Double(midlet.writeRMS("OpenRMS", String.valueOf(newpw.hashCode()).getBytes(), 2)); }
                             else { return new Double(13); }
                         }
                     }
@@ -2709,13 +2711,10 @@ public class Lua {
                     else if (payload.equals("serve")) {
                         if (arg == null || arg.equals("")) { return new Double(2); }
                         else {
-                            String program = toLuaString(arg), code = midlet.read(program, father), pid = midlet.genpid();
-                            Hashtable process = midlet.genprocess("lua", id, null);
+                            String program = toLuaString(arg), code = midlet.read(program, father);
+                            Process process = new Process(midlet, program, "/bin/init ", midlet.getUser(uid), uid, midlet.genpid(), stdout, father)
 
-                            Lua lua = new Lua(midlet, id, pid, process, stdout, father); lua.kill = false;
-                            Hashtable arg = new Hashtable();
-                            arg.put(new Double(0), program); arg.put(new Double(1), "--deamon");
-
+                            Hashtable arg = new Hashtable(); arg.put(new Double(0), program); arg.put(new Double(1), "--deamon");
                             Hashtable res = lua.run(program, code, arg);
 
                             Object handler = res.get("object");
@@ -2724,7 +2723,7 @@ public class Lua {
                                 handler = resx.elementAt(0);
                             }
 
-                            if (handler instanceof Lua.LuaFunction) { process.put("lua", lua); process.put("handler", handler); }
+                            if (handler instanceof Lua.LuaFunction) { process.handler = lua; }
                         }
                     }
 
