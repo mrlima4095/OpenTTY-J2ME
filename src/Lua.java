@@ -2666,16 +2666,27 @@ public class Lua {
                 if (payload == null || payload.equals("")) { return null; }
                 if (payload instanceof String) {
                     if (payload.equals("kill")) {
-                        if (arg == null || arg.equals("")) { return new Double(2); }
-                        else if (midlet.sys.containsKey(arg)) {
-                            Process process = (Process) midlet.sys.get(arg);
-                            if (process.uid == uid || uid == 0) {
-                                midlet.sys.remove(arg);
-                                if (arg.equals("1")) { midlet.destroyApp(true); }
-                                return new Double(0);
-                            } else { return new Double(13); }
+                        if (arg == null || !(arg instanceof Hashtable)) { return new Double(2); }
+                        else {
+                            Hashtable info = (Hashtable) arg;
+                            String pid = (String) info.get("pid"), signal = (String) info.get("signal");
+
+                            if (midlet.sys.containsKey(pid)) {
+                                Process process = (Process) midlet.sys.get(pid);
+
+                                if (process.uid == uid || uid == 0) {
+                                    if (signal.equals("15") && process.sigterm) {
+                                        try { ((LuaFunction) process.sigterm).call(new Vector()); }
+                                        catch (Throwable e) { }
+                                    }
+
+                                    midlet.sys.remove(arg);
+                                    if (arg.equals("1")) { midlet.destroyApp(true); }
+                                    return new Double(0);
+                                } else { return new Double(13); }
+                            }
+                            else { return new Double(127); }
                         }
-                        else { return new Double(127); }
                     }
                     else if (payload.equals("proc")) {
                         if (arg == null || arg.equals("")) { return new Double(2); }
