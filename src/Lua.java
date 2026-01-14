@@ -1418,7 +1418,7 @@ public class Lua {
             }
             else if (MOD == CLOCK) { return System.currentTimeMillis() - uptime; }
             else if (MOD == SETLOC) { if (args.isEmpty()) { } else { midlet.attributes.put("LOCALE", toLuaString(args.elementAt(0))); } }
-            else if (MOD == EXIT) { if (PID.equals("1")) { midlet.destroyApp(true); } midlet.sys.remove(PID); if (args.isEmpty()) { throw new Error(); } else { status = midlet.getNumber(toLuaString(args.elementAt(0)), 1, null); } }
+            else if (MOD == EXIT) { if (PID.equals("1")) { midlet.destroyApp(true); } midlet.sys.remove(PID); if (args.isEmpty()) { throw new Error(); } else { status = getNumber(toLuaString(args.elementAt(0)), 1, null); } }
             else if (MOD == DATE) { return new java.util.Date().toString(); }
             else if (MOD == GETPID) { return args.isEmpty() ? PID : midlet.getpid(toLuaString(args.elementAt(0))); }
             else if (MOD == SETPROC) {
@@ -2453,7 +2453,7 @@ public class Lua {
                     else {
                         if (args.size() == 1) { return text; }
 
-                        int len = text.length(), start = midlet.getNumber(toLuaString(args.elementAt(1)), 1, false), end = args.size() > 2 ? midlet.getNumber(toLuaString(args.elementAt(2)), len, false) : len;
+                        int len = text.length(), start = getNumber(toLuaString(args.elementAt(1)), 1, false), end = args.size() > 2 ? getNumber(toLuaString(args.elementAt(2)), len, false) : len;
 
                         if (start < 0) { start = len + start + 1; }
                         if (end < 0) { end = len + end + 1; }
@@ -2475,8 +2475,8 @@ public class Lua {
                 else {
                     String s = toLuaString(args.elementAt(0));
                     int len = s.length(), start = 1, end = 1;
-                    if (args.size() >= 2) { start = midlet.getNumber(toLuaString(args.elementAt(1)), 1, false); }
-                    if (args.size() >= 3) { end = midlet.getNumber(toLuaString(args.elementAt(2)), start, false); }
+                    if (args.size() >= 2) { start = getNumber(toLuaString(args.elementAt(1)), 1, false); }
+                    if (args.size() >= 3) { end = getNumber(toLuaString(args.elementAt(2)), start, false); }
                     
                     if (start < 0) { start = len + start + 1; }
                     if (end < 0) { end = len + end + 1; }
