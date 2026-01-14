@@ -38,7 +38,7 @@ public class Lua {
     public static class Token { int type; Object value; Token(int type, Object value) { this.type = type; this.value = value; } public String toString() { return "Token(type=" + type + ", value=" + value + ")"; } }
     // |
     // Main
-    public Lua(OpenTTY midlet, int id, String pid, Process proc, Object stdout, Hashtable scope) {
+    public Lua(OpenTTY midlet, int id, String pid, Hashtable proc, Object stdout, Hashtable scope) {
         this.midlet = midlet; this.id = id; this.stdout = stdout; this.father = scope;
         this.tokenIndex = 0; this.PID = pid == null ? midlet.genpid() : pid;
         this.proc = proc == null ? midlet.genprocess("lua", id, null) : proc;
