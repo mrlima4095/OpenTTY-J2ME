@@ -10,7 +10,7 @@ import java.io.*;
 // Lua Runtime
 public class Lua {
     public boolean breakLoop = false, doreturn = false, kill = true, gc = true;
-    public Hashtable proc;
+    public Process proc;
     private OpenTTY midlet;
     private Object stdout;
     public String PID = "";
