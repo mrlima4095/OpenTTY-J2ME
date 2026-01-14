@@ -27,5 +27,5 @@ public class Process {
     }
 
 
-    public String toString() { return "{name=" + name + ",owner=" + owner + ",uid=" + uid + ",pid=" + pid + "," + (lua != null ? "lua=" + lua "," : elf != null ? "elf=" + elf + "," : "") + (handler != null ? "handler=" + handler + "," : "") + "priority=" + priority + ",scope=" + scope + ",db=" + db + "}"; }
+    public String toString() { return "{name=" + name + ",owner=" + owner + ",uid=" + uid + ",pid=" + pid + "," + (lua != null ? "lua=" + lua + "," : elf != null ? "elf=" + elf + "," : "") + (handler != null ? "handler=" + handler + "," : "") + "priority=" + priority + ",scope=" + scope + ",db=" + db + "}"; }
 }
