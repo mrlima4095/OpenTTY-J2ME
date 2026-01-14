@@ -8,7 +8,7 @@ public class Process {
     public int uid, priority = 20;
 
     public Object stdout, stderr;
-    public Object handler = null, sigterm;
+    public Object handler = null, sigterm = null;
     public Lua lua = null;
     public ELF elf = null;
     
