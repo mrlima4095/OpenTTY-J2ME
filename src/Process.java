@@ -9,7 +9,7 @@ public class Process {
     public int uid, priority = 20;
 
     public Object stdout, stderr;
-    public Object handler, sigterm;
+    public Object handler = null, sigterm;
     public Lua lua = null;
     public ELF elf = null;
     
@@ -25,4 +25,7 @@ public class Process {
         this.stdout = stdout; this.stderr = stdout; this.scope = scope;
         this.startTime = System.currentTimeMillis();
     }
+
+
+    public String toString() { return "{name=" + name + ",owner=" + owner + ",uid=" + uid, ",pid=" + pid + "," + (lua != null ? "lua=" + lua ",": elf != null ? "elf=" + elf + "," : "") + (handler != null ? "handler=" + handler + "," : "") + "priority=" + priority + ",scope=" + scope + ",db=" + db + "}"; }
 }
