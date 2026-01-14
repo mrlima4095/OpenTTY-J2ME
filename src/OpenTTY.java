@@ -201,6 +201,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // | (User Manager)
     public int getUserID(String user) { return user.equals("root") ? 0 : user.equals(username) ? 1000 : userID.containsKey(user) ? ((Integer) userID.get(user)).intValue() : -1; }
     // | (Trackers)
+    public Object getobject(String pid, String item) { return sys.containsKey(pid) ? ((Hashtable) sys.get(pid)).get(item) : null; }
     public Hashtable getprocess(String pid) { return sys.containsKey(pid) ? (Hashtable) sys.get(pid) : null; }
     public String getpid(String name) { for (Enumeration KEYS = sys.keys(); KEYS.hasMoreElements();) { String PID = (String) KEYS.nextElement(); if (name.equals((String) ((Hashtable) sys.get(PID)).get("name"))) { return PID; } } return null; } 
     // |
