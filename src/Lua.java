@@ -10,12 +10,13 @@ import java.io.*;
 // Lua Runtime
 public class Lua {
     public boolean breakLoop = false, doreturn = false, kill = true, gc = true;
+    public Process proc;
     private OpenTTY midlet;
     private Object stdout;
     public String PID = "";
     private long uptime = System.currentTimeMillis();
     private int id = 1000, tokenIndex, loopDepth = 0;
-    public Hashtable globals = new Hashtable(), proc, father, requireCache = new Hashtable(), labels = new Hashtable();
+    public Hashtable globals = new Hashtable(), father, requireCache = new Hashtable(), labels = new Hashtable();
     public Vector tokens;
     // |
     public int status = 0;
@@ -37,7 +38,7 @@ public class Lua {
     public static class Token { int type; Object value; Token(int type, Object value) { this.type = type; this.value = value; } public String toString() { return "Token(type=" + type + ", value=" + value + ")"; } }
     // |
     // Main
-    public Lua(OpenTTY midlet, int id, String pid, Hashtable proc, Object stdout, Hashtable scope) {
+    public Lua(OpenTTY midlet, int id, String pid, Process proc, Object stdout, Hashtable scope) {
         this.midlet = midlet; this.id = id; this.stdout = stdout; this.father = scope;
         this.tokenIndex = 0; this.PID = pid == null ? midlet.genpid() : pid;
         this.proc = proc == null ? midlet.genprocess("lua", id, null) : proc;
@@ -1473,10 +1474,7 @@ public class Lua {
                 } 
                 else { return gotbad(1, "request", "process not found"); }
             }
-            else if (MOD == GETUID) {
-                if (args.isEmpty()) { return new Double(id); }
-                else if (midlet.userID.containsKey(args.elementAt(0))) { return new Double((Integer) midlet.userID.get(args.elementAt(0))); }
-            }
+            else if (MOD == GETUID) { if (args.isEmpty()) { return new Double(id); } else if (midlet.userID.containsKey(args.elementAt(0))) { return new Double((Integer) midlet.userID.get(args.elementAt(0))); } }
             else if (MOD == CHDIR) {
                 if (args.isEmpty()) { return father.get("PWD"); }
                 else {
@@ -1509,7 +1507,7 @@ public class Lua {
                 else {
                     String user = toLuaString(args.elementAt(0)), query = args.size() > 1 ? toLuaString(args.elementAt(1)) : null;
                     if (user.equals(midlet.username)) { id = 1000; father.put("USER", midlet.username); return new Double(0); }
-                    else if (midlet.userID.containsKey(user)) { id = midlet.getUserID(user); father.put("USER", midlet.username); return new Double(0); }
+                    else if (midlet.userID.containsKey(user)) { id = midlet.getUserID(user); father.put("USER", user); return new Double(0); }
                     else if (query == null) { return gotbad(2, "su", "string expected, got nil"); }
                     else if (user.equals("root") && midlet.passwd(query)) { id = 0; father.put("USER", "root"); return new Double(0); }
                     else { return new Double(13); }
@@ -2052,7 +2050,25 @@ public class Lua {
                     } else { return gotbad(1, "unpack", "table expected, got " + type(tObj)); }
                 }
             }
-            else if (MOD == TB_DECODE) { return args.isEmpty() ? null : midlet.parseProperties((String) args.elementAt(0)); }
+            else if (MOD == TB_DECODE) {
+                if (args.isEmpty()) { return gotbad(1, "decode", "string expected, got no value"); }
+                else {
+                    String text = toLuaString(args.elementAt(0));
+                    if (text.equals("")) { return new Hashtable(); }
+                    Hashtable properties = new Hashtable();
+
+                    String[] lines = midlet.split(text, '\n');
+                    for (int i = 0; i < lines.length; i++) {
+                        String line = lines[i];
+                        if (line.startsWith("#")) { }
+                        else { 
+                            int equalIndex = line.indexOf('='); 
+                            if (equalIndex > 0 && equalIndex < line.length() - 1) { properties.put(line.substring(0, equalIndex).trim(), midlet.getpattern(line.substring(equalIndex + 1).trim())); } 
+                        }
+                    }
+                    return properties;
+                }
+            }
             else if (MOD == TB_PACK) {
                 Hashtable packed = new Hashtable();
                 for (int i = 0; i < args.size(); i++) {
@@ -2249,7 +2265,7 @@ public class Lua {
                         String layout = getFieldValue(field, "layout", "default");
                         StringItem si = new StringItem(getFieldValue(field, "label", ""), getFieldValue(field, "value", ""), layout.equals("link") ? StringItem.HYPERLINK : layout.equals("button") ? StringItem.BUTTON : Item.LAYOUT_DEFAULT);
                         
-                        si.setFont(midlet.genFont(getFieldValue(field, "style", "default")));
+                        si.setFont(genFont(getFieldValue(field, "style", "default")));
                         return si;
                     }
                 }
@@ -2287,7 +2303,7 @@ public class Lua {
                             String layout = getFieldValue(field, "layout", "default");
                             StringItem si = new StringItem(getFieldValue(field, "label", ""), getFieldValue(field, "value", ""), layout.equals("link") ? StringItem.HYPERLINK : layout.equals("button") ? StringItem.BUTTON : Item.LAYOUT_DEFAULT);
                             
-                            si.setFont(midlet.genFont(getFieldValue(field, "style", "default")));
+                            si.setFont(genFont(getFieldValue(field, "style", "default")));
                             form.append(si);
                         }
                         else if (type.equals("item")) {
@@ -2295,7 +2311,7 @@ public class Lua {
 
                             Command RUN = new Command(getFieldValue(field, "label", (String) gotbad("append", "item", "missing label")), Command.ITEM, 1); 
                             StringItem s = new StringItem(null, getFieldValue(field, "label", ""), StringItem.BUTTON); 
-                            s.setFont(midlet.genFont(field.containsKey("style") ? toLuaString(field.get("style")) : "default"));
+                            s.setFont(genFont(field.containsKey("style") ? toLuaString(field.get("style")) : "default"));
                             s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); 
                             s.addCommand(RUN); 
                             s.setDefaultCommand(RUN); 
@@ -2810,6 +2826,7 @@ public class Lua {
         private int getQuest(String mode) { if (mode == null || mode.length() == 0) { return TextField.ANY; } boolean password = false; if (mode.indexOf("password") != -1) { password = true; mode = midlet.replace(mode, "password", "").trim(); } int base = mode.equals("number") ? TextField.NUMERIC : mode.equals("email") ? TextField.EMAILADDR : mode.equals("phone") ? TextField.PHONENUMBER : mode.equals("decimal") ? TextField.DECIMAL : TextField.ANY; return password ? (base | TextField.PASSWORD) : base; } 
 
         private String getFieldValue(Hashtable table, String key, String fallback) { Object val = table.get(key); return val != null ? toLuaString(val) : fallback; }
+        private Font genFont(String params) { if (params == null || params.length() == 0 || params.equals("default")) { return Font.getDefaultFont(); } int face = Font.FACE_SYSTEM, style = Font.STYLE_PLAIN, size = Font.SIZE_MEDIUM; String[] tokens = split(params, ' '); for (int i = 0; i < tokens.length; i++) { String token = tokens[i].toLowerCase(); if (token.equals("system")) { face = Font.FACE_SYSTEM; } else if (token.equals("monospace")) { face = Font.FACE_MONOSPACE; } else if (token.equals("proportional")) { face = Font.FACE_PROPORTIONAL; } else if (token.equals("bold")) { style |= Font.STYLE_BOLD; } else if (token.equals("italic")) { style |= Font.STYLE_ITALIC; } else if (token.equals("ul") || token.equals("underline") || token.equals("underlined")) { style |= Font.STYLE_UNDERLINED; } else if (token.equals("small")) { size = Font.SIZE_SMALL; } else if (token.equals("medium")) { size = Font.SIZE_MEDIUM; } else if (token.equals("large")) { size = Font.SIZE_LARGE; } } Font f = Font.getFont(face, style, size); return f == null ? Font.getDefaultFont() : f; }
 
         public void run() { if (root instanceof LuaFunction) { Vector arg = new Vector(); try { ((LuaFunction) root).call(arg); } catch (Throwable e) { midlet.print(midlet.getCatch(e), stdout, id, father); } } }
 
