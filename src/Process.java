@@ -19,7 +19,7 @@ public class Process {
         this.stdout = stdout; this.stderr = stdout; this.scope = scope;
         this.startTime = System.currentTimeMillis();
     }
-    public Process(OpenTTY midlet, String name, String command, int uid, String pid, Object stdout, Hashtable args, Hashtable scope) {
+    public Process(OpenTTY midlet, String name, String command, String owner, int uid, String pid, Object stdout, Hashtable args, Hashtable scope) {
         this.elf = new ELF(midlet, args, stdout, scope, uid, pid, new Hashtable());
         this.name = name; this.owner = owner; this.uid = uid; this.pid = pid;
         this.stdout = stdout; this.stderr = stdout; this.scope = scope;

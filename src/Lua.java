@@ -1686,7 +1686,7 @@ public class Lua {
                         }
                         else {
                             InputStream elfStream = new ByteArrayInputStream(data);
-                            Process process = new Process(midlet, program, midlet.joinpath(program), midlet.getUser(owner), "" + owner, pid, stdout, arg, scope);
+                            Process process = new Process(midlet, program, midlet.joinpath(program), owner, pid, out, arg, scope);
                             midlet.sys.put(pid, process);
                             
                             if (process.elf.load(elfStream)) { result.addElement(procesself.run()); } else { result.addElement(1); }
