@@ -189,7 +189,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // | (User Manager)
     public int getUserID(String user) { return user.equals("root") ? 0 : user.equals(username) ? 1000 : userID.containsKey(user) ? ((Integer) userID.get(user)).intValue() : -1; }
     public String getUser(int uid) {
-        if (uid == 0) { return "root" } else if (uid == 1000) { return username; }
+        if (uid == 0) { return "root"; } else if (uid == 1000) { return username; }
         for (Enumeration keys = sys.keys(); keys.hasMoreElements();) {
             String user = (String) keys.nextElement();
             Integer id = (Integer) userID.get(user);
