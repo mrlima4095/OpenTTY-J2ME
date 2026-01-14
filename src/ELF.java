@@ -354,9 +354,7 @@ public class ELF {
     // Runtime
     public Hashtable run() {
         running = true;
-        Hashtable proc = midlet.genprocess("elf", id, null), ITEM = new Hashtable();
-        proc.put("elf", this); 
-        midlet.sys.put(pid, proc);
+        Hashtable ITEM = new Hashtable();
         
         try {
             if (midlet.debug) { 

@@ -1646,7 +1646,7 @@ public class Lua {
             else if (MOD == POPEN) { 
                 if (args.isEmpty()) { } 
                 else {
-                    String program = toLuaString(args.elementAt(0));
+                    String program = toLuaString(args.elementAt(0)), pid = midlet.genpid();
                     Object arguments = args.size() > 1 ? toLuaString(args.elementAt(1)) : "";
                     int owner = (args.size() < 3) ? new Integer(id) : ((args.elementAt(2) instanceof Boolean) ? new Integer((Boolean) args.elementAt(2) ? id : 1000) : (Integer) gotbad(3, "popen", "boolean expected, got " + type(args.elementAt(2))));
                     Object out = (args.size() < 4) ? new StringBuffer() : args.elementAt(3);
@@ -1679,13 +1679,15 @@ public class Lua {
 
                         if (midlet.isPureText(data)) {
                             String code = new String(data, "UTF-8");
-                            Process process = new Process(midlet, ("lua " + program).trim(), midlet.joinpath(program), midlet.getUser(owner), "" + owner, midlet.genpid(), out, scope);
+                            Process process = new Process(midlet, ("lua " + program).trim(), midlet.joinpath(program), midlet.getUser(owner), "" + owner, pid, out, scope);
+                            midlet.sys.put(pid, process);
 
                             result.addElement(process.lua.run(program, code, arg));
                         }
                         else {
                             InputStream elfStream = new ByteArrayInputStream(data);
-                            Process process = new Process(midlet, program, midlet.joinpath(program), midlet.getUser(owner), "" + owner, stdout, arg, scope);
+                            Process process = new Process(midlet, program, midlet.joinpath(program), midlet.getUser(owner), "" + owner, pid, stdout, arg, scope);
+                            midlet.sys.put(pid, process);
                             
                             if (process.elf.load(elfStream)) { result.addElement(procesself.run()); } else { result.addElement(1); }
                         }
