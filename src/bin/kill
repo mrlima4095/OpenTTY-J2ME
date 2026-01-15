@@ -12,7 +12,7 @@ if #arg > 1 then
         signal = "15" x = 2
     end
 
-    for i = x, #arg - x do
+    for i = x, #arg - 1 do
         local status = os.request("1", "sendsig", { pid = arg[i], signal = signal })
 
         if status == 0 then
