@@ -30,6 +30,8 @@ local function shell(args, enable, aliases, stdout, scope)
         end
     end
 
+    argument = string.
+
     if cmd == "" then
 
     elseif enable and aliases and aliases[cmd] then

@@ -100,22 +100,40 @@ socket = {
 }
 
 string = {
+    --[=[Change all characters to upper case]=]
     upper = function (s) end,
+    --[=[Change all characters to lower case]=]
     lower = function (s) end,
+    --[=[Returns length of string]=]
     len = function (s) end,
+    --[=[]=]
     find = function (s, pattern, init, plain) end,
+    --[=[]=]
     match = function (s, pattern) end,
+    --[=[Reverse string]=]
     reverse = function (s) end,
+    --[=[Get parts of string]=]
     sub = function (s, x, y) end,
+    --[=[Get string hash]=]
     hash = function (s) end,
+    --[=[Get bytes of string]=]
     byte = function (s, x, y) end,
+    --[=[Get a string from a byte array]=]
     char = function (...) end,
+    --[=[Removes spaces from start and end of stringf]=]
     trim = function (s) return "" end,
+    --[=[Generates a random UUID]=]
     uuid = function () return "" end,
+    --[=[Split string in parts]=]
     split = function (s, char) return {} end,
+    --[=[Get main part from string]=]
     getCommand = function(s) return "" end,
+    --[=[Get secundary part of string]=]
     getArgument = function(s) return "" end,
-    env = function(s) return "" end
+    --[=[Process environment keys on string]=]
+    env = function(s) return "" end,
+    --[=[Clear patterns of screen]=]
+    getpattern = function (s) return "" end
 }
 
 --[=[
