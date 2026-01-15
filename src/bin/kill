@@ -6,6 +6,10 @@ if #arg > 1 then
     if string.sub(arg[1], 1, 1) == "-" then
         signal = string.sub(arg[1], 1, #arg[1])
         x = 2
+    elseif arg[1] == "KILL" then
+        signal = "9" x = 2
+    elseif arg[1] == "TERM" then
+        signal = "15" x = 2
     end
 
     for i = x, #arg - x do
