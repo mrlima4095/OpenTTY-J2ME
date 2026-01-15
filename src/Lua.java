@@ -1431,7 +1431,7 @@ public class Lua {
                     else if (attribute.equals("name")) { if (value != null) { proc.name = toLuaString(value); } else { return gotbad(1, "setproc", "string expected"); } }
                     else if (attribute.equals("handler")) { if (value instanceof LuaFunction) { proc.handler = value; kill = false; } else { return gotbad(1, "setproc", "function expected"); } }
                     else if (attribute.equals("cmd")) { if (value != null) { proc.cmd = toLuaString(value); } else { return gotbad(1, "setproc", "string expected"); } }
-                    else if (attribute.equals("sigterm")) { if (value instanceof LuaFunction) { proc.sigterm = value; } else { return gotbad(1, "setproc", "function expected"); } }
+                    else if (attribute.equals("sighandler")) { if (value instanceof LuaFunction) { proc.sighandler = value; } else { return gotbad(1, "setproc", "function expected"); } }
                     else { if (value == null) { proc.db.remove(attribute); } else { proc.db.put(attribute, value); } }
                 } 
             }
@@ -2665,7 +2665,7 @@ public class Lua {
 
                 if (payload == null || payload.equals("")) { return null; }
                 if (payload instanceof String) {
-                    if (payload.equals("kill")) {
+                    if (payload.equals("sendsig")) {
                         if (arg == null || !(arg instanceof Hashtable)) { return new Double(2); }
                         else {
                             Hashtable info = (Hashtable) arg;
@@ -2675,8 +2675,8 @@ public class Lua {
                                 Process process = (Process) midlet.sys.get(pid);
 
                                 if (process.uid == uid || uid == 0) {
-                                    if (signal.equals("15") && process.sigterm != null) {
-                                        try { ((LuaFunction) process.sigterm).call(new Vector()); }
+                                    if (!signal.equals("9") && process.sighandler != null) {
+                                        try { Vector arguments = new Vector(); arguments.addElement(signal); ((LuaFunction) process.sighandler).call(arguments); }
                                         catch (Throwable e) { }
                                     }
 

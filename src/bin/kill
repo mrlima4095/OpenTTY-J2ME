@@ -12,7 +12,7 @@ if #arg > 1 then
     end
 
     for i = x, #arg - x do
-        local status = os.request("1", "kill", { pid = arg[i], signal = signal })
+        local status = os.request("1", "sendsig", { pid = arg[i], signal = signal })
 
         if status == 0 then
         elseif status == 127 then
