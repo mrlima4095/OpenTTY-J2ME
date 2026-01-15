@@ -2676,12 +2676,15 @@ public class Lua {
 
                                 if (process.uid == uid || uid == 0) {
                                     if (!signal.equals("9") && process.sighandler != null) {
-                                        try { Vector arguments = new Vector(); arguments.addElement(signal); ((LuaFunction) process.sighandler).call(arguments); }
-                                        catch (Throwable e) { }
+                                        try { 
+                                            Vector arguments = new Vector(); arguments.addElement(signal);
+                                            ((LuaFunction) process.sighandler).call(arguments);
+                                        }
+                                        catch (Throwable e) {  }
                                     }
 
                                     midlet.sys.remove(arg);
-                                    if (arg.equals("1")) { midlet.destroyApp(true); }
+                                    if (signal.equals("9") && arg.equals("1")) { midlet.destroyApp(true); }
                                     return new Double(0);
                                 } else { return new Double(13); }
                             }
