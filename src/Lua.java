@@ -2131,6 +2131,8 @@ public class Lua {
                 String encoded = toLuaString(args.elementAt(0));
                 byte[] decoded = midlet.decodeBase64(encoded);
 
+                if (args.size() > 1) { return new ByteArrayInputStream(decoded); }
+
                 if (decoded == null) { return null; }
 
                 Hashtable result = new Hashtable();

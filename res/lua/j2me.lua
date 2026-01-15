@@ -172,7 +172,16 @@ audio = {
     duration = function (player) end,
     --[=[Get or set player current time]=]
     time = function (player, seek) end,
+}
 
+--[=[
+Base64 J2ME API
+]=]
+base64 = {
+    --[=[Encode data to Base64]=]
+    encode = function (data) end,
+    --[=[Decode Base64 to table with bytes]=]
+    decode = function (table) return {} end
 }
 
 --[=[ 
