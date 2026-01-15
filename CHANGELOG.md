@@ -11,3 +11,4 @@ general
 
 - process structure
 - recovery menu reading list select button to open tool
+- changed kill kernel request to `sendsig` with a table `{pid=[pid],signal=[signal]}`
