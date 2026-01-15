@@ -2683,7 +2683,7 @@ public class Lua {
                                         catch (Throwable e) {  }
                                     }
 
-                                    midlet.sys.remove(arg);
+                                    midlet.sys.remove(pid);
                                     if (signal.equals("9") && arg.equals("1")) { midlet.destroyApp(true); }
                                     return new Double(0);
                                 } else { return new Double(13); }
