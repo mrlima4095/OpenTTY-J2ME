@@ -1,8 +1,18 @@
 #!/bin/lua
 
 if #arg > 1 then
+    local x, signal = 1, "15"
+
+    if arg[1] == "-9" then
+        signal = "9"
+        x = 2
+    elseif arg[1] == "-15" then
+        signal = "15"
+        x = 2
+    end
+
     for i = 1, #arg - 1 do
-        local status = os.request("1", "kill", { pid = arg[i], kill })
+        local status = os.request("1", "kill", { pid = arg[i], signal = "15" })
 
         if status == 0 then
         elseif status == 127 then
