@@ -3,7 +3,7 @@ import java.util.*;
 public class Process {
     private OpenTTY midlet = null;
     public String name, owner, pid, cmd;
-    public Hashtable scope, db;
+    public Hashtable scope, db = new Hashtable();
     public final long startTime;
     public int uid, priority = 20;
 
