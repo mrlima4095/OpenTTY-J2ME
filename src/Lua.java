@@ -2675,7 +2675,7 @@ public class Lua {
                                 Process process = (Process) midlet.sys.get(pid);
 
                                 if (process.uid == uid || uid == 0) {
-                                    if (signal.equals("15") && process.sigterm) {
+                                    if (signal.equals("15") && process.sigterm != null) {
                                         try { ((LuaFunction) process.sigterm).call(new Vector()); }
                                         catch (Throwable e) { }
                                     }
