@@ -2088,6 +2088,55 @@ public class Lua {
                 packed.put("n", new Double(args.size()));
                 return packed;
             }
+            // Package: base64
+            else if (MOD == BASE64_ENCODE) {
+                if (args.isEmpty()) { return gotbad(1, "encode", "string or table expected, got no value"); }
+                
+                Object arg = args.elementAt(0);
+                byte[] data;
+                
+                if (arg instanceof Hashtable) {
+                    Hashtable table = (Hashtable) arg;
+                    if (isListTable(table)) {
+                        Vector vec = toVector(table);
+                        data = new byte[vec.size()];
+                        for (int i = 0; i < vec.size(); i++) {
+                            Object val = vec.elementAt(i);
+                            if (val instanceof Double) {
+                                double d = ((Double) val).doubleValue();
+                                if (d < 0 || d > 255) {
+                                    return gotbad(1, "encode", "byte value out of range (0-255)");
+                                }
+                                data[i] = (byte) d;
+                            } else {
+                                return gotbad(1, "encode", "table must contain numbers");
+                            }
+                        }
+                    } else {
+                        return gotbad(1, "encode", "table must be array-like");
+                    }
+                } else if (arg instanceof String) {
+                    data = toLuaString(arg).getBytes("UTF-8");
+                } else if (arg instanceof InputStream) {
+                    
+                } else {
+                    return gotbad(1, "encode", "string or table expected, got " + type(arg));
+                }
+                
+                return midlet.encodeBase64(data);
+            }
+            else if (MOD == BASE64_DECODE) {
+                if (args.isEmpty()) { return gotbad(1, "decode", "string expected, got no value"); }
+
+                String encoded = toLuaString(args.elementAt(0));
+                byte[] decoded = midlet.decodeBase64(encoded);
+
+                if (decoded == null) { return null; }
+
+                Hashtable result = new Hashtable();
+                for (int i = 0; i < decoded.length; i++) { result.put(new Double(i + 1), new Double(decoded[i] & 0xFF)); }
+                return result;
+            }
             // Package: socket.http
             else if (MOD == HTTP_GET || MOD == HTTP_POST) { return (args.isEmpty() || args.elementAt(0) == null ? gotbad(1, MOD == HTTP_GET ? "get" : "post", "string expected, got no value") : http(MOD == HTTP_GET ? "GET" : "POST", toLuaString(args.elementAt(0)), args.size() > 1 ? toLuaString(args.elementAt(1)) : "", args.size() > 2 ? args.elementAt(2) : null, false)); }
             else if (MOD == HTTP_RGET || MOD == HTTP_RPOST) { return (args.isEmpty() || args.elementAt(0) == null ? gotbad(1, MOD == HTTP_GET ? "get" : "post", "string expected, got no value") : http(MOD == HTTP_GET ? "GET" : "POST", toLuaString(args.elementAt(0)), args.size() > 1 ? toLuaString(args.elementAt(1)) : "", args.size() > 2 ? args.elementAt(2) : null, true)); }
