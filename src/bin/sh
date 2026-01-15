@@ -30,7 +30,7 @@ local function shell(args, enable, aliases, stdout, scope)
         end
     end
 
-    argument = string.
+    argument = string.getpattern(argument)
 
     if cmd == "" then
 
