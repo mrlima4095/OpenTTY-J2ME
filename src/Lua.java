@@ -59,8 +59,8 @@ public class Lua {
         loaders = new int[] { AUDIO_LOAD, AUDIO_PLAY, AUDIO_PAUSE, AUDIO_VOLUME, AUDIO_DURATION, AUDIO_TIME };
         for (int i = 0; i < funcs.length; i++) { audio.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("audio", audio);
 
-        String[] funcs = new String[] { "encode", "decode" };
-        int[] loaders = new int[] { BASE64_ENCODE, BASE64_DECODE };
+        funcs = new String[] { "encode", "decode" };
+        loaders = new int[] { BASE64_ENCODE, BASE64_DECODE };
         for (int i = 0; i < funcs.length; i++) { base64.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("base64", base64);
 
         funcs = new String[] { "get", "post", "rget", "rpost" }; 
