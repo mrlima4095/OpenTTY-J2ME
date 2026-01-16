@@ -2117,9 +2117,9 @@ public class Lua {
                     }
                 } else if (arg instanceof String) {
                     data = toLuaString(arg).getBytes("UTF-8");
-                } else if (arg instanceof InputStream) {
+                } /*else if (arg instanceof InputStream) {
                     
-                } else {
+                } e*/else {
                     return gotbad(1, "encode", "string or table expected, got " + type(arg));
                 }
                 
@@ -2127,17 +2127,18 @@ public class Lua {
             }
             else if (MOD == BASE64_DECODE) {
                 if (args.isEmpty()) { return gotbad(1, "decode", "string expected, got no value"); }
+                else {
+                    String encoded = toLuaString(args.elementAt(0));
+                    byte[] decoded = midlet.decodeBase64(encoded);
 
-                String encoded = toLuaString(args.elementAt(0));
-                byte[] decoded = midlet.decodeBase64(encoded);
+                    if (args.size() > 1) { return new ByteArrayInputStream(decoded); }
 
-                if (args.size() > 1) { return new ByteArrayInputStream(decoded); }
+                    if (decoded == null) { return null; }
 
-                if (decoded == null) { return null; }
-
-                Hashtable result = new Hashtable();
-                for (int i = 0; i < decoded.length; i++) { result.put(new Double(i + 1), new Double(decoded[i] & 0xFF)); }
-                return result;
+                    Hashtable result = new Hashtable();
+                    for (int i = 0; i < decoded.length; i++) { result.put(new Double(i + 1), new Double(decoded[i] & 0xFF)); }
+                    return result;
+                }                
             }
             // Package: socket.http
             else if (MOD == HTTP_GET || MOD == HTTP_POST) { return (args.isEmpty() || args.elementAt(0) == null ? gotbad(1, MOD == HTTP_GET ? "get" : "post", "string expected, got no value") : http(MOD == HTTP_GET ? "GET" : "POST", toLuaString(args.elementAt(0)), args.size() > 1 ? toLuaString(args.elementAt(1)) : "", args.size() > 2 ? args.elementAt(2) : null, false)); }
