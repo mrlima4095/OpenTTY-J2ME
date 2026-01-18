@@ -24,3 +24,4 @@ release date: 22/01/2026
 ## Lua J2ME
 
 - Add support for coroutines
+- Add support for metatables
