@@ -17,5 +17,3 @@ lua
 
 - added new library `base64`
 - added new function `string.getpattern(s)`
-
-library
