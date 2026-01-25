@@ -3,19 +3,14 @@ Copyright (C) 2026 - Mr. Lima
 
 ---
 
-bug fix
+## 🐛 Bug Fix
+- **Fixed user name on scopes after switching user with `su`**
 
-- user name on scopes after switch user with su
+## 🔧 General
+- **Process structure improvements**
+- **Recovery menu reading list select button to open tool**
+- **Changed kill kernel request to `sendsig` with a table `{pid=[pid],signal=[signal]}`**
 
-general
-
-- process structure
-- recovery menu reading list select button to open tool
-- changed kill kernel request to `sendsig` with a table `{pid=[pid],signal=[signal]}`
-
-lua
-
-- added new library `base64`
-- added new function `string.getpattern(s)`
-
-
+## 🌙 Lua
+- **Added new library `base64`**
+- **Added new function `string.getpattern(s)`**
