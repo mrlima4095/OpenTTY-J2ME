@@ -13,6 +13,7 @@ local mirror = {
     ["curl"] = { remote = "net/curl.lua", here = "/bin/curl", description = "Connect with a Server" },
     ["docker"] = { remote = "sys/docker/main.lua", here = "/bin/docker", description = "Conteiners on OpenTTY" },
     ["expr"] = { remote = "file/expr.lua", here = "/bin/expr", description = "Evaluate expressions" },
+    ["free"] = { remote = "sys/free.lua", here = "/bin/free", description = "Memory Informations" },
     ["forge"] = { remote = "dev/forge/main.lua", here = "/lib/forge", description = "Additional API for OpenTTY" },
     ["find"] = { remote = "file/find.lua", here = "/bin/find", description = "Search a pattern value in a file" },
     ["grep"] = { remote = "file/grep.lua", here = "/bin/grep", description = "Check if a file contains a pattern" },
