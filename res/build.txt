@@ -190,3 +190,4 @@
 [2026-1.17.1-03x20] Process Structure
 [2026-1.18-03x21] Release 1.18
 [2026-1.18.1-03x22] 1.18.1 Suite case
+[2026-1.18.1-03x23] Kernel Network Manage

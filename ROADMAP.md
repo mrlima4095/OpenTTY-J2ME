@@ -2,10 +2,14 @@
 
 release date: 27/01/2026
 
-- Applications Menu-like `/bin/init`
-- OpenSSH J2ME
 - Network Controller
 
+# 1.18.2
+
+release date: 01/02/2026
+
+- Applications Menu-like `/bin/init`
+- OpenSSH J2ME
 
 ---
 

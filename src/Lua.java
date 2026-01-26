@@ -2141,7 +2141,7 @@ public class Lua {
                     SocketConnection conn = (SocketConnection) Connector.open(toLuaString(args.elementAt(0)));
                         
                     result.addElement(conn); result.addElement(conn.openInputStream()); result.addElement(conn.openOutputStream()); result.addElement(args.elementAt(0)); result.addElement(new Double(id));
-                    midlet.network.put(conn, result);
+                    proc.net.put(toLuaString(args.elementAt(0)), result);
 
                     return result;
                 } 
@@ -2163,7 +2163,8 @@ public class Lua {
                 if (args.isEmpty() || !(args.elementAt(0) instanceof Double)) { return gotbad(1, "server" , "number expected, got " + (args.isEmpty() ? "no value" : type(args.elementAt(0)))); }
                 else {
                     ServerSocketConnection server = (ServerSocketConnection) Connector.open("socket://:" + toLuaString(args.elementAt(0)));
-                    midlet.network.put(server, new Double(id));
+                    midlet.servers.put(toLuaString(args.elementAt(0)), server);
+                    proc.net.put(toLuaString(args.elementAt(0)), server);
                     return server;
                 }
             }
@@ -2175,7 +2176,7 @@ public class Lua {
                     SocketConnection conn = (SocketConnection) ((ServerSocketConnection) args.elementAt(0)).acceptAndOpen();
                         
                     result.addElement(conn); result.addElement(conn.openInputStream()); result.addElement(conn.openOutputStream());
-                    midlet.network.put(conn, result);
+                    proc.net.put("socket://:" + ((ServerSocketConnection) args.elementAt(0)).getLocalPort(), result);
 
                     return result;
                 }
@@ -2765,8 +2766,22 @@ public class Lua {
                     else if (payload.equals("cache")) { if (arg == null || arg.equals("")) { return new Boolean(midlet.useCache); } else if (arg == Boolean.TRUE || toLuaString(arg).equals("true")) { midlet.useCache = true; } else if (arg == Boolean.FALSE || toLuaString(arg).equals("false")) { midlet.useCache = false; midlet.cache.clear(); midlet.cacheLua.clear(); } else { return new Double(2); } }
                     else if (payload.equals("debug")) { if (arg == null || arg.equals("")) { return new Boolean(midlet.debug); } else if (arg == Boolean.TRUE || toLuaString(arg).equals("true")) { midlet.debug = true; } else if (arg == Boolean.FALSE || toLuaString(arg).equals("false")) { midlet.debug = false; } else { return new Double(2); } } 
                     else if (payload.equals("netsh")) {
-                        for (Enumeration keys = midlet.network.keys(); keys.hasMoreElements();) {
-                            
+                        if (arg == null || arg.equals("")) {
+                            Hashtable result = new Hashtable();
+                            for (Enumeration procs = midlet.sys.keys(); procs.hasMoreElements();) {
+                                String pid = (String) procs.nextElement();
+                                Process p = (Process) midlet.sys.get(pid);
+                                
+                                if (p.net.isEmpty()) { }
+                                else {
+                                    Hashtable map = new Hashtable(); int i = 1;
+                                    for (Enumeration sockets = p.net.keys(); sockets.hasMoreElements();) {
+                                        map.put(new Double(1), sockets.nextElement());
+                                    }
+                                    result.put(pid, map);
+                                }
+                            }
+                            return result;
                         }
                     }
 
