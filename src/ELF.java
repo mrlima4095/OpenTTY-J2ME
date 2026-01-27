@@ -156,14 +156,7 @@ public class ELF {
     
     private String toHex(int value) { String hex = Integer.toHexString(value); while (hex.length() < 8) { hex = "0" + hex; } return "0x" + hex; }
     
-    public boolean load(InputStream is) throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        byte[] buffer = new byte[4096];
-        int bytesRead;
-        while ((bytesRead = is.read(buffer)) != -1) { baos.write(buffer, 0, bytesRead); } 
-        is.close();
-        return load(baos.toByteArray());
-    }
+    public boolean load(InputStream is) throws Exception { ByteArrayOutputStream baos = new ByteArrayOutputStream(); byte[] buffer = new byte[4096]; int bytesRead; while ((bytesRead = is.read(buffer)) != -1) { baos.write(buffer, 0, bytesRead); } is.close(); return load(baos.toByteArray()); }
     public boolean load(byte[] elfData) throws Exception {
         if (elfData.length < 4 || elfData[0] != 0x7F || elfData[1] != 'E' || elfData[2] != 'L' || elfData[3] != 'F') { midlet.print("Not a valid ELF file", stdout, id, scope); return false; }
         if (elfData[4] != ELFCLASS32) { midlet.print("Only 32-bit ELF supported", stdout, id, scope); return false; }
