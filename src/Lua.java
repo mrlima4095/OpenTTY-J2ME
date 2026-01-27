@@ -1631,7 +1631,7 @@ public class Lua {
                         else if (arg instanceof Player) { Player player = (Player) arg; player.stop(); player.deallocate(); player.close(); }
                         else { return gotbad(i + 1, "close", "stream expected, got " + type(arg)); }
 
-                        midlet.network.remove(arg);
+                        midlet.net.remove(arg);
                     }
                 } 
             }
