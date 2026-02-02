@@ -3,13 +3,7 @@
 #
 #   python server.py
 #
-#       OpenTTY Proxy Server (default) to provide Yang Packages, and it
-#   connections to World Wide Web if device haven't support to HTTPS and 
-#   TLS. You can use the HTTP Proxy (by nnproject, can charge this url at
-#   attribute 'MIDlet-Proxy' of MANIFEST.MF). Recommended host your own
-#   session if you wanna modify this software or don't like to leave logs
-#   that you have connected there. (I'M NOT PARTNER OF nnproject).
-#
+
 
 import sys, os
 import socket
