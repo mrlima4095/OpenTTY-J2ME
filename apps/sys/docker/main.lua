@@ -63,9 +63,15 @@ elseif arg[1] == "--deamon" then
 
     return function (payload, args, scope, pid, uid)
         if payload == "run" then
+            local file = args["file"]
+            local image = io.read(args["image"])
             
+            if image == "" then
+                return false
+            end
         elseif payload == "exec" then
         elseif payload == "ps" then
+            return db
         elseif payload == "login" then
         elseif payload == "stop" then
         elseif payload == "kill" then
