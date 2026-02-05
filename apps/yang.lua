@@ -25,6 +25,7 @@ local mirror = {
     ["jdb"] = { remote = "sys/benchmark/main.lua", here = "/bin/jdb", depends = { "forge" }, description = "Debugging API" },
     ["nano"] = { remote = "file/nano.lua", here = "/bin/nano", description = "Text Editor for OpenTTY" },
     ["nc"] = { remote = "net/netcat.lua", here = "/bin/nc", description = "Connect with Remote Interfaces" },
+    ["nice"] = { remote = "sys/nice.lua", here = "/bin/nice", description = "Chance process priority" },
     ["pastebin"] = { remote = "net/pastebin", here = "/bin/pastebin", description = "PasteBin Client for OpenTTY" },
     ["ping"] = { remote = "net/ping.lua", here = "/bin/ping", description = "Test connection delay" },
     ["prg"] = { remote = "sys/push.lua", here = "/bin/prg", description = "PushRegister Manager" },
