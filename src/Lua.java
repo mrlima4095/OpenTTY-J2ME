@@ -2757,7 +2757,7 @@ public class Lua {
                                 Process process = (Process) midlet.sys.get(pid);
 
                                 if (process.uid == uid || uid == 0) {
-                                    process.priority = Math.max(MIN_PRIORITY, Math.min(MAX_PRIORITY, priority));
+                                    process.priority = Math.max(Process.MIN_PRIORITY, Math.min(Process.MAX_PRIORITY, priority));
                                     return new Double(0);
                                 } else { return new Double(13); }
                             }
