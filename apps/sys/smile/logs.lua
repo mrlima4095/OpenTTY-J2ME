@@ -46,7 +46,7 @@ elseif arg[1] == "swap" then
     else
         print("no logs on session")
     end
-elseif arg[1] == "cat" then
+elseif arg[1] == "read" then
     local file = io.open("/tmp/logs")
     if file then
         print(io.read(file))
