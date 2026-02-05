@@ -191,3 +191,4 @@
 [2026-1.18-03x21] Release 1.18
 [2026-1.18.1-03x22] 1.18.1 Suite case
 [2026-1.18.1-03x23] Kernel Network Manage
+[2026-1.18.1-03x24] Added 'nice' syscall

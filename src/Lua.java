@@ -2747,6 +2747,23 @@ public class Lua {
                         }
                         else { return new Double(127); }
                     }
+                    else if (payload.equals("nice")) {
+                        if (arg == null || !(arg instanceof Hashtable)) { return new Double(2); }
+                        else {
+                            Hashtable info = (Hashtable) arg;
+                            String pid = (String) info.get("pid");
+                            int priority = ((Double) info.get("priority")).intValue();
+                            if (midlet.sys.containsKey(pid)) {
+                                Process process = (Process) midlet.sys.get(pid);
+
+                                if (process.uid == uid || uid == 0) {
+                                    p.priority = Math.max(MIN_PRIORITY, Math.min(MAX_PRIORITY, priority));
+                                    return new Double(0);
+                                } else { return new Double(13); }
+                            }
+                            else { return new Double(127); }
+                        }
+                    }
                     else if (payload.equals("passwd")) {
                         if (arg instanceof String) { return new Boolean(midlet.passwd((String) arg)); }
                         else if (arg instanceof Hashtable) {

@@ -9,6 +9,7 @@ bug fixes
 general
 
 - Added Kernel request `netsh` to get openned objects
+- New syscall added `nice` to change process priority
 
 lua
 
