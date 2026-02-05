@@ -50,7 +50,12 @@ function app.main()
     elseif args[1] == "stop" then
 
     elseif args[1] == "logcat" then
-
+        local file = io.open("/tmp/logs")
+        if file then
+            print(io.read(file))
+        else
+            print("no logs on session")
+        end
     else print("jdb: " .. args[1] .. ": not found") end
 end
 
