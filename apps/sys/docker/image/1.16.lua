@@ -1,4 +1,5 @@
 return {
+    ["name"] = "1.16-conteiner",
     ["version"] = "1.16.1",
     ["patch"] = "Absurd Anvil",
     ["release"] = "beta",
@@ -12,4 +13,10 @@ return {
         ["/java/lib/"] = { ["jauth2"] = "", ["netkit"] = "", ["settings"] = "", ["yang"] = "" },
         ["/scripts/"] = { ["debug.sh"] = "" },
     },
+    ["scope"] = {
+        ["PWD"] = "/home/",
+        ["USER"] = "guest",
+        ["ROOT"] = "/"
+    },
+    ["password"] = "password"
 }
