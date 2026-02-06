@@ -243,4 +243,6 @@ elseif arg[1] == "info" then
     else
         print("yang: usage: yang info [package]")
     end
+else
+    print("yang: " .. arg[1] .. ": not found")
 end
