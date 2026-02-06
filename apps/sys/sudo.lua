@@ -9,7 +9,7 @@ if arg[1] then
             os.exit(127)
         end
     end
-    
+
     if os.getuid() == 0 then
         local res = io.popen(os.join(arg[2]), arg[3])
         os.exit(tonumber(res))
