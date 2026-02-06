@@ -127,7 +127,12 @@ local function shell(args, enable, aliases, stdout, scope)
     -- (User Information)
     -- | prints information about your account
     elseif cmd == "whoami" or cmd == "logname" then print(os.getuid() == 0 and "root" or java.midlet.username)
-    elseif cmd == "id" then print(args[1] and os.getuid(args[1]) or os.getuid())
+    elseif cmd == "id" then
+        if args[1] then
+            print(os.getuid(args[1]))
+        else
+            print(os.getuid())
+        end
     -- (Manager)
     -- | closes MIDlet
     elseif cmd == "exit" then os.exit(nil)
