@@ -3,26 +3,6 @@
 local shell_builtin = { "builtin", "source", "gc", "ps", "uptime", "su", "whoami", "lognmae", "id", "exit", "xterm", "warn", "title", "alias", "unalias", "env", "set", "export", "unset", "eval", "echo", "date", "clear", "pwd", "cd", "cat", "ls", "buff", "open", "false", "true" }
 
 if arg[1] then
-    if arg[1] == "-p" then
-        local passwd = arg[2]
-
-        if passwd then
-            local program = arg[3]
-            if not program then
-                print("sudo: missing program")
-                os.exit(2)
-            end
-
-            local args = {}
-            for i = 4, #arg do
-                
-            end
-        else
-            print("sudo -y [passwd] [program] [args**]")
-            os.exit(2)
-        end
-    end
-
     local previous = graphics.getCurrent()
     local screen = graphics.new("screen", "OpenTTY " .. os.getenv("VERSION"))
     local back = graphics.new("command", { label = "Back", type = "ok", priority = 1 })
@@ -41,7 +21,7 @@ if arg[1] then
             graphics.display(previous)
 
             if status == 0 then
-                local res
+                local res = io.popen(os.join(arg[2]), arg[3], true)
             elseif status == 13 then
                 print("sudo: permission denied")
                 os.exit(13)
@@ -49,6 +29,6 @@ if arg[1] then
         end
     })
 else
-    print("sudo [options] [program] [args**]")
+    print("sudo [program] [args**]")
     os.exit(2)
 end
