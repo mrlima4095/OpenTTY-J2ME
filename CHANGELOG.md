@@ -5,6 +5,7 @@ Copyright (C) 2026 - Mr. Lima
 
 bug fixes
 
+- fixed a bug in id, it can't retrieve id from root and another system virtual users
 
 general
 
