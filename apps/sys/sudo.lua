@@ -21,7 +21,7 @@ if arg[1] then
             graphics.display(previous)
 
             if status == 0 then
-                local res = io.popen(os.join(arg[2]), arg[3], true)
+                local res = io.popen(os.join(arg[2]), arg[3])
             elseif status == 13 then
                 print("sudo: permission denied")
                 os.exit(13)
