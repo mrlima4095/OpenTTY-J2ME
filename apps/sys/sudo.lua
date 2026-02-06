@@ -3,6 +3,18 @@
 local shell_builtin = { "builtin", "source", "gc", "ps", "uptime", "su", "whoami", "lognmae", "id", "exit", "xterm", "warn", "title", "alias", "unalias", "env", "set", "export", "unset", "eval", "echo", "date", "clear", "pwd", "cd", "cat", "ls", "buff", "open", "false", "true" }
 
 if arg[1] then
+    for _,v in shell_builtin do
+        if arg[1] == v then
+            print("sudo: " .. arg[1] .. ": is a shell builtin")
+            os.exit(127)
+        end
+    end
+    
+    if os.getuid() == 0 then
+        local res = io.popen(os.join(arg[2]), arg[3])
+        os.exit(tonumber(res))
+    end
+
     local previous = graphics.getCurrent()
     local screen = graphics.new("screen", "OpenTTY " .. os.getenv("VERSION"))
     local back = graphics.new("command", { label = "Back", type = "ok", priority = 1 })
@@ -22,12 +34,14 @@ if arg[1] then
 
             if status == 0 then
                 local res = io.popen(os.join(arg[2]), arg[3])
+                os.exit(tonumber(res))
             elseif status == 13 then
                 print("sudo: permission denied")
                 os.exit(13)
             end
         end
     })
+    graphics.display(screen)
 else
     print("sudo [program] [args**]")
     os.exit(2)
