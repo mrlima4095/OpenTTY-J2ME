@@ -182,7 +182,7 @@ local function shell(args, enable, aliases, stdout, scope)
         elseif string.find(argument, "=") then
             local index = string.find(argument, "=")
 
-            os.setenv(string.sub(argument, 1, index - 1), string.sub(argument, index + 1))
+            os.setenv(string.sub(argument, 1, index - 1), string.trim(string.sub(argument, index + 1)))
         else
             for i = 1, #args do
                 if os.getenv(args[i]) then print(args[i] .. "=" .. os.getenv(args[i]))
