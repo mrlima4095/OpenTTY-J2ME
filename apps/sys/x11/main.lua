@@ -20,7 +20,7 @@ elseif arg[1] == "list" then
             local previous = graphics.getCurrent()
             local screen = graphics.new("list", conf["list.title"])
             local back = graphics.new("command", { label = conf["list.back.label"] or "Back", type = "back", priority = 1 })
-            local go = graphics.new("command", { label = conf["list.button"] or "Change", type = "ok", priority = 1 })
+            local go = graphics.new("command", { label = conf["list.button"] or "Select", type = "ok", priority = 1 })
 
             for k,v in pairs(_list) do
                 if _icon then
@@ -35,7 +35,7 @@ elseif arg[1] == "list" then
                     pcall(shell, conf[opt], true, alias, io.stdout, scope)
                 else
                     local time = string.split(os.date())
-                    io.write(string.trim(io.read("/tmp/logs") .. "\n[" .. time[4] .. "] WARN - " .. opt .. ""))
+                    io.write(string.trim(io.read("/tmp/logs") .. "\n[WARN] " .. time[4] .. " An error occurred, '" .. opt .. "' not found"))
                 end
             end
 
@@ -45,15 +45,13 @@ elseif arg[1] == "list" then
                 [back] = function ()
                     graphics.display(previous)
                     if conf["list.back"] then
-                        
+                        pcall(shell, conf["list.back"], true, alias, io.stdout, scope)
                     end
                     os.exit(0)
                 end,
                 [go] = run, [graphics.fire] = run
             })
             graphics.display(screen)
-
-            
         else
             print("x11: list: " .. arg[2] .. ": not found")
         end
