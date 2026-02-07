@@ -2835,7 +2835,7 @@ public class Lua {
                     else if (payload.equals("useradd")) {
                         if (arg == null || arg.equals("") || arg.equals("root")) { return new Double(2); }
                         else if (midlet.userID.containsKey(arg)) { return new Double(128); }
-                        else { midlet.userID.put(arg, new Integer(midlet.lastID + 1)); midlet.lastID++; }
+                        else { midlet.userID.put(arg, new Integer(midlet.lastID + 1)); midlet.lastID++; return new Double(0); }
                     }
                     else if (payload.equals("userdel")) {
                         if (arg == null || arg.equals("") || arg.equals("root") || arg.equals(midlet.username)) { return new Double(13); }
@@ -2843,9 +2843,9 @@ public class Lua {
                         else { return new Double(127); }
                     }
                     else if (payload.equals("user")) {
-                        if (arg == null || arg.equals("")) { return new Double(2); }
+                        if (arg == null || arg.equals("") || !(arg instanceof Double)) { return new Double(2); }
                         else {
-                            String user = midlet.getUser(toLuaString(arg));
+                            String user = midlet.getUser(((Double) arg).intValue());
                             if (user == null) { return new Double(127); }
                             else { return user; }
                         }
