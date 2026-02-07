@@ -52,7 +52,7 @@ local mirror = {
     ["net"] = { description = "Network Utilities", packages = { "curl", "ifconfig", "ping", "webproxy" } },
     ["file"] = { description = "File Utitlities", packages = { "find", "grep", "hash", "head", "nano", "sed" } },
     ["dev"] = { description = "Development Tools", packages = { "forge", "jdb", "sdk", "svchost" } },
-    ["sys"] = { description = "System Utitlities", packages = { "autogc", "hostname", "htop" } }
+    ["sys"] = { description = "System Utitlities", packages = { "autogc", "hostname", "htop", "free", "sudo", "uname" } }
 }
 
 local function connect(payload)
