@@ -67,7 +67,9 @@ local function shell(args, enable, aliases, stdout, scope)
     elseif cmd == "source" then
         if argument ~= "" then
             local script = io.read(os.join(argument))
-            if script and string.trim(script) ~= "" then
+            if string.startswith(script, "#!/bin/lua") then
+                local _ = load(script)
+            else
                 local cmds = string.split(script, "\n")
                 for _,c in ipairs(cmds) do
                     status = shell(c, false, aliases, stdout, scope)
@@ -277,7 +279,7 @@ if arg[1] == "-c" then
 end
 
 if arg[0] == "/bin/sh" then
-    graphics.SetText(io.stdout, "")
+    pcall(graphics.SetText, io.stdout, "")
     print(string.env(io.read("/etc/motd")))
 end
 
