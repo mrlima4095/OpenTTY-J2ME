@@ -22,7 +22,7 @@ elseif arg[1] == "list" then
             local back = graphics.new("command", { label = conf["list.back.label"] or "Back", type = "back", priority = 1 })
             local go = graphics.new("command", { label = conf["list.button"] or "Select", type = "ok", priority = 1 })
 
-            for k,v in pairs(_list) do
+            for _,v in pairs(_list) do
                 if _icon then
                     graphics.append(screen, v, _icon)
                 else
