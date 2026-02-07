@@ -35,8 +35,8 @@ elseif arg[1] == "list" then
                     pcall(shell, conf[opt], true, alias, io.stdout, scope)
                 else
                     local time = string.split(os.date())
-                    io.write(string.trim(io.read("/tmp/logs") .. "\n[WARN] " .. time[4] .. " An error occurred, '" .. opt .. "' not found"))
-                end
+                    io.write(string.trim(io.read("/tmp/logs") .. "\n[WARN] " .. time[4] .. " An error occurred, '" .. opt .. "' not found"), "/tmp/logs", "a")
+               end
             end
 
             graphics.addCommand(screen, back)
