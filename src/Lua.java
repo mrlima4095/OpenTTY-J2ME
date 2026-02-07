@@ -1471,7 +1471,7 @@ public class Lua {
                 } 
                 else { return gotbad(1, "request", "process not found"); }
             }
-            else if (MOD == GETUID) { if (args.isEmpty()) { return new Double(id); } return new Double(midlet.getUserID(toLuaString(args.elementAt(0)))); }
+            else if (MOD == GETUID) { if (args.isEmpty() || args.elementAt(0) == null) { return new Double(id); } return new Double(midlet.getUserID(toLuaString(args.elementAt(0)))); }
             else if (MOD == CHDIR) {
                 if (args.isEmpty()) { return father.get("PWD"); }
                 else {
