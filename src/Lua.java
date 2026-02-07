@@ -2844,8 +2844,11 @@ public class Lua {
                     }
                     else if (payload.equals("user")) {
                         if (arg == null || arg.equals("")) { return new Double(2); }
-                        else if (midlet.userID.containsKey(arg)) { return midlet.userID.get(arg); }
-                        else { return new Double(127); }
+                        else {
+                            String user = midlet.getUser(toLuaString(arg));
+                            if (user == null) { return new Double(127); }
+                            else { return user; }
+                        }
                     }
                 }
             }
