@@ -161,7 +161,7 @@ graphics = {
     --[=[Render Image]=]
     render = function (img) end,
     --[=[Append itens on screen]=]
-    append = function (screen, field) end,
+    append = function (screen, field, ...) end,
     --[=[Clear Screen Contenst]=]
     clear = function (screen) end,
     --[=[Add buttons `Command` in screen]=]
