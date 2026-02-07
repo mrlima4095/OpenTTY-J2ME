@@ -61,6 +61,7 @@ elseif arg[1] == "list" then
 elseif arg[1] == "quest" then
 elseif arg[1] == "edit" then
 elseif arg[1] == "version" then
+    print("X Server " .. version)
 else
     local previous = graphics.getCurrent()
     local screen = graphics.new("screen", "OpenTTY X.Org")
