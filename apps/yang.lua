@@ -39,6 +39,8 @@ local mirror = {
     ["svchost"] = { remote = "sys/svchost.lua", here = "/bin/svchost", description = "Quick Launch Services" },
     ["sudo"] = { remote = "sys/sudo.lua", here = "/bin/sudo", description = "" },
     ["uname"] = { remote = "sys/uname", here = "/bin/uname", description = "System Informations" },
+    ["useradd"] = { remote = "sys/users/useradd.lua", here = "/bin/useradd", description = "Add users" },
+    ["userdel"] = { remote = "sys/users/userdel.lua", here = "/bin/userdel", description = "Remove users" },
     ["viewer"] = { remote = "file/img.lua", here = "/bin/imgview", description = "View Images" },
     ["webproxy"] = { remote = "net/proxy.lua", here = "/bin/shprxy", description = "Access OpenTTY on WebProxy" },
     ["wget"] = { remote = "net/wget", here = "/bin/wget", description = "Download files from Network" },
