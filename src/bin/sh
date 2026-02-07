@@ -126,13 +126,8 @@ local function shell(args, enable, aliases, stdout, scope)
     -- Session
     -- (User Information)
     -- | prints information about your account
-    elseif cmd == "whoami" or cmd == "logname" then print(os.getuid() == 0 and "root" or java.midlet.username)
-    elseif cmd == "id" then
-        if args[1] then
-            print(os.getuid(args[1]))
-        else
-            print(os.getuid())
-        end
+    elseif cmd == "whoami" or cmd == "logname" then print(os.request(1, "user", os.getuid()))
+    elseif cmd == "id" then print(os.getuid(args[1]))
     -- (Manager)
     -- | closes MIDlet
     elseif cmd == "exit" then os.exit(nil)
@@ -141,7 +136,7 @@ local function shell(args, enable, aliases, stdout, scope)
     -- | go to default screen
     elseif cmd == "xterm" then graphics.display(graphics.db["xterm"])
     -- | display alerts on screen
-    elseif cmd == "warn" then if #args >= 2 then  graphics.display(graphics.new("alert", args[1], args[2])) end
+    elseif cmd == "warn" then if #args >= 2 then graphics.display(graphics.new("alert", args[1], args[2])) else print("warn: usage: warn [title] [msg]") end
     -- | changes title of current screen
     elseif cmd == "title" then graphics.SetTitle(graphics.getCurrent(), argument)
 
@@ -154,7 +149,7 @@ local function shell(args, enable, aliases, stdout, scope)
             local index = string.find(argument, "=")
             local alias, mean = string.sub(argument, 1, index - 1), string.sub(argument, index + 1)
 
-            if alias ~= "" then aliases[alias] = mean end
+            if alias ~= "" then aliases[alias] = string.getpattern(mean) end
         else
             for i = 1, #args do
                 if aliases[args[i]] then print("alias " .. args[i] .. "='" .. aliases[args[i]] .. "'")
