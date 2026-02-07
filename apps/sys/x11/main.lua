@@ -30,7 +30,7 @@ elseif arg[1] == "list" then
                 end
             end
 
-            local function run(opt)
+            local function __run(opt)
                 if conf[opt] then
                     pcall(shell, conf[opt], true, alias, io.stdout, scope)
                 else
@@ -49,7 +49,7 @@ elseif arg[1] == "list" then
                     end
                     os.exit(0)
                 end,
-                [go] = run, [graphics.fire] = run
+                [go] = __run, [graphics.fire] = __run
             })
             graphics.display(screen)
         else
