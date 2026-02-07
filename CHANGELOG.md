@@ -15,6 +15,7 @@ general
 
 lua
 
+- Added functions `string.startswith(s, pattern)` and `string.endswith(s, pattern)`
 
 elf
 
