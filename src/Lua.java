@@ -1411,7 +1411,7 @@ public class Lua {
             else if (MOD == SETLOC) { if (args.isEmpty()) { } else { midlet.attributes.put("LOCALE", toLuaString(args.elementAt(0))); } }
             else if (MOD == EXIT) { if (PID.equals("1")) { midlet.destroyApp(true); } midlet.sys.remove(PID); if (args.isEmpty()) { throw new Error(); } else { status = getNumber(toLuaString(args.elementAt(0)), 1); } }
             else if (MOD == DATE) { return new java.util.Date().toString(); }
-            else if (MOD == GETPID) { return args.isEmpty() ? PID : midlet.getpid(toLuaString(args.elementAt(0))); }
+            else if (MOD == GETPID) { return args.isEmpty() || args.elementAt(0) == null ? PID : midlet.getpid(toLuaString(args.elementAt(0))); }
             else if (MOD == SETPROC) {
                 if (args.isEmpty()) { }
                 else if (args.elementAt(0) instanceof Boolean) { kill = ((Boolean) args.elementAt(0)).booleanValue(); }
@@ -2838,6 +2838,11 @@ public class Lua {
                     else if (payload.equals("userdel")) {
                         if (arg == null || arg.equals("") || arg.equals("root") || arg.equals(midlet.username)) { return new Double(13); }
                         else if (midlet.userID.containsKey(arg)) { if (uid == 0) { midlet.userID.remove(arg); return new Double(0); } else { return new Double(13); } }
+                        else { return new Double(127); }
+                    }
+                    else if (payload.equals("user")) {
+                        if (arg == null || arg.equals("")) { return new Double(2); }
+                        else if (midlet.userID.containsKey(arg)) { return midlet.userID.get(arg); }
                         else { return new Double(127); }
                     }
                 }
