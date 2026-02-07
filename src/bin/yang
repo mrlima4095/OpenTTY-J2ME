@@ -11,6 +11,7 @@ local mirror = {
     ["chroot"] = { remote = "sys/chroot.lua", here = "/bin/chroot", description = "Change to a real File System" },
     ["cmatrix"] = { remote = "games/cmatrix", here = "/bin/cmatrix", description = "The Matrix Effect" },
     ["curl"] = { remote = "net/curl.lua", here = "/bin/curl", description = "Connect with a Server" },
+    ["debug"] = { remote = "sys/debug", here = "/bin/debug", description = "Toggle debug mode" },
     ["docker"] = { remote = "sys/docker/main.lua", here = "/bin/docker", description = "Conteiners on OpenTTY" },
     ["expr"] = { remote = "file/expr.lua", here = "/bin/expr", description = "Evaluate expressions" },
     ["free"] = { remote = "sys/free.lua", here = "/bin/free", description = "Memory Informations" },
@@ -27,6 +28,7 @@ local mirror = {
     ["nano"] = { remote = "file/nano.lua", here = "/bin/nano", description = "Text Editor for OpenTTY" },
     ["nc"] = { remote = "net/netcat.lua", here = "/bin/nc", description = "Connect with Remote Interfaces" },
     ["nice"] = { remote = "sys/nice.lua", here = "/bin/nice", description = "Chance process priority" },
+    ["passwd"] = { remote = "sys/passwd.lua", here = "/bin/passwd", description = "Change password" },
     ["pastebin"] = { remote = "net/pastebin", here = "/bin/pastebin", description = "PasteBin Client for OpenTTY" },
     ["ping"] = { remote = "net/ping.lua", here = "/bin/ping", description = "Test connection delay" },
     ["prg"] = { remote = "sys/push.lua", here = "/bin/prg", description = "PushRegister Manager" },
@@ -41,6 +43,9 @@ local mirror = {
     ["wget"] = { remote = "net/wget", here = "/bin/wget", description = "Download files from Network" },
     ["xterm"] = { remote = "xterm.lua", here = "/bin/xterm", description = "MIDlet Terminal" },
     ["yang"] = { remote = "yang.lua", here = "/bin/yang", description = "OpenTTY Package Manager" },
+
+    --[""] = { remote = "", here = "", depends = {}, description = "" },
+    --[""] = { description = "", packages = {} },
 
     ["net"] = { description = "Network Utilities", packages = { "curl", "ifconfig", "ping", "webproxy" } },
     ["file"] = { description = "File Utitlities", packages = { "find", "grep", "hash", "head", "nano", "sed" } },
@@ -243,6 +248,4 @@ elseif arg[1] == "info" then
     else
         print("yang: usage: yang info [package]")
     end
-else
-    print("yang: " .. arg[1] .. ": not found")
 end
