@@ -9,7 +9,7 @@ if arg[1] == "add" then
         if file then
             logs = io.read(logs)
         else
-            logs = "[" .. hour .. "] " .. string.upper(arg[2]) .. " - " .. arg[3]
+            logs = "[" .. string.upper(arg[2]) .. "] " .. hour .. " " .. arg[3]
         end
 
         os.exit(tonumber(io.write(logs, "/tmp/logs")))
