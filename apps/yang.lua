@@ -34,6 +34,7 @@ local mirror = {
     ["prg"] = { remote = "sys/push.lua", here = "/bin/prg", description = "PushRegister Manager" },
     ["sed"] = { remote = "file/sed.lua", here = "/bin/sed", description = "String Editor" },
     ["sdk"] = { remote = "dev/sdkme", here = "/bin/sdk", depends = { "forge" }, description = "OpenTTY Application SDK" },
+    ["stop"] = { remote = "sys/stop.lua", here = "/bin/stop", description = "Kill application by name" },
     ["sync"] = { remote = "sys/sync", here = "/bin/sync", description = "OpenTTY Updater Checker" },
     ["svchost"] = { remote = "sys/svchost.lua", here = "/bin/svchost", description = "Quick Launch Services" },
     ["sudo"] = { remote = "sys/sudo.lua", here = "/bin/sudo", description = "" },
@@ -42,7 +43,7 @@ local mirror = {
     ["webproxy"] = { remote = "net/proxy.lua", here = "/bin/shprxy", description = "Access OpenTTY on WebProxy" },
     ["wget"] = { remote = "net/wget", here = "/bin/wget", description = "Download files from Network" },
     ["xterm"] = { remote = "xterm.lua", here = "/bin/xterm", description = "MIDlet Terminal" },
-    ["watch"] = { remote = "sys/watch.lua", here = "", depends = {}, description = "" },
+    ["watch"] = { remote = "sys/watch.lua", here = "", description = "Watch a program" },
     ["yang"] = { remote = "yang.lua", here = "/bin/yang", description = "OpenTTY Package Manager" },
 
     --[""] = { remote = "", here = "", depends = {}, description = "" },
