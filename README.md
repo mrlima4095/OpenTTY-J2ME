@@ -46,33 +46,34 @@ It exposes a SandBox with Lua interpreter and an ARM 32 ELF emulator (in develop
 
 ```
 /
-├── 📁 bin/        # Executables and scripts
-│   ├── 📄 cp      # Copy files
-│   ├── 📄 curl    # HTTP client
-│   ├── 📄 init    # Initialization script
-│   ├── 📄 kill    # Kill processes
-│   ├── 📄 lua     # Lua interpreter
-│   ├── 📄 nano    # Text editor
-│   ├── 📄 rm      # Remove files
-│   ├── 📄 sh      # Basic shell
-│   ├── 📄 touch   # Create files
-│   └── 📄 yang    # Package manager
-├── 📁 dev/        # Devices
-│   ├── 📄 null    # Null device
-│   ├── 📄 random  # Random number generator
-│   ├── 📄 stdin   # Standard input
-│   ├── 📄 stdout  # Standard output
-│   └── 📄 zero    # Zero device
-├── 📁 etc/        # Configuration
+├── 📁 bin/            # Executables and scripts
+│   ├── 📄 cp          # Copy files
+│   ├── 📄 curl        # HTTP client
+│   ├── 📄 init        # Initialization script
+│   ├── 📄 kill        # Kill processes
+│   ├── 📄 lua         # Lua interpreter
+│   ├── 📄 nano        # Text editor
+│   ├── 📄 rm          # Remove files
+│   ├── 📄 sh          # Basic shell
+│   ├── 📄 touch       # Create files
+│   └── 📄 yang        # Package manager
+├── 📁 dev/            # Devices
+│   ├── 📄 null        # Null device
+│   ├── 📄 random      # Random number generator
+│   ├── 📄 stdin       # Standard input
+│   ├── 📄 stdout      # Standard output
+│   └── 📄 zero        # Zero device
+├── 📁 etc/            # Configuration
 │   ├── 📄 fstab       # Filesystem table
 │   ├── 📄 hostname    # Host name
 │   ├── 📄 motd        # Initial message
 │   └── 📄 os-release  # Release information
-├── 📁 home/        # User files
-├── 📁 lib/         # Libraries
-│   └── 📄 libcore.so # System core library
-├── 📁 mnt/         # Mount points
-└── 📁 tmp/         # Temporary files
+├── 📁 home/           # User files
+├── 📁 lib/            # Libraries
+│   └── 📄 libcore.so  # System core library
+├── 📁 mnt/            # Mount points
+└── 📁 tmp/            # Temporary files
+└── 📁 proc/           # Process files
 ```
 
 ---
@@ -156,6 +157,7 @@ print("Response:", response)
 | `socket` | Network and sockets | `connect`, `http.get`, `http.post` |
 | `graphics` | Graphical interface | `display`, `new`, `append`, `handler` |
 | `java` | Java integration | `class`, `getName`, `run`, `thread` |
+| `base64` | Base64 API | `encode` `decode` |
 
 ---
 

@@ -1,6 +1,0 @@
-#!/bin/lua
-
-print("OpenTTY usages Yang Package Manger")
-print("Commands are redirect to it")
-
-_ = load(io.read("/bin/yang"))
