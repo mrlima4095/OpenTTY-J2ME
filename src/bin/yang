@@ -42,6 +42,7 @@ local mirror = {
     ["webproxy"] = { remote = "net/proxy.lua", here = "/bin/shprxy", description = "Access OpenTTY on WebProxy" },
     ["wget"] = { remote = "net/wget", here = "/bin/wget", description = "Download files from Network" },
     ["xterm"] = { remote = "xterm.lua", here = "/bin/xterm", description = "MIDlet Terminal" },
+    ["watch"] = { remote = "sys/watch.lua", here = "", depends = {}, description = "" },
     ["yang"] = { remote = "yang.lua", here = "/bin/yang", description = "OpenTTY Package Manager" },
 
     --[""] = { remote = "", here = "", depends = {}, description = "" },
