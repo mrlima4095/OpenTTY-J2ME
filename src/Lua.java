@@ -2626,8 +2626,8 @@ public class Lua {
             else if (MOD == GETARGS) { return args.isEmpty() ? null : midlet.getArgument(toLuaString(args.elementAt(0))); }
             else if (MOD == GETPATTERN) { return args.isEmpty() ? null : midlet.getpattern(toLuaString(args.elementAt(0))); }
             else if (MOD == ENV) { return args.isEmpty() ? null : midlet.env(toLuaString(args.elementAt(0))); }
-            else if (MOD == STARTSWITH) { return args.size() < 2 ? (Boolean) gotbad(1, "startswith", "string expected") : toLuaString(args.elementAt(0)).startsWith(toLuaString(args.elementAt(1))) }
-            else if (MOD == ENDSWITH) { return args.size() < 2 ? (Boolean) gotbad(1, "endswith", "string expected") : toLuaString(args.elementAt(0)).endsWith(toLuaString(args.elementAt(1))) }
+            else if (MOD == STARTSWITH) { return args.size() < 2 ? (Boolean) gotbad(1, "startswith", "string expected") : toLuaString(args.elementAt(0)).startsWith(toLuaString(args.elementAt(1))); }
+            else if (MOD == ENDSWITH) { return args.size() < 2 ? (Boolean) gotbad(1, "endswith", "string expected") : toLuaString(args.elementAt(0)).endsWith(toLuaString(args.elementAt(1))); }
             // Package: audio
             else if (MOD == AUDIO_LOAD) {
                 if (args.isEmpty()) { return gotbad(1, "load", "string expected, got no value"); }
