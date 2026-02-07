@@ -33,7 +33,11 @@ if arg[1] then
             graphics.display(previous)
 
             if status == 0 then
-                local res = io.popen(os.join(arg[2]), arg[3])
+                local program = arg[2]
+                if not string.startswith(program, "/") then
+                    program = "/bin/" .. arg[2]
+                end
+                local res = io.popen(program, arg[3])
                 os.exit(tonumber(res))
             elseif status == 13 then
                 print("sudo: permission denied")
