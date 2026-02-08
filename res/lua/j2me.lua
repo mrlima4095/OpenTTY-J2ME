@@ -188,7 +188,7 @@ audio = {
     volume = function (player, level) end,
     --[=[Get total durantion of audio on player]=]
     duration = function (player) end,
-    --[=[Get or set player current time]=]
+    --[=[Get or set player current time]=] 
     time = function (player, seek) end,
 }
 
