@@ -6,7 +6,7 @@ if arg[1] then
     for i = 1, #arg - 1 do
         local pattern = arg[i]
         local sys = os.getproc()
-        
+
         for k,v in pairs(sys) do
             if v == pattern then
                 local status = os.request(1, "sendsig", { pid = k, signal = 9 })
