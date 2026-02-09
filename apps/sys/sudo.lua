@@ -29,6 +29,8 @@ if arg[1] then
             os.exit()
         end,
         [run] = function (query)
+            local scope = os.scope()
+            local username = scope["USER"]
             local status = os.su("root", query)
             graphics.display(previous)
 
@@ -38,6 +40,7 @@ if arg[1] then
                     program = "/bin/" .. arg[1]
                 end
                 local res = io.popen(program, arg[2])
+                scope["USER"] = username
                 os.exit(tonumber(res))
             elseif status == 13 then
                 print("sudo: permission denied")
