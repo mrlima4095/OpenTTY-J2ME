@@ -157,7 +157,8 @@ print("Response:", response)
 | `socket` | Network and sockets | `connect`, `http.get`, `http.post` |
 | `graphics` | Graphical interface | `display`, `new`, `append`, `handler` |
 | `java` | Java integration | `class`, `getName`, `run`, `thread` |
-| `base64` | Base64 API | `encode` `decode` |
+| `base64` | Base64 API | `encode`, `decode` |
+| `push` | PushRegistry | `register`, `unregister`, `list`, `pending`, `setAlarm`, `getAlarm` |
 
 ---
 
