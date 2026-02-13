@@ -11,7 +11,7 @@ general
 
 - Added Kernel request `netsh` to get openned objects
 - New syscall added `nice` to change process priority
-- New log manager `sys/smile/logs.lua`
+- New log manager `sys/smile/logs.lua`, install with `yang install log`
 - Limited Lua cached tokens to 100 files
 
 lua
