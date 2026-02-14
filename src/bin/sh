@@ -201,7 +201,6 @@ local function shell(args, enable, aliases, stdout, scope)
             end
         end
 
-
     elseif cmd == "eval" then if argument == "" then else print(shell(argument, true, aliases, stdout, scope)) end
     elseif cmd == "echo" then print(argument)
     elseif cmd == "date" then print(os.date())
