@@ -5,7 +5,7 @@ local libcore = {
         if code == 0 then
             return nil
         elseif code == 2 then
-            return "missing params"
+            return "invalid params"
         elseif code == 3 then
             return "Unsupported API"
         elseif code == 5 then
