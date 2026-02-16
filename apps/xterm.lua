@@ -51,4 +51,3 @@ graphics.handler(xterm, {
 })
 graphics.db["xterm"] = xterm
 graphics.display(xterm)
-
