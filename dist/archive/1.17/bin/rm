@@ -1,0 +1,24 @@
+#!/bin/lua
+
+if #arg > 1 then
+    for i = 1, #arg - 1 do
+        local status = os.remove(os.join(arg[i]))
+
+        if status == 1 then
+            print("rm: " .. arg[i] .. ": java.io.IOException")
+        elseif status == 5 then
+            print("rm: " .. arg[i] .. ": read-only storage")
+        elseif status == 13 then
+            print("rm: " .. arg[i] .. ": permission denied")
+        elseif status == 127 then
+            print("rm: " .. arg[i] .. ": not found")
+        end
+
+        if status > 0 then
+            os.exit(status)
+        end
+    end
+else
+    print("rm: usage: rm [file]")
+    os.exit(2)
+end
