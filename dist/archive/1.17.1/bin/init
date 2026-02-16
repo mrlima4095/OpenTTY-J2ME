@@ -1,0 +1,41 @@
+#!/bin/lua
+
+for k,v in pairs({ ["PATCH"] = "Deep Dream", ["VERSION"] = getAppProperty("MIDlet-Version"), ["RELEASE"] = "stable", ["SHELL"] = "/bin/sh" }) do os.setenv(k, v) end
+for k,v in pairs({ ["TYPE"] = "platform", ["CONFIG"] = "configuration", ["PROFILE"] = "profiles", ["LOCALE"] = "locale" }) do os.setenv(k, getAppProperty("/microedition." .. v)) end
+
+local shell = require("/bin/sh")
+local alias, scope = {}, { PWD = "/home/", USER = java.midlet.username, ROOT = "/" }
+
+local xterm = graphics.new("screen", "OpenTTY " .. getAppProperty("MIDlet-Version"))
+local run = graphics.new("command", { label = "Run", type = "ok", priority = 1 })
+
+local function label() graphics.SetLabel(io.stdin, scope["USER"] .. " " .. os.getcwd() .. " " .. (os.getuid() == 0 and "#" or "$")) end
+
+io.mount(io.read("/etc/fstab"))
+print(string.env(io.read("/etc/motd")))
+
+os.scope(scope)
+os.su(java.midlet.username)
+os.request("1", "setsh", shell)
+
+pcall(io.popen, "/home/.initrc")
+label()
+
+graphics.append(xterm, io.stdout)
+graphics.append(xterm, io.stdin)
+graphics.addCommand(xterm, run)
+graphics.handler(xterm, {
+    [run] = function(command)
+        if command ~= "" then
+            graphics.SetText(io.stdin, "")
+
+            local ok, msg = pcall(shell, command, true, alias, io.stdout, scope)
+            if not ok then
+                print(tostring(msg))
+            end
+            label()
+        end
+    end
+})
+graphics.db["xterm"] = xterm
+graphics.display(xterm)
