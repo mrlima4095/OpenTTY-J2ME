@@ -1,0 +1,5 @@
+#!/bin/lua
+
+local libcore = {}
+
+return libcore
