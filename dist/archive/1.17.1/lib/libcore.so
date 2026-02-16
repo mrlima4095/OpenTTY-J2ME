@@ -1,0 +1,31 @@
+#!/bin/lua
+
+local libcore = {
+    errormsg = function (code)
+        if code == 0 then
+            return nil
+        elseif code == 2 then
+            return "missing params"
+        elseif code == 3 then
+            return "Unsupported API"
+        elseif code == 5 then
+            return "read-only storage"
+        elseif code == 13 then
+            return "permission denied"
+        elseif code == 20 then
+            return "not a directory"
+        elseif code == 68 then
+            return "service running"
+        elseif code == 69 then
+            return "service unavailable"
+        elseif code == 100 then
+            return "parsing error"
+        elseif code == 127 then
+            return "not found"
+        else
+            return "java.io.IOException"
+        end
+    end
+}
+
+return libcore
