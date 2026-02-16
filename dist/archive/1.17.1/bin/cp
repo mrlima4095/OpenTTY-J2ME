@@ -1,0 +1,7 @@
+#!/bin/lua
+
+if arg[1] and arg[2] then
+    print(pcall(io.copy, os.join(arg[1]), os.join(arg[2])))
+else
+    print("cp: usage: cp [source] [copyname]")
+end
