@@ -1,0 +1,279 @@
+#!/bin/lua
+
+local function shell(args, enable, aliases, stdout, scope)
+    local status, redirect = 0, string.find(args, ">") ~= nil
+
+    if string.sub(args, 1, 4) ~= "exec" then
+        args = string.env(args)
+    end
+
+    local cmd, argument = string.getCommand(args), string.getArgument(args)
+    args = string.split(argument, nil)
+
+    if redirect then
+        for i = 1, #args do
+            if args[i] == ">" then
+                local std = args[i + 1]
+                if std then
+                    io.setstdout(os.join(std))
+                end
+
+                for j = 1, #args do
+                    if j > i then
+                        table.remove(args, j)
+                    end
+                end
+
+                argument = table.concat(args, " ")
+                break
+            end
+        end
+    end
+
+    if cmd == "" then
+
+    elseif enable and aliases and aliases[cmd] then
+        status = shell(aliases[cmd] .. " " .. argument, enable, aliases, stdout, scope)
+    elseif io.open("/bin/" .. cmd) then
+        local res = io.popen("/bin/" .. cmd, argument, true, stdout, scope)
+        if redirect then
+            io.setstdout(stdout)
+        end
+        return res.status
+    elseif cmd == "." then
+        if args[1] then
+            pcall(function ()
+                local program = io.open(os.join(args[1]))
+                if program then
+                    table.remove(args, 1)
+                    local res = io.popen(program, table.concat(args, " "), true, stdout, scope)
+                    
+                    if type(res) == "number" then
+                        status = res
+                    elseif type(res) == "table" then
+                        status = res.status
+                    end
+                else
+                    print(args[1] .. ": not found")
+                    status = 127
+                end
+            end)
+        end
+
+    elseif cmd == "builtin" or cmd == "command" then
+        if argument ~= "" then
+            status = shell(argument, false, aliases, stdout, scope)
+        end
+    elseif cmd == "source" then
+        if argument ~= "" then
+            local script = io.read(os.join(argument))
+            if script and string.trim(script) ~= "" then
+                local cmds = string.split(script, "\n")
+                for _,c in ipairs(cmds) do
+                    status = shell(c, false, aliases, stdout, scope)
+                    if status ~= 0 then
+                        break
+                    end
+                end
+            end
+        end
+    elseif cmd == "bg" then
+        if argument ~= "" then
+            java.run(function() shell(argument, true, aliases, stdout, scope) end, "Background")
+        end
+    elseif cmd == "exec" then
+        if argument == "" then
+        else
+            for i = 1, #args do
+                status = shell(args[i], enable, aliases, stdout, scope)
+
+                if status > 0 then
+                    break
+                end
+            end
+        end
+
+    -- Kernel
+    -- (Process)
+    -- | prints running process
+    elseif cmd == "gc" then collectgarbage()
+    elseif cmd == "ps" then print("PID\tPROCESS") for k,v in pairs(os.getproc()) do print(k .. "\t" .. v) end
+    -- | prints uptime
+    elseif cmd == "uptime" then
+        print(java.midlet.uptime())
+    -- (Permissions)
+    -- | change your user
+    elseif cmd == "su" then
+        if os.getuid() == 0 then
+            os.su(java.midlet.username)
+            graphics.SetText(io.stdout, "")
+            print(string.env(io.read("/etc/motd")))
+        elseif argument == "" then
+            print("su: usage: su [user] [passwd]")
+        else
+            status = os.su("root", argument)
+
+            if status == 0 then
+                graphics.SetText(io.stdout, "")
+                print(string.env(io.read("/etc/motd")))
+            elseif status == 13 then
+                print("su: permission denied")
+            end
+        end
+
+    -- Session
+    -- (User Information)
+    -- | prints information about your account
+    elseif cmd == "whoami" or cmd == "logname" then print(os.getuid() == 0 and "root" or java.midlet.username)
+    elseif cmd == "id" then print(os.getuid())
+    -- (Manager)
+    -- | closes MIDlet
+    elseif cmd == "exit" then os.exit(nil)
+
+    -- Window Aliases
+    -- | go to default screen
+    elseif cmd == "xterm" then graphics.display(graphics.db["xterm"])
+    -- | display alerts on screen
+    elseif cmd == "warn" then
+        if #args < 2 then
+        else
+            graphics.display(graphics.new("alert", args[1], args[2]))
+        end
+    -- | changes title of current screen
+    elseif cmd == "title" then graphics.SetTitle(graphics.getCurrent(), argument)
+
+    -- Shell Utils
+    -- (Alias Manager)
+    -- | create and view aliases
+    elseif cmd == "alias" then
+        if argument == "" then for k,v in pairs(aliases) do print("alias " .. k .. "='" .. v .. "'") end
+        elseif string.find(argument, "=") then
+            local index = string.find(argument, "=")
+            local alias, mean = string.sub(argument, 1, index - 1), string.sub(argument, index + 1)
+
+            if alias ~= "" then aliases[alias] = mean end
+        else
+            for i = 1, #args do
+                if aliases[args[i]] then print("alias " .. args[i] .. "='" .. aliases[args[i]] .. "'")
+                else
+                    print("alias: " .. args[i] .. ": not found")
+                    status = 127
+                end
+            end
+        end
+    -- | clean aliases
+    elseif cmd == "unalias" then
+        if argument == "" then
+            print("unalias: usage: unalias [-a] name [name ...]")
+        else
+            for i = 1, #args do
+                if aliases[args[i]] then
+                    java.delete(aliases, args[i])
+                else
+                    print("unalias: " .. args[i] .. ": not found")
+                    status = 127
+                end
+            end
+        end
+    -- (Environment Keys)
+    -- | set or view environment keys
+    elseif cmd == "env" or cmd == "set" or cmd == "export" then
+        if argument == "" then for k,v in pairs(os.getenv()) do print(k .. "=" .. v) end
+        elseif string.find(argument, "=") then
+            local index = string.find(argument, "=")
+
+            os.setenv(string.sub(argument, 1, index - 1), string.sub(argument, index + 1))
+        else
+            for i = 1, #args do
+                if os.getenv(args[i]) then print(args[i] .. "=" .. os.getenv(args[i]))
+                else
+                    print(cmd .. ": " .. args[i] .. ": not found")
+                    status = 127
+                end
+            end
+        end
+    -- | remove environment keys
+    elseif cmd == "unset" then
+        if argument == "" then
+        else
+            for i = 1, #args do
+                os.setenv(args[i])
+            end
+        end
+
+
+    elseif cmd == "eval" then if argument == "" then else print(shell(argument, true, aliases, stdout, scope)) end
+    elseif cmd == "echo" then print(argument)
+    elseif cmd == "date" then print(os.date())
+    elseif cmd == "clear" then graphics.SetText(io.stdout, "")
+
+    -- File Utils
+    elseif cmd == "pwd" then print(os.getcwd())
+    elseif cmd == "cd" then
+        if argument == "" then os.chdir("/home/")
+        else
+            argument = os.join(argument)
+
+            if string.sub(argument, -1) ~= "/" then argument = argument .. "/" end
+
+            status = os.chdir(argument)
+            if status == 127 then
+                print("cd: " .. argument .. ": not found")
+            elseif status == 20 then
+                print("cd: " .. argument .. ": not a directory")
+
+            end
+        end
+    elseif cmd == "cat" then
+        for i = 1, #args do
+            local ok, file = pcall(io.open, os.join(args[i]))
+            if ok and file then
+                print(string.env(io.read(file)))
+            else
+                print("cat: " .. args[i] .. ": not found")
+                status = 127
+            end
+        end
+    elseif cmd == "ls" then
+        local pwd = os.join(argument)
+        local buff = ""
+        for k,v in pairs(io.dirs(pwd)) do
+            if string.sub(v, 1, 1) ~= "." then
+                buff = buff .. "\t" .. v
+            end
+        end
+        print(string.trim(buff))
+    
+    -- 
+    elseif cmd == "buff" then graphics.SetText(io.stdin, argument)
+    elseif cmd == "open" then
+        if argument == "" then
+        else
+            local ok, msg = pcall(os.open, argument)
+            if not ok then
+                if msg == "javax.microedition.io.ConnectionNotFoundException" then print("open: " .. argument .. ": not found") return 127
+                else print(tostring(msg)) return 1 end
+            end
+        end
+
+    elseif cmd == "true" or string.sub(cmd, 1, 1) == "#" then
+    elseif cmd == "false" then
+        status = 255
+    else
+        print(cmd .. ": not found")
+        status = 127
+    end
+
+    if redirect then
+        io.setstdout(stdout)
+    end
+
+    return status
+end
+
+if arg[0] == "/bin/sh" then
+    graphics.SetText(io.stdout, "")
+    print(string.env(io.read("/etc/motd")))
+end
+
+return shell
