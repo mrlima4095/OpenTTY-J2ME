@@ -1,0 +1,5 @@
+/=bin/,dev/,etc/,home/,lib/,mnt/,tmp/
+/bin/=cp,curl,init,kill,lua,rm,sh,touch,yang
+/dev/=null,random,stdin,stdout,zero
+/etc/=fstab,hostname,motd,os-release
+/lib/=libcore.so
