@@ -2903,6 +2903,98 @@ public class Lua {
                 }
 
                 if (mainCommand.equals("") || mainCommand.equals("true") || mainCommand.startsWith("#")) { }
+
+                else if (mainCommand.equals("gc")) { System.gc(); }
+                else if (mainCommand.equals("cat")) {
+                    for (int i = 0; i < args.length; i++) {
+                        InputStream in = midlet.getInputStream(midlet.joinpath(args[i], father), father);
+                        if (in != null) { midlet.print(midlet.read(in, 1024), output, id, father); }
+                        else { status = 127; break; }
+                    }
+                }
+                else if (mainCommand.equals("ls")) {
+                    Vector payload = new Vector(); StringBuffer buffer = new StringBuffer();
+                    payload.addElement(args.length == 0 ? (String) father.get("PWD") : args[0]);
+                    Hashtable items = dirs(payload);
+
+                    if (items.isEmpty()) { }
+                    else {
+                        for (Enumeration keys = items.keys(); keys.hasMoreElements();) {
+                            Double i = (Double) keys.nextElement();
+                            String file = (String) items.get(i);
+
+                            buffer.append(file).append("\t");
+                        }
+
+                        midlet.print(buffer.toString().trim(), output, id, father);
+                    }
+                }
+                else if (mainCommand.equals("ps")) {
+                    midlet.print("PID\tPROCESS", output, id, father);
+                    for (Enumeration procs = midlet.sys.keys(); procs.hasMoreElements();) {
+                        String pid = (String) procs.nextElement();
+
+                        midlet.print(pid + "\t" + ((Process) midlet.sys.get(pid)).name, output, id, father);
+                    }
+                }
+                else if (mainCommand.equals("su")) {
+                    /*String user = toLuaString(args.elementAt(0)), query = args.size() > 1 ? toLuaString(args.elementAt(1)) : null;
+                    if (user.equals(midlet.username)) { id = 1000; father.put("USER", midlet.username); return new Double(0); }
+                    else if (midlet.userID.containsKey(user)) { id = midlet.getUserID(user); father.put("USER", user); return new Double(0); }
+                    else if (query == null) { return gotbad(2, "su", "string expected, got nil"); }
+                    else if (user.equals("root") && midlet.passwd(query)) { id = 0; father.put("USER", "root"); return new Double(0); }
+                    else { return new Double(13); }*/
+                }
+                else if (mainCommand.equals("uptime")) {}
+                else if (mainCommand.equals("time")) {
+                    for (int i = 0; i < args.length; i++) {
+                        long before = System.currentTimeMillis();
+                        Vector payload = new Vector();
+                        payload.addElement(args[i]);
+                        status = exec(payload).intValue();
+
+                        midlet.print("at " + (System.currentTimeMillis() - before), output, id, father);
+                        if (status != 0) { break; }
+                        else if (i + 1 < args.length) { midlet.print("---", output, id, father); }
+                    }
+                }
+                else if (mainCommand.equals("whoami")) { midlet.print((String) father.get("USER"), output, id, father); }
+                else if (mainCommand.equals("id")) {  }
+                else if (mainCommand.equals("alias")) {
+                    Hashtable aliases = (Hashtable) father.get("ALIAS");
+
+                    if (args.length == 0) {
+                        for (Enumeration keys = aliases.keys(); keys.hasMoreElements();) {
+                            String key = (String) keys.nextElement(), value = (String) aliases.get(key);
+                            midlet.print("alias " + key + "='" + value + "'", output, id, father);
+                        }
+                    } 
+                    else {
+                        for (int i = 0; i < args.length; i++) {
+                            int i = args[i].indexOf("="); 
+                            if (i != -1) {
+                                String key = args[i].substring(0, i - 1), value = midlet.getpattern(args[i].substring(i + 1));
+                                aliases.put(key, value);
+                            } else {
+                                if (aliases.containsKey(args[i])) {
+                                    midlet.print("alias " + args[i] + "='" + (String) aliases.get(args[i]) + "'", output, id, father);
+                                } else {
+                                    midlet.print("alias: " + args[i] + ": not found", output, id, father); status = 127;
+                                }
+                            }
+                        }
+                    }
+                }
+                else if (mainCommand.equals("unalias")) { }
+                else if (mainCommand.equals("env-export-set")) { }
+                else if (mainCommand.equals("eval")) { }
+                else if (mainCommand.equals("echo")) { midlet.print(argument, output, id, father); }
+                else if (mainCommand.equals("pwd")) { }
+                else if (mainCommand.equals("cd")) { }
+                else if (mainCommand.equals("buff")) { }
+                else if (mainCommand.equals("bg")) { }
+                else if (mainCommand.equals("builtin")) { }
+                else if (mainCommand.equals("source")) { }
                 else if (mainCommand.equals("false")) { status = 255; }
                 else { midlet.print(mainCommand + ": not found", output, id, father); status = 127; }
                 
