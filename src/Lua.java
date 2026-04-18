@@ -2850,7 +2850,7 @@ public class Lua {
                 }
 
                 if (mainCommand.equals("") || mainCommand.equals("true") || mainCommand.startsWith("#")) { }
-                else if ((in = open("/bin/" + mainCommand), father) != null) { status = popen("/bin/" + mainCommand, midlet.genpid(), argument, id, output, father, in); }
+                else if ((in = open("/bin/" + mainCommand, father)) != null) { status = popen("/bin/" + mainCommand, midlet.genpid(), argument, id, output, father, in); }
                 else if (mainCommand.equals("gc")) { System.gc(); }
                 else if (mainCommand.equals("cat")) {
                     for (int i = 0; i < args.length; i++) {
