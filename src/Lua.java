@@ -2988,7 +2988,7 @@ public class Lua {
                 else if (mainCommand.equals("env-export-set")) { }
                 else if (mainCommand.equals("eval")) { }
                 else if (mainCommand.equals("echo")) { midlet.print(argument, output, id, father); }
-                else if (mainCommand.equals("exit")) { exit(); }
+                else if (mainCommand.equals("exit")) { Vector payload = new Vector(); payload.addElement(args.length == 0 ? "0" : args[0]); exit(payload); }
                 else if (mainCommand.equals("pwd")) { }
                 else if (mainCommand.equals("cd")) { }
                 else if (mainCommand.equals("buff")) { }
