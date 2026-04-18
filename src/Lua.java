@@ -2881,7 +2881,7 @@ public class Lua {
         public void run() { if (root instanceof LuaFunction) { Vector arg = new Vector(); try { ((LuaFunction) root).call(arg); } catch (Throwable e) { midlet.print(midlet.getCatch(e), stdout, id, father); } } }
 
         public Double exec(Vector args) throws Exception {
-            if (args.isEmpty()) { return gotbad(1, "execute", "string expected, got no value"); }
+            if (args.isEmpty()) { return (Double) gotbad(1, "execute", "string expected, got no value"); }
             else {
                 String command = toLuaString(args.elementAt(0));
                 String mainCommand = midlet.getCommand(command), argument = midlet.getArgument(command);
