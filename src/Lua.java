@@ -2666,7 +2666,7 @@ public class Lua {
                         }
                     }
                     else if (payload.equals("setsh")) {
-                        if (arg == null || arg.equals("")) { return new Double(2); }
+                        if (arg == null || arg.equals("")) { midlet.shell = new LuaFunction(EXEC); }
                         else if (arg instanceof LuaFunction) { midlet.shell = arg; }
                         else { return new Double(2); }
                     }
