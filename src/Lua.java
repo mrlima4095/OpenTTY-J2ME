@@ -2950,7 +2950,7 @@ public class Lua {
                         long before = System.currentTimeMillis();
                         Vector payload = new Vector();
                         payload.addElement(args[i]);
-                        status = exec(payload);
+                        status = exec(payload).intValue;
 
                         midlet.print("at " + (System.currentTimeMillis() - before), output, id, father);
                         if (status != 0) { break; }
