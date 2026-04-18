@@ -2965,7 +2965,7 @@ public class Lua {
                 else if (mainCommand.equals("whoami")) { midlet.print((String) father.get("USER"), output, id, father); }
                 else if (mainCommand.equals("id")) {  }
                 else if (mainCommand.equals("alias")) {
-                    Hashtable aliases = (Hashtable) father.get("ALIAS");
+                    /*Hashtable aliases = (Hashtable) father.get("ALIAS");
 
                     if (args.length == 0) {
                         for (Enumeration keys = aliases.keys(); keys.hasMoreElements();) {
@@ -2987,7 +2987,7 @@ public class Lua {
                                 }
                             }
                         }
-                    }
+                    }*/
                 }
                 else if (mainCommand.equals("unalias")) { }
                 else if (mainCommand.equals("env-export-set")) { }
