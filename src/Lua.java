@@ -2904,7 +2904,7 @@ public class Lua {
 
                 if (mainCommand.equals("") || mainCommand.equals("true") || mainCommand.startsWith("#")) { }
                 else if (mainCommand.equals("false")) { status = 255; }
-                else { midlet.print(argument + ": not found", output, id, father); status = 127; }
+                else { midlet.print(mainCommand + ": not found", output, id, father); status = 127; }
                 
                 return new Double(status);
             }
