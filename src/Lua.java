@@ -2892,11 +2892,11 @@ public class Lua {
                     if (args[i].equals(">")) {
                         output = args[i + 1];
                         
-                        Vector sanitize = new Vector(); argument = "";
-                        for (int j = 0; j < i - 1; j++) { sanitize.addElement(args[j]); argument = argument + " " + args[j]; }
+                        Vector sanitize = new Vector(); StringBuffer buffer = new StringBuffer();
+                        for (int j = 0; j < i - 1; j++) { sanitize.addElement(args[j]); buffer.append(args[j]); }
 
                         String[] args = new String[sanitize.size()];
-                        sanitize.copyInto(args); argument.trim();
+                        sanitize.copyInto(args); argument = buffer.toString();
 
                         break;
                     }
@@ -2993,7 +2993,7 @@ public class Lua {
                 else if (mainCommand.equals("env-export-set")) { }
                 else if (mainCommand.equals("eval")) { }
                 else if (mainCommand.equals("echo")) { midlet.print(argument, output, id, father); }
-                //else if (mainCommand.equals("exit")) { Vector payload = new Vector(); payload.addElement(args.length == 0 ? "0" : args[0]); exit(payload); }
+                else if (mainCommand.equals("exit")) { Vector payload = new Vector(); payload.addElement(args.length == 0 ? "0" : args[0]); exit(payload); }
                 else if (mainCommand.equals("pwd")) { }
                 else if (mainCommand.equals("cd")) { }
                 else if (mainCommand.equals("buff")) { }
