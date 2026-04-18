@@ -2963,7 +2963,7 @@ public class Lua {
                     Hashtable aliases = (Hashtable) father.get("ALIAS");
 
                     if (args.length == 0) {
-                        for (Enumeration keys = aliases.keys; keys.hasMoreElements();) {
+                        for (Enumeration keys = aliases.keys(); keys.hasMoreElements();) {
                             String key = (String) keys.nextElement(), value = (String) aliases.get(key);
                             midlet.print("alias " + key + "='" + value + "'", output, id, father);
                         }
