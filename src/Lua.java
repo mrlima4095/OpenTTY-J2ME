@@ -2880,7 +2880,7 @@ public class Lua {
 
         public void run() { if (root instanceof LuaFunction) { Vector arg = new Vector(); try { ((LuaFunction) root).call(arg); } catch (Throwable e) { midlet.print(midlet.getCatch(e), stdout, id, father); } } }
 
-        public Double exec(Vector args) {
+        public Double exec(Vector args) throws Exeception {
             if (args.isEmpty()) { return gotbad(1, "execute", "string expected, got no value"); }
             else {
                 String command = toLuaString(args.elementAt(0));
@@ -3001,7 +3001,7 @@ public class Lua {
                 return new Double(status);
             }
         }
-        public Hashtable dirs(Vector args) {
+        public Hashtable dirs(Vector args) throws Exeception {
             String pwd = args.isEmpty() ? (String) father.get("PWD") : toLuaString(args.elementAt(0));
             int index = 1;
             
