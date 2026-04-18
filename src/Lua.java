@@ -2906,7 +2906,7 @@ public class Lua {
                 else if (mainCommand.equals("gc")) { System.gc(); }
                 else if (mainCommand.equals("cat")) {
                     for (int i = 0; i < args.length; i++) {
-                        InputStream in = midlet.getInputStream(midlet.joinpath(args[i]), father);
+                        InputStream in = midlet.getInputStream(midlet.joinpath(args[i], father), father);
                         if (in != null) { midlet.print(midlet.read(in, 1024), output, id, father); }
                         else { status = 127; break; }
                     }
