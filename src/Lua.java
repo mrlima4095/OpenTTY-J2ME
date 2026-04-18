@@ -2893,7 +2893,7 @@ public class Lua {
                         output = args[i + 1];
                         
                         Vector sanitize = new Vector(); argument = "";
-                        for (int j = 0; j < i; j++) { sanitize.addElement(args[i]); argument = argument + " " + args[i]; }
+                        for (int j = 0; j < i - 1; j++) { sanitize.addElement(args[j]); argument = argument + " " + args[j]; }
 
                         String[] args = new String[sanitize.size()];
                         sanitize.copyInto(args); argument.trim();
