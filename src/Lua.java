@@ -3002,7 +3002,7 @@ public class Lua {
         }
 
         public InputStream open(String uri, Hashtable scope) { try { return midlet.getInputStream(uri, scope); } catch (Exception e) { return null; } }
-        public Double popen(Vector args) {
+        public Double popen(Vector args) throws Exception {
             if (args.isEmpty()) { return null; }
             
             String program = toLuaString(args.elementAt(0));
@@ -3022,7 +3022,7 @@ public class Lua {
             return popen(program, midlet.genpid(), arguments, owner, out, scope, is);
         }
         public Double popen(String program, String pid, Object arguments, int owner, 
-                            Object out, Hashtable scope, InputStream is) {
+                            Object out, Hashtable scope, InputStream is) throws Exception {
             Vector result = new Vector();
             
             if (is == null) {
