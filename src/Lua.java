@@ -2932,6 +2932,7 @@ public class Lua {
                         }
                     }
                 }
+                else if (mainCommand.equals("clear")) { midlet.stdout.setText(""); }
                 else if (mainCommand.equals("unalias")) { }
                 else if (mainCommand.equals("env-export-set")) { }
                 else if (mainCommand.equals("eval")) { }
