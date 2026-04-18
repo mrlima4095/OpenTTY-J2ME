@@ -2918,9 +2918,9 @@ public class Lua {
                     } 
                     else {
                         for (int i = 0; i < args.length; i++) {
-                            int i = args[i].indexOf("="); 
-                            if (i != -1) {
-                                String key = args[i].substring(0, i - 1), value = midlet.getpattern(args[i].substring(i + 1));
+                            int j = args[i].indexOf("="); 
+                            if (j != -1) {
+                                String key = args[i].substring(0, j - 1), value = midlet.getpattern(args[i].substring(j + 1));
                                 aliases.put(key, value);
                             } else {
                                 if (aliases.containsKey(args[i])) {
