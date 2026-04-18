@@ -2951,16 +2951,12 @@ public class Lua {
                 }
                 else if (mainCommand.equals("uptime")) {}
                 else if (mainCommand.equals("time")) {
-                    /*for (int i = 0; i < args.length; i++) {
-                        long before = System.currentTimeMillis();
-                        Vector payload = new Vector();
-                        payload.addElement(args[i]);
-                        status = exec(payload).intValue();
+                    long before = System.currentTimeMillis();
+                    Vector payload = new Vector();
+                    payload.addElement(argument);
+                    status = exec(payload).intValue();
 
-                        midlet.print("at " + (System.currentTimeMillis() - before), output, id, father);
-                        if (status != 0) { break; }
-                        else if (i + 1 < args.length) { midlet.print("---", output, id, father); }
-                    }*/
+                    midlet.print("at " + (System.currentTimeMillis() - before), output, id, father);
                 }
                 else if (mainCommand.equals("whoami")) { midlet.print((String) father.get("USER"), output, id, father); }
                 else if (mainCommand.equals("id")) {  }
