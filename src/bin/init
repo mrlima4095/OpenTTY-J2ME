@@ -15,8 +15,6 @@ print(string.env(io.read("/etc/motd")))
 
 os.scope(scope)
 os.su(java.midlet.username)
-os.request("1", "setsh", shell)
-
 pcall(io.popen, "/home/.initrc")
 label()
 
