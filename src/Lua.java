@@ -2978,7 +2978,7 @@ public class Lua {
                                 if (aliases.containsKey(args[i])) {
                                     midlet.print("alias " + args[i] + "='" + (String) aliases.get(args[i]) + "'", output, id, father);
                                 } else {
-                                    midlet.print("alias: " + args[i] + ": not found"); status = 127;
+                                    midlet.print("alias: " + args[i] + ": not found", output, id, father); status = 127;
                                 }
                             }
                         }
