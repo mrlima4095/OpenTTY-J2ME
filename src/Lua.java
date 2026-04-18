@@ -1410,7 +1410,7 @@ public class Lua {
             }
             else if (MOD == CLOCK) { return System.currentTimeMillis() - uptime; }
             else if (MOD == SETLOC) { if (args.isEmpty()) { } else { midlet.attributes.put("LOCALE", toLuaString(args.elementAt(0))); } }
-            else if (MOD == EXIT) { exit(); }
+            else if (MOD == EXIT) { exit(args); }
             else if (MOD == DATE) { return new java.util.Date().toString(); }
             else if (MOD == GETPID) { return args.isEmpty() || args.elementAt(0) == null ? PID : midlet.getpid(toLuaString(args.elementAt(0))); }
             else if (MOD == SETPROC) {
@@ -3053,7 +3053,7 @@ public class Lua {
             return list;
         }
 
-        public void exit() { if (PID.equals("1")) { midlet.destroyApp(true); } midlet.sys.remove(PID); if (args.isEmpty()) { throw new Error(); } else { status = getNumber(toLuaString(args.elementAt(0)), 1); } }
+        public void exit(Vector args) { if (PID.equals("1")) { midlet.destroyApp(true); } midlet.sys.remove(PID); if (args.isEmpty()) { throw new Error(); } else { status = getNumber(toLuaString(args.elementAt(0)), 1); } }
 
         public void commandAction(Command c, Displayable d) {
             try {
