@@ -2957,7 +2957,7 @@ public class Lua {
                         else if (i + 1 < args.length) { midlet.print("---", output, id, father); }
                     }
                 }
-                else if (mainCommand.equals("whoami")) { midlet.print(father.get("USER"), output, id, father); }
+                else if (mainCommand.equals("whoami")) { midlet.print((String) father.get("USER"), output, id, father); }
                 else if (mainCommand.equals("id")) {  }
                 else if (mainCommand.equals("alias")) {
                     Hashtable aliases = (Hashtable) father.get("ALIAS");
