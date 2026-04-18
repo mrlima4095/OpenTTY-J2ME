@@ -2906,11 +2906,11 @@ public class Lua {
 
                 else if (mainCommand.equals("gc")) { System.gc(); }
                 else if (mainCommand.equals("cat")) {
-                    for (int i = 0; i < args.length; i++) {
+                    /*for (int i = 0; i < args.length; i++) {
                         InputStream in = midlet.getInputStream(midlet.joinpath(args[i], father), father);
                         if (in != null) { midlet.print(midlet.read(in, 1024), output, id, father); }
                         else { status = 127; break; }
-                    }
+                    }*/
                 }
                 else if (mainCommand.equals("ls")) {
                     Vector payload = new Vector(); StringBuffer buffer = new StringBuffer();
@@ -2946,7 +2946,7 @@ public class Lua {
                     else { return new Double(13); }*/
                 }
                 else if (mainCommand.equals("uptime")) {}
-                else if (mainCommand.equals("time")) {
+                /*else if (mainCommand.equals("time")) {
                     for (int i = 0; i < args.length; i++) {
                         long before = System.currentTimeMillis();
                         Vector payload = new Vector();
@@ -2957,10 +2957,10 @@ public class Lua {
                         if (status != 0) { break; }
                         else if (i + 1 < args.length) { midlet.print("---", output, id, father); }
                     }
-                }
-                else if (mainCommand.equals("whoami")) { midlet.print((String) father.get("USER"), output, id, father); }
+                }*/
+                //else if (mainCommand.equals("whoami")) { midlet.print((String) father.get("USER"), output, id, father); }
                 else if (mainCommand.equals("id")) {  }
-                else if (mainCommand.equals("alias")) {
+                /*else if (mainCommand.equals("alias")) {
                     Hashtable aliases = (Hashtable) father.get("ALIAS");
 
                     if (args.length == 0) {
@@ -2984,11 +2984,12 @@ public class Lua {
                             }
                         }
                     }
-                }
+                }*/
                 else if (mainCommand.equals("unalias")) { }
                 else if (mainCommand.equals("env-export-set")) { }
                 else if (mainCommand.equals("eval")) { }
                 else if (mainCommand.equals("echo")) { midlet.print(argument, output, id, father); }
+                //else if (mainCommand.equals("exit")) { Vector payload = new Vector(); payload.addElement(args.length == 0 ? "0" : args[0]); exit(payload); }
                 else if (mainCommand.equals("pwd")) { }
                 else if (mainCommand.equals("cd")) { }
                 else if (mainCommand.equals("buff")) { }
