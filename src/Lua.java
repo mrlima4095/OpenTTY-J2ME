@@ -2950,8 +2950,8 @@ public class Lua {
                     else { return new Double(13); }*/
                 }
                 else if (mainCommand.equals("uptime")) {}
-                /*else if (mainCommand.equals("time")) {
-                    for (int i = 0; i < args.length; i++) {
+                else if (mainCommand.equals("time")) {
+                    /*for (int i = 0; i < args.length; i++) {
                         long before = System.currentTimeMillis();
                         Vector payload = new Vector();
                         payload.addElement(args[i]);
@@ -2960,11 +2960,11 @@ public class Lua {
                         midlet.print("at " + (System.currentTimeMillis() - before), output, id, father);
                         if (status != 0) { break; }
                         else if (i + 1 < args.length) { midlet.print("---", output, id, father); }
-                    }
-                }*/
-                //else if (mainCommand.equals("whoami")) { midlet.print((String) father.get("USER"), output, id, father); }
+                    }*/
+                }
+                else if (mainCommand.equals("whoami")) { midlet.print((String) father.get("USER"), output, id, father); }
                 else if (mainCommand.equals("id")) {  }
-                /*else if (mainCommand.equals("alias")) {
+                else if (mainCommand.equals("alias")) {
                     Hashtable aliases = (Hashtable) father.get("ALIAS");
 
                     if (args.length == 0) {
@@ -2988,7 +2988,7 @@ public class Lua {
                             }
                         }
                     }
-                }*/
+                }
                 else if (mainCommand.equals("unalias")) { }
                 else if (mainCommand.equals("env-export-set")) { }
                 else if (mainCommand.equals("eval")) { }
