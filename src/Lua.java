@@ -1627,60 +1627,7 @@ public class Lua {
                 } 
             }
             else if (MOD == OPEN) { if (args.isEmpty()) { return new ByteArrayOutputStream(); } else { try { return midlet.getInputStream(toLuaString(args.elementAt(0)), father); } catch (Exception e) { return null; } } } 
-            else if (MOD == POPEN) { 
-                if (args.isEmpty()) { } 
-                else {
-                    String program = toLuaString(args.elementAt(0)), pid = midlet.genpid();
-                    Object arguments = args.size() > 1 ? toLuaString(args.elementAt(1)) : "";
-                    int owner = (args.size() < 3) ? new Integer(id) : ((args.elementAt(2) instanceof Boolean) ? new Integer((Boolean) args.elementAt(2) ? id : 1000) : (Integer) gotbad(3, "popen", "boolean expected, got " + type(args.elementAt(2))));
-                    Object out = (args.size() < 4) ? new StringBuffer() : args.elementAt(3);
-                    Hashtable scope = (args.size() < 5) ? father : (args.elementAt(4) instanceof Hashtable ? (Hashtable) args.elementAt(4) : (Hashtable) gotbad(5, "popen", "table expected, got " + type(args.elementAt(4))));
-                    InputStream is = (args.size() < 6) ? midlet.getInputStream(program, father) : (InputStream) args.elementAt(5);
-
-                    Vector result = new Vector();
-                    if (is == null) { return new Double(127); }
-                    else {
-                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        byte[] buffer = new byte[1024];
-                        int length;
-                        
-                        while ((length = is.read(buffer)) != -1) { baos.write(buffer, 0, length); }
-                        
-                        byte[] data = baos.toByteArray(); baos.close();
-
-                        Hashtable arg = null;
-                        if (arguments instanceof Hashtable) { arg = (Hashtable) arguments; arg.put(new Double(0), program); }
-                        else if (arguments != null) {
-                            arg = new Hashtable();
-                            arg.put(new Double(0), program);
-                            String args = toLuaString(arguments);
-                            String[] list = midlet.splitArgs(args);
-                            for (int i = 0; i < list.length; i++) { arg.put(new Double(i + 1), list[i]); }
-                        } 
-                        
-                        if (arg == null) { arg = new Hashtable(); }
-                        
-
-                        if (midlet.isPureText(data)) {
-                            String code = new String(data, "UTF-8");
-                            Process process = new Process(midlet, ("lua " + program).trim(), midlet.joinpath(program, father), midlet.getUser(owner), owner, pid, out, scope);
-                            midlet.sys.put(pid, process);
-
-                            result.addElement(process.lua.run(program, code, arg));
-                        }
-                        else {
-                            InputStream elfStream = new ByteArrayInputStream(data);
-                            Process process = new Process(midlet, "elf", midlet.joinpath(program, father), midlet.getUser(owner), owner, pid, stdout, arg, scope);
-                            midlet.sys.put(pid, process);
-                            
-                            if (process.elf.load(elfStream)) { result.addElement(process.elf.run()); } else { result.addElement(1); }
-                        }
-                        
-                        result.addElement(out instanceof StringBuffer ? out.toString() : out);
-                        return result;
-                    }
-                }
-            } 
+            else if (MOD == POPEN) { return popen(args); } 
             else if (MOD == DIRS) { return dirs(args); }
             else if (MOD == SETOUT) { if (args.isEmpty()) { } else { stdout = args.elementAt(0); } }
             else if (MOD == MOUNT) {
@@ -2885,7 +2832,7 @@ public class Lua {
             else {
                 String command = toLuaString(args.elementAt(0));
                 String mainCommand = midlet.getCommand(command), argument = midlet.getArgument(command);
-                String[] args = midlet.splitArgs(argument); int status = 0;
+                String[] args = midlet.splitArgs(argument); int status = 0; InputStream in;
 
                 Object output = stdout;
                 for (int i = 0; i < args.length; i++) {
@@ -2903,14 +2850,14 @@ public class Lua {
                 }
 
                 if (mainCommand.equals("") || mainCommand.equals("true") || mainCommand.startsWith("#")) { }
-
+                else if ((in = open("/bin/" + mainCommand)) != null) { status = popen("/bin/" + mainCommand, midlet.genpid(), argument, id, output, father, in); }
                 else if (mainCommand.equals("gc")) { System.gc(); }
                 else if (mainCommand.equals("cat")) {
                     for (int i = 0; i < args.length; i++) {
                         try {
                             InputStream in = midlet.getInputStream(midlet.joinpath(args[i], father), father);
                             if (in != null) { midlet.print(midlet.read(in, 1024), output, id, father); }
-                            else { throw new Exception(); }
+                            else { status = 2; break; }
                         } catch (Exception e) {
                             status = 127; break;
                         }
@@ -2961,7 +2908,7 @@ public class Lua {
                 else if (mainCommand.equals("whoami")) { midlet.print((String) father.get("USER"), output, id, father); }
                 else if (mainCommand.equals("id")) {  }
                 else if (mainCommand.equals("alias")) {
-                    /*Hashtable aliases = (Hashtable) father.get("ALIAS");
+                    Hashtable aliases = (Hashtable) father.get("ALIAS");
 
                     if (args.length == 0) {
                         for (Enumeration keys = aliases.keys(); keys.hasMoreElements();) {
@@ -2977,13 +2924,13 @@ public class Lua {
                                 aliases.put(key, value);
                             } else {
                                 if (aliases.containsKey(args[i])) {
-                                    midlet.print("alias " + args[i] + "='" + (String) aliases.get(args[i]) + "'", output, id, father);
+                                    midlet.print("alias " + args[i] + "='" + ((String) aliases.get(args[i])) + "'", output, id, father);
                                 } else {
                                     midlet.print("alias: " + args[i] + ": not found", output, id, father); status = 127;
                                 }
                             }
                         }
-                    }*/
+                    }
                 }
                 else if (mainCommand.equals("unalias")) { }
                 else if (mainCommand.equals("env-export-set")) { }
@@ -3052,6 +2999,94 @@ public class Lua {
             }
             
             return list;
+        }
+
+        public InputStream open(String uri, Hashtable scope) { try { return midlet.getInputStream(uri, scope); } catch (Exception e) { return null; } }
+        public Double popen(Vector args) {
+            if (args.isEmpty()) { return null; }
+            
+            String program = toLuaString(args.elementAt(0));
+            Object arguments = args.size() > 1 ? toLuaString(args.elementAt(1)) : "";
+            int owner = (args.size() < 3) ? new Integer(id) : 
+                        ((args.elementAt(2) instanceof Boolean) ? 
+                        new Integer((Boolean) args.elementAt(2) ? id : 1000) : 
+                        (Integer) gotbad(3, "popen", "boolean expected, got " + type(args.elementAt(2))));
+            Object out = (args.size() < 4) ? new StringBuffer() : args.elementAt(3);
+            Hashtable scope = (args.size() < 5) ? father : 
+                            (args.elementAt(4) instanceof Hashtable ? 
+                            (Hashtable) args.elementAt(4) : 
+                            (Hashtable) gotbad(5, "popen", "table expected, got " + type(args.elementAt(4))));
+            InputStream is = (args.size() < 6) ? midlet.getInputStream(program, father) : 
+                            (InputStream) args.elementAt(5);
+            
+            return popen(program, midlet.genpid(), arguments, owner, out, scope, is);
+        }
+        public Double popen(String program, String pid, Object arguments, int owner, 
+                            Object out, Hashtable scope, InputStream is) {
+            Vector result = new Vector();
+            
+            if (is == null) {
+                return new Double(127);
+            }
+            
+            try {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                byte[] buffer = new byte[1024];
+                int length;
+                
+                while ((length = is.read(buffer)) != -1) {
+                    baos.write(buffer, 0, length);
+                }
+                
+                byte[] data = baos.toByteArray();
+                baos.close();
+                
+                Hashtable arg = null;
+                if (arguments instanceof Hashtable) {
+                    arg = (Hashtable) arguments;
+                    arg.put(new Double(0), program);
+                } else if (arguments != null) {
+                    arg = new Hashtable();
+                    arg.put(new Double(0), program);
+                    String argsStr = toLuaString(arguments);
+                    String[] list = midlet.splitArgs(argsStr);
+                    for (int i = 0; i < list.length; i++) {
+                        arg.put(new Double(i + 1), list[i]);
+                    }
+                }
+                
+                if (arg == null) {
+                    arg = new Hashtable();
+                }
+                
+                if (midlet.isPureText(data)) {
+                    String code = new String(data, "UTF-8");
+                    Process process = new Process(midlet, ("lua " + program).trim(), 
+                                                midlet.joinpath(program, scope), 
+                                                midlet.getUser(owner), owner, pid, out, scope);
+                    midlet.sys.put(pid, process);
+                    
+                    result.addElement(process.lua.run(program, code, arg));
+                } else {
+                    InputStream elfStream = new ByteArrayInputStream(data);
+                    Process process = new Process(midlet, "elf", 
+                                                midlet.joinpath(program, scope), 
+                                                midlet.getUser(owner), owner, pid, out, arg, scope);
+                    midlet.sys.put(pid, process);
+                    
+                    if (process.elf.load(elfStream)) {
+                        result.addElement(process.elf.run());
+                    } else {
+                        result.addElement(1);
+                    }
+                }
+                
+                result.addElement(out instanceof StringBuffer ? out.toString() : out);
+                return (Double) result.elementAt(0); // ou retorna o Vector conforme necessidade
+                
+            } catch (Exception e) {
+                return new Double(1);
+            }
         }
 
         public void exit(Vector args) { if (PID.equals("1")) { midlet.destroyApp(true); } midlet.sys.remove(PID); if (args.isEmpty()) { throw new Error(); } else { status = getNumber(toLuaString(args.elementAt(0)), 1); } }
