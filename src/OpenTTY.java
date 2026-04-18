@@ -22,7 +22,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Object shell;
     // |
     public Hashtable attributes = new Hashtable(), fs = new Hashtable(), sys = new Hashtable(), tmp = new Hashtable(), cache = new Hashtable(), cacheLua = new Hashtable(), graphics = new Hashtable(), servers = new Hashtable(), globals = new Hashtable(), userID = new Hashtable();
-    public String username = read("/home/OpenRMS", globals), build = "2026-1.18.1-03x24";
+    public String username = read("/home/OpenRMS", globals), build = "2026-1.18.1-03x25";
     // |
     // Graphics
     public Display display = Display.getDisplay(this);
@@ -38,7 +38,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public void init() {
         try {
             Hashtable args = new Hashtable(); args.put(new Double(0), "/bin/init");
-            globals.put("PWD", "/home/"); globals.put("USER", "root"); globals.put("ROOT", "/");
+            globals.put("PWD", "/home/"); globals.put("USER", "root"); globals.put("ROOT", "/"); globals.put("ALIAS", new Hashtable());
             Process proc = new Process(this, "init", "/bin/init", "root", 0, "1", stdout, globals);
 
             sys.put("1", proc); proc.lua.globals.put("arg", args); proc.handler = proc.lua.getKernel();
@@ -182,7 +182,23 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public String getpattern(String text) { return text.trim().startsWith("\"") && text.trim().endsWith("\"") ? replace(text, "\"", "") : text.trim(); }
     // | (Arrays)
     public String[] split(String content, char div) { Vector lines = new Vector(); int start = 0; for (int i = 0; i < content.length(); i++) { if (content.charAt(i) == div) { lines.addElement(content.substring(start, i)); start = i + 1; } } if (start < content.length()) { lines.addElement(content.substring(start)); } String[] result = new String[lines.size()]; lines.copyInto(result); return result; }
-    public String[] splitArgs(String content) { Vector args = new Vector(); boolean inQuotes = false; int start = 0; for (int i = 0; i < content.length(); i++) { char c = content.charAt(i); if (c == '"') { inQuotes = !inQuotes; continue; } if (!inQuotes && c == ' ') { if (i > start) { args.addElement(getpattern(content.substring(start, i))); } start = i + 1; } } if (start < content.length()) { args.addElement(getpattern(content.substring(start))); } String[] result = new String[args.size()]; args.copyInto(result); return result; }
+    public String[] splitArgs(String content) {
+        Vector args = new Vector();
+        boolean inQuotes = false;
+        int start = 0;
+        for (int i = 0; i < content.length(); i++) { 
+            char c = content.charAt(i); if (c == '"') { inQuotes = !inQuotes; continue; } 
+            if (!inQuotes && c == ' ') { 
+                if (i > start) { args.addElement(getpattern(content.substring(start, i))); }
+                
+                start = i + 1; 
+            }
+        } 
+        if (start < content.length()) { args.addElement(getpattern(content.substring(start))); }
+        String[] result = new String[args.size()]; 
+        args.copyInto(result); 
+        return result; 
+    }
     // |
     // | (Generators)
     public String genpid() { return String.valueOf(1000 + random.nextInt(9000)); }
@@ -289,6 +305,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
             is.close();
             
             return filename.startsWith("/home/") ? sb.toString() : env(sb.toString());
+        } catch (Exception e) { return ""; }
+    }
+    public String read(InputStream in, int chunkSize) {
+        try {
+            InputStream in = (InputStream) arg;
+
+            byte[] buffer = new byte[chunkSize];
+            int bytesRead = in.read(buffer, 0, chunkSize);
+            if (bytesRead == -1) { return null; }
+
+            return new String(buffer, 0, bytesRead, "UTF-8");
         } catch (Exception e) { return ""; }
     }
     public static String loadRMS(String filename, int index) { try { RecordStore RMS = RecordStore.openRecordStore(filename, true); if (RMS.getNumRecords() >= index) { byte[] data = RMS.getRecord(index); if (data != null) { return new String(data); } } if (RMS != null) { RMS.closeRecordStore(); } } catch (RecordStoreException e) { } return ""; }
