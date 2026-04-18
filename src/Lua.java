@@ -2929,7 +2929,7 @@ public class Lua {
                     }
                 }
                 else if (mainCommand.equals("ps")) {
-                    midlet.print("PID\tPROCESS");
+                    midlet.print("PID\tPROCESS", output, id, father);
                     for (Enumeration procs = midlet.sys.keys(); procs.hasMoreElements();) {
                         String pid = (String) procs.nextElement();
 
