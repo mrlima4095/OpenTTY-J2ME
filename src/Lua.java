@@ -2933,16 +2933,16 @@ public class Lua {
                     for (Enumeration procs = midlet.sys.keys(); procs.hasMoreElements();) {
                         String pid = (String) procs.nextElement();
 
-                        midlet.print(pid + "\t" ((Process) midlet.sys.get(pid)).name, output, id, father);
+                        midlet.print(pid + "\t" + ((Process) midlet.sys.get(pid)).name, output, id, father);
                     }
                 }
                 else if (mainCommand.equals("su")) {
-                    String user = toLuaString(args.elementAt(0)), query = args.size() > 1 ? toLuaString(args.elementAt(1)) : null;
+                    /*String user = toLuaString(args.elementAt(0)), query = args.size() > 1 ? toLuaString(args.elementAt(1)) : null;
                     if (user.equals(midlet.username)) { id = 1000; father.put("USER", midlet.username); return new Double(0); }
                     else if (midlet.userID.containsKey(user)) { id = midlet.getUserID(user); father.put("USER", user); return new Double(0); }
                     else if (query == null) { return gotbad(2, "su", "string expected, got nil"); }
                     else if (user.equals("root") && midlet.passwd(query)) { id = 0; father.put("USER", "root"); return new Double(0); }
-                    else { return new Double(13); }
+                    else { return new Double(13); }*/
                 }
                 else if (mainCommand.equals("uptime")) {}
                 else if (mainCommand.equals("time")) {
