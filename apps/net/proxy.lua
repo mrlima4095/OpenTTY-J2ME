@@ -1,7 +1,6 @@
 #!/bin/lua
 
-local shell = require("/bin/sh")
-local aliases, scope = {}, { PWD = "/home/", USER = java.midlet.username }
+
 local password = arg[1]
 
 local function app()
@@ -32,7 +31,11 @@ local function app()
         while true do
             local cmd = string.trim(io.read(i))
 
-            if cmd then shell(cmd, true, aliases, o, scope)
+            if cmd then 
+                local ok, status = pcall(os.execute, cmd)
+                if not ok then
+                    print(status)
+                end
             else break end
         end
     end)
