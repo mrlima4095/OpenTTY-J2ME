@@ -211,6 +211,22 @@ elseif arg[1] == "download" then
     else
         print("yang: usage: yang download [pkg] [file]")
     end
+elseif arg[1] == "run" then
+    if arg[2] then
+        local file = io.read(os.join(arg[2]))
+        if file ~= "" then
+            local pkgs = string.split(file, "\n")
+            print(":: Installing " .. #pkgs)
+            for _,pkg in pairs(pkgs) do
+                install(pkg, true)
+            end
+        else
+            print("yang: nothing to run")
+            os.exit(1)
+        end
+    else
+        print("yang: usage: yang run [requirements.txt]")
+    end
 elseif arg[1] == "remove" then
     if os.getuid() > 0 then print("Permission denied!") os.exit(13) end
 
