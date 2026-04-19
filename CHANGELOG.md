@@ -14,13 +14,12 @@ general
 - New log manager `sys/smile/logs.lua`, install with `yang install log`
 - Limited Lua cached tokens to 100 files
 - Native Shell `os.execute(cmd)` still wrote in Java
-
+- SheBang `#!/bin/sh` on `. [file]` run file with shell
 
 lua
 
 - Added functions `string.startswith(s, pattern)` and `string.endswith(s, pattern)`
 
-elf
 
 yang - package manager
 
@@ -28,6 +27,6 @@ yang - package manager
 - New command `download [pkg] [file]` to download a package without install it
 - New command `run [file]` to run installation scripts
 - Fixed **not found** message that disappears from stdout
-
+- Command `yang install *` install all available packages
 
 
