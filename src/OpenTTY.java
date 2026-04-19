@@ -310,6 +310,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public String read(InputStream in, int chunkSize, boolean consume) {
         try {
             if (in == null) { return ""; }
+            if (consume) {
+                
+            }
             
             InputStreamReader reader = new InputStreamReader(in, "UTF-8");
             StringBuffer sb = new StringBuffer();
