@@ -2827,11 +2827,11 @@ public class Lua {
 
                 if (mainCommand.equals("") || mainCommand.equals("true") || mainCommand.startsWith("#")) { }
                 else if (aliases.containsKey(mainCommand) && !builtin) { Vector payload = new Vector(); payload.addElement(((String) aliases.get(mainCommand)) + " " + argument); return exec(payload); }
-                else if ((in = open("/bin/" + mainCommand, father)) != null) { status = popen("/bin/" + mainCommand, midlet.genpid(), argument, id, output, father, in).intValue(); }
+                else if ((in = open("/bin/" + mainCommand, father)) != null) { status = ((Double) popen("/bin/" + mainCommand, midlet.genpid(), argument, id, output, father, in).elementAt(0)).intValue(); }
                 else if (mainCommand.equals(".")) {
                     if (args.length == 0) { }
                     else if ((in = open(midlet.joinpath(args[0], father), father)) != null) {
-                        status = popen(args[0], midlet.genpid(), args, id, output, father, in).intValue();
+                        status = ((Double) popen(args[0], midlet.genpid(), args, id, output, father, in).elementAt(0)).intValue();
                     }
                     else {
                         midlet.print(". " + args[0] + ": not found", output, id, father);
@@ -3068,7 +3068,7 @@ public class Lua {
         }
 
         public InputStream open(String uri, Hashtable scope) { try { return midlet.getInputStream(uri, scope); } catch (Exception e) { return null; } }
-        public Double popen(Vector args) throws Exception {
+        public Vector popen(Vector args) throws Exception {
             if (args.isEmpty()) { return null; }
             
             String program = toLuaString(args.elementAt(0));
@@ -3080,7 +3080,7 @@ public class Lua {
             
             return popen(program, midlet.genpid(), arguments, owner, out, scope, is);
         }
-        public Double popen(String program, String pid, Object arguments, int owner, Object out, Hashtable scope, InputStream is) throws Exception {
+        public Vector popen(String program, String pid, Object arguments, int owner, Object out, Hashtable scope, InputStream is) throws Exception {
             Vector result = new Vector();
             
             if (is == null) { return new Double(127); }
