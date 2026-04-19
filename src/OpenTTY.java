@@ -307,7 +307,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             return filename.startsWith("/home/") ? sb.toString() : env(sb.toString());
         } catch (Exception e) { return ""; }
     }
-    public String read(InputStream in, int chunkSize) {
+    public String read(InputStream in, int chunkSize, boolean consume) {
         try {
             if (in == null) { return ""; }
             
