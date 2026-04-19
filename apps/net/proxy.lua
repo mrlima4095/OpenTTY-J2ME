@@ -4,26 +4,36 @@
 local scope = { PWD = "/home/", USER = java.midlet.username, ROOT = "/", ALIAS = {} }
 local password = arg[1]
 local function app()
+    print("conectando")
     local ok, conn, i, o = pcall(socket.connect, "socket://opentty.xyz:4096")
     if not ok then
         print(arg[0] .. ": " .. tostring(conn))
         os.exit(101)
     end
 
+    print("pegando enderecos")
     local address, port = socket.device(conn)
+    print("consumindo buffer de password")
     local _ = io.read(i)
 
+    print("enviando password")
     io.write(password .. "\n", o)
+    print("lendo o id da conexao")
     local id = string.trim(string.sub(io.read(i), 22))
 
     print("WebProxy ID: " .. id)
 
+    print("config. id")
     os.setproc("id", id)
+    print("config. passwd")
     os.setproc("passwd", password)
+    print("config. name")
     os.setproc("name", "web-proxy")
 
+    print("config. scooe")
     os.scope(scope)
 
+    print("salvo stdout")
     local bkp_stdout = io.stdout
     io.setstdout(o)
 
