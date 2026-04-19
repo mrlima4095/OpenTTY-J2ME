@@ -2804,7 +2804,7 @@ public class Lua {
         public Double exec(Vector args) throws Exception {
             if (args.isEmpty()) { return (Double) gotbad(1, "execute", "string expected, got no value"); }
             else {
-                int status = 0; InputStream in; boolean builtin = args.size() > 1 ? (Boolean) args.elementAt(1) : false;
+                int status = 0; InputStream in; boolean builtin = args.size() > 1 ? ((Boolean) args.elementAt(1)).booleanValue() : false;
 
                 String command = toLuaString(args.elementAt(0));
                 String mainCommand = midlet.getCommand(command), argument = midlet.getArgument(command);
