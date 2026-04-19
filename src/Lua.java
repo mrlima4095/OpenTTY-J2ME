@@ -2898,7 +2898,7 @@ public class Lua {
                         }
                     }
                 }
-                else if (mainCommand.equals("uptime")) { midlet.print((System.currentTimeMillis() - midlet.uptime) + " ms", output, id, father); }
+                else if (mainCommand.equals("uptime")) { midlet.print(((System.currentTimeMillis() - midlet.uptime) / 1000) + " ms", output, id, father); }
                 else if (mainCommand.equals("time")) {
                     long before = System.currentTimeMillis();
                     Vector payload = new Vector();
