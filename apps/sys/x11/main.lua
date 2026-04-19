@@ -66,7 +66,7 @@ else
     local previous = graphics.getCurrent()
     local screen = graphics.new("screen", "OpenTTY X.Org")
     local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
-    graphics.append(screen, "OpenTTY X.Org - X Server " .. version .. "\nRelease Date: " .. release_date .. "\nX Protocol Version 1, Revision 3\nBuild OS: " .. getAppProperty("/microedition.profile"))
+    graphics.append(screen, "OpenTTY X.Org - X Server " .. version .. "\nRelease Date: " .. release_date .. "\nX Protocol Version 1, Revision 3\nBuild OS: " .. getAppProperty("/microedition.profiles"))
 
     graphics.addCommand(screen, back)
     graphics.handler(screen, { [back] = function () graphics.display(previous) os.exit(0) end })
