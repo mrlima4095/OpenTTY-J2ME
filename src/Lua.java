@@ -2827,7 +2827,7 @@ public class Lua {
                 else if ((in = open("/bin/" + mainCommand, father)) != null) { status = popen("/bin/" + mainCommand, midlet.genpid(), argument, id, output, father, in).intValue(); }
                 else if (mainCommand.equals(".")) {
                     if (args.length == 0) { }
-                    else if (in = open(midlet.joinpath(args[0], father)) != null) {
+                    else if (in = open(midlet.joinpath(args[0], father), father) != null) {
                         status = popen(args[0], midlet.genpid(), args, id, output, father, in).intValue();
                     }
                     else {
