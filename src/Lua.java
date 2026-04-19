@@ -3074,6 +3074,7 @@ public class Lua {
                     arg.put(new Double(0), program);
                 } else if (arguments instanceof String[]) {
                     arg = new Hashtable();
+                    String[] list = (String[]) arguments;
                     for (int i = 0; i < list.length; i++) {
                         arg.put(new Double(i), list[i]);
                     }
