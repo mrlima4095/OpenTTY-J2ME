@@ -153,6 +153,7 @@ if arg[1] == nil or arg[1] == "help" then
     print("Usage: yang <command> [package]")
     print("Commands:")
     print("  install <package>  - Install a package")
+    print("  download <package> - Download a package")
     print("  remove <package>   - Remove a package")
     print("  update             - Check for updates")
     print("  list               - List available packages")
@@ -189,11 +190,13 @@ elseif arg[1] == "install" then
                     os.exit(1)
                 end
             elseif pkg == "*" then
-                for pkg,_ in pairs(mirror) do
-                    install(pkg, true)
+                print(":: Installing " .. (#mirror - 4) .. " packages...")
+                for pkg2,_ in pairs(mirror) do
+                    if mirror[pkg2].remote then
+                       install(pkg2, true)
+                    end
                 end
                 return
-            end
             else
                 print("yang: install: " .. pkg .. ": not found")
                 os.exit(127)
@@ -281,4 +284,7 @@ elseif arg[1] == "info" then
     else
         print("yang: usage: yang info [package]")
     end
+else
+    print("yang: " .. arg[1] .. ": not found")
+    os.exit(127)
 end
