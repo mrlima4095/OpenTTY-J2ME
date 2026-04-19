@@ -32,7 +32,7 @@ local function app()
             local cmd = string.trim(io.read(i))
 
             if cmd then
-                local _ pcall(os.execute, cmd)
+                local _ = pcall(os.execute, cmd)
             else break end
         end
     end)
