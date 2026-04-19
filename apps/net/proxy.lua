@@ -35,8 +35,10 @@ local function app()
 
     print("salvo stdout")
     local bkp_stdout = io.stdout
+    print("setando novo stdout")
     io.setstdout(o)
 
+    print("entrando no loop")
     pcall(function ()
         while true do
             local cmd = string.trim(io.read(i))
