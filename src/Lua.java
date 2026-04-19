@@ -2843,7 +2843,7 @@ public class Lua {
                     for (int i = 0; i < args.length; i++) {
                         try {
                             InputStream in = midlet.getInputStream(midlet.joinpath(args[i], father), father);
-                            if (in != null) { midlet.print(midlet.read(in, 1024), output, id, father); }
+                            if (in != null) { midlet.print(midlet.read(in, 1024, true), output, id, father); }
                             else { status = 2; break; }
                         } catch (Exception e) {
                             status = 127; break;
