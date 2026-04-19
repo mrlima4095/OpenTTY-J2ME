@@ -2826,7 +2826,7 @@ public class Lua {
                 }
 
                 if (mainCommand.equals("") || mainCommand.equals("true") || mainCommand.startsWith("#")) { }
-                else if (aliases.containsKey(mainCommand) && !builtin) { Vector payload = new Vector(); payload.addCommand(((String) aliases.get(mainCommand)) + " " + argument); return exec(payload); }
+                else if (aliases.containsKey(mainCommand) && !builtin) { Vector payload = new Vector(); payload.addElement(((String) aliases.get(mainCommand)) + " " + argument); return exec(payload); }
                 else if ((in = open("/bin/" + mainCommand, father)) != null) { status = popen("/bin/" + mainCommand, midlet.genpid(), argument, id, output, father, in).intValue(); }
                 else if (mainCommand.equals(".")) {
                     if (args.length == 0) { }
