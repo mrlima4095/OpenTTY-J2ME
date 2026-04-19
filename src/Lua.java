@@ -1530,7 +1530,7 @@ public class Lua {
                 else {
                     Object arg = args.elementAt(0);
 
-                    if (arg instanceof InputStream) { return midlet.read((InputStream) arg, args.size() > 1 && args.elementAt(1) instanceof Double ? ((Double) args.elementAt(1)).intValue() : 1024); }
+                    if (arg instanceof InputStream) { return midlet.read((InputStream) arg, args.size() > 1 && args.elementAt(1) instanceof Double ? ((Double) args.elementAt(1)).intValue() : 1024, false); }
                     else if (arg instanceof StringBuffer) { ((StringBuffer) arg).toString(); }
                     else if (arg instanceof OutputStream) { return gotbad(1, "read", "input stream expected, got output"); } 
                     else { return midlet.getcontent(toLuaString(arg), father); } 
