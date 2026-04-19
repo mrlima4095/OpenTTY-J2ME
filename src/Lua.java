@@ -3068,17 +3068,13 @@ public class Lua {
                 } else if (arguments instanceof String[]) {
                     arg = new Hashtable();
                     String[] list = (String[]) arguments;
-                    for (int i = 0; i < list.length; i++) {
-                        arg.put(new Double(i), list[i]);
-                    }
+                    for (int i = 0; i < list.length; i++) { arg.put(new Double(i), list[i]); }
                 } else if (arguments != null) {
                     arg = new Hashtable();
                     arg.put(new Double(0), program);
                     String argsStr = toLuaString(arguments);
                     String[] list = midlet.splitArgs(argsStr);
-                    for (int i = 0; i < list.length; i++) {
-                        arg.put(new Double(i + 1), list[i]);
-                    }
+                    for (int i = 0; i < list.length; i++) { arg.put(new Double(i + 1), list[i]); }
                 }
                 
                 if (arg == null) { arg = new Hashtable(); arg.put(new Double(0), program); }
