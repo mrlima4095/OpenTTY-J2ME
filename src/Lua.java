@@ -3129,8 +3129,9 @@ public class Lua {
                     } else {
                         Process process = new Process(midlet, ("lua " + program).trim(), midlet.joinpath(program, scope), midlet.getUser(owner), owner, pid, out, scope);
                         midlet.sys.put(pid, process);
+                        Hashtable digest = process.lua.run(program, code, arg);
                         
-                        result.addElement(process.lua.run(program, code, arg));
+                        result.addElement(digest.get("STATUS"));
                     }
                 } else {
                     InputStream elfStream = new ByteArrayInputStream(data);
@@ -3138,7 +3139,8 @@ public class Lua {
                     midlet.sys.put(pid, process);
                     
                     if (process.elf.load(elfStream)) {
-                        result.addElement(process.elf.run());
+                        Hashtable digest = process.elf.run();
+                        result.addElement(digest.get("STATUS"));
                     } else {
                         result.addElement(1);
                     }
