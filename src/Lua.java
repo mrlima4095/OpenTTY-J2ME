@@ -2831,7 +2831,7 @@ public class Lua {
                 else if (mainCommand.equals(".")) {
                     if (args.length == 0) { }
                     else if ((in = open(midlet.joinpath(args[0], father), father)) != null) {
-                        status = ((Double) popen(args[0], midlet.genpid(), argument, id, output, father, in).elementAt(0)).intValue()
+                        status = ((Double) popen(args[0], midlet.genpid(), argument, id, output, father, in).elementAt(0)).intValue();
                     }
                     else {
                         midlet.print(". " + args[0] + ": not found", output, id, father);
