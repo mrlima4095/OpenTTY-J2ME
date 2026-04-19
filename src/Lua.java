@@ -2827,11 +2827,11 @@ public class Lua {
 
                 if (mainCommand.equals("") || mainCommand.equals("true") || mainCommand.startsWith("#")) { }
                 else if (aliases.containsKey(mainCommand) && !builtin) { Vector payload = new Vector(); payload.addElement(((String) aliases.get(mainCommand)) + " " + argument); return exec(payload); }
-                else if ((in = open("/bin/" + mainCommand, father)) != null) { status = ((Double) popen("/bin/" + mainCommand, midlet.genpid(), argument, id, output, father, in).elementAt(0)).intValue(); }
+                else if ((in = open("/bin/" + mainCommand, father)) != null) { status = (Integer) popen("/bin/" + mainCommand, midlet.genpid(), argument, id, output, father, in).elementAt(0); }
                 else if (mainCommand.equals(".")) {
                     if (args.length == 0) { }
                     else if ((in = open(midlet.joinpath(args[0], father), father)) != null) {
-                        status = ((Double) popen(args[0], midlet.genpid(), argument, id, output, father, in).elementAt(0)).intValue();
+                        status = (Integer) popen(args[0], midlet.genpid(), argument, id, output, father, in).elementAt(0);
                     }
                     else {
                         midlet.print(". " + args[0] + ": not found", output, id, father);
