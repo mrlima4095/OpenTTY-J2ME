@@ -3121,7 +3121,7 @@ public class Lua {
                         for (int i = 0; i < cmds.length; i++) {
                             Vector payload = new Vector();
                             payload.addElement(cmds[i]);
-                            status = exec(payload);
+                            status = exec(payload).intValue();
                             if (status != 0) { break; }
                         }
 
