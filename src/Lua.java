@@ -2963,7 +2963,7 @@ public class Lua {
                 else if (mainCommand.equals("env") || mainCommand.equals("export") || mainCommand.equals("set")) {
                     if (args.length == 0) {
                         for (Enumeration keys = midlet.attributes.keys(); keys.hasMoreElements();) {
-                            String key = keys.nextElement(), value = (String) midlet.attributes.get(key);
+                            String key = (String) keys.nextElement(), value = (String) midlet.attributes.get(key);
                             midlet.print(key + "=" + value, output, id, father);
                         }
                     } else {
