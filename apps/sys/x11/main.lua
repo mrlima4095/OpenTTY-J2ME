@@ -1,8 +1,5 @@
 #!/bin/lua
 
-local shell = require("/bin/sh")
-local alias, scope = {}, os.scope()
-
 local version = "0.7"
 local release_date = "2026-02-07"
 
@@ -32,7 +29,7 @@ elseif arg[1] == "list" then
 
             local function __run(opt)
                 if conf[opt] then
-                    pcall(shell, conf[opt], true, alias, io.stdout, scope)
+                    pcall(os.execute, conf[opt])
                 else
                     local time = string.split(os.date())
                     io.write(string.trim(io.read("/tmp/logs") .. "\n[WARN] " .. time[4] .. " An error occurred, '" .. opt .. "' not found"), "/tmp/logs", "a")
@@ -45,7 +42,7 @@ elseif arg[1] == "list" then
                 [back] = function ()
                     graphics.display(previous)
                     if conf["list.back"] then
-                        pcall(shell, conf["list.back"], true, alias, io.stdout, scope)
+                        pcall(os.execute, conf["list.back"])
                     end
                     os.exit(0)
                 end,
