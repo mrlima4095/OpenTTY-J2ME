@@ -79,7 +79,7 @@ local function install(pkg, verbose)
     if verbose then
         print(":: Installing " .. pkg .. "...")
     end
-
+    
     local info = mirror[pkg]
 
     if info.depends then
@@ -108,6 +108,20 @@ local function install(pkg, verbose)
         end
 
         return nil
+    end
+end
+local function download(pkg, output)
+    local info = mirror[pkg]
+
+    if info then
+        local content = connect("get apps/" .. info.remote)
+        if content then
+            io.write(content, os.join(output))
+        else
+            print("download failed")
+        end
+    else
+        print("yang: download: " .. pkg .. ": not found")
     end
 end
 local function remove(pkg, verbose)
@@ -139,6 +153,7 @@ if arg[1] == nil or arg[1] == "help" then
     print("Usage: yang <command> [package]")
     print("Commands:")
     print("  install <package>  - Install a package")
+    print("  download <package> - Download a package")
     print("  remove <package>   - Remove a package")
     print("  update             - Check for updates")
     print("  list               - List available packages")
@@ -174,6 +189,14 @@ elseif arg[1] == "install" then
                     print("yang: install: " .. pkg .. ": invalid package (not remote source)")
                     os.exit(1)
                 end
+            elseif pkg == "*" then
+                print(":: Installing " .. (#mirror - 4) .. " packages...")
+                for pkg2,_ in pairs(mirror) do
+                    if mirror[pkg2].remote then
+                       install(pkg2, true)
+                    end
+                end
+                return
             else
                 print("yang: install: " .. pkg .. ": not found")
                 os.exit(127)
@@ -181,6 +204,12 @@ elseif arg[1] == "install" then
         end
     else
         print("yang: usage: yang remove [package]")
+    end
+elseif arg[1] == "download" then
+    if arg[2] and arg[3] then
+        download(arg[2], arg[3])
+    else
+        print("yang: usage: yang download [pkg] [file]")
     end
 elseif arg[1] == "remove" then
     if os.getuid() > 0 then print("Permission denied!") os.exit(13) end
@@ -255,4 +284,7 @@ elseif arg[1] == "info" then
     else
         print("yang: usage: yang info [package]")
     end
+else
+    print("yang: " .. arg[1] .. ": not found")
+    os.exit(127)
 end
