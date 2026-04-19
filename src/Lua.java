@@ -3083,7 +3083,7 @@ public class Lua {
         public Vector popen(String program, String pid, Object arguments, int owner, Object out, Hashtable scope, InputStream is) throws Exception {
             Vector result = new Vector();
             
-            if (is == null) { return new Double(127); }
+            if (is == null) { result.addElement(new Double(127)); return result; }
             
             try {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -3134,9 +3134,7 @@ public class Lua {
                     }
                 } else {
                     InputStream elfStream = new ByteArrayInputStream(data);
-                    Process process = new Process(midlet, "elf", 
-                                                midlet.joinpath(program, scope), 
-                                                midlet.getUser(owner), owner, pid, out, arg, scope);
+                    Process process = new Process(midlet, "elf", midlet.joinpath(program, scope), midlet.getUser(owner), owner, pid, out, arg, scope);
                     midlet.sys.put(pid, process);
                     
                     if (process.elf.load(elfStream)) {
