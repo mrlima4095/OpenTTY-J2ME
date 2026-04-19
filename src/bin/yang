@@ -116,7 +116,7 @@ local function download(pkg, output)
     if info then
         local content = connect("get apps/" .. info.remote)
         if content then
-            io.write(os.join(output))
+            io.write(content, os.join(output))
         end
     else
         print("yang: download: " .. pkg .. ": not found")
