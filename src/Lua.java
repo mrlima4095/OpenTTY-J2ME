@@ -2962,7 +2962,7 @@ public class Lua {
                 else if (mainCommand.equals("cd")) {
                     Vector payload = new Vector();
                     payload.addElement(args.length == 0 ? "/home/" : args[0]);
-                    status = chdir(payload).intValue();
+                    status = ((Double) chdir(payload)).intValue();
 
                     if (status == 127) { midlet.print("cd: " + args[0] + ": not found", output, id, father); }
                     else if (status == 20) { midlet.print("cd: " + args[0] + ": found", output, id, father); }
