@@ -2887,7 +2887,12 @@ public class Lua {
                         }
                     }
                     else {
-                        midlet.print("su: usage: su [username] [passwd]", output, id, father);
+                        if (id != 1000) {
+                            id = 1000;
+                            father.put("USER", midlet.username);
+                        } else {
+                            midlet.print("su: usage: su [username] [passwd]", output, id, father);
+                        }
                     }
                 }
                 else if (mainCommand.equals("uptime")) { midlet.print((System.currentTimeMillis() - midlet.uptime) + " ms", output, id, father); }
