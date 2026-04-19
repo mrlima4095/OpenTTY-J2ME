@@ -110,6 +110,18 @@ local function install(pkg, verbose)
         return nil
     end
 end
+local function download(pkg, output)
+    local info = mirror[pkg]
+
+    if info then
+        local content = connect("get apps/" .. info.remote)
+        if content then
+            io.write(os.join(output))
+        end
+    else
+        print("yang: download: " .. pkg .. ": not found")
+    end
+end
 local function remove(pkg, verbose)
     if verbose then
         print(":: Removing " .. pkg .. "...")
@@ -181,6 +193,11 @@ elseif arg[1] == "install" then
         end
     else
         print("yang: usage: yang remove [package]")
+    end
+elseif arg[1] == "download" then
+    if arg[2] and arg[3] then
+    else
+        print("yang: usage: yang download [pkg] [file]")
     end
 elseif arg[1] == "remove" then
     if os.getuid() > 0 then print("Permission denied!") os.exit(13) end
