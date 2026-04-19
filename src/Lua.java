@@ -2998,7 +2998,7 @@ public class Lua {
                     }
                 }
                 else if (mainCommand.equals("echo")) { midlet.print(argument, output, id, father); }
-                else if (mainCommand.equals("exit")) { Vector payload = new Vector(); payload.addElement(args.length == 0 ? "0" : args[0]); exit(payload); }
+                else if (mainCommand.equals("exit")) { Vector payload = new Vector(); payload.addElement(args.length == 0 ? "0" : args[0]); payload.addElement(builtin); exit(payload); }
                 else if (mainCommand.equals("pwd")) { midlet.print((String) father.get("PWD"), output, id, father); }
                 else if (mainCommand.equals("cd")) {
                     Vector payload = new Vector();
@@ -3008,7 +3008,7 @@ public class Lua {
                     if (status == 127) { midlet.print("cd: " + args[0] + ": not found", output, id, father); }
                     else if (status == 20) { midlet.print("cd: " + args[0] + ": found", output, id, father); }
                 }
-                else if (mainCommand.equals("builtin")) { Vector payload = new Vector(); payload.addElement(argument); payload.addElement(Boolean.FALSE); return exec(payload); }
+                else if (mainCommand.equals("builtin")) { Vector payload = new Vector(); payload.addElement(argument); payload.addElement(builtin); payload.addElement(Boolean.FALSE); return exec(payload); }
                 else if (mainCommand.equals("false")) { status = 255; }
                 else { midlet.print(mainCommand + ": not found", output, id, father); status = 127; }
                 
@@ -3119,7 +3119,9 @@ public class Lua {
                         String[] cmds = midlet.split(code, '\n');
                         int status = 0;
                         for (int i = 0; i < cmds.length; i++) {
-                            status = exec(cmds[i]);
+                            Vector payload = new Vector();
+                            payload.addElement(cmds[i]);
+                            status = exec(payload);
                             if (status != 0) { break; }
                         }
 
