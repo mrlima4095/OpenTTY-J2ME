@@ -32,10 +32,7 @@ local function app()
             local cmd = string.trim(io.read(i))
 
             if cmd then 
-                local ok, status = pcall(os.execute, cmd)
-                if not ok then
-                    print(status)
-                end
+                pcall(os.execute, cmd)
             else break end
         end
     end)
