@@ -3122,7 +3122,7 @@ public class Lua {
             }
         }
 
-        public Object chdir(Vector args) {
+        public Object chdir(Vector args) throws Exception {
             if (args.isEmpty()) { return father.get("PWD"); }
             else {
                 String pwd = (String) father.get("PWD"), target = toLuaString(args.elementAt(0));
