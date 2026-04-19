@@ -1160,7 +1160,7 @@ public class Lua {
     // |
     // Lua Object
     public class LuaFunction implements Runnable, CommandListener, ItemCommandListener, ItemStateListener {
-        private Vector params, bodyTokens;
+        private Vector params, bodyTokens, argv;
         private Hashtable closureScope, cmds = null; 
         private int MOD = -1;
         // | (Screen)
@@ -2806,7 +2806,7 @@ public class Lua {
             else {
                 String command = toLuaString(args.elementAt(0));
                 String mainCommand = midlet.getCommand(command), argument = midlet.getArgument(command);
-                String[] args = midlet.splitArgs(argument); int status = 0; InputStream in;
+                String[] args = midlet.splitArgs(argument); int status = 0; InputStream in; boolean builtin = args.size() > 1 ? (Boolean) args.elementAt(1) : false;
 
                 Object output = stdout; Hashtable aliases = (Hashtable) father.get("ALIAS");
                 for (int i = 0; i < args.length; i++) {
@@ -2824,6 +2824,7 @@ public class Lua {
                 }
 
                 if (mainCommand.equals("") || mainCommand.equals("true") || mainCommand.startsWith("#")) { }
+                else if (aliases.containsKey(mainCommand) && !builtin) { Vector payload = new Vector(); payload.addCommand(((String) aliases.get(mainCommand)) + " " + argument); return exec(payload); }
                 else if ((in = open("/bin/" + mainCommand, father)) != null) { status = popen("/bin/" + mainCommand, midlet.genpid(), argument, id, output, father, in).intValue(); }
                 else if (mainCommand.equals(".")) {
                     if (args.length == 0) { }
@@ -2928,7 +2929,7 @@ public class Lua {
                         for (int i = 0; i < args.length; i++) {
                             int j = args[i].indexOf("="); 
                             if (j != -1) {
-                                String key = args[i].substring(0, j - 1), value = midlet.getpattern(args[i].substring(j + 1));
+                                String key = args[i].substring(0, j), value = midlet.getpattern(args[i].substring(j + 1));
                                 aliases.put(key, value);
                             } else {
                                 if (aliases.containsKey(args[i])) {
@@ -2958,12 +2959,45 @@ public class Lua {
                 }
                 else if (mainCommand.equals("clear")) { midlet.stdout.setText(""); }
                 else if (mainCommand.equals("env") || mainCommand.equals("export") || mainCommand.equals("set")) {
-                    
+                    if (args.length == 0) {
+                        for (Enumeration keys = midlet.attributes.keys(); keys.hasMoreElements();) {
+                            String key = keys.nextElement(), value = (String) midlet.attributes.get(key);
+                            midlet.print(key + "=" + value, output, id, father);
+                        }
+                    } else {
+                        for (int i = 0; i < args.length; i++) {
+                            int j = args[i].indexOf("="); 
+                            if (j != -1) {
+                                String key = args[i].substring(0, j), value = midlet.getpattern(args[i].substring(j + 1));
+                                midlet.attributes.put(key, value);
+                            } else {
+                                if (midlet.attributes.containsKey(args[i])) {
+                                    midlet.print(args[i] + "=" + ((String) midlet.attributes.get(args[i])), output, id, father);
+                                } else {
+                                    midlet.print(mainCommand + ": " + args[i] + ": not found", output, id, father); status = 127;
+                                }
+                            }
+                        }
+                    }
                 }
-                else if (mainCommand.equals("unset")) { }
+                else if (mainCommand.equals("unset")) {
+                    if (args.length == 0) { }
+                    else {
+                        for (int i = 0; i < args.length; i++) {
+                            if (midlet.attributes.containsKey(args[i])) {
+                                midlet.attributes.remove(args[i]);
+                            }
+                            else {
+                                midlet.print("unset: " + args[i] + ": not found", output, id, father);
+                                status = 127;
+                                break;
+                            }
+                        }
+                    }
+                }
                 else if (mainCommand.equals("echo")) { midlet.print(argument, output, id, father); }
                 else if (mainCommand.equals("exit")) { Vector payload = new Vector(); payload.addElement(args.length == 0 ? "0" : args[0]); exit(payload); }
-                else if (mainCommand.equals("pwd")) { }
+                else if (mainCommand.equals("pwd")) { midlet.print((String) father.get("PWD")); }
                 else if (mainCommand.equals("cd")) {
                     Vector payload = new Vector();
                     payload.addElement(args.length == 0 ? "/home/" : args[0]);
@@ -2972,9 +3006,10 @@ public class Lua {
                     if (status == 127) { midlet.print("cd: " + args[0] + ": not found", output, id, father); }
                     else if (status == 20) { midlet.print("cd: " + args[0] + ": found", output, id, father); }
                 }
-                else if (mainCommand.equals("bg")) { }
-                else if (mainCommand.equals("builtin")) { }
-                else if (mainCommand.equals("source")) { }
+                else if (mainCommand.equals("bg")) {
+
+                }
+                else if (mainCommand.equals("builtin")) { Vector payload = new Vector(); payload.addCommand(argument); payload.addElement(Boolean.FALSE); return exec(payload); }
                 else if (mainCommand.equals("false")) { status = 255; }
                 else { midlet.print(mainCommand + ": not found", output, id, father); status = 127; }
                 
@@ -3081,12 +3116,21 @@ public class Lua {
                 
                 if (midlet.isPureText(data)) {
                     String code = new String(data, "UTF-8");
-                    Process process = new Process(midlet, ("lua " + program).trim(), 
-                                                midlet.joinpath(program, scope), 
-                                                midlet.getUser(owner), owner, pid, out, scope);
-                    midlet.sys.put(pid, process);
-                    
-                    result.addElement(process.lua.run(program, code, arg));
+                    if (code.startsWith("#!/bin/sh")) {
+                        String[] cmds = midlet.split(code, '\n');
+                        int status = 0;
+                        for (int i = 0; i < cmds.length; i++) {
+                            status = exec(cmds[i]);
+                            if (status != 0) { break; }
+                        }
+
+                        result.addElement(new Double(status));
+                    } else {
+                        Process process = new Process(midlet, ("lua " + program).trim(), midlet.joinpath(program, scope), midlet.getUser(owner), owner, pid, out, scope);
+                        midlet.sys.put(pid, process);
+                        
+                        result.addElement(process.lua.run(program, code, arg));
+                    }
                 } else {
                     InputStream elfStream = new ByteArrayInputStream(data);
                     Process process = new Process(midlet, "elf", 
@@ -3102,7 +3146,7 @@ public class Lua {
                 }
                 
                 result.addElement(out instanceof StringBuffer ? out.toString() : out);
-                return (Double) result.elementAt(0); 
+                return result; 
                 
             } catch (Exception e) { return new Double(1); }
         }
