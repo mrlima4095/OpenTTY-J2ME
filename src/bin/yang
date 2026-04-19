@@ -196,7 +196,7 @@ elseif arg[1] == "install" then
     end
 elseif arg[1] == "download" then
     if arg[2] and arg[3] then
-    download
+        download(arg[2], arg[3])
     else
         print("yang: usage: yang download [pkg] [file]")
     end
