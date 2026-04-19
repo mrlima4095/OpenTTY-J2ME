@@ -2876,7 +2876,7 @@ public class Lua {
                     if (args.length >= 2) {
                         midlet.print(args[0] + ":" + args[1], output, id, father);
                         if (args[0].equals("root") && midlet.passwd(args[1])) { id = 0; father.put("USER", "root"); }
-                        else { status = 13; }
+                        else { midlet.print("Permission denied!", output, id, father); status = 13; }
                     } 
                     else if (args.length == 1) {
                         midlet.print("1!", output, id, father);
