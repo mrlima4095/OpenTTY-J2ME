@@ -1,7 +1,7 @@
 #!/bin/lua
 
 
-local scope = { PWD = "/home/", USER = java.midlet.username, ALIAS = {} }
+local scope = { PWD = "/home/", USER = java.midlet.username, ROOT = "/", ALIAS = {} }
 local password = arg[1]
 local function app()
     local ok, conn, i, o = pcall(socket.connect, "socket://opentty.xyz:4096")
