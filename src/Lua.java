@@ -2804,9 +2804,11 @@ public class Lua {
         public Double exec(Vector args) throws Exception {
             if (args.isEmpty()) { return (Double) gotbad(1, "execute", "string expected, got no value"); }
             else {
+                int status = 0; InputStream in; boolean builtin = args.size() > 1 ? (Boolean) args.elementAt(1) : false;
+
                 String command = toLuaString(args.elementAt(0));
                 String mainCommand = midlet.getCommand(command), argument = midlet.getArgument(command);
-                String[] args = midlet.splitArgs(argument); int status = 0; InputStream in; boolean builtin = args.size() > 1 ? (Boolean) args.elementAt(1) : false;
+                String[] args = midlet.splitArgs(argument);
 
                 Object output = stdout; Hashtable aliases = (Hashtable) father.get("ALIAS");
                 for (int i = 0; i < args.length; i++) {
