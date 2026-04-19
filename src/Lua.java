@@ -3147,7 +3147,7 @@ public class Lua {
                 result.addElement(out instanceof StringBuffer ? out.toString() : out);
                 return result; 
                 
-            } catch (Exception e) { return new Double(1); }
+            } catch (Exception e) { result.addElement(new Double(1)); return result; }
         }
 
         public Object chdir(Vector args) throws Exception {
