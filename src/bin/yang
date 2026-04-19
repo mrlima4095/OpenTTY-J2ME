@@ -1,6 +1,6 @@
 #!/bin/lua
 
-local version = "1.5"
+local version = "1.5.1"
 
 local server = os.getenv("REPO") or "socket://opentty.xyz:31522"
 local mirror = {
