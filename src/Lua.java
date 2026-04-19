@@ -3125,7 +3125,7 @@ public class Lua {
         public Object chdir(Vector args) throws Exception {
             if (args.isEmpty()) { return father.get("PWD"); }
             else {
-                String pwd = (String) father.get("PWD"), target = midlet.joinpath(toLuaString(args.elementAt(0)));
+                String pwd = (String) father.get("PWD"), target = midlet.joinpath(toLuaString(args.elementAt(0)), father);
                 if (!target.endsWith("/")) {
                     target = target + "/";
                 }
