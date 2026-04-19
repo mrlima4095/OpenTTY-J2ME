@@ -13,6 +13,8 @@ general
 - New syscall added `nice` to change process priority
 - New log manager `sys/smile/logs.lua`, install with `yang install log`
 - Limited Lua cached tokens to 100 files
+- Native Shell `os.execute(cmd)` still wrote in Java
+
 
 lua
 
@@ -20,10 +22,11 @@ lua
 
 elf
 
+yang - package manager
 
-
-
-
+- Updated to `1.5.1`
+- New command `download [pkg] [file]` to download a package without install it
+- Fixed **not found** message that disappears from stdout
 
 
 
