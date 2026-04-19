@@ -2874,7 +2874,7 @@ public class Lua {
                 }
                 else if (mainCommand.equals("su")) {
                     if (args.length >= 2) {
-                        midlet.print("2d!", output, id, father);
+                        midlet.print(args[0] + ":" + args[1], output, id, father);
                         if (args[0].equals("root") && midlet.passwd(args[1])) { id = 0; father.put("USER", "root"); }
                         else { status = 13; }
                     } 
