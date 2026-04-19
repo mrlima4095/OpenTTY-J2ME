@@ -2858,7 +2858,7 @@ public class Lua {
                             Double i = (Double) keys.nextElement();
                             String file = (String) items.get(i);
 
-                            buffer.append(file).append("\t");
+                            if (!file.startsWith(".")) { buffer.append(file).append("\t"); }
                         }
 
                         midlet.print(buffer.toString().trim(), output, id, father);
