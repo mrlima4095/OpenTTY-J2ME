@@ -2882,7 +2882,7 @@ public class Lua {
                         midlet.print("1!", output, id, father);
                         if (midlet.userID.containsKey(args[0])) {
                             id = midlet.getUserID(args[0]);
-                            father.put("USER", midlet.userID.get(args[0]));
+                            father.put("USER", args[0]);
                         } else {
                             midlet.print("Permission denied!", output, id, father);
                             status = 13;
