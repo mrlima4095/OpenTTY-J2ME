@@ -309,13 +309,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     public String read(InputStream in, int chunkSize) {
         try {
-            InputStream is = (InputStream) in;
-
-            byte[] buffer = new byte[chunkSize];
-            int bytesRead = is.read(buffer, 0, chunkSize);
-            if (bytesRead == -1) { return null; }
-
-            return new String(buffer, 0, bytesRead, "UTF-8");
+            InputStream is = getInputStream(filename, scope);
+            if (is == null) { return ""; }
+            
+            InputStreamReader reader = new InputStreamReader(in, "UTF-8");
+            StringBuffer sb = new StringBuffer();
+            int ch;
+            while ((ch = reader.read()) != -1) { sb.append((char) ch); }
+            reader.close();
+            
+            return sb.toString();
         } catch (Exception e) { return ""; }
     }
     public static String loadRMS(String filename, int index) { try { RecordStore RMS = RecordStore.openRecordStore(filename, true); if (RMS.getNumRecords() >= index) { byte[] data = RMS.getRecord(index); if (data != null) { return new String(data); } } if (RMS != null) { RMS.closeRecordStore(); } } catch (RecordStoreException e) { } return ""; }
