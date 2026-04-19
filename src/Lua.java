@@ -3039,36 +3039,24 @@ public class Lua {
             
             String program = toLuaString(args.elementAt(0));
             Object arguments = args.size() > 1 ? toLuaString(args.elementAt(1)) : "";
-            int owner = (args.size() < 3) ? new Integer(id) : 
-                        ((args.elementAt(2) instanceof Boolean) ? 
-                        new Integer((Boolean) args.elementAt(2) ? id : 1000) : 
-                        (Integer) gotbad(3, "popen", "boolean expected, got " + type(args.elementAt(2))));
+            int owner = (args.size() < 3) ? new Integer(id) : ((args.elementAt(2) instanceof Boolean) ? new Integer((Boolean) args.elementAt(2) ? id : 1000) : (Integer) gotbad(3, "popen", "boolean expected, got " + type(args.elementAt(2))));
             Object out = (args.size() < 4) ? new StringBuffer() : args.elementAt(3);
-            Hashtable scope = (args.size() < 5) ? father : 
-                            (args.elementAt(4) instanceof Hashtable ? 
-                            (Hashtable) args.elementAt(4) : 
-                            (Hashtable) gotbad(5, "popen", "table expected, got " + type(args.elementAt(4))));
-            InputStream is = (args.size() < 6) ? midlet.getInputStream(program, father) : 
-                            (InputStream) args.elementAt(5);
+            Hashtable scope = (args.size() < 5) ? father : (args.elementAt(4) instanceof Hashtable ? (Hashtable) args.elementAt(4) : (Hashtable) gotbad(5, "popen", "table expected, got " + type(args.elementAt(4))));
+            InputStream is = (args.size() < 6) ? midlet.getInputStream(program, father) : (InputStream) args.elementAt(5);
             
             return popen(program, midlet.genpid(), arguments, owner, out, scope, is);
         }
-        public Double popen(String program, String pid, Object arguments, int owner, 
-                            Object out, Hashtable scope, InputStream is) throws Exception {
+        public Double popen(String program, String pid, Object arguments, int owner, Object out, Hashtable scope, InputStream is) throws Exception {
             Vector result = new Vector();
             
-            if (is == null) {
-                return new Double(127);
-            }
+            if (is == null) { return new Double(127); }
             
             try {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 byte[] buffer = new byte[1024];
                 int length;
                 
-                while ((length = is.read(buffer)) != -1) {
-                    baos.write(buffer, 0, length);
-                }
+                while ((length = is.read(buffer)) != -1) { baos.write(buffer, 0, length); }
                 
                 byte[] data = baos.toByteArray();
                 baos.close();
@@ -3093,9 +3081,7 @@ public class Lua {
                     }
                 }
                 
-                if (arg == null) {
-                    arg = new Hashtable();
-                }
+                if (arg == null) { arg = new Hashtable(); arg.put(new Double(0), program); }
                 
                 if (midlet.isPureText(data)) {
                     String code = new String(data, "UTF-8");
@@ -3120,11 +3106,9 @@ public class Lua {
                 }
                 
                 result.addElement(out instanceof StringBuffer ? out.toString() : out);
-                return (Double) result.elementAt(0); // ou retorna o Vector conforme necessidade
+                return (Double) result.elementAt(0); 
                 
-            } catch (Exception e) {
-                return new Double(1);
-            }
+            } catch (Exception e) { return new Double(1); }
         }
 
         public Object chdir(Vector args) throws Exception {
