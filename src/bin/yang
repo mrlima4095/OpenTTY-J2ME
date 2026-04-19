@@ -79,13 +79,6 @@ local function install(pkg, verbose)
     if verbose then
         print(":: Installing " .. pkg .. "...")
     end
-
-    if pkg == "*" then
-        for pkg,_ in pairs(mirror) do
-            install(pkg, true)
-        end
-        return
-    end
     
     local info = mirror[pkg]
 
@@ -195,6 +188,12 @@ elseif arg[1] == "install" then
                     print("yang: install: " .. pkg .. ": invalid package (not remote source)")
                     os.exit(1)
                 end
+            elseif pkg == "*" then
+                for pkg,_ in pairs(mirror) do
+                    install(pkg, true)
+                end
+                return
+            end
             else
                 print("yang: install: " .. pkg .. ": not found")
                 os.exit(127)
