@@ -3131,7 +3131,7 @@ public class Lua {
                         midlet.sys.put(pid, process);
                         Hashtable digest = process.lua.run(program, code, arg);
                         
-                        result.addElement(digest.get("STATUS"));
+                        result.addElement(digest.get("status"));
                     }
                 } else {
                     InputStream elfStream = new ByteArrayInputStream(data);
@@ -3140,7 +3140,7 @@ public class Lua {
                     
                     if (process.elf.load(elfStream)) {
                         Hashtable digest = process.elf.run();
-                        result.addElement(digest.get("STATUS"));
+                        result.addElement(digest.get("status"));
                     } else {
                         result.addElement(1);
                     }
