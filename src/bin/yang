@@ -80,6 +80,13 @@ local function install(pkg, verbose)
         print(":: Installing " .. pkg .. "...")
     end
 
+    if pkg == "*" then
+        for pkg,_ in pairs(mirror) do
+            install(pkg, true)
+        end
+        return
+    end
+    
     local info = mirror[pkg]
 
     if info.depends then
