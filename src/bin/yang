@@ -4,7 +4,7 @@ local version = "1.5.1"
 
 local server = os.getenv("REPO") or "socket://opentty.xyz:31522"
 local mirror = {
-    ["appmenu"] = { remote = "sys/appmenu/main.lua", here = "/bin/init", description = "Application Menu" },
+    --["appmenu"] = { remote = "sys/appmenu/main.lua", here = "/bin/init", description = "Application Menu" },
     ["armitage"] = { remote = "net/armitage", here = "/bin/armitage", depends = { "ifconfig" }, description = "OpenTTY Network Tools" },
     ["audio"] = { remote = "file/audio.lua", here = "/bin/audio", description = "Audio Codec Manager" },
     ["autogc"] = { remote = "sys/autogc", here = "/bin/autogc", description = "Auto Clean Memory" },
@@ -13,6 +13,7 @@ local mirror = {
     ["curl"] = { remote = "net/curl.lua", here = "/bin/curl", description = "Connect with a Server" },
     ["debug"] = { remote = "sys/debug", here = "/bin/debug", description = "Toggle debug mode" },
     ["docker"] = { remote = "sys/docker/main.lua", here = "/bin/docker", description = "Conteiners on OpenTTY" },
+    ["du"] = { remote = "file/du.lua", here = "/bin/du", description = "View files lenght" },
     ["expr"] = { remote = "file/expr.lua", here = "/bin/expr", description = "Evaluate expressions" },
     ["event"] = { remote = "sys/smile/event.lua", here = "/bin/event", description = "Event handler" },
     ["free"] = { remote = "sys/free.lua", here = "/bin/free", description = "Memory Informations" },
