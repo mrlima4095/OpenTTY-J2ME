@@ -11,7 +11,13 @@ if arg[1] then
     end
 
     if os.getuid() == 0 then
-        local res = io.popen(os.join(arg[2]), arg[3])
+        local program = arg[1]
+        if program == "su" then
+            os.exit(0)
+        elseif not string.startswith(program, "/") then
+            program = "/bin/" .. arg[1]
+        end
+        local res = io.popen(program, arg[2])
         os.exit(tonumber(res))
     end
 
@@ -36,7 +42,7 @@ if arg[1] then
 
             if status == 0 then
                 local program = arg[1]
-                if program == "su" theb
+                if program == "su" then
                     os.exit(0)
                 elseif not string.startswith(program, "/") then
                     program = "/bin/" .. arg[1]
