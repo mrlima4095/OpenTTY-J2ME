@@ -1,13 +1,13 @@
 #!/bin/lua
 
-local scope, alias, timeline = os.scope(), {}, {}
+local timeline, scope = {}, os.scope()
 
 local xterm = graphics.new("screen", "Terminal")
 local run = graphics.new("command", { label = "Run", type = "ok", priority = 1 })
 local clear = graphics.new("command", { label = "Clear", type = "screen", priority = 1 })
 local history = graphics.new("command", { label = "History", type = "screen", priority = 1 })
 
-local function label() graphics.SetLabel(io.stdin, scope["USER"] .. " " .. os.getcwd() .. " $") end
+local function label() graphics.SetLabel(io.stdin, scope["USER"] .. " " .. os.getcwd() .. " " .. (os.getuid() == 0 and "#" or "$")) end
 
 label()
 
@@ -24,7 +24,7 @@ graphics.handler(xterm, {
             end
             graphics.SetText(io.stdin, "")
 
-            local ok, msg = pcall(os.execute, command, true, alias, io.stdout, scope)
+            local ok, msg = pcall(os.execute, command)
             if not ok then
                 print(tostring(msg))
             end
