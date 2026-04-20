@@ -16,9 +16,12 @@ print(string.env(io.read("/etc/motd")))
 graphics.append(xterm, io.stdout)
 graphics.append(xterm, io.stdin)
 graphics.addCommand(xterm, run)
+graphics.addCommand(xterm, clear)
+graphics.addCommand(xterm, history)
 graphics.handler(xterm, {
     [run] = function(command)
         if command ~= "" then
+            graphics.GetText()
             if timeline[#timeline] ~= command then
                 timeline[#timeline + 1] = command
             end
