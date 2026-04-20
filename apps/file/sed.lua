@@ -152,4 +152,4 @@ else
 end
 
 local result = table.concat(result_lines, "\n")
-os.exit(tonumber(io.write(result, os.join(file))))
+io.write(result, os.join(file))
