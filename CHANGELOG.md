@@ -19,7 +19,7 @@ general
 lua
 
 - Added functions `string.startswith(s, pattern)` and `string.endswith(s, pattern)`
-
+- Read a file or stream with chunck size `-1` will read until end of file/ connection end
 
 yang - package manager
 
@@ -28,5 +28,6 @@ yang - package manager
 - New command `run [file]` to run installation scripts
 - Fixed **not found** message that disappears from stdout
 - Command `yang install *` install all available packages
+- Indexed new package `du` 
 
 
