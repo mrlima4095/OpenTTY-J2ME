@@ -10,6 +10,17 @@ if arg[1] == "-e" then
     end
 
     os.exit(2)
+elseif arg[1] then
+    local file = io.open(os.join(arg[1]))
+    if file then
+        local content = io.read(file, -1)
+        if content then
+            return load(content)
+        end
+    else
+        print("lua: " .. arg[1] .. ": not found")
+        os.exit(127)
+    end
 end
 
 
