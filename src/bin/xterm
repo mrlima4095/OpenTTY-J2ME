@@ -21,6 +21,7 @@ graphics.addCommand(xterm, history)
 graphics.handler(xterm, {
     [run] = function(command)
         if command ~= "" then
+            graphics.GetText()
             if timeline[#timeline] ~= command then
                 timeline[#timeline + 1] = command
             end
