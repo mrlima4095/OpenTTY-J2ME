@@ -1,6 +1,6 @@
 #!/bin/lua
 
-local shell_builtin = { "builtin", "source", "gc", "ps", "uptime", "su", "whoami", "lognmae", "id", "exit", "xterm", "warn", "title", "alias", "unalias", "env", "set", "export", "unset", "eval", "echo", "date", "clear", "pwd", "cd", "cat", "ls", "buff", "open", "false", "true" }
+local shell_builtin = { "builtin", "source", "gc", "ps", "uptime", "whoami", "logname", "id", "exit", "alias", "unalias", "env", "set", "export", "unset", "echo", "date", "clear", "pwd", "cd", "cat", "ls", "false", "true" }
 
 if arg[1] then
     for _,v in shell_builtin do
@@ -36,7 +36,9 @@ if arg[1] then
 
             if status == 0 then
                 local program = arg[1]
-                if not string.startswith(program, "/") then
+                if program == "su" theb
+                    os.exit(0)
+                elseif not string.startswith(program, "/") then
                     program = "/bin/" .. arg[1]
                 end
                 local res = io.popen(program, arg[2])
