@@ -40,7 +40,7 @@ if arg[1] then
                     program = "/bin/" .. arg[1]
                 end
                 local res = io.popen(program, arg[2])
-                scope["USER"] = username
+                os.su(username)
                 os.exit(tonumber(res))
             elseif status == 13 then
                 print("sudo: permission denied")
