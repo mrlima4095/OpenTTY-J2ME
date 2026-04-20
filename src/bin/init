@@ -4,18 +4,17 @@ for k,v in pairs({ ["PATCH"] = "Deep Dream", ["VERSION"] = getAppProperty("MIDle
 for k,v in pairs({ ["TYPE"] = "platform", ["CONFIG"] = "configuration", ["PROFILE"] = "profiles", ["LOCALE"] = "locale" }) do os.setenv(k, getAppProperty("/microedition." .. v)) end
 
 local scope = { PWD = "/home/", USER = java.midlet.username, ROOT = "/", ALIAS = {} }
-
---[[local xterm = graphics.new("screen", "OpenTTY " .. getAppProperty("MIDlet-Version"))
+local xterm = graphics.new("screen", "OpenTTY " .. getAppProperty("MIDlet-Version"))
 local run = graphics.new("command", { label = "Run", type = "ok", priority = 1 })
 
 local function label() graphics.SetLabel(io.stdin, scope["USER"] .. " " .. os.getcwd() .. " " .. (os.getuid() == 0 and "#" or "$")) end
-]]
+
 io.mount(io.read("/etc/fstab"))
 print(string.env(io.read("/etc/motd")))
 
 os.scope(scope)
 os.su(java.midlet.username)
---[[pcall(io.popen, "/home/.initrc")
+pcall(io.popen, "/home/.initrc")
 label()
 
 graphics.append(xterm, io.stdout)
@@ -35,6 +34,4 @@ graphics.handler(xterm, {
     end
 })
 graphics.db["xterm"] = xterm
-graphics.display(xterm)]]
-
-io.popen("/bin/xterm.lua")
+graphics.display(xterm)
