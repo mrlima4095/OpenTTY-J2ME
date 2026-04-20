@@ -1,7 +1,8 @@
 #!/bin/lua
 
-if arg[1] and arg[2] then
-    print(pcall(io.copy, os.join(arg[1]), os.join(arg[2])))
+if arg[1] then
+    local copy = arg[2] or arg[1] .. "-copy"
+    print(pcall(io.copy, os.join(arg[1]), os.join(copy)))
 else
     print("cp: usage: cp [source] [copyname]")
 end
