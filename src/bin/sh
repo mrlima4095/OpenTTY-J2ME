@@ -13,4 +13,3 @@ if arg[0] == "/bin/sh" then
     pcall(graphics.SetText, io.stdout, "")
     print(string.env(io.read("/etc/motd")))
 end
-
