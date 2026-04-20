@@ -4,6 +4,7 @@ return {
     scope = {
         PWD = "/home/",
         USER = "guest",
-        ROOT = "/mnt/docker/template/"
+        ROOT = "/mnt/docker/template/",
+        ALIAS = {}
     }
 }
