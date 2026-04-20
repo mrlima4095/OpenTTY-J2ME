@@ -42,6 +42,6 @@ if arg[1] and arg[2] then
     })
     graphics.display(screen)
 else
-    print("nc: usage: nc [host] [port]")
+    print("nano [file]")
     os.exit(2)
 end
