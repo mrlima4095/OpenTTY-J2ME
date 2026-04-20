@@ -37,4 +37,4 @@ graphics.handler(xterm, {
 graphics.db["xterm"] = xterm
 graphics.display(xterm)]]
 
-io.popen("/bin/xterm")
+io.popen("/bin/xterm.lua")
