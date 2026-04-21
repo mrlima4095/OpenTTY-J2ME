@@ -33,6 +33,7 @@ public class Lua {
     public static final int PUSH_REGISTER = 900, PUSH_UNREGISTER = 901, PUSH_LIST = 902, PUSH_PENDING = 903, PUSH_SET_ALARM = 904;
 
     public static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15, GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41, POWER = 42, BREAK = 43, LENGTH = 44, VARARG = 45, REPEAT = 46, UNTIL = 47, COLON = 48, LABEL = 49, GOTO = 50;
+    public static final Boolean TRUE = Boolean.TRUE, FALSE = Boolean.FALSE;
     public static final Object LUA_NIL = new Object();
     // |
     public static class Token { int type; Object value; Token(int type, Object value) { this.type = type; this.value = value; } public String toString() { return "Token(type=" + type + ", value=" + value + ")"; } }
@@ -1244,7 +1245,7 @@ public class Lua {
             }
             else if (MOD == ERROR) { String msg = toLuaString((args.size() > 0) ? args.elementAt(0) : null); throw new Exception(msg.equals("nil") ? "error" : msg); } 
             else if (MOD == PCALL) {
-                if (args.isEmpty()) { return gotbad(1, "pcall", "value expected"); }
+                if (args.isEmpty()) { return gotbad(1, "pcall", "function expected"); }
                 else {
                     Vector result = new Vector(), fnArgs = new Vector();
 
@@ -1254,14 +1255,14 @@ public class Lua {
 
                         try { 
                             Object value = func.call(fnArgs); 
-                            result.addElement(Boolean.TRUE); 
+                            result.addElement(TRUE); 
 
                             if (value instanceof Vector) { Vector v = (Vector) value; for (int i = 0; i < v.size(); i++) { result.addElement(v.elementAt(i)); } }
                             else { result.addElement(value); }
                         }
-                        catch (Exception e) { result.addElement(Boolean.FALSE); result.addElement(midlet.getCatch(e)); }
+                        catch (Exception e) { result.addElement(FALSE); result.addElement(midlet.getCatch(e)); }
                     }
-                    else { result.addElement(Boolean.FALSE); result.addElement("attempt to call a " + type(args.elementAt(0)) + " value"); } 
+                    else { result.addElement(FALSE); result.addElement("attempt to call a " + type(args.elementAt(0)) + " value"); } 
 
                     return result;
                 }
@@ -1316,7 +1317,7 @@ public class Lua {
                     else if (opt.equals("free")) { return new Double(midlet.runtime.totalMemory() / 1024); }
                     else if (opt.equals("total")) { return new Double(midlet.runtime.freeMemory() / 1024); }
                     else if (opt.equals("count")) { return new Double((midlet.runtime.totalMemory() - midlet.runtime.freeMemory()) / 1024); }
-                    else if (opt.equals("step")) { return Boolean.FALSE; }
+                    else if (opt.equals("step")) { return FALSE; }
                     else if (opt.equals("isrunning")) { return new Boolean(gc); }
                     else if (opt.equals("generational") || opt.equals("incremental")) { return "generational"; }
                     else { return gotbad(1, "collectgarbage", "invalid option '" + opt + "'"); }
@@ -1325,7 +1326,7 @@ public class Lua {
                 }
             }
             else if (MOD == TOSTRING) { return toLuaString(args.isEmpty() ? gotbad(1, "tostring", "value expected") : args.elementAt(0)); }
-            else if (MOD == TONUMBER) { return args.isEmpty() ? gotbad(1, "tostring", "value expected") : new Double(Double.valueOf(toLuaString(args.elementAt(0)))); }
+            else if (MOD == TONUMBER) { return args.isEmpty() ? gotbad(1, "tonumber", "value expected") : new Double(Double.valueOf(toLuaString(args.elementAt(0)))); }
             else if (MOD == SELECT) {
                 if (args.isEmpty() || args.elementAt(0) == null) { return gotbad(1, "select", "number expected, got no value"); } 
                 else {
@@ -1401,11 +1402,10 @@ public class Lua {
             else if (MOD == SETENV) { 
                 if (args.isEmpty()) { } 
                 else {
-                    if (args.size() > 1) {
-                        if (args.elementAt(1) == null) { midlet.attributes.remove(toLuaString(args.elementAt(0))); }
-                        else { midlet.attributes.put(toLuaString(args.elementAt(0)), toLuaString(args.elementAt(1))); }
-                    }
-                    else { midlet.attributes.remove(toLuaString(args.elementAt(0))); }
+                    Object value = args.size() > 1 ? toLuaString(args.elementAt(1)) : null;
+
+                    if (value == null) { midlet.attributes.remove(toLuaString(args.elementAt(0))); }
+                    else { midlet.attributes.put(toLuaString(args.elementAt(0)), value); }
                 }
             }
             else if (MOD == CLOCK) { return System.currentTimeMillis() - uptime; }
@@ -2053,7 +2053,7 @@ public class Lua {
                 try {
                     PushRegistry.registerConnection(connection, midletClass, filter);
                     
-                    return Boolean.TRUE;
+                    return TRUE;
                 } catch (ClassNotFoundException e) {
                     return gotbad(3, "register", "MIDlet class not found: " + midletClass);
                 } catch (Exception e) {
@@ -2644,8 +2644,8 @@ public class Lua {
                         else if (arg instanceof LuaFunction) { midlet.shell = arg; }
                         else { return new Double(2); }
                     }
-                    else if (payload.equals("cache")) { if (arg == null || arg.equals("")) { return new Boolean(midlet.useCache); } else if (arg == Boolean.TRUE || toLuaString(arg).equals("true")) { midlet.useCache = true; } else if (arg == Boolean.FALSE || toLuaString(arg).equals("false")) { midlet.useCache = false; midlet.cache.clear(); midlet.cacheLua.clear(); } else { return new Double(2); } }
-                    else if (payload.equals("debug")) { if (arg == null || arg.equals("")) { return new Boolean(midlet.debug); } else if (arg == Boolean.TRUE || toLuaString(arg).equals("true")) { midlet.debug = true; } else if (arg == Boolean.FALSE || toLuaString(arg).equals("false")) { midlet.debug = false; } else { return new Double(2); } } 
+                    else if (payload.equals("cache")) { if (arg == null || arg.equals("")) { return new Boolean(midlet.useCache); } else if (arg == TRUE || toLuaString(arg).equals("true")) { midlet.useCache = true; } else if (arg == FALSE || toLuaString(arg).equals("false")) { midlet.useCache = false; midlet.cache.clear(); midlet.cacheLua.clear(); } else { return new Double(2); } }
+                    else if (payload.equals("debug")) { if (arg == null || arg.equals("")) { return new Boolean(midlet.debug); } else if (arg == TRUE || toLuaString(arg).equals("true")) { midlet.debug = true; } else if (arg == FALSE || toLuaString(arg).equals("false")) { midlet.debug = false; } else { return new Double(2); } } 
                     else if (payload.equals("netsh")) {
                         if (arg == null || arg.equals("")) {
                             Hashtable result = new Hashtable();
@@ -3008,7 +3008,7 @@ public class Lua {
                     if (status == 127) { midlet.print("cd: " + args[0] + ": not found", output, id, father); }
                     else if (status == 20) { midlet.print("cd: " + args[0] + ": found", output, id, father); }
                 }
-                else if (mainCommand.equals("builtin")) { Vector payload = new Vector(); payload.addElement(argument); payload.addElement(true); payload.addElement(Boolean.FALSE); return exec(payload); }
+                else if (mainCommand.equals("builtin")) { Vector payload = new Vector(); payload.addElement(argument); payload.addElement(true); payload.addElement(FALSE); return exec(payload); }
                 else if (mainCommand.equals("false")) { status = 255; }
                 else { midlet.print(mainCommand + ": not found", output, id, father); status = 127; }
                 
