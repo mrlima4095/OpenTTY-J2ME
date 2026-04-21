@@ -3,7 +3,6 @@
 local version = "1.5.1"
 
 local server = os.getenv("REPO") or "socket://opentty.xyz:31522"
-local proxy, repository, use_proxy = getAppProperty("MIDlet-Proxy") or "http://opentty.xyz/proxy.php?", "https://github.com/mrlima4095/OpenTTY-J2ME/raw/refs/heads/main/apps/", true
 local mirror = {
     --["appmenu"] = { remote = "sys/appmenu/main.lua", here = "/bin/init", description = "Application Menu" },
     ["armitage"] = { remote = "net/armitage", here = "/bin/armitage", depends = { "ifconfig" }, description = "OpenTTY Network Tools" },
@@ -57,26 +56,17 @@ local mirror = {
 }
 
 local function connect(payload)
-    if string.startswith(payload, "fetch") or not use_proxy then
-        local ok, conn, i, o = pcall(socket.connect, server)
+    local ok, conn, i, o = pcall(socket.connect, server)
 
-        if ok then
-            io.write(payload, o)
-            local content = io.read(i, -1)
+    if ok then
+        io.write(payload, o)
+        local content = io.read(i, -1)
 
-            pcall(io.close, conn, i, o)
+        pcall(io.close, conn, i, o)
 
-            return content
-        else
-            return nil
-        end
+        return content
     else
-        local ok, content, status = socket.http.get(proxy .. repository .. string.sub(payload, 4))
-        if ok and status == 200 then
-            return content
-        else
-            return nil
-        end
+        return nil
     end
 end
 
