@@ -1,34 +1,14 @@
 #!/bin/lua
 
-local shell_builtin = { "builtin", "source", "gc", "ps", "uptime", "exit", "alias", "unalias", "env", "set", "export", "unset", "echo", "date", "clear", "pwd", "cd", "cat", "ls", "false", "true" }
-
 if arg[1] then
-    for _,v in shell_builtin do
-        if arg[1] == v then
-            print("sudo: " .. arg[1] .. ": is a shell builtin")
-            os.exit(127)
-        end
-    end
-
-    if os.getuid() == 0 then
-        local program = arg[1]
-        if program == "su" then
-            os.exit(0)
-        elseif not string.startswith(program, "/") then
-            program = "/bin/" .. arg[1]
-        end
-        local res = io.popen(program, arg[2])
-        os.exit(tonumber(res))
-    end
-
     local previous = graphics.getCurrent()
-    local screen = graphics.new("screen", "OpenTTY " .. os.getenv("VERSION"))
-    local back = graphics.new("command", { label = "Back", type = "ok", priority = 1 })
-    local run = graphics.new("command", { label = "Run", type = "ok", priority = 1 })
-
+    local screen = graphics.new("screen", "OpenTTY " .. getAppProperty("MIDlet-Version"))
+    local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
+    local run = graphics.new("command", { label = "Run", type = "screen", priority = 1 })
+    
     graphics.append(screen, { type = "field", label = "[sudo] password for " .. java.midlet.username, value = "", mode = "password" })
-    graphics.addCommand(screen, run)
     graphics.addCommand(screen, back)
+    graphics.addCommand(screen, run)
     graphics.handler(screen, {
         [back] = function ()
             graphics.display(previous)
@@ -41,23 +21,18 @@ if arg[1] then
             graphics.display(previous)
 
             if status == 0 then
-                local program = arg[1]
-                if program == "su" then
-                    os.exit(0)
-                elseif not string.startswith(program, "/") then
-                    program = "/bin/" .. arg[1]
-                end
-                local res = io.popen(program, arg[2])
+                status = os.execute(arg[1])
+
                 os.su(username)
-                os.exit(tonumber(res))
-            elseif status == 13 then
-                print("sudo: permission denied")
+
+                os.exit(status)
+            else
+                print("Permission denied!")
                 os.exit(13)
             end
         end
     })
     graphics.display(screen)
 else
-    print("sudo [program] [args**]")
-    os.exit(2)
+    print("sudo [command]")
 end
