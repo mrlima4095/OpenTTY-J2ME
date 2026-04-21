@@ -15,7 +15,7 @@ local function whois(domain)
     end
 end
 local function ifconfig()
-    local ok, conn, i, o = pcall(socket.connect, "socket://opentty.xyz:31522")
+    local ok, conn, i, o = pcall(socket.connect or "socket://opentty.xyz:31522")
     if not ok then
         return tostring(conn)
     end
@@ -90,7 +90,6 @@ local function menu()
 end
 
 os.setproc("name", "armitage")
-
 
 if arg[1] == nil then menu()
 elseif arg[1] == "whois" then
