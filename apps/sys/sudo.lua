@@ -1,6 +1,6 @@
 #!/bin/lua
 
-local shell_builtin = { "builtin", "source", "gc", "ps", "uptime", "whoami", "logname", "id", "exit", "alias", "unalias", "env", "set", "export", "unset", "echo", "date", "clear", "pwd", "cd", "cat", "ls", "false", "true" }
+local shell_builtin = { "builtin", "source", "gc", "ps", "uptime", "exit", "alias", "unalias", "env", "set", "export", "unset", "echo", "date", "clear", "pwd", "cd", "cat", "ls", "false", "true" }
 
 if arg[1] then
     for _,v in shell_builtin do

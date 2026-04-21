@@ -1478,10 +1478,9 @@ public class Lua {
                 if (args.isEmpty()) { return gotbad(1, "su", "username and password expected"); } 
                 else {
                     String user = toLuaString(args.elementAt(0)), query = args.size() > 1 ? toLuaString(args.elementAt(1)) : null;
-                    if (user.equals(midlet.username)) { id = 1000; father.put("USER", midlet.username); return new Double(0); }
-                    else if (midlet.userID.containsKey(user)) { id = midlet.getUserID(user); father.put("USER", user); return new Double(0); }
+                    if (midlet.userID.containsKey(user)) { id = midlet.getUserID(user); father.put("USER", user); if (args.size() > 2 && args.elementAt(2) == Boolean.TRUE) { proc.uid = id; proc.user = user; } return new Double(0); }
                     else if (query == null) { return gotbad(2, "su", "string expected, got nil"); }
-                    else if (user.equals("root") && midlet.passwd(query)) { id = 0; father.put("USER", "root"); return new Double(0); }
+                    else if (user.equals("root") && midlet.passwd(query)) { id = 0; father.put("USER", "root"); if (args.size() > 2 && args.elementAt(2) == Boolean.TRUE) { proc.uid = 0; proc.user = "root"; } return new Double(0); }
                     else { return new Double(13); }
                 }
             }
