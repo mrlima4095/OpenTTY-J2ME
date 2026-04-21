@@ -6,7 +6,8 @@ local previous = graphics.getCurrent()
 local app = {
     back = graphics.new("command", { label = "Back", type = "back", priority = 1 }),
     clear = graphics.new("command", { label = "Clear", type = "screen", priority = 1 }),
-    save = graphics.new("command", { label = "Save", type = "screen", priority = 1 })
+    save = graphics.new("command", { label = "Save", type = "screen", priority = 1 }),
+    new_line = graphics.new("command", { label = "New Line", type = "screen", priority = 1 })
 }
 
 if arg[1] then
@@ -53,5 +54,13 @@ os.setproc("name", "nano")
 graphics.addCommand(app.editor, app.back)
 graphics.addCommand(app.editor, app.save)
 graphics.addCommand(app.editor, app.clear)
-graphics.handler(app.editor, { [app.back] = app.quit, [app.clear] = function () graphics.SetText(app.editor, "") end, [app.save] = app.write })
+if os.getenv("J2EMU") then
+    graphics.addCommand(app.editor, app.new_line)
+end
+graphics.handler(app.editor, {
+    [app.back] = app.quit,
+    [app.clear] = function () graphics.SetText(app.editor, "") end,
+    [app.new_line] = function () graphics.SetText(graphics.GetText(app.editor) + "\n") end,
+    [app.save] = app.write
+})
 graphics.display(app.editor)
