@@ -3,6 +3,7 @@
 local version = "1.5.1"
 
 local server = os.getenv("REPO") or "socket://opentty.xyz:31522"
+local proxy, repository, use_proxy = getAppProperty("MIDlet-Proxy") or "http://opentty.xyz/proxy.php?", "https://github.com/mrlima4095/OpenTTY-J2ME/raw/refs/heads/main/apps/", true
 local mirror = {
     --["appmenu"] = { remote = "sys/appmenu/main.lua", here = "/bin/init", description = "Application Menu" },
     ["armitage"] = { remote = "net/armitage", here = "/bin/armitage", depends = { "ifconfig" }, description = "OpenTTY Network Tools" },
@@ -52,27 +53,30 @@ local mirror = {
     ["watch"] = { remote = "sys/watch.lua", here = "", description = "Watch a program" },
     ["yang"] = { remote = "yang.lua", here = "/bin/yang", description = "OpenTTY Package Manager" },
 
-    --[""] = { remote = "", here = "", depends = {}, description = "" },
-    --[""] = { description = "", packages = {} },
-
-    ["net"] = { description = "Network Utilities", packages = { "curl", "ifconfig", "ping", "webproxy" } },
-    ["file"] = { description = "File Utitlities", packages = { "find", "grep", "hash", "head", "nano", "sed" } },
-    ["dev"] = { description = "Development Tools", packages = { "forge", "jdb", "sdk", "svchost", "prg" } },
-    ["sys"] = { description = "System Utitlities", packages = { "autogc", "hostname", "htop", "free", "sudo", "uname", "passwd", "nice" } }
+    --[""] = { remote = "", here = "", depends = {}, description = "" }
 }
 
 local function connect(payload)
-    local ok, conn, i, o = pcall(socket.connect, server)
+    if string.startswith(payload, "fetch") or not use_proxy then
+        local ok, conn, i, o = pcall(socket.connect, server)
 
-    if ok then
-        io.write(payload, o)
-        local content = io.read(i, -1)
+        if ok then
+            io.write(payload, o)
+            local content = io.read(i, -1)
 
-        pcall(io.close, conn, i, o)
+            pcall(io.close, conn, i, o)
 
-        return content
+            return content
+        else
+            return nil
+        end
     else
-        return nil
+        local ok, content, status = socket.http.get(proxy .. repository .. string.sub(payload, 4))
+        if ok and status == 200 then
+            return content
+        else
+            return nil
+        end
     end
 end
 
@@ -168,23 +172,7 @@ elseif arg[1] == "install" then
             local pkg = arg[i]
 
             if mirror[pkg] then
-                if mirror[pkg].packages then
-                    print(":: Installing collection: " .. pkg)
-                    print(":: Description: " .. mirror[pkg].description)
-                    print("")
-
-                    local sucess_count = 0
-                    local total_count = #mirror[pkg].packages
-
-                    for _, query in ipairs(mirror[pkg].packages) do
-                        if install(query, false) then
-                            sucess_count = sucess_count + 1
-                        end
-                    end
-
-                    print(":: Collection installation complete!")
-                    print("-> Sucessfully installed: " .. sucess_count .. "/" .. total_count .. " packages")
-                elseif mirror[pkg].remote then
+                if mirror[pkg].remote then
                     install(pkg, true)
                 else
                     print("yang: install: " .. pkg .. ": invalid package (not remote source)")
