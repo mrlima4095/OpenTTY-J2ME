@@ -30,5 +30,6 @@ yang - package manager
 - Fixed **not found** message that disappears from stdout
 - Command `yang install *` install all available packages
 - Indexed new package `du` 
+- `yang` linked to `pkg` 
 
 
