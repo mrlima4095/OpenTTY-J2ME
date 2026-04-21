@@ -50,7 +50,6 @@ local mirror = {
     ["xterm"] = { remote = "xterm.lua", here = "/bin/xterm", description = "MIDlet Terminal" },
     ["x11"] = { remote = "sys/x11/main.lua", here = "/bin/x11", description = "X Server Client" },
     ["watch"] = { remote = "sys/watch.lua", here = "", description = "Watch a program" },
-    ["pkg"] = { remote = "yang.lua", here = "/bin/pkg", description = "OpenTTY Package Manager" },
 
     --[""] = { remote = "", here = "", depends = {}, description = "" }
 }
