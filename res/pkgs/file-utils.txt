@@ -1,0 +1,6 @@
+audio
+du
+find
+grep
+hash
+head
