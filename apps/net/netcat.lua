@@ -32,26 +32,28 @@ if arg[1] and arg[2] then
 
     print("subiu bg")
     java.run(function()
-        while running do local x, response = pcall(io.read, i) if x then io.write(response, buffer, "a") end end
+        while running do local x, response = pcall(io.read, i, 1024) if x then io.write(response, buffer, "a") end end
     end)
 
     print("mostrando itens")
-    local label = "Remote (" .. remote .. ")"
     graphics.append(screen, buffer)
-    graphics.append(screen, { type = "field", label = label })
+    graphics.append(screen, { 
+        type = "field", label = "Remote (" .. remote .. ")"
+        
+    })
     print("mostrando botoes")
     graphics.addCommand(screen, run)
     graphics.addCommand(screen, back)
     graphics.addCommand(screen, clear)
     graphics.handler(screen, {
-        [back] = function ()
+        [back] = function()
             print("voltou")
             graphics.display(previous)
             running = false
             os.exit(0)
         end,
-        [clear] = function () graphics.SetText(buffer, "") end,
-        [run] = function (payload) pcall(io.write, payload, o) end
+        [clear] = function() graphics.SetText(buffer, "") end,
+        [run] = function(payload) pcall(io.write, payload, o) end
     })
     print("mostrou")
     graphics.display(screen)
