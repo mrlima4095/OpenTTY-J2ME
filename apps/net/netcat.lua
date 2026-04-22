@@ -36,8 +36,9 @@ if arg[1] and arg[2] then
     end)
 
     print("mostrando itens")
+    local label = "Remote (" .. remote .. ")"
     graphics.append(screen, buffer)
-    graphics.append(screen, { type = "field", label = "Remote (" .. remote .. ")" })
+    graphics.append(screen, { type = "field", label = label })
     print("mostrando botoes")
     graphics.addCommand(screen, run)
     graphics.addCommand(screen, back)
