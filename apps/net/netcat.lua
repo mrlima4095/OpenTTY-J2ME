@@ -39,7 +39,6 @@ if arg[1] and arg[2] then
     graphics.append(screen, buffer)
     graphics.append(screen, { 
         type = "field", label = "Remote (" .. remote .. ")"
-        
     })
     print("mostrando botoes")
     graphics.addCommand(screen, run)
