@@ -2813,7 +2813,7 @@ public class Lua {
                 Object output = stdout; Hashtable aliases = (Hashtable) father.get("ALIAS");
                 for (int i = 0; i < args.length; i++) {
                     if (args[i].equals(">")) {
-                        output = midlet.joinpath(args[i + 1], father);
+                        output = toLuaString(midlet.joinpath(args[i + 1], father));
                         
                         Vector sanitize = new Vector(); StringBuffer buffer = new StringBuffer();
                         for (int j = 0; j < i - 1; j++) { sanitize.addElement(args[j]); buffer.append(args[j]); }
