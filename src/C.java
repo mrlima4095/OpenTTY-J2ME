@@ -1581,7 +1581,24 @@ public class C {
     }
 
     private boolean isLetter(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'; }
-    private boolean isLetterOrDigit(char c) { return isLetter(c) || (c >= '0' && c <= '9'); }
+    private boolean isLetterOrDigit(char c) { return isLetter(c) || (c >= '0' && c <= '9'); }]
+
+    private String replaceAll(String source, String target, String replacement) {
+        if (target == null || target.length() == 0) return source;
+        
+        StringBuffer result = new StringBuffer();
+        int start = 0;
+        int idx;
+        
+        while ((idx = source.indexOf(target, start)) != -1) {
+            result.append(source.substring(start, idx));
+            result.append(replacement);
+            start = idx + target.length();
+        }
+        result.append(source.substring(start));
+        
+        return result.toString();
+    }
     
     // CFunction implementation
     public class CFunction {
@@ -1644,20 +1661,42 @@ public class C {
                 if (args.isEmpty()) return null;
                 String fmt = toLuaString(args.elementAt(0));
                 String result = fmt;
-                for (int i = 1; i < args.size(); i++) {
-                    String val = toLuaString(args.elementAt(i));
-                    result = result.replaceFirst("%[a-z]", val);
+                int argIndex = 1;
+                
+                // Manual replacement without replaceFirst
+                StringBuffer sb = new StringBuffer();
+                int i = 0;
+                while (i < result.length() && argIndex < args.size()) {
+                    char c = result.charAt(i);
+                    if (c == '%' && i + 1 < result.length()) {
+                        char spec = result.charAt(i + 1);
+                        if (spec == 'd' || spec == 'i' || spec == 'c' || spec == 's' || spec == 'f') {
+                            String val = toLuaString(args.elementAt(argIndex));
+                            sb.append(val);
+                            i += 2;
+                            argIndex++;
+                            continue;
+                        }
+                    }
+                    sb.append(c);
+                    i++;
                 }
-                midlet.print(result, stdout, id, father);
-                return new CValue(TYPE_INT, result.length());
+                // Append remaining characters
+                while (i < result.length()) {
+                    sb.append(result.charAt(i));
+                    i++;
+                }
+                
+                midlet.print(sb.toString(), stdout, id, father);
+                return new CValue(TYPE_INT, new Integer(sb.length()));
             }
             else if (MOD == 1001) { // scanf - simplified
-                return new CValue(TYPE_INT, 0);
+                return new CValue(TYPE_INT, new Integer(0));
             }
             else if (MOD == 1002) { // malloc
                 int size = ((CValue)args.elementAt(0)).asInt();
                 Vector mem = new Vector();
-                for (int i = 0; i < size; i++) mem.addElement(new CValue(TYPE_CHAR, 0));
+                for (int i = 0; i < size; i++) mem.addElement(new CValue(TYPE_CHAR, new Integer(0)));
                 return new CValue(TYPE_PTR, mem);
             }
             else if (MOD == 1003) { // free
@@ -1665,7 +1704,7 @@ public class C {
             }
             else if (MOD == 1004) { // strlen
                 String str = toLuaString(args.elementAt(0));
-                return new CValue(TYPE_INT, str.length());
+                return new CValue(TYPE_INT, new Integer(str.length()));
             }
             else if (MOD == 1005) { // strcpy
                 return args.elementAt(1);
@@ -1678,7 +1717,7 @@ public class C {
             else if (MOD == 1007) { // strcmp
                 String s1 = toLuaString(args.elementAt(0));
                 String s2 = toLuaString(args.elementAt(1));
-                return new CValue(TYPE_INT, s1.compareTo(s2));
+                return new CValue(TYPE_INT, new Integer(s1.compareTo(s2)));
             }
             else if (MOD == 1008) { // memcpy
                 return args.elementAt(1);
@@ -1695,7 +1734,7 @@ public class C {
             else if (MOD == 1011) { // system
                 String cmd = toLuaString(args.elementAt(0));
                 // Execute system command
-                return new CValue(TYPE_INT, 0);
+                return new CValue(TYPE_INT, new Integer(0));
             }
             return null;
         }
