@@ -3010,6 +3010,13 @@ public class Lua {
                 }
                 else if (mainCommand.equals("builtin") || mainCommand.equals("command")) { Vector payload = new Vector(); payload.addElement(argument); payload.addElement(true); payload.addElement(FALSE); return exec(payload); }
                 else if (mainCommand.equals("false")) { status = 255; }
+                else if (mainCommand.equals("")) {
+
+                }
+                else if (mainCommand.equals("c")) {
+                    Process proc = Process(midlet, null, "c", mainCommand + " " + argument, midlet.getUser(id), id, midlet.genpid(), stdout, null, father)
+                    proc.c.run("c-source", midlet.read(argument, father), new Hashtable());
+                }
                 else { midlet.print(mainCommand + ": not found", output, id, father); status = 127; }
                 
                 return new Double(status);
