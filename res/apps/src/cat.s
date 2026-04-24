@@ -2,36 +2,42 @@
 .section .text
 
 _start:
-    @ argc está na stack no endereço apontado por SP
+    @ O argc está em sp, mas o emulador pode estar usando um layout diferente
+    @ Vamos ler diretamente da forma que o setupCRTStack configurou
+    
     ldr r0, [sp]           @ argc
     cmp r0, #1
-    ble usage              @ se argc <= 1, mostra uso
+    ble usage
     
-    @ argv[1] está em sp + 4
-    ldr r1, [sp, #4]       @ argv[1] = nome do arquivo
-    cmp r1, #0
-    beq usage
+    @ argv[1] - o emulador coloca os ponteiros dos argumentos
+    ldr r1, [sp, #4]       @ primeiro ponteiro após argc
     
-    @ Abrir arquivo
-    mov r0, r1             @ filename
+    @ DEBUG: imprimir endereço do argumento (opcional, remover depois)
+    @ mov r7, #4
+    @ mov r0, #1
+    @ svc #0
+    
+    @ Tentar abrir o arquivo
+    mov r0, r1             @ filename pointer
     mov r1, #0             @ O_RDONLY
     mov r7, #5             @ SYS_OPEN
     svc #0
     
+    @ Verificar se abriu corretamente
     cmp r0, #0
-    blt open_error         @ erro ao abrir
+    blt open_error
     
     mov r4, r0             @ salvar file descriptor
     
 read_loop:
     mov r7, #3             @ SYS_READ
-    mov r0, r4             @ fd
-    ldr r1, =buffer        @ buffer
-    ldr r2, =BUFSZ         @ tamanho
+    mov r0, r4
+    ldr r1, =buffer
+    ldr r2, =BUFSZ
     svc #0
     
     cmp r0, #0
-    ble close_file         @ fim do arquivo ou erro
+    ble close_file
     
     mov r7, #4             @ SYS_WRITE
     mov r0, #1             @ stdout
@@ -59,10 +65,10 @@ open_error:
     ldr r1, =err_msg
     ldr r2, =err_len
     svc #0
-    @ fall through to exit
+    b exit
 
 exit:
-    mov r7, #1             @ SYS_EXIT
+    mov r7, #1
     mov r0, #0
     svc #0
 
