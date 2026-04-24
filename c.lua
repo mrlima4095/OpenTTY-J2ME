@@ -1,5 +1,5 @@
 -- C.lua - C Language Interpreter Runtime for OpenTTY/Lua J2ME
--- Compatível com CLDC 1.1 / MIDP 2.0
+-- Sem self, sem :, compatível com J2ME
 
 local C = {}
 
@@ -10,7 +10,7 @@ C.CONSTANT = 2
 C.STRING = 3
 C.PUNCTUATOR = 4
 
--- Keywords (usando strings como chaves para evitar problemas com palavras reservadas)
+-- Keywords
 C.KEYWORDS = {
     ["auto"] = 256,
     ["break"] = 257,
@@ -71,11 +71,6 @@ C.OP = {
     ptr = 320
 }
 
--- Reverse mapping para debug
-C.TOKEN_NAMES = {}
-for k, v in pairs(C.KEYWORDS) do C.TOKEN_NAMES[v] = k end
-for k, v in pairs(C.OP) do C.TOKEN_NAMES[v] = k end
-
 -- Type constants
 C.TY_VOID = 0
 C.TY_INT = 1
@@ -85,9 +80,9 @@ C.TY_FLOAT = 4
 C.TY_DOUBLE = 5
 C.TY_PTR = 6
 
--- Character helper functions para J2ME (sem funções Unicode)
+-- Character helpers para J2ME
 local function isSpace(c)
-    return c == " " or c == "\t" or c == "\n" or c == "\r" or c == "\f" or c == "\v"
+    return c == " " or c == "\t" or c == "\n" or c == "\r" or c == "\f"
 end
 
 local function isDigit(c)
@@ -95,7 +90,6 @@ local function isDigit(c)
 end
 
 local function isLetter(c)
-    -- A-Z, a-z, underscore apenas (ASCII para J2ME)
     return (c >= "A" and c <= "Z") or (c >= "a" and c <= "z") or c == "_"
 end
 
@@ -103,50 +97,36 @@ local function isAlnum(c)
     return isDigit(c) or isLetter(c)
 end
 
--- C Value wrapper
-local CValue = {}
-CValue.__index = CValue
-
-function CValue.new(type_, value)
-    return setmetatable({type = type_, value = value}, CValue)
+-- CValue wrapper (sem metatabela, funcoes normais)
+local function newCValue(type, value)
+    return {type = type, value = value}
 end
 
-function CValue:asInt()
-    if type(self.value) == "number" then
-        return self.value
-    elseif type(self.value) == "boolean" then
-        return self.value and 1 or 0
-    elseif type(self.value) == "string" then
-        return tonumber(self.value) or 0
+local function cvalue_asInt(v)
+    if v == nil then return 0 end
+    if type(v.value) == "number" then
+        return v.value
+    elseif type(v.value) == "boolean" then
+        if v.value then return 1 else return 0 end
+    elseif type(v.value) == "string" then
+        local n = tonumber(v.value)
+        if n then return n else return 0 end
     else
         return 0
     end
 end
 
-function CValue:asChar()
-    return string.char(self:asInt())
-end
-
-function CValue:asString()
-    if self.type == C.TY_CHAR then
-        return string.char(self:asInt())
-    elseif self.type == C.TY_PTR and type(self.value) == "string" then
-        return self.value
-    else
-        return tostring(self.value)
-    end
-end
-
-function CValue.__tostring(v)
+local function cvalue_asString(v)
+    if v == nil then return "nil" end
     if v.type == C.TY_INT or v.type == C.TY_LONG then
-        return tostring(v:asInt())
+        return tostring(cvalue_asInt(v))
     elseif v.type == C.TY_CHAR then
-        return string.char(v:asInt())
+        return string.char(cvalue_asInt(v))
     elseif v.type == C.TY_PTR then
         if type(v.value) == "string" then
             return '"' .. v.value .. '"'
         else
-            return string.format("ptr:%s", tostring(v.value))
+            return "ptr:" .. tostring(v.value)
         end
     else
         return tostring(v.value)
@@ -157,26 +137,26 @@ end
 function C.tokenize(code)
     local tokens = {}
     local i = 1
-    local len = #code
+    local len = string.len(code)
     
     while i <= len do
-        local c = code:sub(i, i)
+        local c = string.sub(code, i, i)
         
         if isSpace(c) then
             i = i + 1
             
-        -- Linha de comentário //
-        elseif c == "/" and i < len and code:sub(i+1, i+1) == "/" then
+        -- Comment //
+        elseif c == "/" and i < len and string.sub(code, i+1, i+1) == "/" then
             i = i + 2
-            while i <= len and code:sub(i, i) ~= "\n" do
+            while i <= len and string.sub(code, i, i) ~= "\n" do
                 i = i + 1
             end
             
-        -- Comentário multi-linha /*
-        elseif c == "/" and i < len and code:sub(i+1, i+1) == "*" then
+        -- Comment /*
+        elseif c == "/" and i < len and string.sub(code, i+1, i+1) == "*" then
             i = i + 2
             while i + 1 <= len do
-                if code:sub(i, i) == "*" and code:sub(i+1, i+1) == "/" then
+                if string.sub(code, i, i) == "*" and string.sub(code, i+1, i+1) == "/" then
                     i = i + 2
                     break
                 end
@@ -188,13 +168,13 @@ function C.tokenize(code)
             i = i + 1
             local s = {}
             while i <= len do
-                local ch = code:sub(i, i)
+                local ch = string.sub(code, i, i)
                 if ch == '"' then
                     i = i + 1
                     break
                 elseif ch == "\\" and i < len then
                     i = i + 1
-                    local esc = code:sub(i, i)
+                    local esc = string.sub(code, i, i)
                     if esc == "n" then
                         table.insert(s, "\n")
                     elseif esc == "t" then
@@ -217,13 +197,13 @@ function C.tokenize(code)
             end
             table.insert(tokens, {type = C.STRING, value = table.concat(s)})
             
-        -- Character constant
+        -- Char constant
         elseif c == "'" and i < len then
             i = i + 1
-            local ch = code:sub(i, i)
+            local ch = string.sub(code, i, i)
             if ch == "\\" and i < len then
                 i = i + 1
-                local esc = code:sub(i, i)
+                local esc = string.sub(code, i, i)
                 if esc == "n" then
                     ch = "\n"
                 elseif esc == "t" then
@@ -240,15 +220,15 @@ function C.tokenize(code)
                     ch = esc
                 end
             end
-            i = i + 2 -- skip ' and closing '
-            if code:sub(i, i) == "'" then i = i + 1 end
-            table.insert(tokens, {type = C.CONSTANT, value = CValue.new(C.TY_CHAR, string.byte(ch))})
+            i = i + 2
+            if string.sub(code, i, i) == "'" then i = i + 1 end
+            table.insert(tokens, {type = C.CONSTANT, value = newCValue(C.TY_CHAR, string.byte(ch))})
             
         -- Identifier or keyword
         elseif isLetter(c) then
             local s = {}
-            while i <= len and isAlnum(code:sub(i, i)) do
-                table.insert(s, code:sub(i, i))
+            while i <= len and isAlnum(string.sub(code, i, i)) do
+                table.insert(s, string.sub(code, i, i))
                 i = i + 1
             end
             local word = table.concat(s)
@@ -260,35 +240,13 @@ function C.tokenize(code)
             end
             
         -- Number constant
-        elseif isDigit(c) or (c == "." and i < len and isDigit(code:sub(i+1, i+1))) then
+        elseif isDigit(c) or (c == "." and i < len and isDigit(string.sub(code, i+1, i+1))) then
             local s = {}
             local isFloat = false
-            local isHex = false
-            
-            -- Hex detection
-            if c == "0" and i < len then
-                local nextc = code:sub(i+1, i+1)
-                if nextc == "x" or nextc == "X" then
-                    isHex = true
-                    table.insert(s, code:sub(i, i))
-                    i = i + 1
-                    table.insert(s, code:sub(i, i))
-                    i = i + 1
-                end
-            end
             
             while i <= len do
-                local ch = code:sub(i, i)
-                
-                if isHex then
-                    local isHexDigit = (ch >= "0" and ch <= "9") or (ch >= "a" and ch <= "f") or (ch >= "A" and ch <= "F")
-                    if isHexDigit then
-                        table.insert(s, ch)
-                        i = i + 1
-                    else
-                        break
-                    end
-                elseif isDigit(ch) then
+                local ch = string.sub(code, i, i)
+                if isDigit(ch) then
                     table.insert(s, ch)
                     i = i + 1
                 elseif ch == "." and not isFloat then
@@ -299,7 +257,7 @@ function C.tokenize(code)
                     isFloat = true
                     table.insert(s, ch)
                     i = i + 1
-                    local sign = code:sub(i, i)
+                    local sign = string.sub(code, i, i)
                     if sign == "+" or sign == "-" then
                         table.insert(s, sign)
                         i = i + 1
@@ -311,18 +269,16 @@ function C.tokenize(code)
             
             local num = table.concat(s)
             local val
-            if isHex then
-                val = CValue.new(C.TY_INT, tonumber(num, 16))
-            elseif isFloat then
-                val = CValue.new(C.TY_DOUBLE, tonumber(num))
+            if isFloat then
+                val = newCValue(C.TY_DOUBLE, tonumber(num))
             else
-                val = CValue.new(C.TY_INT, tonumber(num))
+                val = newCValue(C.TY_INT, tonumber(num))
             end
             table.insert(tokens, {type = C.CONSTANT, value = val})
             
         -- Multi-character operators
         elseif i + 1 <= len then
-            local op2 = code:sub(i, i+1)
+            local op2 = string.sub(code, i, i+1)
             local optype = nil
             
             if op2 == "++" then optype = C.OP.inc
@@ -397,24 +353,42 @@ function C.tokenize(code)
     return tokens
 end
 
--- Parser state
-local function createParser(tokens)
+-- Truthy check
+local function isTruthy(val)
+    if val == nil then return false end
+    if type(val) == "boolean" then return val end
+    if type(val) == "table" then
+        if val.type == C.TY_PTR then
+            return val.value ~= nil
+        end
+        return cvalue_asInt(val) ~= 0
+    end
+    if type(val) == "number" then return val ~= 0 end
+    if type(val) == "string" then return string.len(val) > 0 end
+    return val ~= nil
+end
+
+-- Parser and execution
+function C.compile(source)
+    local tokens = C.tokenize(source)
     local pos = 1
     local breakLoop = false
     local doreturn = false
     local loopDepth = 0
-    local switchLevel = 0
     local globals = {}
     local labels = {}
     
     local function peek()
-        return tokens[pos] or {type = C.EOF}
+        local t = tokens[pos]
+        if t == nil then return {type = C.EOF} end
+        return t
     end
     
     local function consume()
         local t = tokens[pos]
         if t then pos = pos + 1 end
-        return t or {type = C.EOF}
+        if t == nil then return {type = C.EOF} end
+        return t
     end
     
     local function expect(typ)
@@ -422,37 +396,21 @@ local function createParser(tokens)
         if t.type == typ then
             return consume()
         else
-            local expected = tostring(typ)
-            local got = tostring(t.type)
-            error(string.format("Expected %s but got %s at position %d", expected, got, pos))
+            error("Expected " .. tostring(typ) .. " got " .. tostring(t.type))
         end
     end
     
-    local function isTruthy(val)
-        if val == nil then return false end
-        if type(val) == "boolean" then return val end
-        if type(val) == "table" and val.type then
-            if val.type == C.TY_PTR then
-                return val.value ~= nil
-            end
-            return val:asInt() ~= 0
-        end
-        if type(val) == "number" then return val ~= 0 end
-        if type(val) == "string" then return #val > 0 end
-        return val ~= nil and val ~= false
-    end
-    
-    -- Forward declarations
+    -- Forward declare
     local parseExpression
     
-    -- Primary expression
+    -- Primary
     local function parsePrimary()
         local t = peek()
         
         if t.type == C.IDENTIFIER then
             consume()
             local sym = globals[t.value]
-            if not sym then
+            if sym == nil then
                 error("undefined symbol: " .. t.value)
             end
             return sym
@@ -463,7 +421,7 @@ local function createParser(tokens)
         
         elseif t.type == C.STRING then
             consume()
-            return CValue.new(C.TY_PTR, t.value)
+            return newCValue(C.TY_PTR, t.value)
         
         elseif t.type == "(" then
             consume()
@@ -472,27 +430,27 @@ local function createParser(tokens)
             return expr
         
         else
-            error("expected primary expression, got " .. tostring(t.type) .. " (" .. tostring(t.value) .. ")")
+            error("expected primary expression")
         end
     end
     
-    -- Unary expression
+    -- Unary
     local function parseUnary()
         local t = peek()
         
         if t.type == C.OP.inc then
             consume()
             local expr = parseUnary()
-            local val = expr:asInt()
+            local val = cvalue_asInt(expr)
             expr.value = val + 1
-            return CValue.new(C.TY_INT, val)
+            return newCValue(C.TY_INT, val)
         
         elseif t.type == C.OP.dec then
             consume()
             local expr = parseUnary()
-            local val = expr:asInt()
+            local val = cvalue_asInt(expr)
             expr.value = val - 1
-            return CValue.new(C.TY_INT, val)
+            return newCValue(C.TY_INT, val)
         
         elseif t.type == "*" then
             consume()
@@ -505,7 +463,7 @@ local function createParser(tokens)
         elseif t.type == "&" then
             consume()
             local expr = parseUnary()
-            return CValue.new(C.TY_PTR, expr)
+            return newCValue(C.TY_PTR, expr)
         
         elseif t.type == "+" then
             consume()
@@ -514,12 +472,12 @@ local function createParser(tokens)
         elseif t.type == "-" then
             consume()
             local expr = parseUnary()
-            return CValue.new(C.TY_INT, -expr:asInt())
+            return newCValue(C.TY_INT, -cvalue_asInt(expr))
         
         elseif t.type == "~" then
             consume()
             local expr = parseUnary()
-            return CValue.new(C.TY_INT, bit32.bnot(expr:asInt()))
+            return newCValue(C.TY_INT, bit32.bnot(cvalue_asInt(expr)))
         
         elseif t.type == "!" then
             consume()
@@ -540,17 +498,19 @@ local function createParser(tokens)
             if t.type == "*" then
                 consume()
                 local right = parseUnary()
-                left = CValue.new(C.TY_INT, left:asInt() * right:asInt())
+                left = newCValue(C.TY_INT, cvalue_asInt(left) * cvalue_asInt(right))
             elseif t.type == "/" then
                 consume()
                 local right = parseUnary()
-                if right:asInt() == 0 then error("division by zero") end
-                left = CValue.new(C.TY_INT, math.floor(left:asInt() / right:asInt()))
+                local rv = cvalue_asInt(right)
+                if rv == 0 then error("division by zero") end
+                left = newCValue(C.TY_INT, math.floor(cvalue_asInt(left) / rv))
             elseif t.type == "%" then
                 consume()
                 local right = parseUnary()
-                if right:asInt() == 0 then error("modulo by zero") end
-                left = CValue.new(C.TY_INT, left:asInt() % right:asInt())
+                local rv = cvalue_asInt(right)
+                if rv == 0 then error("modulo by zero") end
+                left = newCValue(C.TY_INT, cvalue_asInt(left) % rv)
             else
                 break
             end
@@ -568,11 +528,11 @@ local function createParser(tokens)
             if t.type == "+" then
                 consume()
                 local right = parseMul()
-                left = CValue.new(C.TY_INT, left:asInt() + right:asInt())
+                left = newCValue(C.TY_INT, cvalue_asInt(left) + cvalue_asInt(right))
             elseif t.type == "-" then
                 consume()
                 local right = parseMul()
-                left = CValue.new(C.TY_INT, left:asInt() - right:asInt())
+                left = newCValue(C.TY_INT, cvalue_asInt(left) - cvalue_asInt(right))
             else
                 break
             end
@@ -590,11 +550,11 @@ local function createParser(tokens)
             if t.type == C.OP.left then
                 consume()
                 local right = parseAdd()
-                left = CValue.new(C.TY_INT, bit32.lshift(left:asInt(), right:asInt()))
+                left = newCValue(C.TY_INT, bit32.lshift(cvalue_asInt(left), cvalue_asInt(right)))
             elseif t.type == C.OP.right then
                 consume()
                 local right = parseAdd()
-                left = CValue.new(C.TY_INT, bit32.rshift(left:asInt(), right:asInt()))
+                left = newCValue(C.TY_INT, bit32.rshift(cvalue_asInt(left), cvalue_asInt(right)))
             else
                 break
             end
@@ -612,19 +572,19 @@ local function createParser(tokens)
             if t.type == "<" then
                 consume()
                 local right = parseShift()
-                left = left:asInt() < right:asInt()
+                left = cvalue_asInt(left) < cvalue_asInt(right)
             elseif t.type == ">" then
                 consume()
                 local right = parseShift()
-                left = left:asInt() > right:asInt()
+                left = cvalue_asInt(left) > cvalue_asInt(right)
             elseif t.type == C.OP.le then
                 consume()
                 local right = parseShift()
-                left = left:asInt() <= right:asInt()
+                left = cvalue_asInt(left) <= cvalue_asInt(right)
             elseif t.type == C.OP.ge then
                 consume()
                 local right = parseShift()
-                left = left:asInt() >= right:asInt()
+                left = cvalue_asInt(left) >= cvalue_asInt(right)
             else
                 break
             end
@@ -642,11 +602,11 @@ local function createParser(tokens)
             if t.type == C.OP.eq then
                 consume()
                 local right = parseRel()
-                left = left:asInt() == right:asInt()
+                left = cvalue_asInt(left) == cvalue_asInt(right)
             elseif t.type == C.OP.ne then
                 consume()
                 local right = parseRel()
-                left = left:asInt() ~= right:asInt()
+                left = cvalue_asInt(left) ~= cvalue_asInt(right)
             else
                 break
             end
@@ -662,7 +622,7 @@ local function createParser(tokens)
         while peek().type == "&" do
             consume()
             local right = parseEq()
-            left = CValue.new(C.TY_INT, bit32.band(left:asInt(), right:asInt()))
+            left = newCValue(C.TY_INT, bit32.band(cvalue_asInt(left), cvalue_asInt(right)))
         end
         
         return left
@@ -675,7 +635,7 @@ local function createParser(tokens)
         while peek().type == "^" do
             consume()
             local right = parseAnd()
-            left = CValue.new(C.TY_INT, bit32.bxor(left:asInt(), right:asInt()))
+            left = newCValue(C.TY_INT, bit32.bxor(cvalue_asInt(left), cvalue_asInt(right)))
         end
         
         return left
@@ -688,7 +648,7 @@ local function createParser(tokens)
         while peek().type == "|" do
             consume()
             local right = parseXor()
-            left = CValue.new(C.TY_INT, bit32.bor(left:asInt(), right:asInt()))
+            left = newCValue(C.TY_INT, bit32.bor(cvalue_asInt(left), cvalue_asInt(right)))
         end
         
         return left
@@ -729,7 +689,11 @@ local function createParser(tokens)
             local trueExpr = parseExpression()
             expect(":")
             local falseExpr = parseConditional()
-            return isTruthy(cond) and trueExpr or falseExpr
+            if isTruthy(cond) then
+                return trueExpr
+            else
+                return falseExpr
+            end
         end
         
         return cond
@@ -743,57 +707,57 @@ local function createParser(tokens)
         if t.type == "=" then
             consume()
             local right = parseAssignment()
-            -- Atribuição simples
-            if type(left) == "table" and left.type then
+            if type(left) == "table" then
                 left.value = right
                 if right and right.type then
                     left.type = right.type
                 end
             end
             return right
-            
+        
         elseif t.type == C.OP.add_assign then
             consume()
             local right = parseAssignment()
-            local val = left:asInt() + right:asInt()
+            local val = cvalue_asInt(left) + cvalue_asInt(right)
             left.value = val
-            return CValue.new(C.TY_INT, val)
-            
+            return newCValue(C.TY_INT, val)
+        
         elseif t.type == C.OP.sub_assign then
             consume()
             local right = parseAssignment()
-            local val = left:asInt() - right:asInt()
+            local val = cvalue_asInt(left) - cvalue_asInt(right)
             left.value = val
-            return CValue.new(C.TY_INT, val)
-            
+            return newCValue(C.TY_INT, val)
+        
         elseif t.type == C.OP.mul_assign then
             consume()
             local right = parseAssignment()
-            local val = left:asInt() * right:asInt()
+            local val = cvalue_asInt(left) * cvalue_asInt(right)
             left.value = val
-            return CValue.new(C.TY_INT, val)
-            
+            return newCValue(C.TY_INT, val)
+        
         elseif t.type == C.OP.div_assign then
             consume()
             local right = parseAssignment()
-            if right:asInt() == 0 then error("division by zero") end
-            local val = math.floor(left:asInt() / right:asInt())
+            local rv = cvalue_asInt(right)
+            if rv == 0 then error("division by zero") end
+            local val = math.floor(cvalue_asInt(left) / rv)
             left.value = val
-            return CValue.new(C.TY_INT, val)
-            
+            return newCValue(C.TY_INT, val)
+        
         elseif t.type == C.OP.mod_assign then
             consume()
             local right = parseAssignment()
-            if right:asInt() == 0 then error("modulo by zero") end
-            local val = left:asInt() % right:asInt()
+            local rv = cvalue_asInt(right)
+            if rv == 0 then error("modulo by zero") end
+            local val = cvalue_asInt(left) % rv
             left.value = val
-            return CValue.new(C.TY_INT, val)
+            return newCValue(C.TY_INT, val)
         end
         
         return left
     end
     
-    -- Expression entry point
     function parseExpression()
         return parseAssignment()
     end
@@ -803,7 +767,9 @@ local function createParser(tokens)
         expect("{")
         while peek().type ~= "}" do
             local res = parseStatement()
-            if doreturn then return res end
+            if doreturn then
+                return res
+            end
         end
         expect("}")
         return nil
@@ -839,7 +805,7 @@ local function createParser(tokens)
         local cond = parseExpression()
         expect(")")
         
-        -- Capture body tokens
+        -- Capture body
         local bodyStart = pos
         local depth = 1
         local bodyTokens = {}
@@ -872,7 +838,6 @@ local function createParser(tokens)
                 break
             end
             
-            -- Execute body
             local savedPos = pos
             local savedTokens = tokens
             tokens = bodyTokens
@@ -887,7 +852,6 @@ local function createParser(tokens)
             tokens = savedTokens
             if doreturn then break end
             
-            -- Re-evaluate condition
             pos = condPos
             cond = parseExpression()
             pos = bodyStart
@@ -902,13 +866,11 @@ local function createParser(tokens)
         expect(C.KEYWORDS["for"])
         expect("(")
         
-        -- Initialization
         if peek().type ~= ";" then
             parseExpression()
         end
         expect(";")
         
-        -- Condition
         local condPos = pos
         local cond = nil
         if peek().type ~= ";" then
@@ -916,7 +878,6 @@ local function createParser(tokens)
         end
         expect(";")
         
-        -- Increment
         local incTokens = {}
         if peek().type ~= ")" then
             while peek().type ~= ")" do
@@ -925,7 +886,6 @@ local function createParser(tokens)
         end
         expect(")")
         
-        -- Body
         local bodyStart = pos
         local depth = 1
         local bodyTokens = {}
@@ -958,7 +918,6 @@ local function createParser(tokens)
                 break
             end
             
-            -- Check condition
             if cond then
                 pos = condPos
                 cond = parseExpression()
@@ -967,7 +926,6 @@ local function createParser(tokens)
                 end
             end
             
-            -- Execute body
             local savedPos = pos
             local savedTokens = tokens
             tokens = bodyTokens
@@ -982,12 +940,10 @@ local function createParser(tokens)
             tokens = savedTokens
             if doreturn then break end
             
-            -- Execute increment
             if #incTokens > 0 then
                 local incPos = pos
-                local incTokensSave = incTokens
                 pos = 1
-                tokens = incTokensSave
+                tokens = incTokens
                 while peek().type ~= C.EOF do
                     parseExpression()
                 end
@@ -1000,9 +956,9 @@ local function createParser(tokens)
         return result
     end
     
-    -- Break statement
+    -- Break
     local function parseBreak()
-        if loopDepth == 0 and switchLevel == 0 then
+        if loopDepth == 0 then
             error("break outside loop")
         end
         expect(C.KEYWORDS["break"])
@@ -1011,7 +967,7 @@ local function createParser(tokens)
         return nil
     end
     
-    -- Continue statement
+    -- Continue
     local function parseContinue()
         if loopDepth == 0 then
             error("continue outside loop")
@@ -1022,7 +978,7 @@ local function createParser(tokens)
         return nil
     end
     
-    -- Return statement
+    -- Return
     local function parseReturn()
         expect(C.KEYWORDS["return"])
         doreturn = true
@@ -1065,7 +1021,7 @@ local function createParser(tokens)
         end
     end
     
-    -- Top-level parse
+    -- Main parse
     local function parse()
         local result = nil
         while peek().type ~= C.EOF do
@@ -1077,61 +1033,52 @@ local function createParser(tokens)
         return result
     end
     
-    return {
-        parse = parse,
-        tokens = tokens,
-        globals = globals,
-        labels = labels,
-        getBreak = function() return breakLoop end,
-        setBreak = function(v) breakLoop = v end,
-        getReturn = function() return doreturn end,
-        setReturn = function(v) doreturn = v end
-    }
+    return parse()
 end
 
--- Public API
-function C.compile(source)
-    local tokens = C.tokenize(source)
-    local parser = createParser(tokens)
-    local result = parser.parse()
-    return result
-end
-
-function C.eval(source)
-    return C.compile(source)
-end
-
--- Built-in printf (simplified for J2ME)
+-- Printf function
 local function printf(fmt, ...)
     local args = {...}
     local result = fmt
-    local i = 1
+    local idx = 1
     
     result = string.gsub(result, "%%d", function()
-        local val = args[i] or 0
-        i = i + 1
-        return tostring(val)
+        local v = args[idx]
+        idx = idx + 1
+        if type(v) == "table" then
+            return tostring(cvalue_asInt(v))
+        end
+        return tostring(v or 0)
     end)
     
     result = string.gsub(result, "%%s", function()
-        local val = args[i] or ""
-        i = i + 1
-        return tostring(val)
+        local v = args[idx]
+        idx = idx + 1
+        if type(v) == "table" then
+            return cvalue_asString(v)
+        end
+        return tostring(v or "")
     end)
     
     result = string.gsub(result, "%%c", function()
-        local val = args[i] or 0
-        i = i + 1
-        return string.char(tonumber(val) or 0)
+        local v = args[idx]
+        idx = idx + 1
+        local num = 0
+        if type(v) == "table" then
+            num = cvalue_asInt(v)
+        else
+            num = tonumber(v) or 0
+        end
+        return string.char(num)
     end)
     
     result = string.gsub(result, "%%%%", "%%")
     
     print(result)
-    return #result
+    return string.len(result)
 end
 
--- Make available globally
+-- Export
 _G.C = C
 _G.printf = printf
 
