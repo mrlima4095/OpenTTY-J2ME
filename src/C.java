@@ -1581,7 +1581,7 @@ public class C {
     }
 
     private boolean isLetter(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'; }
-    private boolean isLetterOrDigit(char c) { return isLetter(c) || (c >= '0' && c <= '9'); }]
+    private boolean isLetterOrDigit(char c) { return isLetter(c) || (c >= '0' && c <= '9'); }
 
     private String replaceAll(String source, String target, String replacement) {
         if (target == null || target.length() == 0) return source;
