@@ -1,48 +1,42 @@
-// contador_loop_estatico.c
-// Compilar: arm-linux-gnueabi-gcc -static -nostdlib -o contador_loop contador_loop_estatico.c
+// contador.c - Mostra números de 0 a 5
+// Compilar: arm-none-eabi-gcc -nostdlib -static -o contador.elf contador.c
 
-void print_number(int n) {
-    char buffer[16];
-    char* p = buffer + 15;
-    *p = '\n';
-    p--;
-    
-    // Converter número para string (backwards)
-    do {
-        *p = (n % 10) + '0';
-        n /= 10;
-        p--;
-    } while (n > 0);
-    
-    p++; // Ajustar para início do número
-    
-    // Calcular comprimento
-    int len = (buffer + 15) - p + 1; // +1 para incluir \n
-    
-    // Syscall write
-    asm volatile (
-        "mov r0, #1\n"      // fd = stdout
-        "mov r1, %0\n"      // buffer
-        "mov r2, %1\n"      // length
+void write_syscall(int fd, const char* buf, int count) {
+    __asm__ volatile (
         "mov r7, #4\n"      // syscall write
-        "svc #0\n"
-        :
-        : "r" (p), "r" (len)
+        "mov r0, %0\n"      // fd
+        "mov r1, %1\n"      // buffer
+        "mov r2, %2\n"      // count
+        "swi 0\n"
+        : : "r"(fd), "r"(buf), "r"(count)
         : "r0", "r1", "r2", "r7"
     );
 }
 
-void _start() {
-    // Contar de 1 a 10
+void exit_syscall(int status) {
+    __asm__ volatile (
+        "mov r7, #1\n"      // syscall exit
+        "mov r0, %0\n"      // status
+        "swi 0\n"
+        : : "r"(status)
+        : "r0", "r7"
+    );
+}
+
+void print_number(int num) {
+    char buf[3];
+    buf[0] = '0' + num;  // converte para caractere
+    buf[1] = '\n';       // newline
+    buf[2] = '\0';       // null terminator (opcional)
+    write_syscall(1, buf, 2);
+}
+
+void _start(void) {
     int i;
-    for (i = 1; i <= 10; i++) {
+    
+    for (i = 0; i <= 5; i++) {
         print_number(i);
     }
     
-    // Exit
-    asm volatile (
-        "mov r0, #0\n"
-        "mov r7, #1\n"
-        "svc #0\n"
-    );
+    exit_syscall(0);
 }
