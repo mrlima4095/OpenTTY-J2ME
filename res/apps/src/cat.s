@@ -1,61 +1,81 @@
-.syntax unified
-.arm
-
-.data
-filename:
-    .ascii "/home/OpenRMS\0"
-buffer:
-    .space 1024         // buffer de leitura
-
-.text
 .global _start
+.section .text
 
 _start:
-    // open("/home/OpenRMS", O_RDONLY)
-    ldr r0, =filename
-    mov r1, #0          // O_RDONLY
-    mov r2, #0          // modo (não usado)
-    mov r7, #5          // syscall open
-    swi #0
+    @ argc está na stack no endereço apontado por SP
+    ldr r0, [sp]           @ argc
+    cmp r0, #1
+    ble usage              @ se argc <= 1, mostra uso
+    
+    @ argv[1] está em sp + 4
+    ldr r1, [sp, #4]       @ argv[1] = nome do arquivo
+    cmp r1, #0
+    beq usage
+    
+    @ Abrir arquivo
+    mov r0, r1             @ filename
+    mov r1, #0             @ O_RDONLY
+    mov r7, #5             @ SYS_OPEN
+    svc #0
     
     cmp r0, #0
-    blt error           // se erro
+    blt open_error         @ erro ao abrir
     
-    mov r4, r0          // salvar file descriptor
+    mov r4, r0             @ salvar file descriptor
     
 read_loop:
-    // read(fd, buffer, 1024)
-    mov r0, r4
-    ldr r1, =buffer
-    mov r2, #1024
-    mov r7, #3          // syscall read
-    swi #0
+    mov r7, #3             @ SYS_READ
+    mov r0, r4             @ fd
+    ldr r1, =buffer        @ buffer
+    ldr r2, =BUFSZ         @ tamanho
+    svc #0
     
     cmp r0, #0
-    ble close_file      // se EOF ou erro
+    ble close_file         @ fim do arquivo ou erro
     
-    // write(1, buffer, bytes_lidos)
-    mov r2, r0          // bytes lidos
-    mov r0, #1          // stdout
+    mov r7, #4             @ SYS_WRITE
+    mov r0, #1             @ stdout
     ldr r1, =buffer
-    mov r7, #4          // syscall write
-    swi #0
-    
+    svc #0
     b read_loop
 
 close_file:
-    // close(fd)
+    mov r7, #6             @ SYS_CLOSE
     mov r0, r4
-    mov r7, #6          // syscall close
-    swi #0
-    
-    // exit(0)
-    mov r0, #0
-    mov r7, #1
-    swi #0
+    svc #0
+    b exit
 
-error:
-    // Em caso de erro, apenas sair
+usage:
+    mov r7, #4
     mov r0, #1
-    mov r7, #1
-    swi #0
+    ldr r1, =usage_msg
+    ldr r2, =usage_len
+    svc #0
+    b exit
+
+open_error:
+    mov r7, #4
+    mov r0, #1
+    ldr r1, =err_msg
+    ldr r2, =err_len
+    svc #0
+    @ fall through to exit
+
+exit:
+    mov r7, #1             @ SYS_EXIT
+    mov r0, #0
+    svc #0
+
+.section .data
+usage_msg:
+    .asciz "Usage: cat <filename>\n"
+usage_len = . - usage_msg
+
+err_msg:
+    .asciz "cat: Cannot open file\n"
+err_len = . - err_msg
+
+.section .bss
+buffer:
+    .space 4096
+BUFSZ = 4096
