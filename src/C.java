@@ -7,7 +7,7 @@ import java.util.*;
 import java.io.*;
 
 // |
-// C Runtime - C Language Interpreter for OpenTTY
+// C Runtime
 public class C {
     public boolean breakLoop = false, doreturn = false, kill = true;
     public Process proc;
@@ -244,10 +244,10 @@ public class C {
                 continue;
             }
             
-            // Identifiers and keywords
-            if (Character.isLetter(c) || c == '_') {
+            // Identifiers and keywords (CORRIGIDO)
+            if (isLetter(c)) {
                 StringBuffer sb = new StringBuffer();
-                while (i < code.length() && (Character.isLetterOrDigit(code.charAt(i)) || code.charAt(i) == '_')) {
+                while (i < code.length() && isLetterOrDigit(code.charAt(i))) {
                     sb.append(code.charAt(i));
                     i++;
                 }
@@ -258,8 +258,8 @@ public class C {
                 continue;
             }
             
-            // Numbers
-            if (Character.isDigit(c)) {
+            // Numbers (CORRIGIDO)
+            if (c >= '0' && c <= '9') {
                 StringBuffer sb = new StringBuffer();
                 boolean isHex = false, isFloat = false;
                 
@@ -274,7 +274,7 @@ public class C {
                     if (isHex && ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))) {
                         sb.append(c);
                         i++;
-                    } else if (!isHex && Character.isDigit(c)) {
+                    } else if (!isHex && (c >= '0' && c <= '9')) {
                         sb.append(c);
                         i++;
                     } else if (!isHex && c == '.' && !isFloat) {
@@ -1574,6 +1574,9 @@ public class C {
         
         tokenIndex = saved;
     }
+
+    private boolean isLetter(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'; }
+    private boolean isLetterOrDigit(char c) { return isLetter(c) || (c >= '0' && c <= '9'); }
     
     // CFunction implementation
     public class CFunction {
