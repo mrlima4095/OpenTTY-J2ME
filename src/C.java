@@ -48,15 +48,17 @@ public class C {
         }
         
         public String toString() {
-            if (type == TYPE_INT) return String.valueOf(((Number)value).intValue());
-            if (type == TYPE_CHAR) return String.valueOf((char)((Number)value).intValue());
+            if (type == TYPE_INT) return String.valueOf(((Integer)value).intValue());
+            if (type == TYPE_CHAR) return String.valueOf((char)((Integer)value).intValue());
+            if (type == TYPE_DOUBLE) return String.valueOf(((Double)value).doubleValue());
             if (type == TYPE_PTR) return "ptr:" + value;
             if (type == TYPE_STRUCT) return "struct:" + value;
             return String.valueOf(value);
         }
         
         public int asInt() {
-            if (value instanceof Number) return ((Number)value).intValue();
+            if (value instanceof Integer) return ((Integer)value).intValue();
+            if (value instanceof Double) return (int)((Double)value).doubleValue();
             if (value instanceof Boolean) return ((Boolean)value).booleanValue() ? 1 : 0;
             if (value instanceof String) {
                 try { return Integer.parseInt((String)value); }
@@ -68,7 +70,8 @@ public class C {
         public char asChar() { return (char)asInt(); }
         public long asLong() { return asInt(); }
         public double asDouble() {
-            if (value instanceof Number) return ((Number)value).doubleValue();
+            if (value instanceof Double) return ((Double)value).doubleValue();
+            if (value instanceof Integer) return ((Integer)value).doubleValue();
             return 0.0;
         }
     }
@@ -1118,12 +1121,12 @@ public class C {
             Object right = exclusiveOrExpression();
             int l = ((CValue)left).asInt();
             int r = ((CValue)right).asInt();
-            left = new CValue(TYPE_INT, l | r);
+            left = new CValue(TYPE_INT, new Integer(l | r));
         }
         
         return left;
     }
-    
+
     private Object exclusiveOrExpression() throws Exception {
         Object left = andExpression();
         
@@ -1132,12 +1135,12 @@ public class C {
             Object right = andExpression();
             int l = ((CValue)left).asInt();
             int r = ((CValue)right).asInt();
-            left = new CValue(TYPE_INT, l ^ r);
+            left = new CValue(TYPE_INT, new Integer(l ^ r));
         }
         
         return left;
     }
-    
+
     private Object andExpression() throws Exception {
         Object left = equalityExpression();
         
@@ -1146,7 +1149,7 @@ public class C {
             Object right = equalityExpression();
             int l = ((CValue)left).asInt();
             int r = ((CValue)right).asInt();
-            left = new CValue(TYPE_INT, l & r);
+            left = new CValue(TYPE_INT, new Integer(l & r));
         }
         
         return left;
@@ -1208,19 +1211,19 @@ public class C {
                 Object right = additiveExpression();
                 int l = ((CValue)left).asInt();
                 int r = ((CValue)right).asInt();
-                left = new CValue(TYPE_INT, l << r);
+                left = new CValue(TYPE_INT, new Integer(l << r));
             } else if (t == RIGHT_OP) {
                 consume(RIGHT_OP);
                 Object right = additiveExpression();
                 int l = ((CValue)left).asInt();
                 int r = ((CValue)right).asInt();
-                left = new CValue(TYPE_INT, l >> r);
+                left = new CValue(TYPE_INT, new Integer(l >> r));
             } else break;
         }
         
         return left;
     }
-    
+
     private Object additiveExpression() throws Exception {
         Object left = multiplicativeExpression();
         
@@ -1232,7 +1235,7 @@ public class C {
                 if (left instanceof CValue && right instanceof CValue) {
                     int l = ((CValue)left).asInt();
                     int r = ((CValue)right).asInt();
-                    left = new CValue(TYPE_INT, l + r);
+                    left = new CValue(TYPE_INT, new Integer(l + r));
                 } else {
                     left = toLuaString(left) + toLuaString(right);
                 }
@@ -1241,7 +1244,7 @@ public class C {
                 Object right = multiplicativeExpression();
                 int l = ((CValue)left).asInt();
                 int r = ((CValue)right).asInt();
-                left = new CValue(TYPE_INT, l - r);
+                left = new CValue(TYPE_INT, new Integer(l - r));
             } else break;
         }
         
@@ -1258,21 +1261,21 @@ public class C {
                 Object right = castExpression();
                 int l = ((CValue)left).asInt();
                 int r = ((CValue)right).asInt();
-                left = new CValue(TYPE_INT, l * r);
+                left = new CValue(TYPE_INT, new Integer(l * r));
             } else if (t == '/') {
                 consume('/');
                 Object right = castExpression();
                 int l = ((CValue)left).asInt();
                 int r = ((CValue)right).asInt();
                 if (r == 0) throw new Exception("division by zero");
-                left = new CValue(TYPE_INT, l / r);
+                left = new CValue(TYPE_INT, new Integer(l / r));
             } else if (t == '%') {
                 consume('%');
                 Object right = castExpression();
                 int l = ((CValue)left).asInt();
                 int r = ((CValue)right).asInt();
                 if (r == 0) throw new Exception("modulo by zero");
-                left = new CValue(TYPE_INT, l % r);
+                left = new CValue(TYPE_INT, new Integer(l % r));
             } else break;
         }
         
@@ -1297,14 +1300,14 @@ public class C {
             Object expr = unaryExpression();
             int val = ((CValue)expr).asInt();
             ((CValue)expr).value = new Integer(val + 1);
-            return new CValue(TYPE_INT, val);
+            return new CValue(TYPE_INT, new Integer(val));
         }
         if (t == DEC_OP) {
             consume(DEC_OP);
             Object expr = unaryExpression();
             int val = ((CValue)expr).asInt();
             ((CValue)expr).value = new Integer(val - 1);
-            return new CValue(TYPE_INT, val);
+            return new CValue(TYPE_INT, new Integer(val));
         }
         if (t == '&') {
             consume('&');
@@ -1322,7 +1325,7 @@ public class C {
             consume('-');
             Object expr = unaryExpression();
             int val = ((CValue)expr).asInt();
-            return new CValue(TYPE_INT, -val);
+            return new CValue(TYPE_INT, new Integer(-val));
         }
         if (t == '~') {
             consume('~');
@@ -1387,12 +1390,12 @@ public class C {
                 consume(INC_OP);
                 int val = ((CValue)expr).asInt();
                 ((CValue)expr).value = new Integer(val + 1);
-                expr = new CValue(TYPE_INT, val);
+                expr = new CValue(TYPE_INT, new Integer(val));
             } else if (t == DEC_OP) {
                 consume(DEC_OP);
                 int val = ((CValue)expr).asInt();
                 ((CValue)expr).value = new Integer(val - 1);
-                expr = new CValue(TYPE_INT, val);
+                expr = new CValue(TYPE_INT, new Integer(val));
             } else break;
         }
         
@@ -1469,19 +1472,21 @@ public class C {
     private Object binaryOp(Object left, Object right, int op) {
         int l = ((CValue)left).asInt();
         int r = ((CValue)right).asInt();
+        int result;
         switch (op) {
-            case '+': return new CValue(TYPE_INT, l + r);
-            case '-': return new CValue(TYPE_INT, l - r);
-            case '*': return new CValue(TYPE_INT, l * r);
-            case '/': return new CValue(TYPE_INT, l / r);
-            case '%': return new CValue(TYPE_INT, l % r);
-            case LEFT_OP: return new CValue(TYPE_INT, l << r);
-            case RIGHT_OP: return new CValue(TYPE_INT, l >> r);
-            case '&': return new CValue(TYPE_INT, l & r);
-            case '|': return new CValue(TYPE_INT, l | r);
-            case '^': return new CValue(TYPE_INT, l ^ r);
-            default: return left;
+            case '+': result = l + r; break;
+            case '-': result = l - r; break;
+            case '*': result = l * r; break;
+            case '/': result = l / r; break;
+            case '%': result = l % r; break;
+            case LEFT_OP: result = l << r; break;
+            case RIGHT_OP: result = l >> r; break;
+            case '&': result = l & r; break;
+            case '|': result = l | r; break;
+            case '^': result = l ^ r; break;
+            default: result = l;
         }
+        return new CValue(TYPE_INT, new Integer(result));
     }
     
     private Object addressOf(Object expr) {
