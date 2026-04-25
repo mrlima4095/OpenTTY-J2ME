@@ -182,22 +182,64 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public String getpattern(String text) { return text.trim().startsWith("\"") && text.trim().endsWith("\"") ? replace(text, "\"", "") : text.trim(); }
     // | (Arrays)
     public String[] split(String content, char div) { Vector lines = new Vector(); int start = 0; for (int i = 0; i < content.length(); i++) { if (content.charAt(i) == div) { lines.addElement(content.substring(start, i)); start = i + 1; } } if (start < content.length()) { lines.addElement(content.substring(start)); } String[] result = new String[lines.size()]; lines.copyInto(result); return result; }
-    public String[] splitArgs(String content) {
-        Vector args = new Vector();
-        boolean inQuotes = false;
-        int start = 0;
-        for (int i = 0; i < content.length(); i++) { 
-            char c = content.charAt(i); if (c == '"') { inQuotes = !inQuotes; continue; } 
-            if (!inQuotes && c == ' ') { 
-                if (i > start) { args.addElement(getpattern(content.substring(start, i))); }
-                
-                start = i + 1; 
+    public String[] splitArgs(String input) {
+        Vector result = new Vector();
+        StringBuffer current = new StringBuffer(); // Use StringBuffer se StringBuilder não existir no seu J2ME
+        boolean inDoubleQuotes = false;
+        boolean inSingleQuotes = false;
+        boolean escaped = false;
+        
+        for (int i = 0; i < input.length(); i++) {
+            char c = input.charAt(i);
+            
+            if (escaped) {
+                current.append(c);
+                escaped = false;
+                continue;
             }
-        } 
-        if (start < content.length()) { args.addElement(getpattern(content.substring(start))); }
-        String[] result = new String[args.size()]; 
-        args.copyInto(result); 
-        return result; 
+            
+            if (c == '\\') {
+                if (inDoubleQuotes || inSingleQuotes) {
+                    escaped = true;
+                } else {
+                    current.append(c);
+                }
+                continue;
+            }
+            
+            if (c == '"' && !inSingleQuotes) {
+                inDoubleQuotes = !inDoubleQuotes;
+                current.append(c);
+                continue;
+            }
+            
+            if (c == '\'' && !inDoubleQuotes) {
+                inSingleQuotes = !inSingleQuotes;
+                current.append(c);
+                continue;
+            }
+            
+            if (c == ' ' && !inDoubleQuotes && !inSingleQuotes) {
+                if (current.length() > 0) {
+                    result.addElement(current.toString());
+                    current.setLength(0);
+                }
+                continue;
+            }
+            
+            current.append(c);
+        }
+        
+        if (current.length() > 0) {
+            result.addElement(current.toString());
+        }
+        
+        String[] array = new String[result.size()];
+        for (int i = 0; i < result.size(); i++) {
+            array[i] = (String) result.elementAt(i);
+        }
+        
+        return array;
     }
     // |
     // | (Generators)
