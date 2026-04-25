@@ -2806,7 +2806,7 @@ public class Lua {
             else {
                 int status = 0; InputStream in; boolean builtin = args.size() > 1 ? ((Boolean) args.elementAt(1)).booleanValue() : false;
 
-                String command = toLuaString(args.elementAt(0));
+                String command = midlet.env(toLuaString(args.elementAt(0)));
                 String mainCommand = midlet.getCommand(command), argument = midlet.getArgument(command);
                 String[] args = midlet.splitArgs(argument);
 
