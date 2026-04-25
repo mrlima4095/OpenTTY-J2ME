@@ -1,66 +1,140 @@
+#!/bin/lua
+
 --[[
-   private int importScript(String script, int id) {
-        if (script == null || script.length() == 0) { return 2; }
 
-        Hashtable PKG = parseProperties(script);
-        final String PID = genpid();
-        // |
-        // Verify current API version
-        if (PKG.containsKey("api.version")) {
-            String version = env("$VERSION"), apiVersion = (String) PKG.get("api.version"), mode = (String) PKG.get("api.match");
-            if (mode == null || mode.length() == 0) mode = "exact-prefix";
+    // Build APP Shell
+    if (PKG.containsKey("shell.name") && PKG.containsKey("shell.args")) { 
+    String[] args = split((String) PKG.get("shell.args"), ','); 
+    Hashtable TABLE = new Hashtable(); 
+    for (int i = 0; i < args.length; i++) { 
+    String NAME = args[i].trim(), VALUE = (String) PKG.get(NAME); 
+    TABLE.put(NAME, (VALUE != null) ? VALUE : ""); } 
+    if (PKG.containsKey("shell.unknown")) { TABLE.put("shell.unknown", (String) PKG.get("shell.unknown")); } shell.put(((String) PKG.get("shell.name")).trim(), TABLE); }
 
-            boolean fail = false;
-
-            if (mode.equals("exact-prefix")) { fail = !version.startsWith(apiVersion); } 
-            else if (mode.equals("minimum") || mode.equals("maximum")) {
-                String[] currentParts = split(version, '.'), requiredParts = split(apiVersion, '.');
-                if (mode.equals("minimum")) { if (currentParts.length < 2 || requiredParts.length < 2) { fail = true; } else { fail = getNumber(requiredParts[1]) > getNumber(currentParts[1]); } }
-                else if (mode.equals("maximum")) { if (currentParts.length < 1 || requiredParts.length < 1) { fail = true; } else { fail = getNumber(requiredParts[0]) > getNumber(currentParts[0]); } }
-            } 
-            else if (mode.equals("exact-full")) { fail = !version.equals(apiVersion); } 
-            else { return 1; }
-
-            if (fail) { String error = (String) PKG.get("api.error"); processCommand(error != null ? error : "true", true, id); return 3; }
-        }
-        if (PKG.containsKey("api.require")) {
-            String[] nodes = split((String) PKG.get("api.require"), ',');
-            for (int i = 0; i < nodes.length; i++) {
-                boolean fail = false;
-
-                if (nodes[i].equals("lua") && javaClass("Lua") != 0) { fail = true; }
-                if (nodes[i].equals("canvas") && javaClass("MIDletCanvas") != 0) { fail = true; }
-                if (nodes[i].equals("devicefs") && javaClass("javax.microedition.io.FileConnection") != 0) { fail = true; } 
-                if (nodes[i].equals("prg") && javaClass("javax.microedition.io.PushRegistry") != 0) { fail = true; }
-                if (nodes[i].equals("") && javaClass("") != 0) { fail = true; }
-
-                if (fail) { String error = (String) PKG.get("api.error"); processCommand(error != null ? error : "true", true, id); return 3; }             
-            }
-        }
-        // |
-        // Build dependencies
-        if (PKG.containsKey("include")) { String[] include = split((String) PKG.get("include"), ','); for (int i = 0; i < include.length; i++) { int STATUS = importScript(getcontent(include[i]), id); if (STATUS != 0) { return STATUS; } } }
-        // |
-        // Start and handle APP process
-        if (PKG.containsKey("process.name")) { start((String) PKG.get("process.name"), PID, (String) PKG.get("process.exit"), id); }
-        if (PKG.containsKey("process.port")) { 
-            String PORT = (String) PKG.get("process.port"), MOD = (String) PKG.get("process.db"); 
-            if (((Hashtable) getobject("1", "sessions")).containsKey(PORT)) { MIDletLogs("add warn Application port is unavailable."); return 68; }
-            
-            new MIDletControl("bind", env(PORT + " " + (MOD == null ? "" : MOD)), id);
-        }
-        // |
-        // Start Application
-        if (PKG.containsKey("config")) { int STATUS = processCommand((String) PKG.get("config"), true, id); if (STATUS != 0) { return STATUS; } }
-        if (PKG.containsKey("mod") && PKG.containsKey("process.name")) { new MIDletControl(PID, "MIDlet-MOD", (String) PKG.get("mod"), true, id); }
-        // |
-        // Generate items - Command & Files
-        if (PKG.containsKey("command")) { String[] commands = split((String) PKG.get("command"), ','); for (int i = 0; i < commands.length; i++) { if (PKG.containsKey(commands[i])) { aliases.put(commands[i], env((String) PKG.get(commands[i]))); } else { MIDletLogs("add error Failed to create command '" + commands[i] + "' content not found"); } } }
-        if (PKG.containsKey("file")) { String[] files = split((String) PKG.get("file"), ','); for (int i = 0; i < files.length; i++) { if (PKG.containsKey(files[i])) { int STATUS = writeRMS("/home/" + files[i], env((String) PKG.get(files[i])), id); } else { MIDletLogs("add error Failed to create file '" + files[i] + "' content not found"); } } }
-        // |
-        // Build APP Shell
-        if (PKG.containsKey("shell.name") && PKG.containsKey("shell.args")) { String[] args = split((String) PKG.get("shell.args"), ','); Hashtable TABLE = new Hashtable(); for (int i = 0; i < args.length; i++) { String NAME = args[i].trim(), VALUE = (String) PKG.get(NAME); TABLE.put(NAME, (VALUE != null) ? VALUE : ""); } if (PKG.containsKey("shell.unknown")) { TABLE.put("shell.unknown", (String) PKG.get("shell.unknown")); } shell.put(((String) PKG.get("shell.name")).trim(), TABLE); }
-
-        return 0;
-    }
+    return 0;
+}
 ]]
+
+local function launch(source, content)
+    local pkg = table.decode(content)
+
+    if pkg["api.version"] then
+        local version = os.getenv("VERSION")
+        local matching = pkg["api.match"] or "exact-prefix"
+        local ok = true
+
+        if matching == "exact-prefix" then
+            ok = string.startswith(version, pkg["api.version"])
+        elseif matching == "minimum" or matching == "maximum" then
+            
+        elseif matching == "exact-full" then
+            ok = version == pkg["api.version"]
+        end
+
+        if not ok then
+            if pkg["api.error"] then
+                os.execute(pkg["api.error"])
+            end
+            os.exit(3)
+        end
+    end
+    if pkg["api.require"] then
+        local nodes = string.split(pkg["api.require"], ",")
+        local ok = true
+        for _, node in pairs(nodes) do
+            if node == "lua" and not java.class("Lua") then ok = false
+            elseif node == "canvas" and not java.class("LuaCanvas") then ok = false
+            elseif node == "devicefs" and not java.class("javax.microedition.io.FileConnection") then ok = false
+            elseif node == "prg" and not java.class("javax.microedition.io.PushRegistry") then ok = false
+            end
+        end
+
+        if not ok then
+            if pkg["api.error"] then
+                os.execute(pkg["api.error"])
+            end
+            os.exit(3)
+        end
+    end
+
+    if pkg["include"] then
+        local apps = string.split(pkg["api.require"], ",")
+        for _, app in pairs(apps) do
+            local file = io.open(os.join(app))
+            if file then
+                launch(io.read(file))
+            else
+                if pkg["include.error"] then
+                    os.execute(pkg["include.error"])
+                end
+                os.exit(127)
+            end
+        end
+    end
+
+    if pkg["process.name"] then
+        os.setproc("name", pkg["process.name"])
+        os.setproc(false)
+    end
+
+    if pkg["process.port"] then
+
+    end
+
+    if pkg["config"] then
+        local status = os.execute(pkg["config"])
+        if status > 0 then
+            os.exit(status)
+        end
+    end
+    if pkg["mod"] and pkg["process.name"] then
+        local function background()
+            local status = os.execute(pkg["mod"])
+            if status > 0 then
+                os.exit(status)
+            end
+        end
+        java.run(background, "MIDlet-MOD")
+    end
+
+    if pkg["command"] then
+        local scope = os.scope()
+        local keys = string.split(pkg["command"], ",")
+        for _, key in pairs(keys) do
+            if pkg[key] then
+                scope["ALIAS"][key] = pkg[key]
+            else
+                print("launch: " .. source .. ": no content for alias '" .. key .. "'")
+                os.exit(1)
+            end
+        end
+    end
+    if pkg["file"] then
+        local files = string.split(pkg["command"], ",")
+        for _, f in pairs(files) do
+            if pkg[f] then
+                io.write(pkg[f], "/home/" .. string.env(f))
+            else
+                print("launch: " .. source .. ": no content for file '" .. f .. "'")
+                os.exit(1)
+            end
+        end
+        
+    end
+
+    if pkg["shell.name"] and pkg["shell.args"] then
+        
+    end
+end
+
+if arg[1] then
+    local file = io.open(os.join(arg[1]))
+    if file then
+        launch(io.read(file))
+    else
+        print("launch: " .. arg[1] .. ": not found")
+        os.exit(127)
+    end
+else
+    print("launch [source]")
+end
