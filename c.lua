@@ -1,5 +1,5 @@
 -- C.lua - C Language Interpreter Runtime for OpenTTY/Lua J2ME
--- Versão corrigida (sem erro de cast)
+-- Versão SEM dependência do printf do Java
 
 local C = {}
 
@@ -8,76 +8,22 @@ C.EOF = 0
 C.IDENTIFIER = 1
 C.CONSTANT = 2
 C.STRING = 3
-C.PUNCTUATOR = 4
 
 -- Keywords
 C.KEYWORDS = {
-    ["auto"] = 256,
-    ["break"] = 257,
-    ["case"] = 258,
-    ["char"] = 259,
-    ["const"] = 260,
-    ["continue"] = 261,
-    ["default"] = 262,
-    ["do"] = 263,
-    ["double"] = 264,
-    ["else"] = 265,
-    ["enum"] = 266,
-    ["extern"] = 267,
-    ["float"] = 268,
-    ["for"] = 269,
-    ["goto"] = 270,
-    ["if"] = 271,
     ["int"] = 272,
-    ["long"] = 273,
-    ["register"] = 274,
     ["return"] = 275,
-    ["short"] = 276,
-    ["signed"] = 277,
-    ["sizeof"] = 278,
-    ["static"] = 279,
-    ["struct"] = 280,
-    ["switch"] = 281,
-    ["typedef"] = 282,
-    ["union"] = 283,
-    ["unsigned"] = 284,
-    ["void"] = 285,
-    ["volatile"] = 286,
-    ["while"] = 287
-}
-
--- Operators
-C.OP = {
-    inc = 300,
-    dec = 301,
-    left = 302,
-    right = 303,
-    le = 304,
-    ge = 305,
-    eq = 306,
-    ne = 307,
-    and_op = 308,
-    or_op = 309,
-    mul_assign = 310,
-    div_assign = 311,
-    mod_assign = 312,
-    add_assign = 313,
-    sub_assign = 314,
-    left_assign = 315,
-    right_assign = 316,
-    and_assign = 317,
-    xor_assign = 318,
-    or_assign = 319,
-    ptr = 320
+    ["if"] = 271,
+    ["else"] = 265,
+    ["while"] = 287,
+    ["for"] = 269,
+    ["break"] = 257,
+    ["continue"] = 261
 }
 
 -- Type constants
-C.TY_VOID = 0
 C.TY_INT = 1
 C.TY_CHAR = 2
-C.TY_LONG = 3
-C.TY_FLOAT = 4
-C.TY_DOUBLE = 5
 C.TY_PTR = 6
 
 -- Character helpers
@@ -97,84 +43,92 @@ local function isAlnum(c)
     return isDigit(c) or isLetter(c)
 end
 
--- CValue constructor
-local function newCValue(type, value)
-    return {type = type, value = value}
+-- CValue
+local function newCValue(typ, val)
+    return {type = typ, value = val}
 end
 
--- Converter CValue para numero
-local function toNumber(val)
-    if val == nil then
+local function toInt(v)
+    if v == nil then return 0 end
+    if type(v) == "number" then return v end
+    if type(v) == "table" then
+        if type(v.value) == "number" then return v.value end
         return 0
     end
-    if type(val) == "number" then
-        return val
+    if type(v) == "string" then
+        local n = tonumber(v)
+        if n then return n else return 0 end
     end
-    if type(val) == "table" then
-        if val.type == C.TY_INT or val.type == C.TY_CHAR or val.type == C.TY_LONG then
-            if type(val.value) == "number" then
-                return val.value
-            elseif type(val.value) == "string" then
-                return tonumber(val.value) or 0
-            else
-                return 0
-            end
-        end
-    end
-    return tonumber(val) or 0
+    return 0
 end
 
--- Converter para string
-local function toString(val)
-    if val == nil then
-        return "nil"
-    end
-    if type(val) == "string" then
-        return val
-    end
-    if type(val) == "number" then
-        return tostring(val)
-    end
-    if type(val) == "table" then
-        if val.type == C.TY_INT or val.type == C.TY_LONG then
-            return tostring(toNumber(val))
-        elseif val.type == C.TY_CHAR then
-            return string.char(toNumber(val))
-        elseif val.type == C.TY_PTR then
-            if type(val.value) == "string" then
-                return val.value
-            else
-                return tostring(val.value)
-            end
+local function toString(v)
+    if v == nil then return "" end
+    if type(v) == "string" then return v end
+    if type(v) == "number" then return tostring(v) end
+    if type(v) == "table" then
+        if v.type == C.TY_PTR and type(v.value) == "string" then
+            return v.value
         end
+        return tostring(toInt(v))
     end
-    return tostring(val)
+    return tostring(v)
 end
 
--- Truthy check
-local function isTruthy(val)
-    if val == nil then
-        return false
-    end
-    if type(val) == "boolean" then
-        return val
-    end
-    if type(val) == "number" then
-        return val ~= 0
-    end
-    if type(val) == "table" then
-        if val.type == C.TY_PTR then
-            return val.value ~= nil
-        end
-        return toNumber(val) ~= 0
-    end
-    if type(val) == "string" then
-        return #val > 0
+local function isTruthy(v)
+    if v == nil then return false end
+    if type(v) == "boolean" then return v end
+    if type(v) == "number" then return v ~= 0 end
+    if type(v) == "table" then
+        if v.type == C.TY_PTR then return v.value ~= nil end
+        return toInt(v) ~= 0
     end
     return true
 end
 
--- Tokenizer
+-- Printf em Lua puro (NAO usa o printf do Java)
+local function lua_printf(fmt, ...)
+    local args = {...}
+    local result = ""
+    local i = 1
+    local len = string.len(fmt)
+    local argIdx = 1
+    
+    while i <= len do
+        local c = string.sub(fmt, i, i)
+        
+        if c == "%" and i < len then
+            local spec = string.sub(fmt, i+1, i+1)
+            i = i + 2
+            
+            local val = args[argIdx]
+            argIdx = argIdx + 1
+            
+            if spec == "d" or spec == "i" then
+                result = result .. tostring(toInt(val))
+            elseif spec == "s" then
+                result = result .. toString(val)
+            elseif spec == "c" then
+                result = result .. string.char(toInt(val))
+            elseif spec == "%" then
+                result = result .. "%"
+            else
+                result = result .. "%" .. spec
+            end
+        else
+            result = result .. c
+            i = i + 1
+        end
+    end
+    
+    print(result)
+    return #result
+end
+
+-- Substitui o printf global para NAO usar o Java
+_G.printf = lua_printf
+
+-- Tokenizer simplificado
 function C.tokenize(code)
     local tokens = {}
     local i = 1
@@ -189,16 +143,6 @@ function C.tokenize(code)
         elseif c == "/" and i < len and string.sub(code, i+1, i+1) == "/" then
             i = i + 2
             while i <= len and string.sub(code, i, i) ~= "\n" do
-                i = i + 1
-            end
-            
-        elseif c == "/" and i < len and string.sub(code, i+1, i+1) == "*" then
-            i = i + 2
-            while i + 1 <= len do
-                if string.sub(code, i, i) == "*" and string.sub(code, i+1, i+1) == "/" then
-                    i = i + 2
-                    break
-                end
                 i = i + 1
             end
             
@@ -217,12 +161,6 @@ function C.tokenize(code)
                         table.insert(s, "\n")
                     elseif esc == "t" then
                         table.insert(s, "\t")
-                    elseif esc == "r" then
-                        table.insert(s, "\r")
-                    elseif esc == "\\" then
-                        table.insert(s, "\\")
-                    elseif esc == '"' then
-                        table.insert(s, '"')
                     else
                         table.insert(s, esc)
                     end
@@ -232,30 +170,6 @@ function C.tokenize(code)
                 i = i + 1
             end
             table.insert(tokens, {type = C.STRING, value = table.concat(s)})
-            
-        elseif c == "'" and i < len then
-            i = i + 1
-            local ch = string.sub(code, i, i)
-            if ch == "\\" and i < len then
-                i = i + 1
-                local esc = string.sub(code, i, i)
-                if esc == "n" then
-                    ch = "\n"
-                elseif esc == "t" then
-                    ch = "\t"
-                elseif esc == "r" then
-                    ch = "\r"
-                elseif esc == "0" then
-                    ch = "\0"
-                else
-                    ch = esc
-                end
-            end
-            i = i + 2
-            if string.sub(code, i, i) == "'" then
-                i = i + 1
-            end
-            table.insert(tokens, {type = C.CONSTANT, value = newCValue(C.TY_CHAR, string.byte(ch))})
             
         elseif isLetter(c) then
             local s = {}
@@ -280,62 +194,39 @@ function C.tokenize(code)
             local num = table.concat(s)
             table.insert(tokens, {type = C.CONSTANT, value = newCValue(C.TY_INT, tonumber(num))})
             
-        elseif i + 1 <= len then
-            local op2 = string.sub(code, i, i+1)
-            local optype = nil
-            
-            if op2 == "++" then optype = C.OP.inc
-            elseif op2 == "--" then optype = C.OP.dec
-            elseif op2 == "<<" then optype = C.OP.left
-            elseif op2 == ">>" then optype = C.OP.right
-            elseif op2 == "<=" then optype = C.OP.le
-            elseif op2 == ">=" then optype = C.OP.ge
-            elseif op2 == "==" then optype = C.OP.eq
-            elseif op2 == "!=" then optype = C.OP.ne
-            elseif op2 == "&&" then optype = C.OP.and_op
-            elseif op2 == "||" then optype = C.OP.or_op
-            elseif op2 == "+=" then optype = C.OP.add_assign
-            elseif op2 == "-=" then optype = C.OP.sub_assign
-            elseif op2 == "*=" then optype = C.OP.mul_assign
-            elseif op2 == "/=" then optype = C.OP.div_assign
-            elseif op2 == "->" then optype = C.OP.ptr
-            end
-            
-            if optype then
-                table.insert(tokens, {type = optype, value = op2})
-                i = i + 2
-            else
-                local punct = nil
-                if c == ";" then punct = ";"
-                elseif c == "{" then punct = "{"
-                elseif c == "}" then punct = "}"
-                elseif c == "(" then punct = "("
-                elseif c == ")" then punct = ")"
-                elseif c == "[" then punct = "["
-                elseif c == "]" then punct = "]"
-                elseif c == "," then punct = ","
-                elseif c == "=" then punct = "="
-                elseif c == "+" then punct = "+"
-                elseif c == "-" then punct = "-"
-                elseif c == "*" then punct = "*"
-                elseif c == "/" then punct = "/"
-                elseif c == "%" then punct = "%"
-                elseif c == "&" then punct = "&"
-                elseif c == "|" then punct = "|"
-                elseif c == "^" then punct = "^"
-                elseif c == "~" then punct = "~"
-                elseif c == "!" then punct = "!"
-                elseif c == "<" then punct = "<"
-                elseif c == ">" then punct = ">"
-                end
-                
-                if punct then
-                    table.insert(tokens, {type = punct, value = c})
-                else
-                    error("Unexpected character: " .. c)
-                end
-                i = i + 1
-            end
+        elseif c == ";" then
+            table.insert(tokens, {type = ";", value = ";"})
+            i = i + 1
+        elseif c == "(" then
+            table.insert(tokens, {type = "(", value = "("})
+            i = i + 1
+        elseif c == ")" then
+            table.insert(tokens, {type = ")", value = ")"})
+            i = i + 1
+        elseif c == "{" then
+            table.insert(tokens, {type = "{", value = "{"})
+            i = i + 1
+        elseif c == "}" then
+            table.insert(tokens, {type = "}", value = "}"})
+            i = i + 1
+        elseif c == "=" then
+            table.insert(tokens, {type = "=", value = "="})
+            i = i + 1
+        elseif c == "+" then
+            table.insert(tokens, {type = "+", value = "+"})
+            i = i + 1
+        elseif c == "-" then
+            table.insert(tokens, {type = "-", value = "-"})
+            i = i + 1
+        elseif c == "*" then
+            table.insert(tokens, {type = "*", value = "*"})
+            i = i + 1
+        elseif c == "/" then
+            table.insert(tokens, {type = "/", value = "/"})
+            i = i + 1
+        elseif c == "," then
+            table.insert(tokens, {type = ",", value = ","})
+            i = i + 1
         else
             i = i + 1
         end
@@ -345,44 +236,13 @@ function C.tokenize(code)
     return tokens
 end
 
--- Função printf global (sem erro de cast)
-function _G.printf(fmt, ...)
-    local args = {...}
-    local result = fmt
-    local idx = 1
-    
-    -- Substitui %d, %i, %s, %c
-    result = string.gsub(result, "%%[discc]", function(spec)
-        local val = args[idx]
-        idx = idx + 1
-        
-        if val == nil then
-            return ""
-        end
-        
-        -- Converte o valor para o tipo apropriado
-        if spec == "%d" or spec == "%i" then
-            return tostring(toNumber(val))
-        elseif spec == "%s" then
-            return toString(val)
-        elseif spec == "%c" then
-            return string.char(toNumber(val))
-        end
-        return toString(val)
-    end)
-    
-    -- Substitui %%
-    result = string.gsub(result, "%%%%", "%%")
-    
-    print(result)
-    return #result
-end
-
--- Compilador/Interpretador C simplificado
+-- Compilador/Interpretador C
 function C.compile(source)
     local tokens = C.tokenize(source)
     local pos = 1
     local globals = {}
+    local doreturn = false
+    local returnValue = nil
     
     local function peek()
         local t = tokens[pos]
@@ -402,109 +262,146 @@ function C.compile(source)
         if t.type == typ then
             return consume()
         end
-        error("Expected " .. tostring(typ))
+        error("Expected " .. tostring(typ) .. " got " .. tostring(t.type))
     end
     
-    -- Expressão simples (apenas constantes, strings e printf)
-    local function parseExpression()
+    -- Expressão aritmética simples
+    local function parseExpr()
+        local left = peek()
+        
+        if left.type == C.CONSTANT then
+            consume()
+            return left.value
+        elseif left.type == C.IDENTIFIER then
+            local name = consume().value
+            local sym = globals[name]
+            if sym == nil then
+                sym = newCValue(C.TY_INT, 0)
+                globals[name] = sym
+            end
+            return sym
+        elseif left.type == C.STRING then
+            local str = consume().value
+            return newCValue(C.TY_PTR, str)
+        else
+            return newCValue(C.TY_INT, 0)
+        end
+    end
+    
+    -- Statement
+    local function parseStatement()
         local t = peek()
         
-        if t.type == C.IDENTIFIER then
-            local name = consume().value
+        if t.type == C.KEYWORDS["int"] then
+            consume() -- int
+            local name = expect(C.IDENTIFIER).value
             
-            if name == "printf" then
-                expect("(")
-                local fmtTok = peek()
-                if fmtTok.type ~= C.STRING then
-                    error("printf needs string format")
-                end
-                consume()
-                local fmt = fmtTok.value
-                
-                local args = {}
-                while peek().type == "," do
-                    consume()
-                    local argTok = peek()
-                    if argTok.type == C.CONSTANT then
-                        consume()
-                        table.insert(args, argTok.value)
-                    elseif argTok.type == C.STRING then
-                        consume()
-                        table.insert(args, argTok.value)
-                    elseif argTok.type == C.IDENTIFIER then
-                        local varName = consume().value
-                        local sym = globals[varName]
-                        table.insert(args, sym or 0)
+            -- Verifica se tem inicializacao = valor
+            local val = newCValue(C.TY_INT, 0)
+            if peek().type == "=" then
+                consume() -- =
+                local expr = parseExpr()
+                val = expr
+            end
+            expect(";")
+            
+            globals[name] = val
+            return nil
+            
+        elseif t.type == C.IDENTIFIER and t.value == "printf" then
+            consume() -- printf
+            expect("(")
+            local fmtTok = expect(C.STRING)
+            local fmt = fmtTok.value
+            
+            local args = {}
+            while peek().type == "," do
+                consume() -- ,
+                local arg = parseExpr()
+                table.insert(args, arg)
+            end
+            expect(")")
+            expect(";")
+            
+            -- Executa printf
+            local out = ""
+            local argIdx = 1
+            local i = 1
+            local flen = string.len(fmt)
+            
+            while i <= flen do
+                local ch = string.sub(fmt, i, i)
+                if ch == "%" and i < flen then
+                    local spec = string.sub(fmt, i+1, i+1)
+                    i = i + 2
+                    
+                    local argVal = args[argIdx]
+                    argIdx = argIdx + 1
+                    
+                    if spec == "d" or spec == "i" then
+                        out = out .. tostring(toInt(argVal))
+                    elseif spec == "s" then
+                        out = out .. toString(argVal)
+                    elseif spec == "c" then
+                        out = out .. string.char(toInt(argVal))
+                    elseif spec == "%" then
+                        out = out .. "%"
                     else
-                        break
+                        out = out .. "%" .. spec
                     end
+                else
+                    out = out .. ch
+                    i = i + 1
                 end
-                expect(")")
-                expect(";")
-                
-                -- Chama printf com os argumentos
-                local out = string.gsub(fmt, "%%[discc]", function()
-                    local arg = table.remove(args, 1)
-                    if arg == nil then return "" end
-                    if type(arg) == "table" then
-                        return tostring(arg.value)
-                    end
-                    return tostring(arg)
-                end)
-                out = string.gsub(out, "%%%%", "%%")
-                print(out)
-                return newCValue(C.TY_INT, #out)
-            else
-                -- Variavel
-                local sym = globals[name]
-                if sym == nil then
-                    sym = newCValue(C.TY_INT, 0)
-                    globals[name] = sym
-                end
-                expect(";")
-                return sym
             end
             
-        elseif t.type == C.CONSTANT then
-            local val = consume().value
+            print(out)
+            return newCValue(C.TY_INT, #out)
+            
+        elseif t.type == C.KEYWORDS["return"] then
+            consume() -- return
+            local val = nil
+            if peek().type ~= ";" then
+                val = parseExpr()
+            end
             expect(";")
+            doreturn = true
+            returnValue = val
             return val
             
-        elseif t.type == C.STRING then
-            local str = consume().value
-            expect(";")
-            return newCValue(C.TY_PTR, str)
+        elseif t.type == ";" then
+            consume()
+            return nil
             
         else
-            -- Pula statement desconhecido
-            while peek().type ~= C.EOF and peek().type ~= ";" do
-                consume()
-            end
+            -- Expressao qualquer
+            local expr = parseExpr()
             if peek().type == ";" then
                 consume()
             end
-            return nil
+            return expr
         end
     end
     
-    -- Parser principal
+    -- Parse all
     local function parse()
-        local lastResult = nil
         while peek().type ~= C.EOF do
-            lastResult = parseExpression()
+            local res = parseStatement()
+            if doreturn then
+                return returnValue
+            end
         end
-        return lastResult
+        return nil
     end
     
     return parse()
 end
 
--- Versão eval
 function C.eval(source)
     return C.compile(source)
 end
 
--- Exportar para o G
+-- Export
 _G.C = C
 
 return C
