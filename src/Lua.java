@@ -3012,7 +3012,7 @@ public class Lua {
                     String pid = midlet.genpid();
                     Process process = new Process(midlet, ("build " + args[0]).trim(), midlet.joinpath(args[0], father), midlet.getUser(id), id, pid, stdout, father, -1);
                     midlet.sys.put(pid, process);
-                    process.c.run(program, code, new Hashtable());
+                    process.c.run(args[0], code, new Hashtable());
                 }
                 else if (mainCommand.equals("builtin") || mainCommand.equals("command")) { Vector payload = new Vector(); payload.addElement(argument); payload.addElement(true); payload.addElement(FALSE); return exec(payload); }
                 else if (mainCommand.equals("false")) { status = 255; }
