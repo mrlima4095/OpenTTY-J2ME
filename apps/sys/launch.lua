@@ -1,20 +1,5 @@
 #!/bin/lua
 
---[[
-
-    // Build APP Shell
-    if (PKG.containsKey("shell.name") && PKG.containsKey("shell.args")) { 
-    String[] args = split((String) PKG.get("shell.args"), ','); 
-    Hashtable TABLE = new Hashtable(); 
-    for (int i = 0; i < args.length; i++) { 
-    String NAME = args[i].trim(), VALUE = (String) PKG.get(NAME); 
-    TABLE.put(NAME, (VALUE != null) ? VALUE : ""); } 
-    if (PKG.containsKey("shell.unknown")) { TABLE.put("shell.unknown", (String) PKG.get("shell.unknown")); } shell.put(((String) PKG.get("shell.name")).trim(), TABLE); }
-
-    return 0;
-}
-]]
-
 local function launch(source, content)
     local pkg = table.decode(content)
 
