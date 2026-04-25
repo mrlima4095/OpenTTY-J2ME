@@ -60,7 +60,7 @@ end
 graphics.handler(app.editor, {
     [app.back] = app.quit,
     [app.clear] = function () graphics.SetText(app.editor, "") end,
-    [app.new_line] = function () graphics.SetText(graphics.GetText(app.editor) + "\n") end,
+    [app.new_line] = function () graphics.SetText(graphics.GetText(app.editor) .. "\n") end,
     [app.save] = app.write
 })
 graphics.display(app.editor)
