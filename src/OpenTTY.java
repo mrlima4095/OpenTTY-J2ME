@@ -587,7 +587,7 @@ class Process {
     public int uid = 1000, priority = DEFAULT_PRIORITY;
 
     public static final int MIN_PRIORITY = 0, DEFAULT_PRIORITY = 10, MAX_PRIORITY = 20;
-
+  
     public Object stdout, stderr;
     public Object handler = null, sighandler = null;
     public Lua lua = null;

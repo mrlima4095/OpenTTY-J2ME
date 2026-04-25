@@ -3085,7 +3085,7 @@ public class Lua {
             
             if (is == null) { result.addElement(new Double(127)); return result; }
             
-            try {
+            try {  
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 byte[] buffer = new byte[1024];
                 int length;

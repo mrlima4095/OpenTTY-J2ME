@@ -93,7 +93,7 @@ public class ELF {
     // Informações do ELF carregado
     private Hashtable elfInfo;
     
-    // Coprocessador (simulado para FPU)
+    // Coprocessador (simulado para FPU)  
     private float[] fpuRegisters;
     private int fpscr; // FPU Status and Control Register
     
