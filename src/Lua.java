@@ -3009,6 +3009,7 @@ public class Lua {
                     else if (status == 20) { midlet.print("cd: " + args[0] + ": found", output, id, father); }
                 }
                 else if (mainCommand.equals("build")) {
+                    String pid = midlet.genpid();
                     Process process = new Process(midlet, ("build " + args[0]).trim(), midlet.joinpath(args[0], father), midlet.getUser(id), id, pid, out, father, -1);
                     midlet.sys.put(pid, process);
                     process.c.run(program, code, new Hashtable());
