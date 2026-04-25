@@ -978,7 +978,7 @@ public class ELF {
         sp -= 8;
 
         Vector envVars = new Vector();
-        envVars.addElement("PATH=/bin"); envVars.addElement("USER=" + (id == 0 ? "root" : midlet.username)); envVars.addElement("HOME=/home"); envVars.addElement("TERM=vt100");
+        envVars.addElement("PATH=/bin"); envVars.addElement("USER=" + midlet.getUser(id)); envVars.addElement("HOME=/home"); envVars.addElement("TERM=vt100");
         for (Enumeration e = midlet.attributes.keys(); e.hasMoreElements();) { envVars.addElement(midlet.attributes.get(e.nextElement())); }
 
         int envpStart = sp - (envVars.size() + 1) * 4;
