@@ -265,17 +265,28 @@ public class C2ME {
             return null;
         }
         else if (current.type == TOKEN_IDENTIFIER || current.type == TOKEN_STAR || current.type == TOKEN_AMPERSAND) {
+            boolean isPointerDeref = (current.type == TOKEN_STAR);
             Object left = unary(scope);
             
             if (peek().type == TOKEN_ASSIGN) {
                 consume(TOKEN_ASSIGN);
                 Object value = expression(scope);
                 
-                if (isPointer(left)) {
-                    setPointerValue(left, value);
+                if (isPointerDeref) {
+                    Object target = left;
+                    if (left instanceof String) {
+                        target = unwrap(scope.get((String) left));
+                    }
+                    if (isPointer(target)) {
+                        setPointerValue(target, value);
+                    } else {
+                        throw new Exception("Dereference of non-pointer value");
+                    }
                 } else if (left instanceof String) {
                     String varName = (String) left;
                     scope.put(varName, value == null ? C_NIL : value);
+                } else if (isPointer(left)) {
+                    setPointerValue(left, value);
                 }
                 
                 if (peek().type == TOKEN_SEMICOLON) {
@@ -342,9 +353,8 @@ public class C2ME {
         Vector initializers = new Vector();
         
         do {
-            // Verifica se é ponteiro
             boolean isPointer = false;
-            if (peek().type == TOKEN_STAR) {
+            while (peek().type == TOKEN_STAR) {
                 isPointer = true;
                 consume(TOKEN_STAR);
             }
@@ -353,7 +363,8 @@ public class C2ME {
             varNames.addElement(varName);
             
             if (isPointer) {
-                initializers.addElement(createPointer(C_NIL, "pointer"));
+                Hashtable ptr = createPointer(C_NIL, "pointer");
+                initializers.addElement(ptr);
             } else {
                 if (peek().type == TOKEN_ASSIGN) {
                     consume(TOKEN_ASSIGN);
@@ -827,6 +838,12 @@ public class C2ME {
         } else if (peek().type == TOKEN_STAR) {
             consume(TOKEN_STAR);
             Object ptr = unary(scope);
+            
+            if (ptr instanceof String) {
+                String ptrName = (String) ptr;
+                ptr = unwrap(scope.get(ptrName));
+            }
+            
             if (isPointer(ptr)) {
                 return getPointerValue(ptr);
             }
@@ -834,11 +851,14 @@ public class C2ME {
         } else if (peek().type == TOKEN_AMPERSAND) {
             consume(TOKEN_AMPERSAND);
             String varName = (String) consume(TOKEN_IDENTIFIER).value;
+            
             String ptrName = "&" + varName;
             if (scope.containsKey(ptrName)) {
                 return scope.get(ptrName);
             }
-            Hashtable ptr = createPointer(scope.get(varName), "auto");
+            
+            Object varValue = scope.get(varName);
+            Hashtable ptr = createPointer(varValue == null ? C_NIL : varValue, "auto");
             scope.put(ptrName, ptr);
             return ptr;
         }
