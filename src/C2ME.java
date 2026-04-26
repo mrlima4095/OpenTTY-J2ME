@@ -120,7 +120,7 @@ public class C2ME {
         Hashtable ITEM = new Hashtable();
         int exitStatus = 0;
         
-        try {
+        /*try {
             this.tokens = tokenize(code);
             collectLabels();
             
@@ -172,7 +172,7 @@ public class C2ME {
         
         if (kill) { 
             midlet.sys.remove(PID); 
-        }
+        }*/
         
         ITEM.put("status", new Integer(status));
         ITEM.put("exitcode", new Integer(exitStatus));
