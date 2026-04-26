@@ -1649,6 +1649,49 @@ private boolean isPointer(Object obj) {
            && ((Hashtable) obj).containsKey("type");
 }
     
+private int toInt(Object obj) {
+    if (obj == null || obj == C_NIL) return 0;
+    if (obj instanceof Double) return ((Double) obj).intValue();
+    if (obj instanceof Integer) return ((Integer) obj).intValue();
+    if (obj instanceof String) {
+        try {
+            return Integer.parseInt((String) obj);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+    if (obj instanceof Character) return (int) ((Character) obj).charValue();
+    if (obj instanceof Boolean) return ((Boolean) obj).booleanValue() ? 1 : 0;
+    if (obj instanceof Hashtable) {
+        // Se for ponteiro, tenta pegar o valor
+        Hashtable table = (Hashtable) obj;
+        if (table.containsKey("value")) {
+            return toInt(table.get("value"));
+        }
+    }
+    return 0;
+}
+private double toDouble(Object obj) {
+    if (obj == null || obj == C_NIL) return 0.0;
+    if (obj instanceof Double) return ((Double) obj).doubleValue();
+    if (obj instanceof Integer) return ((Integer) obj).doubleValue();
+    if (obj instanceof String) {
+        try {
+            return Double.parseDouble((String) obj);
+        } catch (NumberFormatException e) {
+            return 0.0;
+        }
+    }
+    if (obj instanceof Character) return (double) ((Character) obj).charValue();
+    if (obj instanceof Boolean) return ((Boolean) obj).booleanValue() ? 1.0 : 0.0;
+    if (obj instanceof Hashtable) {
+        Hashtable table = (Hashtable) obj;
+        if (table.containsKey("value")) {
+            return toDouble(table.get("value"));
+        }
+    }
+    return 0.0;
+}
     // |
     // CFunction Class
     public class CFunction {
