@@ -884,7 +884,35 @@ public class C2ME {
     private Object primary(Hashtable scope) throws Exception {
         CToken current = peek();
         
-        if (current.type == TOKEN_NUMBER) {
+        // No primary(), para arrays
+if (peek().type == TOKEN_LBRACKET) {
+    consume(TOKEN_LBRACKET);
+    Object index = expression(scope);
+    consume(TOKEN_RBRACKET);
+    
+    int idx = toInt(index);
+    
+    if (value instanceof Vector) {
+        Vector vec = (Vector) value;
+        if (idx >= 0 && idx < vec.size()) {
+            // Retorna ponteiro para o elemento se for array de ponteiros
+            Object elem = vec.elementAt(idx);
+            if (isPointer(elem)) {
+                return elem;
+            }
+            return elem;
+        }
+        return C_NIL;
+    }
+    if (value instanceof String) {
+        String str = (String) value;
+        if (idx >= 0 && idx < str.length()) {
+            return new Character(str.charAt(idx));
+        }
+        return C_NIL;
+    }
+}
+        else if (current.type == TOKEN_NUMBER) {
             consume(TOKEN_NUMBER);
             return current.value;
         }
@@ -942,6 +970,32 @@ public class C2ME {
                 consume(TOKEN_RPAREN);
                 return new Double(1);
             }
+        }
+        else if (current.type == TOKEN_MULTIPLY) {
+            // Dereferência: *ptr
+            consume(TOKEN_MULTIPLY);
+            Object ptr = unary(scope);
+            
+            if (isPointer(ptr)) {
+                return getPointerValue(ptr);
+            }
+            throw new Exception("Dereference of non-pointer value");
+        }
+        else if (current.type == TOKEN_AMPERSAND) {
+            // Endereço: &var
+            consume(TOKEN_AMPERSAND);
+            String varName = (String) consume(TOKEN_IDENTIFIER).value;
+            Object var = scope.get(varName);
+            
+            // Verifica se já tem um ponteiro para esta variável
+            String ptrName = "&" + varName;
+            if (scope.containsKey(ptrName)) {
+                return scope.get(ptrName);
+            }
+            
+            Hashtable ptr = createPointer(var, "auto");
+            scope.put(ptrName, ptr);
+            return ptr;
         }
         
         throw new Exception("Unexpected token in primary: " + current.type);
