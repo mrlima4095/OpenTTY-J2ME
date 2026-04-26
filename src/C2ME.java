@@ -1,213 +1,3 @@
-import javax.microedition.io.*;
-import java.util.*;
-import java.io.*;
-// |
-// C2ME Runtime
-public class C2ME {
-    public Process proc;
-    private OpenTTY midlet;
-    private Object stdout;
-    public String PID = "";
-    private long uptime = System.currentTimeMillis();
-    private int uid = 1000, tokenIndex, status = 0;
-    public Hashtable globals = new Hashtable(), father;
-    public Vector tokens;
-    private boolean kill = false;
-    // |
-    public int status = 0;
-    // |
-    public static final int EOF = 0;
-    public static class CToken { int type; Object value; CToken(int type, Object value) { this.type = type; this.value = value; } public String toString() { return "CToken(type=" + type + ", value=" + value + ")"; } }
-    
-    public C2ME(OpenTTY midlet, int uid, String pid, Process proc, Object stdout, Hashtable scope) {
-        this.midlet = midlet; 
-        this.uid = uid; 
-        this.PID = pid; 
-        this.proc = proc; 
-        this.stdout = stdout; 
-        this.father = scope;
-    }
-    public Hashtable run(String source, String code, Hashtable args) {
-
-    }
-
-    public Vector tokenize(String code) throws Exception {
-        Vector tokens = new Vector();
-        int i = 0;
-        if (code.startsWith("#!")) {
-            while (i < code.length() && code.charAt(i) != '\n') { i++; }
-            if (i < code.length() && code.charAt(i) == '\n') { i++; }
-        }
-        while (i < code.length()) {
-            char c = code.charAt(i);
-
-            if (isWhitespace(c)) { i++; }
-            else if (c == '/' && i + 1 < code.length() && code.charAt(i + 1) == '/') {
-                i += 2;
-                while (i < code.length() && code.charAt(i) != '\n') i++;
-            }
-            else if (c == '/' && i + 1 < code.length() && code.charAt(i + 1) == '*') {
-                i += 2;
-                while (i + 1 < code.length() && !(code.charAt(i) == '*' && code.charAt(i + 1) == '/')) i++;
-                i += 2;
-            }
-            else if (c == '"') {
-                StringBuffer sb = new StringBuffer(); i++;
-                while (i < code.length() && code.charAt(i) != '"') {
-                    if (code.charAt(i) == '\\' && i + 1 < code.length()) { sb.append(code.charAt(i)); i++; }
-                    sb.append(code.charAt(i)); i++;
-                }
-                if (i < code.length() && code.charAt(i) == '"') i++;
-                tokens.addElement(new CToken(STRING, sb.toString()));
-            }
-            else if (c == '\'') {
-                StringBuffer sb = new StringBuffer(); i++;
-                while (i < code.length() && code.charAt(i) != '\'') {
-                    if (code.charAt(i) == '\\' && i + 1 < code.length()) { sb.append(code.charAt(i)); i++; }
-                    sb.append(code.charAt(i)); i++;
-                }
-                if (i < code.length() && code.charAt(i) == '\'') i++;
-                tokens.addElement(new CToken(CHAR, sb.toString()));
-            }
-            else if (isDigit(c) || (c == '.' && i + 1 < code.length() && isDigit(code.charAt(i + 1)))) {
-                StringBuffer sb = new StringBuffer();
-                boolean hasDecimal = false, hasExponent = false;
-                while (i < code.length()) {
-                    c = code.charAt(i);
-                    if (isDigit(c)) { sb.append(c); i++; }
-                    else if (c == '.' && !hasDecimal && !hasExponent) { sb.append(c); hasDecimal = true; i++; }
-                    else if ((c == 'e' || c == 'E') && !hasExponent && i + 1 < code.length()) {
-                        sb.append(c); hasExponent = true; i++;
-                        if (i < code.length() && (code.charAt(i) == '+' || code.charAt(i) == '-')) { sb.append(code.charAt(i)); i++; }
-                    }
-                    else if ((c == 'f' || c == 'F' || c == 'l' || c == 'L') && i + 1 < code.length() && !isLetterOrDigit(code.charAt(i + 1))) {
-                        sb.append(c); i++; break;
-                    }
-                    else break;
-                }
-                try {
-                    String numStr = sb.toString();
-                    if (numStr.indexOf('.') != -1 || numStr.indexOf('e') != -1 || numStr.indexOf('E') != -1)
-                        tokens.addElement(new CToken(NUMBER, new Double(Double.parseDouble(numStr))));
-                    else tokens.addElement(new CToken(NUMBER, new Integer(Integer.parseInt(numStr))));
-                } catch (NumberFormatException e) { throw new RuntimeException("Invalid number format '" + sb.toString() + "'"); }
-                continue;
-            }
-            else if (isLetter(c) || c == '_') {
-                StringBuffer sb = new StringBuffer();
-                while (i < code.length() && (isLetterOrDigit(code.charAt(i)) || code.charAt(i) == '_')) { sb.append(code.charAt(i)); i++; }
-                String word = sb.toString();
-                int type = isKeyword(word);
-                tokens.addElement(new CToken(type != -1 ? type : IDENTIFIER, word));
-            }
-            else if (c == '+' && i + 1 < code.length() && code.charAt(i + 1) == '+') { tokens.addElement(new CToken(INCREMENT, "++")); i += 2; }
-            else if (c == '-' && i + 1 < code.length() && code.charAt(i + 1) == '-') { tokens.addElement(new CToken(DECREMENT, "--")); i += 2; }
-            else if (c == '-' && i + 1 < code.length() && code.charAt(i + 1) == '>') { tokens.addElement(new CToken(ARROW, "->")); i += 2; }
-            else if (c == '=' && i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new CToken(EQ, "==")); i += 2; }
-            else if (c == '!' && i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new CToken(NE, "!=")); i += 2; }
-            else if (c == '<' && i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new CToken(LE, "<=")); i += 2; }
-            else if (c == '>' && i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new CToken(GE, ">=")); i += 2; }
-            else if (c == '<' && i + 1 < code.length() && code.charAt(i + 1) == '<') { tokens.addElement(new CToken(LSHIFT, "<<")); i += 2; }
-            else if (c == '>' && i + 1 < code.length() && code.charAt(i + 1) == '>') { tokens.addElement(new CToken(RSHIFT, ">>")); i += 2; }
-            else if (c == '&' && i + 1 < code.length() && code.charAt(i + 1) == '&') { tokens.addElement(new CToken(AND, "&&")); i += 2; }
-            else if (c == '|' && i + 1 < code.length() && code.charAt(i + 1) == '|') { tokens.addElement(new CToken(OR, "||")); i += 2; }
-            else if (c == '.' && i + 2 < code.length() && code.charAt(i + 1) == '.' && code.charAt(i + 2) == '.') { tokens.addElement(new CToken(ELLIPSIS, "...")); i += 3; }
-            else if (c == '#') { tokens.addElement(new CToken(PREPROCESSOR, "#")); i++; }
-            else if (c == '+') { tokens.addElement(new CToken(PLUS, "+")); i++; }
-            else if (c == '-') { tokens.addElement(new CToken(MINUS, "-")); i++; }
-            else if (c == '*') { tokens.addElement(new CToken(MULTIPLY, "*")); i++; }
-            else if (c == '/') { tokens.addElement(new CToken(DIVIDE, "/")); i++; }
-            else if (c == '%') { tokens.addElement(new CToken(MODULO, "%")); i++; }
-            else if (c == '=') { tokens.addElement(new CToken(ASSIGN, "=")); i++; }
-            else if (c == '!') { tokens.addElement(new CToken(NOT, "!")); i++; }
-            else if (c == '<') { tokens.addElement(new CToken(LT, "<")); i++; }
-            else if (c == '>') { tokens.addElement(new CToken(GT, ">")); i++; }
-            else if (c == '&') { tokens.addElement(new CToken(BITAND, "&")); i++; }
-            else if (c == '|') { tokens.addElement(new CToken(BITOR, "|")); i++; }
-            else if (c == '^') { tokens.addElement(new CToken(BITXOR, "^")); i++; }
-            else if (c == '~') { tokens.addElement(new CToken(BITNOT, "~")); i++; }
-            else if (c == '(') { tokens.addElement(new CToken(LPAREN, "(")); i++; }
-            else if (c == ')') { tokens.addElement(new CToken(RPAREN, ")")); i++; }
-            else if (c == '{') { tokens.addElement(new CToken(LBRACE, "{")); i++; }
-            else if (c == '}') { tokens.addElement(new CToken(RBRACE, "}")); i++; }
-            else if (c == '[') { tokens.addElement(new CToken(LBRACKET, "[")); i++; }
-            else if (c == ']') { tokens.addElement(new CToken(RBRACKET, "]")); i++; }
-            else if (c == ';') { tokens.addElement(new CToken(SEMICOLON, ";")); i++; }
-            else if (c == ',') { tokens.addElement(new CToken(COMMA, ",")); i++; }
-            else if (c == '.') { tokens.addElement(new CToken(DOT, ".")); i++; }
-            else if (c == ':') { tokens.addElement(new CToken(COLON, ":")); i++; }
-            else if (c == '?') { tokens.addElement(new CToken(QUESTION, "?")); i++; }
-            else { throw new Exception("Unexpected character '" + c + "'"); }
-        }
-
-        tokens.addElement(new CToken(EOF, "EOF"));
-        if (midlet.useCache) { if (midlet.cacheLua.size() > 100) { midlet.cacheLua.clear(); } midlet.cacheLua.put(code, tokens); }
-        return tokens;
-    }
-
-    private int isKeyword(String word) {
-        if (word.equals("auto")) return AUTO;
-        if (word.equals("break")) return BREAK;
-        if (word.equals("case")) return CASE;
-        if (word.equals("char")) return CHAR_KEY;
-        if (word.equals("const")) return CONST;
-        if (word.equals("continue")) return CONTINUE;
-        if (word.equals("default")) return DEFAULT;
-        if (word.equals("do")) return DO;
-        if (word.equals("double")) return DOUBLE;
-        if (word.equals("else")) return ELSE;
-        if (word.equals("enum")) return ENUM;
-        if (word.equals("extern")) return EXTERN;
-        if (word.equals("float")) return FLOAT;
-        if (word.equals("for")) return FOR;
-        if (word.equals("goto")) return GOTO;
-        if (word.equals("if")) return IF;
-        if (word.equals("int")) return INT;
-        if (word.equals("long")) return LONG;
-        if (word.equals("register")) return REGISTER;
-        if (word.equals("return")) return RETURN;
-        if (word.equals("short")) return SHORT;
-        if (word.equals("signed")) return SIGNED;
-        if (word.equals("sizeof")) return SIZEOF;
-        if (word.equals("static")) return STATIC;
-        if (word.equals("struct")) return STRUCT;
-        if (word.equals("switch")) return SWITCH;
-        if (word.equals("typedef")) return TYPEDEF;
-        if (word.equals("union")) return UNION;
-        if (word.equals("unsigned")) return UNSIGNED;
-        if (word.equals("void")) return VOID;
-        if (word.equals("volatile")) return VOLATILE;
-        if (word.equals("while")) return WHILE;
-        return -1;
-    }
-
-    private boolean isWhitespace(char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\r'; }
-    private boolean isLetter(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'); }
-    private boolean isDigit(char c) { return c >= '0' && c <= '9'; }
-
-    private boolean isLetterOrDigit(char c) { return isLetter(c) || isDigit(c); }
-
-    // C token type constants
-    public static final int EOF = 0, IDENTIFIER = 1, NUMBER = 2, STRING = 3, CHAR = 4;
-    public static final int AUTO = 10, BREAK = 11, CASE = 12, CHAR_KEY = 13, CONST = 14, CONTINUE = 15;
-    public static final int DEFAULT = 16, DO = 17, DOUBLE = 18, ELSE = 19, ENUM = 20, EXTERN = 21;
-    public static final int FLOAT = 22, FOR = 23, GOTO = 24, IF = 25, INT = 26, LONG = 27;
-    public static final int REGISTER = 28, RETURN = 29, SHORT = 30, SIGNED = 31, SIZEOF = 32, STATIC = 33;
-    public static final int STRUCT = 34, SWITCH = 35, TYPEDEF = 36, UNION = 37, UNSIGNED = 38, VOID = 39, VOLATILE = 40, WHILE = 41;
-    public static final int PLUS = 50, MINUS = 51, MULTIPLY = 52, DIVIDE = 53, MODULO = 54, ASSIGN = 55;
-    public static final int EQ = 56, NE = 57, LT = 58, GT = 59, LE = 60, GE = 61, AND = 62, OR = 63, NOT = 64;
-    public static final int BITAND = 65, BITOR = 66, BITXOR = 67, BITNOT = 68, LSHIFT = 69, RSHIFT = 70;
-    public static final int INCREMENT = 71, DECREMENT = 72, ARROW = 73;
-    public static final int LPAREN = 80, RPAREN = 81, LBRACE = 82, RBRACE = 83, LBRACKET = 84, RBRACKET = 85;
-    public static final int SEMICOLON = 86, COMMA = 87, DOT = 88, COLON = 89, QUESTION = 90, ELLIPSIS = 91;
-    public static final int PREPROCESSOR = 100;
-
-
-
-}
-// |
-// End
-
 import javax.microedition.lcdui.*;
 import javax.microedition.io.file.*;
 import javax.microedition.media.control.*;
@@ -217,6 +7,8 @@ import javax.microedition.io.*;
 import java.util.*;
 import java.io.*;
 
+// |
+// C2ME Runtime - C Language Interpreter for J2ME
 public class C2ME {
     public boolean breakLoop = false, doreturn = false, kill = true;
     public Process proc;
@@ -253,11 +45,45 @@ public class C2ME {
     public static final int TOKEN_COMMA = 87, TOKEN_DOT = 88, TOKEN_COLON = 89, TOKEN_QUESTION = 90;
     public static final int TOKEN_ELLIPSIS = 91;
     public static final int TOKEN_PREPROCESSOR = 100;
-    
-    public static class CToken { int type; Object value; CToken(int type, Object value) { this.type = type; this.value = value; } }
+
+    // Built-in function IDs
+    public static final int BUILTIN_PRINTF = 200;
+    public static final int BUILTIN_PUTS = 201;
+    public static final int BUILTIN_PUTCHAR = 202;
+    public static final int BUILTIN_GETCHAR = 203;
+    public static final int BUILTIN_GETS = 204;
+    public static final int BUILTIN_SYSTEM = 205;
+    public static final int BUILTIN_EXIT = 206;
+    public static final int BUILTIN_MALLOC = 207;
+    public static final int BUILTIN_FREE = 208;
+    public static final int BUILTIN_STRLEN = 209;
+    public static final int BUILTIN_STRCMP = 210;
+    public static final int BUILTIN_STRCPY = 211;
+    public static final int BUILTIN_STRCAT = 212;
+    public static final int BUILTIN_ATOI = 213;
+    public static final int BUILTIN_ITOA = 214;
+    public static final int BUILTIN_ISDIGIT = 215;
+    public static final int BUILTIN_ISALPHA = 216;
+        
+    public static class CToken { 
+        int type; 
+        Object value; 
+        CToken(int type, Object value) { 
+            this.type = type; 
+            this.value = value; 
+        } 
+        public String toString() { 
+            return "CToken(type=" + type + ", value=" + value + ")"; 
+        } 
+    }
     
     public C2ME(OpenTTY midlet, int id, String pid, Process proc, Object stdout, Hashtable scope) {
-        this.midlet = midlet; this.id = id; this.PID = pid; this.proc = proc; this.stdout = stdout; this.father = scope;
+        this.midlet = midlet; 
+        this.id = id; 
+        this.PID = pid; 
+        this.proc = proc; 
+        this.stdout = stdout; 
+        this.father = scope;
         this.tokenIndex = 0;
         initializeGlobals();
     }
@@ -265,56 +91,207 @@ public class C2ME {
     private void initializeGlobals() {
         globals.put("NULL", null);
         globals.put("EOF", new Integer(-1));
+        
+        // Register built-in C functions
+        globals.put("printf", new CFunction(BUILTIN_PRINTF));
+        globals.put("puts", new CFunction(BUILTIN_PUTS));
+        globals.put("putchar", new CFunction(BUILTIN_PUTCHAR));
+        globals.put("getchar", new CFunction(BUILTIN_GETCHAR));
+        globals.put("gets", new CFunction(BUILTIN_GETS));
+        globals.put("system", new CFunction(BUILTIN_SYSTEM));
+        globals.put("exit", new CFunction(BUILTIN_EXIT));
+        globals.put("malloc", new CFunction(BUILTIN_MALLOC));
+        globals.put("free", new CFunction(BUILTIN_FREE));
+        globals.put("strlen", new CFunction(BUILTIN_STRLEN));
+        globals.put("strcmp", new CFunction(BUILTIN_STRCMP));
+        globals.put("strcpy", new CFunction(BUILTIN_STRCPY));
+        globals.put("strcat", new CFunction(BUILTIN_STRCAT));
+        globals.put("atoi", new CFunction(BUILTIN_ATOI));
+        globals.put("itoa", new CFunction(BUILTIN_ITOA));
+        globals.put("isdigit", new CFunction(BUILTIN_ISDIGIT));
+        globals.put("isalpha", new CFunction(BUILTIN_ISALPHA));
     }
     
+    // |
+    // Run Source Code - C style: only function declarations, start at main()
     public Hashtable run(String source, String code, Hashtable args) {
         midlet.sys.put(PID, proc);
         globals.put("arg", args);
         Hashtable ITEM = new Hashtable();
+        int exitStatus = 0;
         
         try {
             this.tokens = tokenize(code);
             collectLabels();
             
+            // First pass: collect all function declarations
+            // No code outside functions is allowed (like real C)
             while (peek().type != TOKEN_EOF) {
-                Object res = statement(globals);
-                if (doreturn) {
-                    if (res != null) { ITEM.put("object", res); }
-                    doreturn = false;
-                    break;
+                if (isFunctionDeclaration()) {
+                    // Declare the function (register it in globals)
+                    declareFunction(globals);
+                } else {
+                    // Found code outside function - error (real C doesn't allow this)
+                    throw new Exception("syntax error: code outside function");
                 }
             }
+            
+            // Reset token index to find main
+            tokenIndex = 0;
+            
+            // Find and execute main function
+            CFunction mainFunc = (CFunction) globals.get("main");
+            if (mainFunc == null) {
+                throw new Exception("undefined reference to 'main'");
+            }
+            
+            // Prepare argv for main
+            Vector mainArgs = new Vector();
+            mainArgs.addElement(new Double(args != null ? args.size() : 0)); // argc
+            mainArgs.addElement(args != null ? args : new Hashtable()); // argv
+            
+            // Call main and get return value as exit status
+            Object result = mainFunc.call(mainArgs);
+            if (result instanceof Double) {
+                exitStatus = ((Double) result).intValue();
+            } else if (result instanceof Integer) {
+                exitStatus = ((Integer) result).intValue();
+            }
+            
+            status = exitStatus;
+            
         } catch (Exception e) {
             midlet.print(midlet.getCatch(e), stdout, id, father);
             status = 1;
         } catch (Error e) {
-            if (e.getMessage() != null) { midlet.print(e.getMessage(), stdout, id, father); }
+            if (e.getMessage() != null) { 
+                midlet.print(e.getMessage(), stdout, id, father); 
+            }
             status = 1;
         }
         
-        if (kill) { midlet.sys.remove(PID); }
-        ITEM.put("status", status);
+        if (kill) { 
+            midlet.sys.remove(PID); 
+        }
+        
+        ITEM.put("status", new Integer(status));
+        ITEM.put("exitcode", new Integer(exitStatus));
         return ITEM;
     }
     
+    // |
+    // Function Declaration Detection
+    private boolean isFunctionDeclaration() throws Exception {
+        int savedPos = tokenIndex;
+        try {
+            // Check pattern: type name ( parameters ) {
+            if (isTypeSpecifier(peek().type)) {
+                consume(); // type
+                if (peek().type == TOKEN_IDENTIFIER) {
+                    String name = (String) consume(TOKEN_IDENTIFIER).value;
+                    if (peek().type == TOKEN_LPAREN) {
+                        tokenIndex = savedPos;
+                        return true;
+                    }
+                }
+            }
+        } catch (Exception e) {}
+        tokenIndex = savedPos;
+        return false;
+    }
+    
+    private void declareFunction(Hashtable scope) throws Exception {
+        int returnType = peek().type;
+        consume(returnType);
+        
+        String funcName = (String) consume(TOKEN_IDENTIFIER).value;
+        consume(TOKEN_LPAREN);
+        
+        // Parse parameters
+        Vector params = new Vector();
+        if (peek().type != TOKEN_RPAREN) {
+            do {
+                if (isTypeSpecifier(peek().type)) {
+                    consume(); // param type
+                    String paramName = (String) consume(TOKEN_IDENTIFIER).value;
+                    params.addElement(paramName);
+                } else if (peek().type == TOKEN_ELLIPSIS) {
+                    consume(TOKEN_ELLIPSIS);
+                    params.addElement("...");
+                    break;
+                } else {
+                    throw new Exception("invalid parameter declaration");
+                }
+                if (peek().type == TOKEN_COMMA) {
+                    consume(TOKEN_COMMA);
+                } else {
+                    break;
+                }
+            } while (true);
+        }
+        consume(TOKEN_RPAREN);
+        
+        // Parse function body
+        consume(TOKEN_LBRACE);
+        Vector bodyTokens = new Vector();
+        int depth = 1;
+        
+        while (depth > 0 && peek().type != TOKEN_EOF) {
+            CToken token = consume();
+            
+            if (token.type == TOKEN_LBRACE) {
+                depth++;
+            } else if (token.type == TOKEN_RBRACE) {
+                depth--;
+                if (depth == 0) {
+                    break;
+                }
+            }
+            
+            if (depth > 0) {
+                bodyTokens.addElement(token);
+            }
+        }
+        
+        // Create and register function
+        CFunction func = new CFunction(params, bodyTokens, scope, returnType);
+        scope.put(funcName, func);
+    }
+    
+    // |
+    // Statement Parsing
     public Object statement(Hashtable scope) throws Exception {
         CToken current = peek();
         
-        if (status != 0) { midlet.sys.remove(PID); throw new Error(); }
-        if (!midlet.sys.containsKey(PID)) { throw new Error("Process killed"); }
+        if (status != 0) { 
+            midlet.sys.remove(PID); 
+            throw new Error(); 
+        }
+        if (!midlet.sys.containsKey(PID)) { 
+            throw new Error("Process killed"); 
+        }
         
-        // Variable declaration or assignment
+        // Variable declaration
         if (isTypeSpecifier(current.type)) {
             return declaration(scope);
+        }
+        // Label
+        else if (current.type == TOKEN_IDENTIFIER && peekNext().type == TOKEN_COLON) {
+            String labelName = (String) consume(TOKEN_IDENTIFIER).value;
+            consume(TOKEN_COLON);
+            labels.put(labelName, new Integer(tokenIndex));
+            return null;
         }
         else if (current.type == TOKEN_IDENTIFIER) {
             String varName = (String) consume(TOKEN_IDENTIFIER).value;
             
             // Function call
             if (peek().type == TOKEN_LPAREN) {
-                callFunction(varName, scope);
-                consume(TOKEN_SEMICOLON);
-                return null;
+                Object result = callFunction(varName, scope);
+                if (peek().type == TOKEN_SEMICOLON) {
+                    consume(TOKEN_SEMICOLON);
+                }
+                return result;
             }
             // Assignment
             else if (peek().type == TOKEN_ASSIGN) {
@@ -322,7 +299,7 @@ public class C2ME {
                 Object value = expression(scope);
                 scope.put(varName, value);
                 consume(TOKEN_SEMICOLON);
-                return null;
+                return value;
             }
             // Variable access
             else {
@@ -375,7 +352,6 @@ public class C2ME {
         Vector varNames = new Vector();
         Vector initializers = new Vector();
         
-        // Read variable names and initializers
         do {
             String varName = (String) consume(TOKEN_IDENTIFIER).value;
             varNames.addElement(varName);
@@ -397,7 +373,6 @@ public class C2ME {
         
         consume(TOKEN_SEMICOLON);
         
-        // Declare variables in scope
         for (int i = 0; i < varNames.size(); i++) {
             String name = (String) varNames.elementAt(i);
             Object value = initializers.elementAt(i);
@@ -408,7 +383,7 @@ public class C2ME {
     }
     
     private Object getDefaultValue(int typeSpec) {
-        if (typeSpec == TOKEN_INT || typeSpec == TOKEN_LONG) {
+        if (typeSpec == TOKEN_INT || typeSpec == TOKEN_LONG || typeSpec == TOKEN_SHORT) {
             return new Double(0);
         } else if (typeSpec == TOKEN_DOUBLE || typeSpec == TOKEN_FLOAT) {
             return new Double(0.0);
@@ -428,26 +403,18 @@ public class C2ME {
         boolean conditionTrue = isTruthy(condition);
         Object result = null;
         
-        // Save current tokens for else handling
-        int savedTokenIndex = tokenIndex;
-        
         if (conditionTrue) {
-            // Execute if body
             result = statement(scope);
-            // Skip else if/else blocks
+            // Skip else/else if blocks
             skipElseBlocks();
         } else {
-            // Skip if body
             skipStatement();
             
-            // Check for else if or else
             if (peek().type == TOKEN_ELSE) {
                 consume(TOKEN_ELSE);
                 if (peek().type == TOKEN_IF) {
-                    // else if - recursively handle
                     result = ifStatement(scope);
                 } else {
-                    // else block
                     result = statement(scope);
                 }
             }
@@ -543,7 +510,6 @@ public class C2ME {
         int incrementTokenIndex = tokenIndex;
         boolean hasIncrement = peek().type != TOKEN_RPAREN;
         if (hasIncrement) {
-            // Skip increment for now, will execute after each iteration
             skipIncrement();
         }
         consume(TOKEN_RPAREN);
@@ -569,8 +535,6 @@ public class C2ME {
                 tokenIndex = incrementTokenIndex;
                 expression(scope);
             }
-            
-            tokenIndex = conditionTokenIndex;
         }
         
         loopDepth--;
@@ -653,7 +617,9 @@ public class C2ME {
     }
     
     private Object breakStatement(Hashtable scope) throws Exception {
-        if (loopDepth == 0) { throw new Exception("break statement not within loop or switch"); }
+        if (loopDepth == 0) { 
+            throw new Exception("break statement not within loop or switch"); 
+        }
         consume(TOKEN_BREAK);
         consume(TOKEN_SEMICOLON);
         breakLoop = true;
@@ -661,10 +627,11 @@ public class C2ME {
     }
     
     private Object continueStatement(Hashtable scope) throws Exception {
-        if (loopDepth == 0) { throw new Exception("continue statement not within loop"); }
+        if (loopDepth == 0) { 
+            throw new Exception("continue statement not within loop"); 
+        }
         consume(TOKEN_CONTINUE);
         consume(TOKEN_SEMICOLON);
-        // Skip to next iteration will be handled by loop
         return null;
     }
     
@@ -673,7 +640,9 @@ public class C2ME {
         String labelName = (String) consume(TOKEN_IDENTIFIER).value;
         consume(TOKEN_SEMICOLON);
         
-        if (!labels.containsKey(labelName)) { throw new Exception("label '" + labelName + "' not found"); }
+        if (!labels.containsKey(labelName)) { 
+            throw new Exception("label '" + labelName + "' not found"); 
+        }
         
         Integer labelPos = (Integer) labels.get(labelName);
         tokenIndex = labelPos.intValue();
@@ -693,6 +662,8 @@ public class C2ME {
         return result;
     }
     
+    // |
+    // Expression Parsing
     private Object expression(Hashtable scope) throws Exception {
         return logicalOr(scope);
     }
@@ -753,12 +724,7 @@ public class C2ME {
             int op = peek().type;
             consume(op);
             Object right = relational(scope);
-            boolean result;
-            if (op == TOKEN_EQ) {
-                result = valuesEqual(left, right);
-            } else {
-                result = !valuesEqual(left, right);
-            }
+            boolean result = (op == TOKEN_EQ) ? valuesEqual(left, right) : !valuesEqual(left, right);
             left = new Boolean(result);
         }
         return left;
@@ -791,11 +757,7 @@ public class C2ME {
             Object right = additive(scope);
             int lNum = toNumber(left).intValue();
             int rNum = toNumber(right).intValue();
-            if (op == TOKEN_LSHIFT) {
-                left = new Double(lNum << rNum);
-            } else {
-                left = new Double(lNum >> rNum);
-            }
+            left = new Double(op == TOKEN_LSHIFT ? (lNum << rNum) : (lNum >> rNum));
         }
         return left;
     }
@@ -808,11 +770,7 @@ public class C2ME {
             Object right = multiplicative(scope);
             double lNum = toNumber(left).doubleValue();
             double rNum = toNumber(right).doubleValue();
-            if (op == TOKEN_PLUS) {
-                left = new Double(lNum + rNum);
-            } else {
-                left = new Double(lNum - rNum);
-            }
+            left = new Double(op == TOKEN_PLUS ? (lNum + rNum) : (lNum - rNum));
         }
         return left;
     }
@@ -856,7 +814,6 @@ public class C2ME {
             return new Double(~toNumber(val).intValue());
         } else if (peek().type == TOKEN_INCREMENT) {
             consume(TOKEN_INCREMENT);
-            // Prefix increment
             if (peek().type == TOKEN_IDENTIFIER) {
                 String varName = (String) consume(TOKEN_IDENTIFIER).value;
                 Object val = scope.get(varName);
@@ -880,7 +837,6 @@ public class C2ME {
     private Object postfix(Hashtable scope) throws Exception {
         Object primary = primary(scope);
         
-        // Postfix increment/decrement
         if (peek().type == TOKEN_INCREMENT) {
             consume(TOKEN_INCREMENT);
             if (primary instanceof String) {
@@ -926,7 +882,6 @@ public class C2ME {
                 value = unwrap(globals.get(name));
             }
             
-            // Array access
             if (peek().type == TOKEN_LBRACKET) {
                 consume(TOKEN_LBRACKET);
                 Object index = expression(scope);
@@ -941,7 +896,6 @@ public class C2ME {
                     return null;
                 }
             }
-            // Function call
             else if (peek().type == TOKEN_LPAREN) {
                 return callFunction(name, scope);
             }
@@ -957,7 +911,6 @@ public class C2ME {
         else if (current.type == TOKEN_SIZEOF) {
             consume(TOKEN_SIZEOF);
             consume(TOKEN_LPAREN);
-            // For simplicity, return size of type or expression
             if (isTypeSpecifier(peek().type)) {
                 int type = peek().type;
                 consume(type);
@@ -966,7 +919,7 @@ public class C2ME {
             } else {
                 Object expr = expression(scope);
                 consume(TOKEN_RPAREN);
-                return new Double(1); // Default size
+                return new Double(1);
             }
         }
         
@@ -998,7 +951,8 @@ public class C2ME {
         }
     }
     
-    // Helper methods
+    // |
+    // Helper Methods
     private boolean isTypeSpecifier(int type) {
         return (type >= TOKEN_AUTO && type <= TOKEN_VOLATILE) || 
                type == TOKEN_INT || type == TOKEN_CHAR_KEY ||
@@ -1019,8 +973,11 @@ public class C2ME {
         if (value instanceof Double) return (Double) value;
         if (value instanceof Boolean) return new Double(((Boolean) value).booleanValue() ? 1 : 0);
         if (value instanceof String) {
-            try { return new Double(Double.parseDouble((String) value)); }
-            catch (NumberFormatException e) { return new Double(0); }
+            try { 
+                return new Double(Double.parseDouble((String) value)); 
+            } catch (NumberFormatException e) { 
+                return new Double(0); 
+            }
         }
         return new Double(0);
     }
@@ -1049,15 +1006,25 @@ public class C2ME {
         int depth = 0;
         while (true) {
             CToken t = peek();
-            if (t.type == TOKEN_LBRACE) { depth++; consume(TOKEN_LBRACE); }
+            if (t.type == TOKEN_LBRACE) { 
+                depth++; 
+                consume(TOKEN_LBRACE); 
+            }
             else if (t.type == TOKEN_RBRACE) { 
                 if (depth == 0) break;
                 depth--; 
                 consume(TOKEN_RBRACE);
             }
-            else if (t.type == TOKEN_SEMICOLON) { consume(TOKEN_SEMICOLON); break; }
-            else if (t.type == TOKEN_EOF) { break; }
-            else { consume(); }
+            else if (t.type == TOKEN_SEMICOLON) { 
+                consume(TOKEN_SEMICOLON); 
+                break; 
+            }
+            else if (t.type == TOKEN_EOF) { 
+                break; 
+            }
+            else { 
+                consume(); 
+            }
             if (depth == 0 && (t.type == TOKEN_SEMICOLON || t.type == TOKEN_RBRACE)) break;
         }
     }
@@ -1135,14 +1102,10 @@ public class C2ME {
         tokenIndex = 0;
         while (peek().type != TOKEN_EOF) {
             CToken token = peek();
-            if (token.type == TOKEN_IDENTIFIER) {
-                if (peek().type == TOKEN_COLON) {
-                    String labelName = (String) consume(TOKEN_IDENTIFIER).value;
-                    consume(TOKEN_COLON);
-                    labels.put(labelName, new Integer(tokenIndex));
-                } else {
-                    consume();
-                }
+            if (token.type == TOKEN_IDENTIFIER && peekNext().type == TOKEN_COLON) {
+                String labelName = (String) consume(TOKEN_IDENTIFIER).value;
+                consume(TOKEN_COLON);
+                labels.put(labelName, new Integer(tokenIndex));
             } else {
                 consume();
             }
@@ -1151,10 +1114,337 @@ public class C2ME {
         tokenIndex = savedTokenIndex;
     }
     
-    private Object unwrap(Object v) { return v; }
+    private Object unwrap(Object v) { 
+        return v; 
+    }
     
-    // Tokenizer methods remain as previously implemented...
+    // |
+    // Tokenizer Methods
+    public Vector tokenize(String code) throws Exception {
+        if (midlet.cacheLua.containsKey(code)) { 
+            return (Vector) midlet.cacheLua.get(code); 
+        }
+
+        Vector tokens = new Vector();
+        int i = 0;
+        
+        if (code.startsWith("#!")) {
+            while (i < code.length() && code.charAt(i) != '\n') { i++; }
+            if (i < code.length() && code.charAt(i) == '\n') { i++; }
+        }
+        
+        while (i < code.length()) {
+            char c = code.charAt(i);
+
+            if (isWhitespace(c)) { 
+                i++; 
+            }
+            else if (c == '/' && i + 1 < code.length() && code.charAt(i + 1) == '/') {
+                i += 2;
+                while (i < code.length() && code.charAt(i) != '\n') i++;
+            }
+            else if (c == '/' && i + 1 < code.length() && code.charAt(i + 1) == '*') {
+                i += 2;
+                while (i + 1 < code.length() && !(code.charAt(i) == '*' && code.charAt(i + 1) == '/')) i++;
+                i += 2;
+            }
+            else if (c == '"') {
+                StringBuffer sb = new StringBuffer(); 
+                i++;
+                while (i < code.length() && code.charAt(i) != '"') {
+                    if (code.charAt(i) == '\\' && i + 1 < code.length()) { 
+                        sb.append(code.charAt(i)); 
+                        i++; 
+                    }
+                    sb.append(code.charAt(i)); 
+                    i++;
+                }
+                if (i < code.length() && code.charAt(i) == '"') i++;
+                tokens.addElement(new CToken(TOKEN_STRING, sb.toString()));
+            }
+            else if (c == '\'') {
+                StringBuffer sb = new StringBuffer(); 
+                i++;
+                while (i < code.length() && code.charAt(i) != '\'') {
+                    if (code.charAt(i) == '\\' && i + 1 < code.length()) { 
+                        sb.append(code.charAt(i)); 
+                        i++; 
+                    }
+                    sb.append(code.charAt(i)); 
+                    i++;
+                }
+                if (i < code.length() && code.charAt(i) == '\'') i++;
+                tokens.addElement(new CToken(TOKEN_CHAR, sb.toString()));
+            }
+            else if (isDigit(c) || (c == '.' && i + 1 < code.length() && isDigit(code.charAt(i + 1)))) {
+                StringBuffer sb = new StringBuffer();
+                boolean hasDecimal = false, hasExponent = false;
+                while (i < code.length()) {
+                    c = code.charAt(i);
+                    if (isDigit(c)) { 
+                        sb.append(c); 
+                        i++; 
+                    }
+                    else if (c == '.' && !hasDecimal && !hasExponent) { 
+                        sb.append(c); 
+                        hasDecimal = true; 
+                        i++; 
+                    }
+                    else if ((c == 'e' || c == 'E') && !hasExponent && i + 1 < code.length()) {
+                        sb.append(c); 
+                        hasExponent = true; 
+                        i++;
+                        if (i < code.length() && (code.charAt(i) == '+' || code.charAt(i) == '-')) { 
+                            sb.append(code.charAt(i)); 
+                            i++; 
+                        }
+                    }
+                    else if ((c == 'f' || c == 'F' || c == 'l' || c == 'L') && i + 1 < code.length() && !isLetterOrDigit(code.charAt(i + 1))) {
+                        sb.append(c); 
+                        i++; 
+                        break;
+                    }
+                    else break;
+                }
+                try {
+                    String numStr = sb.toString();
+                    if (numStr.indexOf('.') != -1 || numStr.indexOf('e') != -1 || numStr.indexOf('E') != -1)
+                        tokens.addElement(new CToken(TOKEN_NUMBER, new Double(Double.parseDouble(numStr))));
+                    else tokens.addElement(new CToken(TOKEN_NUMBER, new Integer(Integer.parseInt(numStr))));
+                } catch (NumberFormatException e) { 
+                    throw new RuntimeException("Invalid number format '" + sb.toString() + "'"); 
+                }
+                continue;
+            }
+            else if (isLetter(c) || c == '_') {
+                StringBuffer sb = new StringBuffer();
+                while (i < code.length() && (isLetterOrDigit(code.charAt(i)) || code.charAt(i) == '_')) { 
+                    sb.append(code.charAt(i)); 
+                    i++; 
+                }
+                String word = sb.toString();
+                int type = isKeyword(word);
+                tokens.addElement(new CToken(type != -1 ? type : TOKEN_IDENTIFIER, word));
+            }
+            else if (c == '+' && i + 1 < code.length() && code.charAt(i + 1) == '+') { 
+                tokens.addElement(new CToken(TOKEN_INCREMENT, "++")); 
+                i += 2; 
+            }
+            else if (c == '-' && i + 1 < code.length() && code.charAt(i + 1) == '-') { 
+                tokens.addElement(new CToken(TOKEN_DECREMENT, "--")); 
+                i += 2; 
+            }
+            else if (c == '-' && i + 1 < code.length() && code.charAt(i + 1) == '>') { 
+                tokens.addElement(new CToken(TOKEN_ARROW, "->")); 
+                i += 2; 
+            }
+            else if (c == '=' && i + 1 < code.length() && code.charAt(i + 1) == '=') { 
+                tokens.addElement(new CToken(TOKEN_EQ, "==")); 
+                i += 2; 
+            }
+            else if (c == '!' && i + 1 < code.length() && code.charAt(i + 1) == '=') { 
+                tokens.addElement(new CToken(TOKEN_NE, "!=")); 
+                i += 2; 
+            }
+            else if (c == '<' && i + 1 < code.length() && code.charAt(i + 1) == '=') { 
+                tokens.addElement(new CToken(TOKEN_LE, "<=")); 
+                i += 2; 
+            }
+            else if (c == '>' && i + 1 < code.length() && code.charAt(i + 1) == '=') { 
+                tokens.addElement(new CToken(TOKEN_GE, ">=")); 
+                i += 2; 
+            }
+            else if (c == '<' && i + 1 < code.length() && code.charAt(i + 1) == '<') { 
+                tokens.addElement(new CToken(TOKEN_LSHIFT, "<<")); 
+                i += 2; 
+            }
+            else if (c == '>' && i + 1 < code.length() && code.charAt(i + 1) == '>') { 
+                tokens.addElement(new CToken(TOKEN_RSHIFT, ">>")); 
+                i += 2; 
+            }
+            else if (c == '&' && i + 1 < code.length() && code.charAt(i + 1) == '&') { 
+                tokens.addElement(new CToken(TOKEN_AND, "&&")); 
+                i += 2; 
+            }
+            else if (c == '|' && i + 1 < code.length() && code.charAt(i + 1) == '|') { 
+                tokens.addElement(new CToken(TOKEN_OR, "||")); 
+                i += 2; 
+            }
+            else if (c == '.' && i + 2 < code.length() && code.charAt(i + 1) == '.' && code.charAt(i + 2) == '.') { 
+                tokens.addElement(new CToken(TOKEN_ELLIPSIS, "...")); 
+                i += 3; 
+            }
+            else if (c == '#') { 
+                tokens.addElement(new CToken(TOKEN_PREPROCESSOR, "#")); 
+                i++; 
+            }
+            else if (c == '+') { 
+                tokens.addElement(new CToken(TOKEN_PLUS, "+")); 
+                i++; 
+            }
+            else if (c == '-') { 
+                tokens.addElement(new CToken(TOKEN_MINUS, "-")); 
+                i++; 
+            }
+            else if (c == '*') { 
+                tokens.addElement(new CToken(TOKEN_STAR, "*")); 
+                i++; 
+            }
+            else if (c == '/') { 
+                tokens.addElement(new CToken(TOKEN_SLASH, "/")); 
+                i++; 
+            }
+            else if (c == '%') { 
+                tokens.addElement(new CToken(TOKEN_PERCENT, "%")); 
+                i++; 
+            }
+            else if (c == '=') { 
+                tokens.addElement(new CToken(TOKEN_ASSIGN, "=")); 
+                i++; 
+            }
+            else if (c == '!') { 
+                tokens.addElement(new CToken(TOKEN_NOT, "!")); 
+                i++; 
+            }
+            else if (c == '<') { 
+                tokens.addElement(new CToken(TOKEN_LT, "<")); 
+                i++; 
+            }
+            else if (c == '>') { 
+                tokens.addElement(new CToken(TOKEN_GT, ">")); 
+                i++; 
+            }
+            else if (c == '&') { 
+                tokens.addElement(new CToken(TOKEN_BITAND, "&")); 
+                i++; 
+            }
+            else if (c == '|') { 
+                tokens.addElement(new CToken(TOKEN_BITOR, "|")); 
+                i++; 
+            }
+            else if (c == '^') { 
+                tokens.addElement(new CToken(TOKEN_BITXOR, "^")); 
+                i++; 
+            }
+            else if (c == '~') { 
+                tokens.addElement(new CToken(TOKEN_BITNOT, "~")); 
+                i++; 
+            }
+            else if (c == '(') { 
+                tokens.addElement(new CToken(TOKEN_LPAREN, "(")); 
+                i++; 
+            }
+            else if (c == ')') { 
+                tokens.addElement(new CToken(TOKEN_RPAREN, ")")); 
+                i++; 
+            }
+            else if (c == '{') { 
+                tokens.addElement(new CToken(TOKEN_LBRACE, "{")); 
+                i++; 
+            }
+            else if (c == '}') { 
+                tokens.addElement(new CToken(TOKEN_RBRACE, "}")); 
+                i++; 
+            }
+            else if (c == '[') { 
+                tokens.addElement(new CToken(TOKEN_LBRACKET, "[")); 
+                i++; 
+            }
+            else if (c == ']') { 
+                tokens.addElement(new CToken(TOKEN_RBRACKET, "]")); 
+                i++; 
+            }
+            else if (c == ';') { 
+                tokens.addElement(new CToken(TOKEN_SEMICOLON, ";")); 
+                i++; 
+            }
+            else if (c == ',') { 
+                tokens.addElement(new CToken(TOKEN_COMMA, ",")); 
+                i++; 
+            }
+            else if (c == '.') { 
+                tokens.addElement(new CToken(TOKEN_DOT, ".")); 
+                i++; 
+            }
+            else if (c == ':') { 
+                tokens.addElement(new CToken(TOKEN_COLON, ":")); 
+                i++; 
+            }
+            else if (c == '?') { 
+                tokens.addElement(new CToken(TOKEN_QUESTION, "?")); 
+                i++; 
+            }
+            else { 
+                throw new Exception("Unexpected character '" + c + "'"); 
+            }
+        }
+
+        tokens.addElement(new CToken(TOKEN_EOF, "EOF"));
+        
+        if (midlet.useCache) { 
+            if (midlet.cacheLua.size() > 100) { 
+                midlet.cacheLua.clear(); 
+            } 
+            midlet.cacheLua.put(code, tokens); 
+        }
+        
+        return tokens;
+    }
+
+    private int isKeyword(String word) {
+        if (word.equals("auto")) return TOKEN_AUTO;
+        if (word.equals("break")) return TOKEN_BREAK;
+        if (word.equals("case")) return TOKEN_CASE;
+        if (word.equals("char")) return TOKEN_CHAR_KEY;
+        if (word.equals("const")) return TOKEN_CONST;
+        if (word.equals("continue")) return TOKEN_CONTINUE;
+        if (word.equals("default")) return TOKEN_DEFAULT;
+        if (word.equals("do")) return TOKEN_DO;
+        if (word.equals("double")) return TOKEN_DOUBLE;
+        if (word.equals("else")) return TOKEN_ELSE;
+        if (word.equals("enum")) return TOKEN_ENUM;
+        if (word.equals("extern")) return TOKEN_EXTERN;
+        if (word.equals("float")) return TOKEN_FLOAT;
+        if (word.equals("for")) return TOKEN_FOR;
+        if (word.equals("goto")) return TOKEN_GOTO;
+        if (word.equals("if")) return TOKEN_IF;
+        if (word.equals("int")) return TOKEN_INT;
+        if (word.equals("long")) return TOKEN_LONG;
+        if (word.equals("register")) return TOKEN_REGISTER;
+        if (word.equals("return")) return TOKEN_RETURN;
+        if (word.equals("short")) return TOKEN_SHORT;
+        if (word.equals("signed")) return TOKEN_SIGNED;
+        if (word.equals("sizeof")) return TOKEN_SIZEOF;
+        if (word.equals("static")) return TOKEN_STATIC;
+        if (word.equals("struct")) return TOKEN_STRUCT;
+        if (word.equals("switch")) return TOKEN_SWITCH;
+        if (word.equals("typedef")) return TOKEN_TYPEDEF;
+        if (word.equals("union")) return TOKEN_UNION;
+        if (word.equals("unsigned")) return TOKEN_UNSIGNED;
+        if (word.equals("void")) return TOKEN_VOID;
+        if (word.equals("volatile")) return TOKEN_VOLATILE;
+        if (word.equals("while")) return TOKEN_WHILE;
+        return -1;
+    }
+
+    private boolean isWhitespace(char c) { 
+        return c == ' ' || c == '\t' || c == '\n' || c == '\r'; 
+    }
     
+    private boolean isLetter(char c) { 
+        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'); 
+    }
+    
+    private boolean isDigit(char c) { 
+        return c >= '0' && c <= '9'; 
+    }
+
+    private boolean isLetterOrDigit(char c) { 
+        return isLetter(c) || isDigit(c); 
+    }
+
+    // |
+    // Token Navigation
     public CToken peek() {
         if (tokenIndex < tokens.size()) {
             return (CToken) tokens.elementAt(tokenIndex);
@@ -1184,87 +1474,466 @@ public class C2ME {
         }
         throw new Exception("Expected token type " + expectedType + " but got " + token.type);
     }
+
+    // Helper methods for type conversion
+    private String toCString(Object obj) {
+        if (obj == null) return "";
+        if (obj instanceof String) return (String) obj;
+        if (obj instanceof Character) return String.valueOf((Character) obj);
+        if (obj instanceof Double) {
+            double d = ((Double) obj).doubleValue();
+            if (d == (long) d) return String.valueOf((long) d);
+            return String.valueOf(d);
+        }
+        if (obj instanceof Integer) return String.valueOf(((Integer) obj).intValue());
+        if (obj instanceof Boolean) return ((Boolean) obj).booleanValue() ? "true" : "false";
+        if (obj instanceof Vector) {
+            // Treat as string builder simulation
+            StringBuffer sb = new StringBuffer();
+            for (int i = 1; i < ((Vector) obj).size(); i++) {
+                Object elem = ((Vector) obj).elementAt(i);
+                if (elem instanceof Integer) {
+                    sb.append((char) ((Integer) elem).intValue());
+                }
+            }
+            return sb.toString();
+        }
+        return obj.toString();
+    }
+
+    private int toInteger(Object obj) {
+        if (obj == null) return 0;
+        if (obj instanceof Integer) return ((Integer) obj).intValue();
+        if (obj instanceof Double) return ((Double) obj).intValue();
+        if (obj instanceof String) {
+            try {
+                return Integer.parseInt((String) obj);
+            } catch (NumberFormatException e) {
+                return 0;
+            }
+        }
+        if (obj instanceof Boolean) return ((Boolean) obj).booleanValue() ? 1 : 0;
+        if (obj instanceof Character) return (int) ((Character) obj).charValue();
+        return 0;
+    }
+
+    private double toDouble(Object obj) {
+        if (obj == null) return 0.0;
+        if (obj instanceof Double) return ((Double) obj).doubleValue();
+        if (obj instanceof Integer) return ((Integer) obj).doubleValue();
+        if (obj instanceof String) {
+            try {
+                return Double.parseDouble((String) obj);
+            } catch (NumberFormatException e) {
+                return 0.0;
+            }
+        }
+        return 0.0;
+    }
+
+    private String formatNumber(int num, String format) {
+        if (format.equals("x")) return Integer.toHexString(num);
+        if (format.equals("X")) return Integer.toHexString(num).toUpperCase();
+        if (format.equals("o")) return Integer.toOctalString(num);
+        return String.valueOf(num);
+    }
     
-    // CFunction class for built-in and user-defined functions
+    // |
+    // CFunction Class
     public class CFunction {
-        private int type;
         private Vector params;
         private Vector bodyTokens;
         private Hashtable closureScope;
+        private int returnType;
+        private int builtinId;
         
-        public CFunction(int type) {
-            this.type = type;
+        public CFunction(int builtinId) {
+            this.builtinId = builtinId;
+            this.params = new Vector();
         }
         
-        public CFunction(Vector params, Vector bodyTokens, Hashtable closureScope) {
+        public CFunction(Vector params, Vector bodyTokens, Hashtable closureScope, int returnType) {
             this.params = params;
             this.bodyTokens = bodyTokens;
             this.closureScope = closureScope;
-            this.type = -1;
+            this.returnType = returnType;
+            this.builtinId = -1;
         }
         
         public Object call(Vector args) throws Exception {
-            if (type != -1) {
+            if (builtinId != -1) {
                 return builtinCall(args);
             }
             
             Hashtable funcScope = new Hashtable();
-            for (Enumeration e = closureScope.keys(); e.hasMoreElements();) {
-                String key = (String) e.nextElement();
-                funcScope.put(key, closureScope.get(key));
+            
+            // Copy closure scope
+            if (closureScope != null) {
+                for (Enumeration e = closureScope.keys(); e.hasMoreElements();) {
+                    String key = (String) e.nextElement();
+                    funcScope.put(key, closureScope.get(key));
+                }
             }
             
+            // Bind parameters
             for (int i = 0; i < params.size() && i < args.size(); i++) {
                 funcScope.put((String) params.elementAt(i), args.elementAt(i));
             }
             
+            // Save current state
             int savedTokenIndex = tokenIndex;
             Vector savedTokens = tokens;
+            boolean savedDoreturn = doreturn;
+            boolean savedBreakLoop = breakLoop;
             
+            // Execute function body
             tokens = bodyTokens;
             tokenIndex = 0;
+            doreturn = false;
             
             Object returnValue = null;
-            while (peek().type != TOKEN_EOF) {
+            
+            while (peek().type != TOKEN_EOF && !doreturn) {
                 Object result = statement(funcScope);
                 if (doreturn) {
                     returnValue = result;
-                    doreturn = false;
                     break;
                 }
             }
             
+            // Restore state
             tokenIndex = savedTokenIndex;
             tokens = savedTokens;
+            doreturn = savedDoreturn;
+            breakLoop = savedBreakLoop;
             
             return returnValue;
         }
         
         private Object builtinCall(Vector args) throws Exception {
-            // Built-in C functions can be added here
+            switch (builtinId) {
+                case BUILTIN_PRINTF:
+                    return builtin_printf(args);
+                case BUILTIN_PUTS:
+                    return builtin_puts(args);
+                case BUILTIN_PUTCHAR:
+                    return builtin_putchar(args);
+                case BUILTIN_GETCHAR:
+                    return builtin_getchar();
+                case BUILTIN_GETS:
+                    return builtin_gets(args);
+                case BUILTIN_SYSTEM:
+                    return builtin_system(args);
+                case BUILTIN_EXIT:
+                    return builtin_exit(args);
+                case BUILTIN_MALLOC:
+                    return builtin_malloc(args);
+                case BUILTIN_FREE:
+                    return builtin_free(args);
+                case BUILTIN_STRLEN:
+                    return builtin_strlen(args);
+                case BUILTIN_STRCMP:
+                    return builtin_strcmp(args);
+                case BUILTIN_STRCPY:
+                    return builtin_strcpy(args);
+                case BUILTIN_STRCAT:
+                    return builtin_strcat(args);
+                case BUILTIN_ATOI:
+                    return builtin_atoi(args);
+                case BUILTIN_ITOA:
+                    return builtin_itoa(args);
+                case BUILTIN_ISDIGIT:
+                    return builtin_isdigit(args);
+                case BUILTIN_ISALPHA:
+                    return builtin_isalpha(args);
+            }
             return null;
         }
-    }
-    
-    // Tokenizer methods (same as previous implementation)
-    public Vector tokenize(String code) throws Exception {
-        // ... (previous tokenizer implementation)
-        return new Vector();
-    }
-    
-    private boolean isWhitespace(char c) {
-        return c == ' ' || c == '\t' || c == '\n' || c == '\r';
-    }
-    
-    private boolean isLetter(char c) {
-        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
-    }
-    
-    private boolean isDigit(char c) {
-        return c >= '0' && c <= '9';
-    }
-    
-    private boolean isLetterOrDigit(char c) {
-        return isLetter(c) || isDigit(c);
+        // printf - Formatted output
+        private Object builtin_printf(Vector args) throws Exception {
+            if (args.isEmpty()) return new Integer(0);
+            
+            StringBuffer output = new StringBuffer();
+            String format = toCString(args.elementAt(0));
+            int argIndex = 1;
+            
+            for (int i = 0; i < format.length(); i++) {
+                char c = format.charAt(i);
+                
+                if (c == '%' && i + 1 < format.length()) {
+                    i++;
+                    char spec = format.charAt(i);
+                    
+                    switch (spec) {
+                        case 'd':
+                        case 'i': {
+                            if (argIndex < args.size()) {
+                                int val = toInteger(args.elementAt(argIndex++));
+                                output.append(val);
+                            }
+                            break;
+                        }
+                        case 'u': {
+                            if (argIndex < args.size()) {
+                                int val = toInteger(args.elementAt(argIndex++));
+                                output.append(val & 0xFFFFFFFFL);
+                            }
+                            break;
+                        }
+                        case 'x': {
+                            if (argIndex < args.size()) {
+                                int val = toInteger(args.elementAt(argIndex++));
+                                output.append(Integer.toHexString(val));
+                            }
+                            break;
+                        }
+                        case 'X': {
+                            if (argIndex < args.size()) {
+                                int val = toInteger(args.elementAt(argIndex++));
+                                output.append(Integer.toHexString(val).toUpperCase());
+                            }
+                            break;
+                        }
+                        case 'f': {
+                            if (argIndex < args.size()) {
+                                double val = toDouble(args.elementAt(argIndex++));
+                                output.append(val);
+                            }
+                            break;
+                        }
+                        case 'c': {
+                            if (argIndex < args.size()) {
+                                int val = toInteger(args.elementAt(argIndex++));
+                                output.append((char) val);
+                            }
+                            break;
+                        }
+                        case 's': {
+                            if (argIndex < args.size()) {
+                                String val = toCString(args.elementAt(argIndex++));
+                                output.append(val);
+                            }
+                            break;
+                        }
+                        case 'p': {
+                            output.append("0x");
+                            if (argIndex < args.size()) {
+                                int val = toInteger(args.elementAt(argIndex++));
+                                output.append(Integer.toHexString(val));
+                            }
+                            break;
+                        }
+                        case '%': {
+                            output.append('%');
+                            break;
+                        }
+                        default:
+                            output.append('%').append(spec);
+                            break;
+                    }
+                } else {
+                    output.append(c);
+                }
+            }
+            
+            // Print to stdout using OpenTTY's print method
+            midlet.print(output.toString(), stdout, id, father);
+            return new Integer(output.length());
+        }
+
+        // puts - Print string with newline
+        private Object builtin_puts(Vector args) throws Exception {
+            if (args.isEmpty()) {
+                midlet.print("", stdout, id, father);
+                return new Integer(1);
+            }
+            
+            String str = toCString(args.elementAt(0));
+            midlet.print(str, stdout, id, father);
+            return new Integer(str.length() + 1);
+        }
+
+        // putchar - Print single character
+        private Object builtin_putchar(Vector args) throws Exception {
+            if (args.isEmpty()) return new Integer(-1);
+            
+            int c = toInteger(args.elementAt(0));
+            midlet.print(String.valueOf((char) c), stdout, id, father);
+            return new Integer(c);
+        }
+
+        // getchar - Read character from stdin
+        private Object builtin_getchar() throws Exception {
+            String stdin = midlet.stdin.getString();
+            if (stdin == null || stdin.length() == 0) return new Integer(-1);
+            
+            char c = stdin.charAt(0);
+            midlet.stdin.setString(stdin.length() > 1 ? stdin.substring(1) : "");
+            return new Integer((int) c);
+        }
+
+        // gets - Read string from stdin
+        private Object builtin_gets(Vector args) throws Exception {
+            String stdin = midlet.stdin.getString();
+            if (stdin == null || stdin.length() == 0) return null;
+            
+            // Read until newline
+            int newlinePos = stdin.indexOf('\n');
+            String line;
+            if (newlinePos != -1) {
+                line = stdin.substring(0, newlinePos);
+                midlet.stdin.setString(stdin.substring(newlinePos + 1));
+            } else {
+                line = stdin;
+                midlet.stdin.setString("");
+            }
+            
+            return line;
+        }
+
+        // system - Execute shell command
+        private Object builtin_system(Vector args) throws Exception {
+            if (args.isEmpty()) return new Integer(0);
+            
+            String command = toCString(args.elementAt(0));
+            
+            // Execute command using OpenTTY's shell
+            Vector cmdArgs = new Vector();
+            cmdArgs.addElement(command);
+            
+            Object shell = midlet.shell;
+            if (shell instanceof Lua.LuaFunction) {
+                try {
+                    Object result = ((Lua.LuaFunction) shell).call(cmdArgs);
+                    if (result instanceof Double) {
+                        return new Integer(((Double) result).intValue());
+                    }
+                } catch (Exception e) {
+                    return new Integer(-1);
+                }
+            } else if (shell instanceof C2ME.CFunction) {
+                try {
+                    Object result = ((C2ME.CFunction) shell).call(cmdArgs);
+                    if (result instanceof Double) {
+                        return new Integer(((Double) result).intValue());
+                    }
+                } catch (Exception e) {
+                    return new Integer(-1);
+                }
+            }
+            
+            return new Integer(0);
+        }
+
+        // exit - Terminate program
+        private Object builtin_exit(Vector args) throws Exception {
+            int exitCode = 0;
+            if (!args.isEmpty()) {
+                exitCode = toInteger(args.elementAt(0));
+            }
+            
+            doreturn = true;
+            status = exitCode;
+            return new Integer(exitCode);
+        }
+
+        // malloc - Allocate memory (simulated with Hashtable)
+        private Object builtin_malloc(Vector args) throws Exception {
+            if (args.isEmpty()) return null;
+            
+            int size = toInteger(args.elementAt(0));
+            // Simulate memory allocation with a Vector
+            Vector memory = new Vector();
+            memory.addElement(new Integer(size)); // Store size at index 0
+            for (int i = 0; i < size; i++) {
+                memory.addElement(new Integer(0));
+            }
+            return memory;
+        }
+
+        // free - Free allocated memory
+        private Object builtin_free(Vector args) throws Exception {
+            if (args.isEmpty()) return null;
+            
+            Object ptr = args.elementAt(0);
+            if (ptr instanceof Vector) {
+                // Just let GC collect it
+                ptr = null;
+            }
+            return null;
+        }
+
+        // strlen - Get string length
+        private Object builtin_strlen(Vector args) throws Exception {
+            if (args.isEmpty()) return new Integer(0);
+            
+            String str = toCString(args.elementAt(0));
+            return new Integer(str.length());
+        }
+
+        // strcmp - Compare strings
+        private Object builtin_strcmp(Vector args) throws Exception {
+            if (args.size() < 2) return new Integer(0);
+            
+            String s1 = toCString(args.elementAt(0));
+            String s2 = toCString(args.elementAt(1));
+            
+            return new Integer(s1.compareTo(s2));
+        }
+
+        // strcpy - Copy string
+        private Object builtin_strcpy(Vector args) throws Exception {
+            if (args.size() < 2) return null;
+            
+            String src = toCString(args.elementAt(1));
+            return src; // Return copied string
+        }
+
+        // strcat - Concatenate strings
+        private Object builtin_strcat(Vector args) throws Exception {
+            if (args.size() < 2) return null;
+            
+            String s1 = toCString(args.elementAt(0));
+            String s2 = toCString(args.elementAt(1));
+            
+            return s1 + s2;
+        }
+
+        // atoi - Convert string to integer
+        private Object builtin_atoi(Vector args) throws Exception {
+            if (args.isEmpty()) return new Integer(0);
+            
+            String str = toCString(args.elementAt(0));
+            try {
+                return new Integer(Integer.parseInt(str));
+            } catch (NumberFormatException e) {
+                return new Integer(0);
+            }
+        }
+
+        // itoa - Convert integer to string (returns as number for simplicity)
+        private Object builtin_itoa(Vector args) throws Exception {
+            if (args.isEmpty()) return "";
+            
+            int value = toInteger(args.elementAt(0));
+            return Integer.toString(value);
+        }
+
+        // isdigit - Check if character is digit
+        private Object builtin_isdigit(Vector args) throws Exception {
+            if (args.isEmpty()) return new Integer(0);
+            
+            int c = toInteger(args.elementAt(0));
+            return new Integer((c >= '0' && c <= '9') ? 1 : 0);
+        }
+
+        // isalpha - Check if character is alphabetic
+        private Object builtin_isalpha(Vector args) throws Exception {
+            if (args.isEmpty()) return new Integer(0);
+            
+            int c = toInteger(args.elementAt(0));
+            return new Integer(((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) ? 1 : 0);
+        }
+
     }
 }
