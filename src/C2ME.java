@@ -134,7 +134,7 @@ public class C2ME {
                     declareFunction(globals);
                 } else {
                     // Found code outside function - error (real C doesn't allow this)
-                    //throw new Exception("syntax error: code outside function");
+                    throw new Exception("syntax error: code outside function");
                 }
             }
             
