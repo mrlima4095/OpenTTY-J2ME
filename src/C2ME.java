@@ -39,6 +39,7 @@ public class C2ME {
     public static final int TOKEN_BITOR = 66, TOKEN_BITXOR = 67, TOKEN_BITNOT = 68;
     public static final int TOKEN_LSHIFT = 69, TOKEN_RSHIFT = 70, TOKEN_INCREMENT = 71;
     public static final int TOKEN_DECREMENT = 72, TOKEN_ARROW = 73;
+    public static final int TOKEN_AMPERSAND = 74;  // & para endereço
     
     public static final int TOKEN_LPAREN = 80, TOKEN_RPAREN = 81, TOKEN_LBRACE = 82, TOKEN_RBRACE = 83;
     public static final int TOKEN_LBRACKET = 84, TOKEN_RBRACKET = 85, TOKEN_SEMICOLON = 86;
@@ -127,14 +128,11 @@ public class C2ME {
             collectLabels();
             
             // First pass: collect all function declarations
-            // No code outside functions is allowed (like real C)
             while (peek().type != TOKEN_EOF) {
                 if (isFunctionDeclaration()) {
-                    // Declare the function (register it in globals)
                     declareFunction(globals);
                 } else {
-                    // Found code outside function - error (real C doesn't allow this)
-                    throw new Exception("syntax error: code outside function");
+                    consume();
                 }
             }
             
@@ -186,11 +184,10 @@ public class C2ME {
     private boolean isFunctionDeclaration() throws Exception {
         int savedPos = tokenIndex;
         try {
-            // Check pattern: type name ( parameters ) {
             if (isTypeSpecifier(peek().type)) {
-                consume(); // type
+                consume();
                 if (peek().type == TOKEN_IDENTIFIER) {
-                    String name = (String) consume(TOKEN_IDENTIFIER).value;
+                    consume(TOKEN_IDENTIFIER);
                     if (peek().type == TOKEN_LPAREN) {
                         tokenIndex = savedPos;
                         return true;
@@ -214,7 +211,7 @@ public class C2ME {
         if (peek().type != TOKEN_RPAREN) {
             do {
                 if (isTypeSpecifier(peek().type)) {
-                    consume(); // param type
+                    consume();
                     String paramName = (String) consume(TOKEN_IDENTIFIER).value;
                     params.addElement(paramName);
                 } else if (peek().type == TOKEN_ELLIPSIS) {
@@ -344,21 +341,9 @@ public class C2ME {
             return null;
         }
         else if (current.type == TOKEN_PREPROCESSOR) {
-            // Pular a diretiva #include
             consume(TOKEN_PREPROCESSOR);
-            // Pular o nome do arquivo (include)
-            if (peek().type == TOKEN_IDENTIFIER || peek().type == TOKEN_STRING) {
+            while (peek().type != TOKEN_EOF && peek().type != TOKEN_SEMICOLON && peek().type != TOKEN_PREPROCESSOR) {
                 consume();
-            }
-            // Pular até o final da linha
-            while (peek().type != TOKEN_EOF && peek().type != TOKEN_SEMICOLON) {
-                if (peek().type == TOKEN_LT || peek().type == TOKEN_GT) {
-                    consume();
-                } else if (peek().type == TOKEN_IDENTIFIER || peek().type == TOKEN_STRING) {
-                    consume();
-                } else {
-                    break;
-                }
             }
             return null;
         }
@@ -369,6 +354,13 @@ public class C2ME {
     private Object declaration(Hashtable scope) throws Exception {
         int typeSpec = peek().type;
         consume(typeSpec);
+        
+        // Check for pointer declaration
+        boolean isPointer = false;
+        if (peek().type == TOKEN_STAR) {
+            isPointer = true;
+            consume(TOKEN_STAR);
+        }
         
         Vector varNames = new Vector();
         Vector initializers = new Vector();
@@ -397,10 +389,26 @@ public class C2ME {
         for (int i = 0; i < varNames.size(); i++) {
             String name = (String) varNames.elementAt(i);
             Object value = initializers.elementAt(i);
-            scope.put(name, value);
+            
+            if (isPointer) {
+                Hashtable ptr = createPointer(value, getTypeName(typeSpec));
+                scope.put(name, ptr);
+            } else {
+                scope.put(name, value);
+            }
         }
         
         return null;
+    }
+    
+    private String getTypeName(int typeSpec) {
+        if (typeSpec == TOKEN_INT) return "int";
+        if (typeSpec == TOKEN_CHAR_KEY) return "char";
+        if (typeSpec == TOKEN_DOUBLE) return "double";
+        if (typeSpec == TOKEN_FLOAT) return "float";
+        if (typeSpec == TOKEN_LONG) return "long";
+        if (typeSpec == TOKEN_SHORT) return "short";
+        return "auto";
     }
     
     private Object getDefaultValue(int typeSpec) {
@@ -411,7 +419,7 @@ public class C2ME {
         } else if (typeSpec == TOKEN_CHAR_KEY) {
             return new Character('\0');
         } else {
-            return null;
+            return C_NIL;
         }
     }
     
@@ -426,7 +434,6 @@ public class C2ME {
         
         if (conditionTrue) {
             result = statement(scope);
-            // Skip else/else if blocks
             skipElseBlocks();
         } else {
             skipStatement();
@@ -714,7 +721,7 @@ public class C2ME {
         while (peek().type == TOKEN_BITOR) {
             consume(TOKEN_BITOR);
             Object right = bitwiseXor(scope);
-            left = new Double(toNumber(left).intValue() | toNumber(right).intValue());
+            left = new Double(toInt(left) | toInt(right));
         }
         return left;
     }
@@ -724,7 +731,7 @@ public class C2ME {
         while (peek().type == TOKEN_BITXOR) {
             consume(TOKEN_BITXOR);
             Object right = bitwiseAnd(scope);
-            left = new Double(toNumber(left).intValue() ^ toNumber(right).intValue());
+            left = new Double(toInt(left) ^ toInt(right));
         }
         return left;
     }
@@ -734,7 +741,7 @@ public class C2ME {
         while (peek().type == TOKEN_BITAND) {
             consume(TOKEN_BITAND);
             Object right = equality(scope);
-            left = new Double(toNumber(left).intValue() & toNumber(right).intValue());
+            left = new Double(toInt(left) & toInt(right));
         }
         return left;
     }
@@ -758,8 +765,8 @@ public class C2ME {
             int op = peek().type;
             consume(op);
             Object right = shift(scope);
-            double lNum = toNumber(left).doubleValue();
-            double rNum = toNumber(right).doubleValue();
+            double lNum = toDouble(left);
+            double rNum = toDouble(right);
             boolean result;
             if (op == TOKEN_LT) result = lNum < rNum;
             else if (op == TOKEN_GT) result = lNum > rNum;
@@ -776,8 +783,8 @@ public class C2ME {
             int op = peek().type;
             consume(op);
             Object right = additive(scope);
-            int lNum = toNumber(left).intValue();
-            int rNum = toNumber(right).intValue();
+            int lNum = toInt(left);
+            int rNum = toInt(right);
             left = new Double(op == TOKEN_LSHIFT ? (lNum << rNum) : (lNum >> rNum));
         }
         return left;
@@ -789,8 +796,8 @@ public class C2ME {
             int op = peek().type;
             consume(op);
             Object right = multiplicative(scope);
-            double lNum = toNumber(left).doubleValue();
-            double rNum = toNumber(right).doubleValue();
+            double lNum = toDouble(left);
+            double rNum = toDouble(right);
             left = new Double(op == TOKEN_PLUS ? (lNum + rNum) : (lNum - rNum));
         }
         return left;
@@ -802,8 +809,8 @@ public class C2ME {
             int op = peek().type;
             consume(op);
             Object right = unary(scope);
-            double lNum = toNumber(left).doubleValue();
-            double rNum = toNumber(right).doubleValue();
+            double lNum = toDouble(left);
+            double rNum = toDouble(right);
             if (op == TOKEN_STAR) {
                 left = new Double(lNum * rNum);
             } else if (op == TOKEN_SLASH) {
@@ -824,7 +831,7 @@ public class C2ME {
         } else if (peek().type == TOKEN_MINUS) {
             consume(TOKEN_MINUS);
             Object val = unary(scope);
-            return new Double(-toNumber(val).doubleValue());
+            return new Double(-toDouble(val));
         } else if (peek().type == TOKEN_NOT) {
             consume(TOKEN_NOT);
             Object val = unary(scope);
@@ -832,27 +839,57 @@ public class C2ME {
         } else if (peek().type == TOKEN_BITNOT) {
             consume(TOKEN_BITNOT);
             Object val = unary(scope);
-            return new Double(~toNumber(val).intValue());
+            return new Double(~toInt(val));
         } else if (peek().type == TOKEN_INCREMENT) {
             consume(TOKEN_INCREMENT);
             if (peek().type == TOKEN_IDENTIFIER) {
                 String varName = (String) consume(TOKEN_IDENTIFIER).value;
                 Object val = unwrap(scope.get(varName));
-                Double newVal = new Double(toNumber(val).doubleValue() + 1);
-                scope.put(varName, newVal);
-                return newVal;
+                double newVal = toDouble(val) + 1;
+                Object result = new Double(newVal);
+                scope.put(varName, result);
+                return result;
             }
         } else if (peek().type == TOKEN_DECREMENT) {
             consume(TOKEN_DECREMENT);
             if (peek().type == TOKEN_IDENTIFIER) {
                 String varName = (String) consume(TOKEN_IDENTIFIER).value;
                 Object val = unwrap(scope.get(varName));
-                Double newVal = new Double(toNumber(val).doubleValue() - 1);
-                scope.put(varName, newVal);
-                return newVal;
+                double newVal = toDouble(val) - 1;
+                Object result = new Double(newVal);
+                scope.put(varName, result);
+                return result;
             }
+        } else if (peek().type == TOKEN_STAR) {
+            // Dereference pointer: *ptr
+            consume(TOKEN_STAR);
+            Object ptr = unary(scope);
+            if (isPointer(ptr)) {
+                return getPointerValue(ptr);
+            }
+            throw new Exception("Dereference of non-pointer value");
+        } else if (peek().type == TOKEN_AMPERSAND) {
+            // Address of: &var
+            consume(TOKEN_AMPERSAND);
+            String varName = (String) consume(TOKEN_IDENTIFIER).value;
+            Object var = scope.get(varName);
+            String ptrName = "&" + varName;
+            if (scope.containsKey(ptrName)) {
+                return scope.get(ptrName);
+            }
+            Hashtable ptr = createPointer(var, getTypeNameFromValue(var));
+            scope.put(ptrName, ptr);
+            return ptr;
         }
         return postfix(scope);
+    }
+    
+    private String getTypeNameFromValue(Object val) {
+        if (val instanceof Double) return "int";
+        if (val instanceof String) return "char*";
+        if (val instanceof Character) return "char";
+        if (val instanceof Hashtable && isPointer(val)) return "pointer";
+        return "auto";
     }
     
     private Object postfix(Hashtable scope) throws Exception {
@@ -863,8 +900,9 @@ public class C2ME {
             if (primary instanceof String) {
                 String varName = (String) primary;
                 Object val = scope.get(varName);
-                Double newVal = new Double(toNumber(val).doubleValue() + 1);
-                scope.put(varName, newVal);
+                double newVal = toDouble(val) + 1;
+                Object result = new Double(newVal);
+                scope.put(varName, result);
                 return val;
             }
         } else if (peek().type == TOKEN_DECREMENT) {
@@ -872,8 +910,9 @@ public class C2ME {
             if (primary instanceof String) {
                 String varName = (String) primary;
                 Object val = scope.get(varName);
-                Double newVal = new Double(toNumber(val).doubleValue() - 1);
-                scope.put(varName, newVal);
+                double newVal = toDouble(val) - 1;
+                Object result = new Double(newVal);
+                scope.put(varName, result);
                 return val;
             }
         }
@@ -884,35 +923,7 @@ public class C2ME {
     private Object primary(Hashtable scope) throws Exception {
         CToken current = peek();
         
-        // No primary(), para arrays
-if (peek().type == TOKEN_LBRACKET) {
-    consume(TOKEN_LBRACKET);
-    Object index = expression(scope);
-    consume(TOKEN_RBRACKET);
-    
-    int idx = toInt(index);
-    
-    if (value instanceof Vector) {
-        Vector vec = (Vector) value;
-        if (idx >= 0 && idx < vec.size()) {
-            // Retorna ponteiro para o elemento se for array de ponteiros
-            Object elem = vec.elementAt(idx);
-            if (isPointer(elem)) {
-                return elem;
-            }
-            return elem;
-        }
-        return C_NIL;
-    }
-    if (value instanceof String) {
-        String str = (String) value;
-        if (idx >= 0 && idx < str.length()) {
-            return new Character(str.charAt(idx));
-        }
-        return C_NIL;
-    }
-}
-        else if (current.type == TOKEN_NUMBER) {
+        if (current.type == TOKEN_NUMBER) {
             consume(TOKEN_NUMBER);
             return current.value;
         }
@@ -931,25 +942,50 @@ if (peek().type == TOKEN_LBRACKET) {
                 value = unwrap(globals.get(name));
             }
             
+            // Array access: arr[index]
             if (peek().type == TOKEN_LBRACKET) {
                 consume(TOKEN_LBRACKET);
                 Object index = expression(scope);
                 consume(TOKEN_RBRACKET);
                 
+                int idx = toInt(index);
+                
                 if (value instanceof Vector) {
-                    int idx = toNumber(index).intValue();
                     Vector vec = (Vector) value;
                     if (idx >= 0 && idx < vec.size()) {
-                        return vec.elementAt(idx);
+                        Object elem = vec.elementAt(idx);
+                        if (isPointer(elem)) {
+                            return elem;
+                        }
+                        return elem;
                     }
-                    return null;
+                    return C_NIL;
                 }
+                if (value instanceof String) {
+                    String str = (String) value;
+                    if (idx >= 0 && idx < str.length()) {
+                        return new Character(str.charAt(idx));
+                    }
+                    return C_NIL;
+                }
+                if (isPointer(value)) {
+                    // Treat pointer as array
+                    Object ptrValue = getPointerValue(value);
+                    if (ptrValue instanceof Vector) {
+                        Vector vec = (Vector) ptrValue;
+                        if (idx >= 0 && idx < vec.size()) {
+                            return vec.elementAt(idx);
+                        }
+                    }
+                }
+                return C_NIL;
             }
+            // Function call
             else if (peek().type == TOKEN_LPAREN) {
                 return callFunction(name, scope);
             }
             
-            return value;
+            return value == null ? C_NIL : value;
         }
         else if (current.type == TOKEN_LPAREN) {
             consume(TOKEN_LPAREN);
@@ -970,44 +1006,6 @@ if (peek().type == TOKEN_LBRACKET) {
                 consume(TOKEN_RPAREN);
                 return new Double(1);
             }
-        }
-        // No primary(), quando encontra IDENTIFIER seguido de *
-        else if (peek().type == TOKEN_MULTIPLY) {
-            consume(TOKEN_MULTIPLY);
-            String ptrName = (String) consume(TOKEN_IDENTIFIER).value;
-            
-            // Cria ponteiro nulo
-            Hashtable ptr = createPointer(C_NIL, "pointer");
-            scope.put(ptrName, ptr);
-            
-            // Se tem inicialização
-            if (peek().type == TOKEN_ASSIGN) {
-                consume(TOKEN_ASSIGN);
-                Object initValue = expression(scope);
-                if (isPointer(initValue)) {
-                    setPointerValue(ptr, getPointerValue(initValue));
-                } else {
-                    setPointerValue(ptr, initValue);
-                }
-            }
-            
-            return ptr;
-        }
-        else if (current.type == TOKEN_AMPERSAND) {
-            // Endereço: &var
-            consume(TOKEN_AMPERSAND);
-            String varName = (String) consume(TOKEN_IDENTIFIER).value;
-            Object var = scope.get(varName);
-            
-            // Verifica se já tem um ponteiro para esta variável
-            String ptrName = "&" + varName;
-            if (scope.containsKey(ptrName)) {
-                return scope.get(ptrName);
-            }
-            
-            Hashtable ptr = createPointer(var, "auto");
-            scope.put(ptrName, ptr);
-            return ptr;
         }
         
         throw new Exception("Unexpected token in primary: " + current.type);
@@ -1048,25 +1046,11 @@ if (peek().type == TOKEN_LBRACKET) {
     }
     
     private boolean isTruthy(Object value) {
-        if (value == null) return false;
+        if (value == null || value == C_NIL) return false;
         if (value instanceof Boolean) return ((Boolean) value).booleanValue();
         if (value instanceof Double) return ((Double) value).doubleValue() != 0;
         if (value instanceof String) return ((String) value).length() > 0;
         return true;
-    }
-    
-    private Double toNumber(Object value) {
-        if (value == null) return new Double(0);
-        if (value instanceof Double) return (Double) value;
-        if (value instanceof Boolean) return new Double(((Boolean) value).booleanValue() ? 1 : 0);
-        if (value instanceof String) {
-            try { 
-                return new Double(Double.parseDouble((String) value)); 
-            } catch (NumberFormatException e) { 
-                return new Double(0); 
-            }
-        }
-        return new Double(0);
     }
     
     private boolean valuesEqual(Object a, Object b) {
@@ -1347,9 +1331,17 @@ if (peek().type == TOKEN_LBRACKET) {
                 tokens.addElement(new CToken(TOKEN_AND, "&&")); 
                 i += 2; 
             }
+            else if (c == '&' && i + 1 < code.length() && code.charAt(i + 1) != '&') { 
+                tokens.addElement(new CToken(TOKEN_AMPERSAND, "&")); 
+                i++; 
+            }
             else if (c == '|' && i + 1 < code.length() && code.charAt(i + 1) == '|') { 
                 tokens.addElement(new CToken(TOKEN_OR, "||")); 
                 i += 2; 
+            }
+            else if (c == '|') { 
+                tokens.addElement(new CToken(TOKEN_BITOR, "|")); 
+                i++; 
             }
             else if (c == '.' && i + 2 < code.length() && code.charAt(i + 1) == '.' && code.charAt(i + 2) == '.') { 
                 tokens.addElement(new CToken(TOKEN_ELLIPSIS, "...")); 
@@ -1393,14 +1385,6 @@ if (peek().type == TOKEN_LBRACKET) {
             }
             else if (c == '>') { 
                 tokens.addElement(new CToken(TOKEN_GT, ">")); 
-                i++; 
-            }
-            else if (c == '&') { 
-                tokens.addElement(new CToken(TOKEN_BITAND, "&")); 
-                i++; 
-            }
-            else if (c == '|') { 
-                tokens.addElement(new CToken(TOKEN_BITOR, "|")); 
                 i++; 
             }
             else if (c == '^') { 
@@ -1558,7 +1542,7 @@ if (peek().type == TOKEN_LBRACKET) {
 
     // Helper methods for type conversion
     private String toCString(Object obj) {
-        if (obj == null) return "";
+        if (obj == null || obj == C_NIL) return "";
         if (obj instanceof String) return (String) obj;
         if (obj instanceof Character) return String.valueOf((Character) obj);
         if (obj instanceof Double) {
@@ -1569,7 +1553,6 @@ if (peek().type == TOKEN_LBRACKET) {
         if (obj instanceof Integer) return String.valueOf(((Integer) obj).intValue());
         if (obj instanceof Boolean) return ((Boolean) obj).booleanValue() ? "true" : "false";
         if (obj instanceof Vector) {
-            // Treat as string builder simulation
             StringBuffer sb = new StringBuffer();
             for (int i = 1; i < ((Vector) obj).size(); i++) {
                 Object elem = ((Vector) obj).elementAt(i);
@@ -1579,27 +1562,18 @@ if (peek().type == TOKEN_LBRACKET) {
             }
             return sb.toString();
         }
+        if (obj instanceof Hashtable && isPointer(obj)) {
+            return toCString(getPointerValue(obj));
+        }
         return obj.toString();
     }
 
     private int toInteger(Object obj) {
-        if (obj == null) return 0;
-        if (obj instanceof Integer) return ((Integer) obj).intValue();
-        if (obj instanceof Double) return ((Double) obj).intValue();
-        if (obj instanceof String) {
-            try {
-                return Integer.parseInt((String) obj);
-            } catch (NumberFormatException e) {
-                return 0;
-            }
-        }
-        if (obj instanceof Boolean) return ((Boolean) obj).booleanValue() ? 1 : 0;
-        if (obj instanceof Character) return (int) ((Character) obj).charValue();
-        return 0;
+        return toInt(obj);
     }
 
     private double toDouble(Object obj) {
-        if (obj == null) return 0.0;
+        if (obj == null || obj == C_NIL) return 0.0;
         if (obj instanceof Double) return ((Double) obj).doubleValue();
         if (obj instanceof Integer) return ((Integer) obj).doubleValue();
         if (obj instanceof String) {
@@ -1609,89 +1583,72 @@ if (peek().type == TOKEN_LBRACKET) {
                 return 0.0;
             }
         }
+        if (obj instanceof Character) return (double) ((Character) obj).charValue();
+        if (obj instanceof Boolean) return ((Boolean) obj).booleanValue() ? 1.0 : 0.0;
+        if (obj instanceof Hashtable) {
+            if (isPointer(obj)) {
+                return toDouble(getPointerValue(obj));
+            }
+        }
         return 0.0;
     }
 
-    private String formatNumber(int num, String format) {
-        if (format.equals("x")) return Integer.toHexString(num);
-        if (format.equals("X")) return Integer.toHexString(num).toUpperCase();
-        if (format.equals("o")) return Integer.toOctalString(num);
-        return String.valueOf(num);
+    private Object wrap(Object v) { 
+        return v == null ? C_NIL : v; 
     }
-
-    private Object wrap(Object v) { return v == null ? C_NIL : v; }
-    private Object unwrap(Object v) { return v == C_NIL ? null : v; }
-
-// No lugar da classe Pointer, use Hashtable
-private Hashtable createPointer(Object value, String type) {
-    Hashtable ptr = new Hashtable();
-    ptr.put("value", value == null ? C_NIL : value);
-    ptr.put("type", type);
-    ptr.put("address", new Integer(System.identityHashCode(ptr)));
-    return ptr;
-}
-
-private Object getPointerValue(Object ptr) {
-    if (ptr instanceof Hashtable && ((Hashtable) ptr).containsKey("value")) {
-        return ((Hashtable) ptr).get("value");
-    }
-    return ptr;
-}
-
-private void setPointerValue(Object ptr, Object value) {
-    if (ptr instanceof Hashtable && ((Hashtable) ptr).containsKey("value")) {
-        ((Hashtable) ptr).put("value", value == null ? C_NIL : value);
-    }
-}
-
-private boolean isPointer(Object obj) {
-    return obj instanceof Hashtable && ((Hashtable) obj).containsKey("value") 
-           && ((Hashtable) obj).containsKey("type");
-}
     
-private int toInt(Object obj) {
-    if (obj == null || obj == C_NIL) return 0;
-    if (obj instanceof Double) return ((Double) obj).intValue();
-    if (obj instanceof Integer) return ((Integer) obj).intValue();
-    if (obj instanceof String) {
-        try {
-            return Integer.parseInt((String) obj);
-        } catch (NumberFormatException e) {
-            return 0;
+    private Object unwrap(Object v) { 
+        return v == C_NIL ? null : v; 
+    }
+
+    // Pointer operations using Hashtable
+    private Hashtable createPointer(Object value, String type) {
+        Hashtable ptr = new Hashtable();
+        ptr.put("value", value == null ? C_NIL : value);
+        ptr.put("type", type);
+        ptr.put("address", new Integer(System.identityHashCode(ptr)));
+        return ptr;
+    }
+
+    private Object getPointerValue(Object ptr) {
+        if (ptr instanceof Hashtable && ((Hashtable) ptr).containsKey("value")) {
+            return ((Hashtable) ptr).get("value");
+        }
+        return ptr;
+    }
+
+    private void setPointerValue(Object ptr, Object value) {
+        if (ptr instanceof Hashtable && ((Hashtable) ptr).containsKey("value")) {
+            ((Hashtable) ptr).put("value", value == null ? C_NIL : value);
         }
     }
-    if (obj instanceof Character) return (int) ((Character) obj).charValue();
-    if (obj instanceof Boolean) return ((Boolean) obj).booleanValue() ? 1 : 0;
-    if (obj instanceof Hashtable) {
-        // Se for ponteiro, tenta pegar o valor
-        Hashtable table = (Hashtable) obj;
-        if (table.containsKey("value")) {
-            return toInt(table.get("value"));
-        }
+
+    private boolean isPointer(Object obj) {
+        return obj instanceof Hashtable && ((Hashtable) obj).containsKey("value") 
+               && ((Hashtable) obj).containsKey("type");
     }
-    return 0;
-}
-private double toDouble(Object obj) {
-    if (obj == null || obj == C_NIL) return 0.0;
-    if (obj instanceof Double) return ((Double) obj).doubleValue();
-    if (obj instanceof Integer) return ((Integer) obj).doubleValue();
-    if (obj instanceof String) {
-        try {
-            return Double.parseDouble((String) obj);
-        } catch (NumberFormatException e) {
-            return 0.0;
+    
+    private int toInt(Object obj) {
+        if (obj == null || obj == C_NIL) return 0;
+        if (obj instanceof Double) return ((Double) obj).intValue();
+        if (obj instanceof Integer) return ((Integer) obj).intValue();
+        if (obj instanceof String) {
+            try {
+                return Integer.parseInt((String) obj);
+            } catch (NumberFormatException e) {
+                return 0;
+            }
         }
-    }
-    if (obj instanceof Character) return (double) ((Character) obj).charValue();
-    if (obj instanceof Boolean) return ((Boolean) obj).booleanValue() ? 1.0 : 0.0;
-    if (obj instanceof Hashtable) {
-        Hashtable table = (Hashtable) obj;
-        if (table.containsKey("value")) {
-            return toDouble(table.get("value"));
+        if (obj instanceof Character) return (int) ((Character) obj).charValue();
+        if (obj instanceof Boolean) return ((Boolean) obj).booleanValue() ? 1 : 0;
+        if (obj instanceof Hashtable) {
+            if (isPointer(obj)) {
+                return toInt(getPointerValue(obj));
+            }
         }
+        return 0;
     }
-    return 0.0;
-}
+    
     // |
     // CFunction Class
     public class CFunction {
@@ -1721,7 +1678,6 @@ private double toDouble(Object obj) {
             
             Hashtable funcScope = new Hashtable();
             
-            // Copy closure scope
             if (closureScope != null) {
                 for (Enumeration e = closureScope.keys(); e.hasMoreElements();) {
                     String key = (String) e.nextElement();
@@ -1729,18 +1685,15 @@ private double toDouble(Object obj) {
                 }
             }
             
-            // Bind parameters
             for (int i = 0; i < params.size() && i < args.size(); i++) {
                 funcScope.put((String) params.elementAt(i), args.elementAt(i));
             }
             
-            // Save current state
             int savedTokenIndex = tokenIndex;
             Vector savedTokens = tokens;
             boolean savedDoreturn = doreturn;
             boolean savedBreakLoop = breakLoop;
             
-            // Execute function body
             tokens = bodyTokens;
             tokenIndex = 0;
             doreturn = false;
@@ -1755,7 +1708,6 @@ private double toDouble(Object obj) {
                 }
             }
             
-            // Restore state
             tokenIndex = savedTokenIndex;
             tokens = savedTokens;
             doreturn = savedDoreturn;
@@ -1766,43 +1718,27 @@ private double toDouble(Object obj) {
         
         private Object builtinCall(Vector args) throws Exception {
             switch (builtinId) {
-                case BUILTIN_PRINTF:
-                    return builtin_printf(args);
-                case BUILTIN_PUTS:
-                    return builtin_puts(args);
-                case BUILTIN_PUTCHAR:
-                    return builtin_putchar(args);
-                case BUILTIN_GETCHAR:
-                    return builtin_getchar();
-                case BUILTIN_GETS:
-                    return builtin_gets(args);
-                case BUILTIN_SYSTEM:
-                    return builtin_system(args);
-                case BUILTIN_EXIT:
-                    return builtin_exit(args);
-                case BUILTIN_MALLOC:
-                    return builtin_malloc(args);
-                case BUILTIN_FREE:
-                    return builtin_free(args);
-                case BUILTIN_STRLEN:
-                    return builtin_strlen(args);
-                case BUILTIN_STRCMP:
-                    return builtin_strcmp(args);
-                case BUILTIN_STRCPY:
-                    return builtin_strcpy(args);
-                case BUILTIN_STRCAT:
-                    return builtin_strcat(args);
-                case BUILTIN_ATOI:
-                    return builtin_atoi(args);
-                case BUILTIN_ITOA:
-                    return builtin_itoa(args);
-                case BUILTIN_ISDIGIT:
-                    return builtin_isdigit(args);
-                case BUILTIN_ISALPHA:
-                    return builtin_isalpha(args);
+                case BUILTIN_PRINTF: return builtin_printf(args);
+                case BUILTIN_PUTS: return builtin_puts(args);
+                case BUILTIN_PUTCHAR: return builtin_putchar(args);
+                case BUILTIN_GETCHAR: return builtin_getchar();
+                case BUILTIN_GETS: return builtin_gets(args);
+                case BUILTIN_SYSTEM: return builtin_system(args);
+                case BUILTIN_EXIT: return builtin_exit(args);
+                case BUILTIN_MALLOC: return builtin_malloc(args);
+                case BUILTIN_FREE: return builtin_free(args);
+                case BUILTIN_STRLEN: return builtin_strlen(args);
+                case BUILTIN_STRCMP: return builtin_strcmp(args);
+                case BUILTIN_STRCPY: return builtin_strcpy(args);
+                case BUILTIN_STRCAT: return builtin_strcat(args);
+                case BUILTIN_ATOI: return builtin_atoi(args);
+                case BUILTIN_ITOA: return builtin_itoa(args);
+                case BUILTIN_ISDIGIT: return builtin_isdigit(args);
+                case BUILTIN_ISALPHA: return builtin_isalpha(args);
             }
             return null;
         }
+        
         // printf - Formatted output
         private Object builtin_printf(Vector args) throws Exception {
             if (args.isEmpty()) return new Integer(0);
@@ -1822,28 +1758,28 @@ private double toDouble(Object obj) {
                         case 'd':
                         case 'i': {
                             if (argIndex < args.size()) {
-                                int val = toInteger(args.elementAt(argIndex++));
+                                int val = toInt(args.elementAt(argIndex++));
                                 output.append(val);
                             }
                             break;
                         }
                         case 'u': {
                             if (argIndex < args.size()) {
-                                int val = toInteger(args.elementAt(argIndex++));
+                                int val = toInt(args.elementAt(argIndex++));
                                 output.append(val & 0xFFFFFFFFL);
                             }
                             break;
                         }
                         case 'x': {
                             if (argIndex < args.size()) {
-                                int val = toInteger(args.elementAt(argIndex++));
+                                int val = toInt(args.elementAt(argIndex++));
                                 output.append(Integer.toHexString(val));
                             }
                             break;
                         }
                         case 'X': {
                             if (argIndex < args.size()) {
-                                int val = toInteger(args.elementAt(argIndex++));
+                                int val = toInt(args.elementAt(argIndex++));
                                 output.append(Integer.toHexString(val).toUpperCase());
                             }
                             break;
@@ -1857,7 +1793,7 @@ private double toDouble(Object obj) {
                         }
                         case 'c': {
                             if (argIndex < args.size()) {
-                                int val = toInteger(args.elementAt(argIndex++));
+                                int val = toInt(args.elementAt(argIndex++));
                                 output.append((char) val);
                             }
                             break;
@@ -1872,7 +1808,7 @@ private double toDouble(Object obj) {
                         case 'p': {
                             output.append("0x");
                             if (argIndex < args.size()) {
-                                int val = toInteger(args.elementAt(argIndex++));
+                                int val = toInt(args.elementAt(argIndex++));
                                 output.append(Integer.toHexString(val));
                             }
                             break;
@@ -1890,7 +1826,6 @@ private double toDouble(Object obj) {
                 }
             }
             
-            // Print to stdout using OpenTTY's print method
             midlet.print(output.toString(), stdout, id, father);
             return new Integer(output.length());
         }
@@ -1911,34 +1846,33 @@ private double toDouble(Object obj) {
         private Object builtin_putchar(Vector args) throws Exception {
             if (args.isEmpty()) return new Integer(-1);
             
-            int c = toInteger(args.elementAt(0));
+            int c = toInt(args.elementAt(0));
             midlet.print(String.valueOf((char) c), stdout, id, father);
             return new Integer(c);
         }
 
         // getchar - Read character from stdin
         private Object builtin_getchar() throws Exception {
-            String stdin = midlet.stdin.getString();
-            if (stdin == null || stdin.length() == 0) return new Integer(-1);
+            String stdinStr = midlet.stdin.getString();
+            if (stdinStr == null || stdinStr.length() == 0) return new Integer(-1);
             
-            char c = stdin.charAt(0);
-            midlet.stdin.setString(stdin.length() > 1 ? stdin.substring(1) : "");
+            char c = stdinStr.charAt(0);
+            midlet.stdin.setString(stdinStr.length() > 1 ? stdinStr.substring(1) : "");
             return new Integer((int) c);
         }
 
         // gets - Read string from stdin
         private Object builtin_gets(Vector args) throws Exception {
-            String stdin = midlet.stdin.getString();
-            if (stdin == null || stdin.length() == 0) return null;
+            String stdinStr = midlet.stdin.getString();
+            if (stdinStr == null || stdinStr.length() == 0) return null;
             
-            // Read until newline
-            int newlinePos = stdin.indexOf('\n');
+            int newlinePos = stdinStr.indexOf('\n');
             String line;
             if (newlinePos != -1) {
-                line = stdin.substring(0, newlinePos);
-                midlet.stdin.setString(stdin.substring(newlinePos + 1));
+                line = stdinStr.substring(0, newlinePos);
+                midlet.stdin.setString(stdinStr.substring(newlinePos + 1));
             } else {
-                line = stdin;
+                line = stdinStr;
                 midlet.stdin.setString("");
             }
             
@@ -1951,7 +1885,6 @@ private double toDouble(Object obj) {
             
             String command = toCString(args.elementAt(0));
             
-            // Execute command using OpenTTY's shell
             Vector cmdArgs = new Vector();
             cmdArgs.addElement(command);
             
@@ -1983,7 +1916,7 @@ private double toDouble(Object obj) {
         private Object builtin_exit(Vector args) throws Exception {
             int exitCode = 0;
             if (!args.isEmpty()) {
-                exitCode = toInteger(args.elementAt(0));
+                exitCode = toInt(args.elementAt(0));
             }
             
             doreturn = true;
@@ -1991,14 +1924,13 @@ private double toDouble(Object obj) {
             return new Integer(exitCode);
         }
 
-        // malloc - Allocate memory (simulated with Hashtable)
+        // malloc - Allocate memory (simulated with Vector)
         private Object builtin_malloc(Vector args) throws Exception {
             if (args.isEmpty()) return null;
             
-            int size = toInteger(args.elementAt(0));
-            // Simulate memory allocation with a Vector
+            int size = toInt(args.elementAt(0));
             Vector memory = new Vector();
-            memory.addElement(new Integer(size)); // Store size at index 0
+            memory.addElement(new Integer(size));
             for (int i = 0; i < size; i++) {
                 memory.addElement(new Integer(0));
             }
@@ -2011,7 +1943,6 @@ private double toDouble(Object obj) {
             
             Object ptr = args.elementAt(0);
             if (ptr instanceof Vector) {
-                // Just let GC collect it
                 ptr = null;
             }
             return null;
@@ -2040,7 +1971,7 @@ private double toDouble(Object obj) {
             if (args.size() < 2) return null;
             
             String src = toCString(args.elementAt(1));
-            return src; // Return copied string
+            return src;
         }
 
         // strcat - Concatenate strings
@@ -2065,11 +1996,11 @@ private double toDouble(Object obj) {
             }
         }
 
-        // itoa - Convert integer to string (returns as number for simplicity)
+        // itoa - Convert integer to string
         private Object builtin_itoa(Vector args) throws Exception {
             if (args.isEmpty()) return "";
             
-            int value = toInteger(args.elementAt(0));
+            int value = toInt(args.elementAt(0));
             return Integer.toString(value);
         }
 
@@ -2077,7 +2008,7 @@ private double toDouble(Object obj) {
         private Object builtin_isdigit(Vector args) throws Exception {
             if (args.isEmpty()) return new Integer(0);
             
-            int c = toInteger(args.elementAt(0));
+            int c = toInt(args.elementAt(0));
             return new Integer((c >= '0' && c <= '9') ? 1 : 0);
         }
 
@@ -2085,11 +2016,8 @@ private double toDouble(Object obj) {
         private Object builtin_isalpha(Vector args) throws Exception {
             if (args.isEmpty()) return new Integer(0);
             
-            int c = toInteger(args.elementAt(0));
+            int c = toInt(args.elementAt(0));
             return new Integer(((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) ? 1 : 0);
         }
-
     }
 }
-// |
-// EOF
