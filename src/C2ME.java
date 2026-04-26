@@ -39,7 +39,7 @@ public class C2ME {
     public static final int TOKEN_BITOR = 66, TOKEN_BITXOR = 67, TOKEN_BITNOT = 68;
     public static final int TOKEN_LSHIFT = 69, TOKEN_RSHIFT = 70, TOKEN_INCREMENT = 71;
     public static final int TOKEN_DECREMENT = 72, TOKEN_ARROW = 73;
-    public static final int TOKEN_AMPERSAND = 74;
+    public static final int TOKEN_AMPERSAND = 74;  // & para endereço
     
     public static final int TOKEN_LPAREN = 80, TOKEN_RPAREN = 81, TOKEN_LBRACE = 82, TOKEN_RBRACE = 83;
     public static final int TOKEN_LBRACKET = 84, TOKEN_RBRACKET = 85, TOKEN_SEMICOLON = 86;
@@ -95,6 +95,7 @@ public class C2ME {
         globals.put("NULL", C_NIL);
         globals.put("EOF", new Integer(-1));
         
+        // Register built-in C functions
         globals.put("printf", new CFunction(BUILTIN_PRINTF));
         globals.put("puts", new CFunction(BUILTIN_PUTS));
         globals.put("putchar", new CFunction(BUILTIN_PUTCHAR));
@@ -114,6 +115,8 @@ public class C2ME {
         globals.put("isalpha", new CFunction(BUILTIN_ISALPHA));
     }
     
+    // |
+    // Run Source Code - C style: only function declarations, start at main()
     public Hashtable run(String source, String code, Hashtable args) {
         midlet.sys.put(PID, proc);
         globals.put("arg", args);
@@ -124,6 +127,7 @@ public class C2ME {
             this.tokens = tokenize(code);
             collectLabels();
             
+            // First pass: collect all function declarations
             while (peek().type != TOKEN_EOF) {
                 if (isFunctionDeclaration()) {
                     declareFunction(globals);
@@ -132,17 +136,21 @@ public class C2ME {
                 }
             }
             
+            // Reset token index to find main
             tokenIndex = 0;
             
+            // Find and execute main function
             CFunction mainFunc = (CFunction) globals.get("main");
             if (mainFunc == null) {
                 throw new Exception("undefined reference to 'main'");
             }
             
+            // Prepare argv for main
             Vector mainArgs = new Vector();
-            mainArgs.addElement(new Double(args != null ? args.size() : 0));
-            mainArgs.addElement(args != null ? args : new Hashtable());
+            mainArgs.addElement(new Double(args != null ? args.size() : 0)); // argc
+            mainArgs.addElement(args != null ? args : new Hashtable()); // argv
             
+            // Call main and get return value as exit status
             Object result = mainFunc.call(mainArgs);
             if (result instanceof Double) {
                 exitStatus = ((Double) result).intValue();
@@ -171,6 +179,8 @@ public class C2ME {
         return ITEM;
     }
     
+    // |
+    // Function Declaration Detection
     private boolean isFunctionDeclaration() throws Exception {
         int savedPos = tokenIndex;
         try {
@@ -196,6 +206,7 @@ public class C2ME {
         String funcName = (String) consume(TOKEN_IDENTIFIER).value;
         consume(TOKEN_LPAREN);
         
+        // Parse parameters
         Vector params = new Vector();
         if (peek().type != TOKEN_RPAREN) {
             do {
@@ -219,6 +230,7 @@ public class C2ME {
         }
         consume(TOKEN_RPAREN);
         
+        // Parse function body
         consume(TOKEN_LBRACE);
         Vector bodyTokens = new Vector();
         int depth = 1;
@@ -240,10 +252,13 @@ public class C2ME {
             }
         }
         
+        // Create and register function
         CFunction func = new CFunction(params, bodyTokens, scope, returnType);
         scope.put(funcName, func);
     }
     
+    // |
+    // Statement Parsing
     public Object statement(Hashtable scope) throws Exception {
         CToken current = peek();
         
@@ -255,50 +270,41 @@ public class C2ME {
             throw new Error("Process killed"); 
         }
         
+        // Variable declaration
         if (isTypeSpecifier(current.type)) {
             return declaration(scope);
         }
+        // Label
         else if (current.type == TOKEN_IDENTIFIER && peekNext().type == TOKEN_COLON) {
             String labelName = (String) consume(TOKEN_IDENTIFIER).value;
             consume(TOKEN_COLON);
             labels.put(labelName, new Integer(tokenIndex));
             return null;
         }
-        else if (current.type == TOKEN_IDENTIFIER || current.type == TOKEN_STAR || current.type == TOKEN_AMPERSAND) {
-            boolean isPointerDeref = (current.type == TOKEN_STAR);
-            Object left = unary(scope);
+        else if (current.type == TOKEN_IDENTIFIER) {
+            String varName = (String) consume(TOKEN_IDENTIFIER).value;
             
-            if (peek().type == TOKEN_ASSIGN) {
-                consume(TOKEN_ASSIGN);
-                Object value = expression(scope);
-                
-                if (isPointerDeref) {
-                    Object target = left;
-                    if (left instanceof String) {
-                        target = unwrap(scope.get((String) left));
-                    }
-                    if (isPointer(target)) {
-                        setPointerValue(target, value);
-                    } else {
-                        throw new Exception("Dereference of non-pointer value");
-                    }
-                } else if (left instanceof String) {
-                    String varName = (String) left;
-                    scope.put(varName, value == null ? C_NIL : value);
-                } else if (isPointer(left)) {
-                    setPointerValue(left, value);
-                }
-                
+            // Function call
+            if (peek().type == TOKEN_LPAREN) {
+                Object result = callFunction(varName, scope);
                 if (peek().type == TOKEN_SEMICOLON) {
                     consume(TOKEN_SEMICOLON);
                 }
+                return result;
+            }
+            // Assignment
+            else if (peek().type == TOKEN_ASSIGN) {
+                consume(TOKEN_ASSIGN);
+                Object value = expression(scope);
+                scope.put(varName, value == null ? C_NIL : value);
+                consume(TOKEN_SEMICOLON);
                 return value;
             }
-            
-            if (peek().type == TOKEN_SEMICOLON) {
+            // Variable access
+            else {
                 consume(TOKEN_SEMICOLON);
+                return unwrap(scope.get(varName));
             }
-            return left;
         }
         else if (current.type == TOKEN_IF) {
             return ifStatement(scope);
@@ -349,30 +355,26 @@ public class C2ME {
         int typeSpec = peek().type;
         consume(typeSpec);
         
+        // Check for pointer declaration
+        boolean isPointer = false;
+        if (peek().type == TOKEN_STAR) {
+            isPointer = true;
+            consume(TOKEN_STAR);
+        }
+        
         Vector varNames = new Vector();
         Vector initializers = new Vector();
         
         do {
-            boolean isPointer = false;
-            while (peek().type == TOKEN_STAR) {
-                isPointer = true;
-                consume(TOKEN_STAR);
-            }
-            
             String varName = (String) consume(TOKEN_IDENTIFIER).value;
             varNames.addElement(varName);
             
-            if (isPointer) {
-                Hashtable ptr = createPointer(C_NIL, "pointer");
-                initializers.addElement(ptr);
+            if (peek().type == TOKEN_ASSIGN) {
+                consume(TOKEN_ASSIGN);
+                Object initValue = expression(scope);
+                initializers.addElement(initValue);
             } else {
-                if (peek().type == TOKEN_ASSIGN) {
-                    consume(TOKEN_ASSIGN);
-                    Object initValue = expression(scope);
-                    initializers.addElement(initValue);
-                } else {
-                    initializers.addElement(getDefaultValue(typeSpec));
-                }
+                initializers.addElement(getDefaultValue(typeSpec));
             }
             
             if (peek().type == TOKEN_COMMA) {
@@ -387,10 +389,26 @@ public class C2ME {
         for (int i = 0; i < varNames.size(); i++) {
             String name = (String) varNames.elementAt(i);
             Object value = initializers.elementAt(i);
-            scope.put(name, value);
+            
+            if (isPointer) {
+                Hashtable ptr = createPointer(value, getTypeName(typeSpec));
+                scope.put(name, ptr);
+            } else {
+                scope.put(name, value);
+            }
         }
         
         return null;
+    }
+    
+    private String getTypeName(int typeSpec) {
+        if (typeSpec == TOKEN_INT) return "int";
+        if (typeSpec == TOKEN_CHAR_KEY) return "char";
+        if (typeSpec == TOKEN_DOUBLE) return "double";
+        if (typeSpec == TOKEN_FLOAT) return "float";
+        if (typeSpec == TOKEN_LONG) return "long";
+        if (typeSpec == TOKEN_SHORT) return "short";
+        return "auto";
     }
     
     private Object getDefaultValue(int typeSpec) {
@@ -495,6 +513,7 @@ public class C2ME {
         consume(TOKEN_FOR);
         consume(TOKEN_LPAREN);
         
+        // Initialization
         if (peek().type != TOKEN_SEMICOLON) {
             if (isTypeSpecifier(peek().type)) {
                 declaration(scope);
@@ -506,6 +525,7 @@ public class C2ME {
             consume(TOKEN_SEMICOLON);
         }
         
+        // Condition
         int conditionTokenIndex = tokenIndex;
         Object condition = null;
         boolean hasCondition = peek().type != TOKEN_SEMICOLON;
@@ -514,6 +534,7 @@ public class C2ME {
         }
         consume(TOKEN_SEMICOLON);
         
+        // Increment
         int incrementTokenIndex = tokenIndex;
         boolean hasIncrement = peek().type != TOKEN_RPAREN;
         if (hasIncrement) {
@@ -669,6 +690,8 @@ public class C2ME {
         return result;
     }
     
+    // |
+    // Expression Parsing
     private Object expression(Hashtable scope) throws Exception {
         return logicalOr(scope);
     }
@@ -823,8 +846,9 @@ public class C2ME {
                 String varName = (String) consume(TOKEN_IDENTIFIER).value;
                 Object val = unwrap(scope.get(varName));
                 double newVal = toDouble(val) + 1;
-                scope.put(varName, new Double(newVal));
-                return new Double(newVal);
+                Object result = new Double(newVal);
+                scope.put(varName, result);
+                return result;
             }
         } else if (peek().type == TOKEN_DECREMENT) {
             consume(TOKEN_DECREMENT);
@@ -832,37 +856,40 @@ public class C2ME {
                 String varName = (String) consume(TOKEN_IDENTIFIER).value;
                 Object val = unwrap(scope.get(varName));
                 double newVal = toDouble(val) - 1;
-                scope.put(varName, new Double(newVal));
-                return new Double(newVal);
+                Object result = new Double(newVal);
+                scope.put(varName, result);
+                return result;
             }
         } else if (peek().type == TOKEN_STAR) {
+            // Dereference pointer: *ptr
             consume(TOKEN_STAR);
             Object ptr = unary(scope);
-            
-            if (ptr instanceof String) {
-                String ptrName = (String) ptr;
-                ptr = unwrap(scope.get(ptrName));
-            }
-            
             if (isPointer(ptr)) {
                 return getPointerValue(ptr);
             }
             throw new Exception("Dereference of non-pointer value");
         } else if (peek().type == TOKEN_AMPERSAND) {
+            // Address of: &var
             consume(TOKEN_AMPERSAND);
             String varName = (String) consume(TOKEN_IDENTIFIER).value;
-            
+            Object var = scope.get(varName);
             String ptrName = "&" + varName;
             if (scope.containsKey(ptrName)) {
                 return scope.get(ptrName);
             }
-            
-            Object varValue = scope.get(varName);
-            Hashtable ptr = createPointer(varValue == null ? C_NIL : varValue, "auto");
+            Hashtable ptr = createPointer(var, getTypeNameFromValue(var));
             scope.put(ptrName, ptr);
             return ptr;
         }
         return postfix(scope);
+    }
+    
+    private String getTypeNameFromValue(Object val) {
+        if (val instanceof Double) return "int";
+        if (val instanceof String) return "char*";
+        if (val instanceof Character) return "char";
+        if (val instanceof Hashtable && isPointer(val)) return "pointer";
+        return "auto";
     }
     
     private Object postfix(Hashtable scope) throws Exception {
@@ -873,8 +900,9 @@ public class C2ME {
             if (primary instanceof String) {
                 String varName = (String) primary;
                 Object val = scope.get(varName);
-                Double newVal = new Double(toDouble(val) + 1);
-                scope.put(varName, newVal);
+                double newVal = toDouble(val) + 1;
+                Object result = new Double(newVal);
+                scope.put(varName, result);
                 return val;
             }
         } else if (peek().type == TOKEN_DECREMENT) {
@@ -882,8 +910,9 @@ public class C2ME {
             if (primary instanceof String) {
                 String varName = (String) primary;
                 Object val = scope.get(varName);
-                Double newVal = new Double(toDouble(val) - 1);
-                scope.put(varName, newVal);
+                double newVal = toDouble(val) - 1;
+                Object result = new Double(newVal);
+                scope.put(varName, result);
                 return val;
             }
         }
@@ -896,7 +925,7 @@ public class C2ME {
         
         if (current.type == TOKEN_NUMBER) {
             consume(TOKEN_NUMBER);
-            return new Double(toDouble(current.value));
+            return current.value;
         }
         else if (current.type == TOKEN_STRING) {
             consume(TOKEN_STRING);
@@ -908,23 +937,27 @@ public class C2ME {
         }
         else if (current.type == TOKEN_IDENTIFIER) {
             String name = (String) consume(TOKEN_IDENTIFIER).value;
+            Object value = unwrap(scope.get(name));
+            if (value == null && globals.containsKey(name)) {
+                value = unwrap(globals.get(name));
+            }
             
+            // Array access: arr[index]
             if (peek().type == TOKEN_LBRACKET) {
                 consume(TOKEN_LBRACKET);
                 Object index = expression(scope);
                 consume(TOKEN_RBRACKET);
-                
-                Object value = unwrap(scope.get(name));
-                if (value == null && globals.containsKey(name)) {
-                    value = unwrap(globals.get(name));
-                }
                 
                 int idx = toInt(index);
                 
                 if (value instanceof Vector) {
                     Vector vec = (Vector) value;
                     if (idx >= 0 && idx < vec.size()) {
-                        return vec.elementAt(idx);
+                        Object elem = vec.elementAt(idx);
+                        if (isPointer(elem)) {
+                            return elem;
+                        }
+                        return elem;
                     }
                     return C_NIL;
                 }
@@ -935,14 +968,24 @@ public class C2ME {
                     }
                     return C_NIL;
                 }
+                if (isPointer(value)) {
+                    // Treat pointer as array
+                    Object ptrValue = getPointerValue(value);
+                    if (ptrValue instanceof Vector) {
+                        Vector vec = (Vector) ptrValue;
+                        if (idx >= 0 && idx < vec.size()) {
+                            return vec.elementAt(idx);
+                        }
+                    }
+                }
                 return C_NIL;
             }
-            
-            if (peek().type == TOKEN_LPAREN) {
+            // Function call
+            else if (peek().type == TOKEN_LPAREN) {
                 return callFunction(name, scope);
             }
             
-            return name;
+            return value == null ? C_NIL : value;
         }
         else if (current.type == TOKEN_LPAREN) {
             consume(TOKEN_LPAREN);
@@ -993,6 +1036,8 @@ public class C2ME {
         }
     }
     
+    // |
+    // Helper Methods
     private boolean isTypeSpecifier(int type) {
         return (type >= TOKEN_AUTO && type <= TOKEN_VOLATILE) || 
                type == TOKEN_INT || type == TOKEN_CHAR_KEY ||
@@ -1140,6 +1185,8 @@ public class C2ME {
         tokenIndex = savedTokenIndex;
     }
     
+    // |
+    // Tokenizer Methods
     public Vector tokenize(String code) throws Exception {
         if (midlet.cacheLua.containsKey(code)) { 
             return (Vector) midlet.cacheLua.get(code); 
@@ -1284,9 +1331,17 @@ public class C2ME {
                 tokens.addElement(new CToken(TOKEN_AND, "&&")); 
                 i += 2; 
             }
+            else if (c == '&' && i + 1 < code.length() && code.charAt(i + 1) != '&') { 
+                tokens.addElement(new CToken(TOKEN_AMPERSAND, "&")); 
+                i++; 
+            }
             else if (c == '|' && i + 1 < code.length() && code.charAt(i + 1) == '|') { 
                 tokens.addElement(new CToken(TOKEN_OR, "||")); 
                 i += 2; 
+            }
+            else if (c == '|') { 
+                tokens.addElement(new CToken(TOKEN_BITOR, "|")); 
+                i++; 
             }
             else if (c == '.' && i + 2 < code.length() && code.charAt(i + 1) == '.' && code.charAt(i + 2) == '.') { 
                 tokens.addElement(new CToken(TOKEN_ELLIPSIS, "...")); 
@@ -1295,10 +1350,6 @@ public class C2ME {
             else if (c == '#') { 
                 tokens.addElement(new CToken(TOKEN_PREPROCESSOR, "#")); 
                 i++; 
-            }
-            else if (c == '&') {
-                tokens.addElement(new CToken(TOKEN_AMPERSAND, "&"));
-                i++;
             }
             else if (c == '+') { 
                 tokens.addElement(new CToken(TOKEN_PLUS, "+")); 
@@ -1457,6 +1508,8 @@ public class C2ME {
         return isLetter(c) || isDigit(c); 
     }
 
+    // |
+    // Token Navigation
     public CToken peek() {
         if (tokenIndex < tokens.size()) {
             return (CToken) tokens.elementAt(tokenIndex);
@@ -1487,6 +1540,7 @@ public class C2ME {
         throw new Exception("Expected token type " + expectedType + " but got " + token.type);
     }
 
+    // Helper methods for type conversion
     private String toCString(Object obj) {
         if (obj == null || obj == C_NIL) return "";
         if (obj instanceof String) return (String) obj;
@@ -1508,23 +1562,14 @@ public class C2ME {
             }
             return sb.toString();
         }
+        if (obj instanceof Hashtable && isPointer(obj)) {
+            return toCString(getPointerValue(obj));
+        }
         return obj.toString();
     }
 
     private int toInteger(Object obj) {
-        if (obj == null || obj == C_NIL) return 0;
-        if (obj instanceof Integer) return ((Integer) obj).intValue();
-        if (obj instanceof Double) return ((Double) obj).intValue();
-        if (obj instanceof String) {
-            try {
-                return Integer.parseInt((String) obj);
-            } catch (NumberFormatException e) {
-                return 0;
-            }
-        }
-        if (obj instanceof Boolean) return ((Boolean) obj).booleanValue() ? 1 : 0;
-        if (obj instanceof Character) return (int) ((Character) obj).charValue();
-        return 0;
+        return toInt(obj);
     }
 
     private double toDouble(Object obj) {
@@ -1540,11 +1585,12 @@ public class C2ME {
         }
         if (obj instanceof Character) return (double) ((Character) obj).charValue();
         if (obj instanceof Boolean) return ((Boolean) obj).booleanValue() ? 1.0 : 0.0;
+        if (obj instanceof Hashtable) {
+            if (isPointer(obj)) {
+                return toDouble(getPointerValue(obj));
+            }
+        }
         return 0.0;
-    }
-
-    private int toInt(Object obj) {
-        return toInteger(obj);
     }
 
     private Object wrap(Object v) { 
@@ -1555,6 +1601,7 @@ public class C2ME {
         return v == C_NIL ? null : v; 
     }
 
+    // Pointer operations using Hashtable
     private Hashtable createPointer(Object value, String type) {
         Hashtable ptr = new Hashtable();
         ptr.put("value", value == null ? C_NIL : value);
@@ -1580,7 +1627,30 @@ public class C2ME {
         return obj instanceof Hashtable && ((Hashtable) obj).containsKey("value") 
                && ((Hashtable) obj).containsKey("type");
     }
-
+    
+    private int toInt(Object obj) {
+        if (obj == null || obj == C_NIL) return 0;
+        if (obj instanceof Double) return ((Double) obj).intValue();
+        if (obj instanceof Integer) return ((Integer) obj).intValue();
+        if (obj instanceof String) {
+            try {
+                return Integer.parseInt((String) obj);
+            } catch (NumberFormatException e) {
+                return 0;
+            }
+        }
+        if (obj instanceof Character) return (int) ((Character) obj).charValue();
+        if (obj instanceof Boolean) return ((Boolean) obj).booleanValue() ? 1 : 0;
+        if (obj instanceof Hashtable) {
+            if (isPointer(obj)) {
+                return toInt(getPointerValue(obj));
+            }
+        }
+        return 0;
+    }
+    
+    // |
+    // CFunction Class
     public class CFunction {
         private Vector params;
         private Vector bodyTokens;
@@ -1648,44 +1718,28 @@ public class C2ME {
         
         private Object builtinCall(Vector args) throws Exception {
             switch (builtinId) {
-                case BUILTIN_PRINTF:
-                    return builtin_printf(args);
-                case BUILTIN_PUTS:
-                    return builtin_puts(args);
-                case BUILTIN_PUTCHAR:
-                    return builtin_putchar(args);
-                case BUILTIN_GETCHAR:
-                    return builtin_getchar();
-                case BUILTIN_GETS:
-                    return builtin_gets(args);
-                case BUILTIN_SYSTEM:
-                    return builtin_system(args);
-                case BUILTIN_EXIT:
-                    return builtin_exit(args);
-                case BUILTIN_MALLOC:
-                    return builtin_malloc(args);
-                case BUILTIN_FREE:
-                    return builtin_free(args);
-                case BUILTIN_STRLEN:
-                    return builtin_strlen(args);
-                case BUILTIN_STRCMP:
-                    return builtin_strcmp(args);
-                case BUILTIN_STRCPY:
-                    return builtin_strcpy(args);
-                case BUILTIN_STRCAT:
-                    return builtin_strcat(args);
-                case BUILTIN_ATOI:
-                    return builtin_atoi(args);
-                case BUILTIN_ITOA:
-                    return builtin_itoa(args);
-                case BUILTIN_ISDIGIT:
-                    return builtin_isdigit(args);
-                case BUILTIN_ISALPHA:
-                    return builtin_isalpha(args);
+                case BUILTIN_PRINTF: return builtin_printf(args);
+                case BUILTIN_PUTS: return builtin_puts(args);
+                case BUILTIN_PUTCHAR: return builtin_putchar(args);
+                case BUILTIN_GETCHAR: return builtin_getchar();
+                case BUILTIN_GETS: return builtin_gets(args);
+                case BUILTIN_SYSTEM: return builtin_system(args);
+                case BUILTIN_EXIT: return builtin_exit(args);
+                case BUILTIN_MALLOC: return builtin_malloc(args);
+                case BUILTIN_FREE: return builtin_free(args);
+                case BUILTIN_STRLEN: return builtin_strlen(args);
+                case BUILTIN_STRCMP: return builtin_strcmp(args);
+                case BUILTIN_STRCPY: return builtin_strcpy(args);
+                case BUILTIN_STRCAT: return builtin_strcat(args);
+                case BUILTIN_ATOI: return builtin_atoi(args);
+                case BUILTIN_ITOA: return builtin_itoa(args);
+                case BUILTIN_ISDIGIT: return builtin_isdigit(args);
+                case BUILTIN_ISALPHA: return builtin_isalpha(args);
             }
             return null;
         }
         
+        // printf - Formatted output
         private Object builtin_printf(Vector args) throws Exception {
             if (args.isEmpty()) return new Integer(0);
             
@@ -1704,28 +1758,28 @@ public class C2ME {
                         case 'd':
                         case 'i': {
                             if (argIndex < args.size()) {
-                                int val = toInteger(args.elementAt(argIndex++));
+                                int val = toInt(args.elementAt(argIndex++));
                                 output.append(val);
                             }
                             break;
                         }
                         case 'u': {
                             if (argIndex < args.size()) {
-                                int val = toInteger(args.elementAt(argIndex++));
+                                int val = toInt(args.elementAt(argIndex++));
                                 output.append(val & 0xFFFFFFFFL);
                             }
                             break;
                         }
                         case 'x': {
                             if (argIndex < args.size()) {
-                                int val = toInteger(args.elementAt(argIndex++));
+                                int val = toInt(args.elementAt(argIndex++));
                                 output.append(Integer.toHexString(val));
                             }
                             break;
                         }
                         case 'X': {
                             if (argIndex < args.size()) {
-                                int val = toInteger(args.elementAt(argIndex++));
+                                int val = toInt(args.elementAt(argIndex++));
                                 output.append(Integer.toHexString(val).toUpperCase());
                             }
                             break;
@@ -1739,7 +1793,7 @@ public class C2ME {
                         }
                         case 'c': {
                             if (argIndex < args.size()) {
-                                int val = toInteger(args.elementAt(argIndex++));
+                                int val = toInt(args.elementAt(argIndex++));
                                 output.append((char) val);
                             }
                             break;
@@ -1754,7 +1808,7 @@ public class C2ME {
                         case 'p': {
                             output.append("0x");
                             if (argIndex < args.size()) {
-                                int val = toInteger(args.elementAt(argIndex++));
+                                int val = toInt(args.elementAt(argIndex++));
                                 output.append(Integer.toHexString(val));
                             }
                             break;
@@ -1776,6 +1830,7 @@ public class C2ME {
             return new Integer(output.length());
         }
 
+        // puts - Print string with newline
         private Object builtin_puts(Vector args) throws Exception {
             if (args.isEmpty()) {
                 midlet.print("", stdout, id, father);
@@ -1787,40 +1842,44 @@ public class C2ME {
             return new Integer(str.length() + 1);
         }
 
+        // putchar - Print single character
         private Object builtin_putchar(Vector args) throws Exception {
             if (args.isEmpty()) return new Integer(-1);
             
-            int c = toInteger(args.elementAt(0));
+            int c = toInt(args.elementAt(0));
             midlet.print(String.valueOf((char) c), stdout, id, father);
             return new Integer(c);
         }
 
+        // getchar - Read character from stdin
         private Object builtin_getchar() throws Exception {
-            String stdin = midlet.stdin.getString();
-            if (stdin == null || stdin.length() == 0) return new Integer(-1);
+            String stdinStr = midlet.stdin.getString();
+            if (stdinStr == null || stdinStr.length() == 0) return new Integer(-1);
             
-            char c = stdin.charAt(0);
-            midlet.stdin.setString(stdin.length() > 1 ? stdin.substring(1) : "");
+            char c = stdinStr.charAt(0);
+            midlet.stdin.setString(stdinStr.length() > 1 ? stdinStr.substring(1) : "");
             return new Integer((int) c);
         }
 
+        // gets - Read string from stdin
         private Object builtin_gets(Vector args) throws Exception {
-            String stdin = midlet.stdin.getString();
-            if (stdin == null || stdin.length() == 0) return null;
+            String stdinStr = midlet.stdin.getString();
+            if (stdinStr == null || stdinStr.length() == 0) return null;
             
-            int newlinePos = stdin.indexOf('\n');
+            int newlinePos = stdinStr.indexOf('\n');
             String line;
             if (newlinePos != -1) {
-                line = stdin.substring(0, newlinePos);
-                midlet.stdin.setString(stdin.substring(newlinePos + 1));
+                line = stdinStr.substring(0, newlinePos);
+                midlet.stdin.setString(stdinStr.substring(newlinePos + 1));
             } else {
-                line = stdin;
+                line = stdinStr;
                 midlet.stdin.setString("");
             }
             
             return line;
         }
 
+        // system - Execute shell command
         private Object builtin_system(Vector args) throws Exception {
             if (args.isEmpty()) return new Integer(0);
             
@@ -1853,10 +1912,11 @@ public class C2ME {
             return new Integer(0);
         }
 
+        // exit - Terminate program
         private Object builtin_exit(Vector args) throws Exception {
             int exitCode = 0;
             if (!args.isEmpty()) {
-                exitCode = toInteger(args.elementAt(0));
+                exitCode = toInt(args.elementAt(0));
             }
             
             doreturn = true;
@@ -1864,10 +1924,11 @@ public class C2ME {
             return new Integer(exitCode);
         }
 
+        // malloc - Allocate memory (simulated with Vector)
         private Object builtin_malloc(Vector args) throws Exception {
             if (args.isEmpty()) return null;
             
-            int size = toInteger(args.elementAt(0));
+            int size = toInt(args.elementAt(0));
             Vector memory = new Vector();
             memory.addElement(new Integer(size));
             for (int i = 0; i < size; i++) {
@@ -1876,10 +1937,18 @@ public class C2ME {
             return memory;
         }
 
+        // free - Free allocated memory
         private Object builtin_free(Vector args) throws Exception {
+            if (args.isEmpty()) return null;
+            
+            Object ptr = args.elementAt(0);
+            if (ptr instanceof Vector) {
+                ptr = null;
+            }
             return null;
         }
 
+        // strlen - Get string length
         private Object builtin_strlen(Vector args) throws Exception {
             if (args.isEmpty()) return new Integer(0);
             
@@ -1887,6 +1956,7 @@ public class C2ME {
             return new Integer(str.length());
         }
 
+        // strcmp - Compare strings
         private Object builtin_strcmp(Vector args) throws Exception {
             if (args.size() < 2) return new Integer(0);
             
@@ -1896,6 +1966,7 @@ public class C2ME {
             return new Integer(s1.compareTo(s2));
         }
 
+        // strcpy - Copy string
         private Object builtin_strcpy(Vector args) throws Exception {
             if (args.size() < 2) return null;
             
@@ -1903,6 +1974,7 @@ public class C2ME {
             return src;
         }
 
+        // strcat - Concatenate strings
         private Object builtin_strcat(Vector args) throws Exception {
             if (args.size() < 2) return null;
             
@@ -1912,6 +1984,7 @@ public class C2ME {
             return s1 + s2;
         }
 
+        // atoi - Convert string to integer
         private Object builtin_atoi(Vector args) throws Exception {
             if (args.isEmpty()) return new Integer(0);
             
@@ -1923,24 +1996,27 @@ public class C2ME {
             }
         }
 
+        // itoa - Convert integer to string
         private Object builtin_itoa(Vector args) throws Exception {
             if (args.isEmpty()) return "";
             
-            int value = toInteger(args.elementAt(0));
+            int value = toInt(args.elementAt(0));
             return Integer.toString(value);
         }
 
+        // isdigit - Check if character is digit
         private Object builtin_isdigit(Vector args) throws Exception {
             if (args.isEmpty()) return new Integer(0);
             
-            int c = toInteger(args.elementAt(0));
+            int c = toInt(args.elementAt(0));
             return new Integer((c >= '0' && c <= '9') ? 1 : 0);
         }
 
+        // isalpha - Check if character is alphabetic
         private Object builtin_isalpha(Vector args) throws Exception {
             if (args.isEmpty()) return new Integer(0);
             
-            int c = toInteger(args.elementAt(0));
+            int c = toInt(args.elementAt(0));
             return new Integer(((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) ? 1 : 0);
         }
     }
