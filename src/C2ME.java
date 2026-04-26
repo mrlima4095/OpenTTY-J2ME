@@ -1208,7 +1208,7 @@ public class C2ME {
                     String numStr = sb.toString();
                     if (numStr.indexOf('.') != -1 || numStr.indexOf('e') != -1 || numStr.indexOf('E') != -1)
                         tokens.addElement(new CToken(TOKEN_NUMBER, new Double(Double.parseDouble(numStr))));
-                    else tokens.addElement(new CToken(TOKEN_NUMBER, new Integer(Integer.parseInt(numStr))));
+                    else tokens.addElement(new CToken(TOKEN_NUMBER, new Double(Double.parseInt(numStr))));
                 } catch (NumberFormatException e) { 
                     throw new RuntimeException("Invalid number format '" + sb.toString() + "'"); 
                 }
