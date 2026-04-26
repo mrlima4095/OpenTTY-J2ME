@@ -3010,11 +3010,31 @@ public class Lua {
                 }
                 else if (mainCommand.equals("build")) {
                     String pid = midlet.genpid();
-                    Process process = new Process(midlet, ("build " + args[0]).trim(), midlet.joinpath(args[0], father), midlet.getUser(id), id, pid, stdout, father, -1);
-                    midlet.sys.put(pid, process);
-                    Hashtable digest = process.c.run(args[0], midlet.read(midlet.joinpath(args[0], father), father), new Hashtable());
-
-                    status = (Integer) digest.get("status");
+                    String filePath = midlet.joinpath(args[0], father);
+                    String sourceCode = midlet.read(filePath, father);
+                    
+                    if (sourceCode == null || sourceCode.equals("")) {
+                        midlet.print("build: " + args[0] + ": empty or not found", output, id, father);
+                        status = 127;
+                    } else {
+                        Process process = new Process(midlet, ("build " + args[0]).trim(), filePath, midlet.getUser(id), id, pid, output, father, -1);
+                        midlet.sys.put(pid, process);
+                        
+                        Hashtable digest = process.c.run(args[0], sourceCode, new Hashtable());
+                        
+                        if (digest != null && digest.containsKey("status")) {
+                            Object statusObj = digest.get("status");
+                            if (statusObj instanceof Integer) {
+                                status = ((Integer) statusObj).intValue();
+                            } else if (statusObj instanceof Double) {
+                                status = ((Double) statusObj).intValue();
+                            } else {
+                                status = 1;
+                            }
+                        } else {
+                            status = 1;
+                        }
+                    }
                 }
                 else if (mainCommand.equals("builtin") || mainCommand.equals("command")) { Vector payload = new Vector(); payload.addElement(argument); payload.addElement(true); payload.addElement(FALSE); return exec(payload); }
                 else if (mainCommand.equals("false")) { status = 255; }
