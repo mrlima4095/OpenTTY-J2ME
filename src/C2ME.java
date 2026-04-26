@@ -343,7 +343,26 @@ public class C2ME {
             consume(TOKEN_SEMICOLON);
             return null;
         }
-        
+        else if (current.type == TOKEN_PREPROCESSOR) {
+            // Pular a diretiva #include
+            consume(TOKEN_PREPROCESSOR);
+            // Pular o nome do arquivo (include)
+            if (peek().type == TOKEN_IDENTIFIER || peek().type == TOKEN_STRING) {
+                consume();
+            }
+            // Pular até o final da linha
+            while (peek().type != TOKEN_EOF && peek().type != TOKEN_SEMICOLON) {
+                if (peek().type == TOKEN_LT || peek().type == TOKEN_GT) {
+                    consume();
+                } else if (peek().type == TOKEN_IDENTIFIER || peek().type == TOKEN_STRING) {
+                    consume();
+                } else {
+                    break;
+                }
+            }
+            return null;
+        }
+                
         throw new Exception("Unexpected token: " + current.type);
     }
     
@@ -1536,6 +1555,33 @@ public class C2ME {
 
     private Object wrap(Object v) { return v == null ? C_NIL : v; }
     private Object unwrap(Object v) { return v == C_NIL ? null : v; }
+
+// No lugar da classe Pointer, use Hashtable
+private Hashtable createPointer(Object value, String type) {
+    Hashtable ptr = new Hashtable();
+    ptr.put("value", value == null ? C_NIL : value);
+    ptr.put("type", type);
+    ptr.put("address", new Integer(System.identityHashCode(ptr)));
+    return ptr;
+}
+
+private Object getPointerValue(Object ptr) {
+    if (ptr instanceof Hashtable && ((Hashtable) ptr).containsKey("value")) {
+        return ((Hashtable) ptr).get("value");
+    }
+    return ptr;
+}
+
+private void setPointerValue(Object ptr, Object value) {
+    if (ptr instanceof Hashtable && ((Hashtable) ptr).containsKey("value")) {
+        ((Hashtable) ptr).put("value", value == null ? C_NIL : value);
+    }
+}
+
+private boolean isPointer(Object obj) {
+    return obj instanceof Hashtable && ((Hashtable) obj).containsKey("value") 
+           && ((Hashtable) obj).containsKey("type");
+}
     
     // |
     // CFunction Class
