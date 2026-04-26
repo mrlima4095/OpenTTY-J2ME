@@ -85,7 +85,7 @@ public class C2ME {
         this.stdout = stdout; 
         this.father = scope;
         this.tokenIndex = 0;
-        initializeGlobals();
+        //initializeGlobals();
     }
     
     private void initializeGlobals() {
