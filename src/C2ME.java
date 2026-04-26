@@ -64,6 +64,8 @@ public class C2ME {
     public static final int BUILTIN_ITOA = 214;
     public static final int BUILTIN_ISDIGIT = 215;
     public static final int BUILTIN_ISALPHA = 216;
+
+    public static final Object C_NIL = new Object();
         
     public static class CToken { 
         int type; 
@@ -85,11 +87,11 @@ public class C2ME {
         this.stdout = stdout; 
         this.father = scope;
         this.tokenIndex = 0;
-        //initializeGlobals();
+        initializeGlobals();
     }
     
     private void initializeGlobals() {
-        globals.put("NULL", null);
+        globals.put("NULL", C_NIL);
         globals.put("EOF", new Integer(-1));
         
         // Register built-in C functions
@@ -297,7 +299,7 @@ public class C2ME {
             else if (peek().type == TOKEN_ASSIGN) {
                 consume(TOKEN_ASSIGN);
                 Object value = expression(scope);
-                scope.put(varName, value);
+                scope.put(varName, value == null ? C_NIL : value);
                 consume(TOKEN_SEMICOLON);
                 return value;
             }
@@ -816,7 +818,7 @@ public class C2ME {
             consume(TOKEN_INCREMENT);
             if (peek().type == TOKEN_IDENTIFIER) {
                 String varName = (String) consume(TOKEN_IDENTIFIER).value;
-                Object val = scope.get(varName);
+                Object val = unwrap(scope.get(varName));
                 Double newVal = new Double(toNumber(val).doubleValue() + 1);
                 scope.put(varName, newVal);
                 return newVal;
@@ -825,7 +827,7 @@ public class C2ME {
             consume(TOKEN_DECREMENT);
             if (peek().type == TOKEN_IDENTIFIER) {
                 String varName = (String) consume(TOKEN_IDENTIFIER).value;
-                Object val = scope.get(varName);
+                Object val = unwrap(scope.get(varName));
                 Double newVal = new Double(toNumber(val).doubleValue() - 1);
                 scope.put(varName, newVal);
                 return newVal;
@@ -1112,10 +1114,6 @@ public class C2ME {
         }
         
         tokenIndex = savedTokenIndex;
-    }
-    
-    private Object unwrap(Object v) { 
-        return v; 
     }
     
     // |
@@ -1537,6 +1535,9 @@ public class C2ME {
         if (format.equals("o")) return Integer.toOctalString(num);
         return String.valueOf(num);
     }
+
+    private Object wrap(Object v) { return v == null ? C_NIL : v; }
+    private Object unwrap(Object v) { return v == C_NIL ? null : v; }
     
     // |
     // CFunction Class
@@ -1937,3 +1938,5 @@ public class C2ME {
 
     }
 }
+// |
+// EOF
