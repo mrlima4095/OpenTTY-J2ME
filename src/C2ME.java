@@ -971,15 +971,27 @@ if (peek().type == TOKEN_LBRACKET) {
                 return new Double(1);
             }
         }
-        else if (current.type == TOKEN_MULTIPLY) {
-            // Dereferência: *ptr
+        // No primary(), quando encontra IDENTIFIER seguido de *
+        else if (peek().type == TOKEN_MULTIPLY) {
             consume(TOKEN_MULTIPLY);
-            Object ptr = unary(scope);
+            String ptrName = (String) consume(TOKEN_IDENTIFIER).value;
             
-            if (isPointer(ptr)) {
-                return getPointerValue(ptr);
+            // Cria ponteiro nulo
+            Hashtable ptr = createPointer(C_NIL, "pointer");
+            scope.put(ptrName, ptr);
+            
+            // Se tem inicialização
+            if (peek().type == TOKEN_ASSIGN) {
+                consume(TOKEN_ASSIGN);
+                Object initValue = expression(scope);
+                if (isPointer(initValue)) {
+                    setPointerValue(ptr, getPointerValue(initValue));
+                } else {
+                    setPointerValue(ptr, initValue);
+                }
             }
-            throw new Exception("Dereference of non-pointer value");
+            
+            return ptr;
         }
         else if (current.type == TOKEN_AMPERSAND) {
             // Endereço: &var
