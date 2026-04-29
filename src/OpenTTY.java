@@ -179,12 +179,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public String getCatch(Throwable e) { String message = e.getMessage(); return message == null || message.length() == 0 || message.equals("null") ? e.getClass().getName() : e.getClass().getName() + ": " + message; }
     // |
     public String getcontent(String file, Hashtable scope) { return file.startsWith("/") ? read(file, scope) : read(((String) scope.get("PWD")) + file, scope); }
-    public String getpattern(String text) { return text.trim().startsWith("\"") && text.trim().endsWith("\"") ? replace(text, "\"", "") : text.trim(); }
+    public String getpattern(String text) { return text.trim().startsWith("\"") && text.trim().endsWith("\"") ? text.substring(1, text.length() - 1) : text.trim(); } // replace(text, "\"", "")
     // | (Arrays)
     public String[] split(String content, char div) { Vector lines = new Vector(); int start = 0; for (int i = 0; i < content.length(); i++) { if (content.charAt(i) == div) { lines.addElement(content.substring(start, i)); start = i + 1; } } if (start < content.length()) { lines.addElement(content.substring(start)); } String[] result = new String[lines.size()]; lines.copyInto(result); return result; }
     public String[] splitArgs(String input) {
         Vector result = new Vector();
-        StringBuffer current = new StringBuffer(); // Use StringBuffer se StringBuilder não existir no seu J2ME
+        StringBuffer current = new StringBuffer();
         boolean inDoubleQuotes = false;
         boolean inSingleQuotes = false;
         boolean escaped = false;
