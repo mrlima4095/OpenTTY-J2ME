@@ -38,7 +38,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public void init() {
         try {
             Hashtable args = new Hashtable(); args.put(new Double(0), "/bin/init");
-            globals.put("PWD", "/home/"); globals.put("USER", "root"); globals.put("ROOT", "/"); globals.put("ALIAS", new Hashtable()); userID.put("fetuber", 1000);
+            globals.put("PWD", "/home/"); globals.put("USER", "root"); globals.put("ROOT", "/"); globals.put("ALIAS", new Hashtable()); userID.put(username, 1000);
             Process proc = new Process(this, "init", "/bin/init", "root", 0, "1", stdout, globals);
 
             sys.put("1", proc); proc.lua.globals.put("arg", args); proc.handler = proc.lua.getKernel();
