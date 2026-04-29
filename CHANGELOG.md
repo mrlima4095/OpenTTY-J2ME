@@ -16,6 +16,7 @@ general
 - Native Shell `os.execute(cmd)` still wrote in Java
 - SheBang `#!/bin/sh` on `. [file]` run file with shell
 - Added the **Add new line** button in Nano Editor
+- Config. file `OpenRMS` doesnt appear in file listings
 
 lua
 
