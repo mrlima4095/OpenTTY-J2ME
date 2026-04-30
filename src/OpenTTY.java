@@ -83,12 +83,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
         menu.setCommandListener(this);
         display.setCurrent(menu);
     }
-    // | (Installation)
-    private void login(boolean user, boolean pword) {
-        if (user || pword) {
-        } 
-        else { init(); }
-    }
     private void logged() {
         Alert alert = new Alert("OpenTTY", "Reopen MIDlet to access console", null, AlertType.INFO);
         alert.setTimeout(Alert.FOREVER);
@@ -105,7 +99,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             int selected = menu.getSelectedIndex();
             String item = menu.getString(selected);
             
-            if (item.equals("Retry boot")) { login(username.equals(""), passwd().equals("")); }
+            if (item.equals("Retry boot")) { }
             else if (item.equals("Update")) { try { platformRequest("http://opentty.xyz/dist/"); } catch (Exception e) { } }
             else if (item.equals("Clear data")) { deleteFile("/bin/init", 0, globals); writeRMS("OpenRMS", "".getBytes(), 1); writeRMS("OpenRMS", "".getBytes(), 2); warn("Clear Data", "User data cleared. Restart OpenTTY."); }
             else if (item.equals("Reset config")) {
