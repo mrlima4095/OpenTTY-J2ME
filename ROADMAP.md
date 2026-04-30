@@ -52,3 +52,13 @@ release date: 10/02/2026
 
 - Legacy Screens
 - Themes
+
+## Boot Menu
+
+Title: **Setup Utility**
+Screens:
+- About
+- Menu
+- - Boot Menu
+- - Recovery Menu
+- - 
