@@ -235,9 +235,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         
         String[] array = new String[result.size()];
-        for (int i = 0; i < result.size(); i++) {
-            array[i] = getpattern((String) result.elementAt(i));
-        }
+        for (int i = 0; i < result.size(); i++) { array[i] = getpattern((String) result.elementAt(i)); }
         
         return array;
     }
