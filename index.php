@@ -271,7 +271,6 @@ else {
           OpenTTY brings a full Unix-like environment to J2ME feature phones. Execute ARM32 binaries, Lua scripts, manage processes, and experience modern CLI on old devices.
         </p>
         <div class="btn-icon-group mb-4">
-          <a class="btn btn-outline-terminal" href="/assets/"><i class="bi bi-arrow-repeat"></i><span>Mirror</span></a>
           <a class="btn btn-outline-terminal" href="/dist/"><i class="bi bi-download"></i><span>Downloads</span></a>
           <a class="btn btn-outline-terminal" href="http://git.opentty.xyz"><i class="bi bi-code-square"></i><span>Gitea</span></a>
           <a class="btn btn-outline-terminal" href="https://github.com/mrlima4095/OpenTTY-J2ME"><i class="bi bi-github"></i><span>Repository</span></a>
@@ -279,7 +278,7 @@ else {
         </div>
         <div class="code-badge d-inline-flex mt-2">
           <i class="bi bi-cpu me-2 text-cyan"></i> 
-          <span>ELF loader · dynamic linking · syscall emulation · Lua 5.x runtime</span>
+          <span>Lua J2ME · ELF loader · Dynamic linking</span>
         </div>
       </div>
       <div class="col-lg-6">
