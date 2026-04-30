@@ -34,7 +34,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public void startApp() {
         if (sys.containsKey("1")) { }
         else {
-            boolean user = username.equals(""), pword = passwd().equals("")
+            boolean user = username.equals(""), pword = passwd().equals("");
             if (user || pword) {
                 Form screen = new Form("OpenTTY - Login");
                 screen.append(env(":: Create " + (user && pword ? "your credentials (user and password)" : user ? "an username" : "a password") + " to your account"));
