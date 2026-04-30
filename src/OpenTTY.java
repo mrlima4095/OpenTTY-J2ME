@@ -31,24 +31,36 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // MIDlet Loader
     // | (Triggers)
-    public void startApp() { if (sys.containsKey("1")) { } else { login(username.equals(""), passwd().equals("")); } }
+    public void startApp() {
+        if (sys.containsKey("1")) { }
+        else {
+            if (username.equals("") || passwd().equals("")) {
+                Form screen = new Form("OpenTTY - Login");
+                screen.append(env(":: Create " + (user && pword ? "your credentials (user and password)" : user ? "an username" : "a password") + " to your account"));
+                if (user) { screen.append(new TextField("Username", "", 256, TextField.ANY)); }
+                if (pword) { screen.append(new TextField("Password", "", 256, TextField.ANY | TextField.PASSWORD)); }
+                screen.addCommand(new Command("Login", Command.OK, 1));
+                screen.addCommand(new Command("Exit", Command.SCREEN, 1));
+                screen.setCommandListener(this);
+                display.setCurrent(screen);
+            } else {
+                try {
+                    Hashtable args = new Hashtable(); args.put(new Double(0), "/bin/init");
+                    globals.put("PWD", "/home/"); globals.put("USER", "root"); globals.put("ROOT", "/"); globals.put("ALIAS", new Hashtable()); userID.put(username, 1000);
+                    Process proc = new Process(this, "init", "/bin/init", "root", 0, "1", stdout, globals);
+
+                    sys.put("1", proc); proc.lua.globals.put("arg", args); proc.handler = proc.lua.getKernel();
+                    proc.lua.tokens = proc.lua.tokenize(read("/bin/init", globals)); 
+
+                    while (proc.lua.peek().type != 0) { Object res = proc.lua.statement(globals); if (proc.lua.doreturn) { break; } }
+                }
+                catch (IllegalStateException e) { }
+                catch (Throwable e) { panic(e); }
+            }
+        }
+    }
     public void pauseApp() { }
     public void destroyApp(boolean unconditional) { notifyDestroyed(); }
-    // | (Boot)
-    public void init() {
-        try {
-            Hashtable args = new Hashtable(); args.put(new Double(0), "/bin/init");
-            globals.put("PWD", "/home/"); globals.put("USER", "root"); globals.put("ROOT", "/"); globals.put("ALIAS", new Hashtable()); userID.put(username, 1000);
-            Process proc = new Process(this, "init", "/bin/init", "root", 0, "1", stdout, globals);
-
-            sys.put("1", proc); proc.lua.globals.put("arg", args); proc.handler = proc.lua.getKernel();
-            proc.lua.tokens = proc.lua.tokenize(read("/bin/init", globals)); 
-
-            while (proc.lua.peek().type != 0) { Object res = proc.lua.statement(globals); if (proc.lua.doreturn) { break; } }
-        }
-        catch (IllegalStateException e) { }
-        catch (Throwable e) { panic(e); }
-    }
     // | (Kernel Panic)
     private void panic(Throwable e) {
         Form screen = new Form(e instanceof Exception ? "SandBox" : "Kernel Panic");
@@ -73,14 +85,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // | (Installation)
     private void login(boolean user, boolean pword) {
         if (user || pword) {
-            Form screen = new Form("OpenTTY - Login");
-            screen.append(env(":: Create " + (user && pword ? "your credentials (user and password)" : user ? "an username" : "a password") + " to your account"));
-            if (user) { screen.append(new TextField("Username", "", 256, TextField.ANY)); }
-            if (pword) { screen.append(new TextField("Password", "", 256, TextField.ANY | TextField.PASSWORD)); }
-            screen.addCommand(new Command("Login", Command.OK, 1));
-            screen.addCommand(new Command("Exit", Command.SCREEN, 1));
-            screen.setCommandListener(this);
-            display.setCurrent(screen);
         } 
         else { init(); }
     }
