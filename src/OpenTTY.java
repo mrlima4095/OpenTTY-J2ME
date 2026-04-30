@@ -199,40 +199,20 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
             
             if (c == '\\') {
-                if (inDoubleQuotes || inSingleQuotes) {
-                    escaped = true;
-                } else {
-                    current.append(c);
-                }
+                if (inDoubleQuotes || inSingleQuotes) { escaped = true; }
+                else { current.append(c); }
+
                 continue;
             }
             
-            if (c == '"' && !inSingleQuotes) {
-                inDoubleQuotes = !inDoubleQuotes;
-                current.append(c);
-                continue;
-            }
-            
-            if (c == '\'' && !inDoubleQuotes) {
-                inSingleQuotes = !inSingleQuotes;
-                current.append(c);
-                continue;
-            }
-            
-            if (c == ' ' && !inDoubleQuotes && !inSingleQuotes) {
-                if (current.length() > 0) {
-                    result.addElement(current.toString());
-                    current.setLength(0);
-                }
-                continue;
-            }
+            if (c == '"' && !inSingleQuotes) { inDoubleQuotes = !inDoubleQuotes; current.append(c); continue; }
+            if (c == '\'' && !inDoubleQuotes) { inSingleQuotes = !inSingleQuotes; current.append(c); continue; }
+            if (c == ' ' && !inDoubleQuotes && !inSingleQuotes) { if (current.length() > 0) { result.addElement(current.toString()); current.setLength(0); } continue; }
             
             current.append(c);
         }
         
-        if (current.length() > 0) {
-            result.addElement(current.toString());
-        }
+        if (current.length() > 0) { result.addElement(current.toString()); }
         
         String[] array = new String[result.size()];
         for (int i = 0; i < result.size(); i++) { array[i] = getpattern((String) result.elementAt(i)); }
