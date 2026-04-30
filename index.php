@@ -287,7 +287,7 @@ else {
             <span class="window-dot" style="background:#ff5f56;"></span>
             <span class="window-dot" style="background:#ffbd2e;"></span>
             <span class="window-dot" style="background:#27c93f;"></span>
-            <span class="ms-2 small text-secondary">opentty@j2me:~/sandbox</span>
+            <span class="ms-2 small text-secondary">root@opentty:~/home#</span>
           </div>
           <div class="terminal-body p-3" style="min-height: 260px; background:#0b0e12;">
             <pre style="background: transparent; border: none; color:#bbd4ff; margin:0; font-size:0.8rem;">
