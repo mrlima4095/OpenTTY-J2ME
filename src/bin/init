@@ -3,7 +3,7 @@
 for k,v in pairs({ ["PATCH"] = "Deep Dream", ["VERSION"] = getAppProperty("MIDlet-Version"), ["RELEASE"] = "mod", ["SHELL"] = "/bin/sh" }) do os.setenv(k, v) end
 for k,v in pairs({ ["TYPE"] = "platform", ["CONFIG"] = "configuration", ["PROFILE"] = "profiles", ["LOCALE"] = "locale" }) do os.setenv(k, getAppProperty("/microedition." .. v)) end
 
-local scope = { PWD = "/home/", USER = java.midlet.username, ROOT = "/", ALIAS = {} }
+local scope = os.scope()
 local xterm = graphics.new("screen", "OpenTTY " .. getAppProperty("MIDlet-Version"))
 local run = graphics.new("command", { label = "Run", type = "ok", priority = 1 })
 
@@ -12,7 +12,6 @@ local function label() graphics.SetLabel(io.stdin, scope["USER"] .. " " .. os.ge
 io.mount(io.read("/etc/fstab"))
 print(string.env(io.read("/etc/motd")))
 
-os.scope(scope)
 os.su(java.midlet.username)
 pcall(io.popen, "/home/.initrc")
 label()
