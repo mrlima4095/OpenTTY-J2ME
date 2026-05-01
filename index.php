@@ -292,7 +292,6 @@ else {
           <a class="btn btn-outline-terminal" href="http://git.opentty.xyz"><i class="bi bi-code-square"></i><span>Gitea</span></a>
           <a class="btn btn-outline-terminal" href="https://github.com/mrlima4095/OpenTTY-J2ME"><i class="bi bi-github"></i><span>Repository</span></a>
           <a class="btn btn-outline-terminal" href="/cli"><i class="bi bi-globe2"></i><span>WebProxy</span></a>
-          <a class="btn btn-outline-terminal" href="/assets/"><i class="bi bi-arrow-repeat"></i><span>Mirror</span></a>
         </div>
         <div class="code-badge d-inline-flex mt-2">
           <i class="bi bi-cpu me-2 text-cyan"></i> 
