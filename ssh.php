@@ -1,155 +1,145 @@
 <?php
 session_start();
 
-// Configurações
-$SSH_HOST = 'localhost';
-$SSH_PORT = 22;
+// Configurações do SSH (movido para arquivo separado por segurança)
+$config = [
+    'host' => '192.168.1.100',
+    'port' => 22,
+    'user' => 'usuario',
+    'password' => 'senha'
+];
 
-// Função para conectar SSH
-function ssh_connect($host, $port, $user, $pass) {
-    // Verificar se extensão está carregada
-    if (!function_exists('ssh2_connect')) {
-        return array('error' => 'Extensão SSH2 não está instalada no servidor');
-    }
+class WebSSHTerminal {
+    private $connection;
+    private $current_dir;
+    private $history_file;
     
-    $connection = @ssh2_connect($host, $port);
-    if (!$connection) {
-        return array('error' => "Não foi possível conectar a $host:$port");
-    }
-    
-    if (@ssh2_auth_password($connection, $user, $pass)) {
-        return array('conn' => $connection);
-    } else {
-        return array('error' => 'Falha na autenticação. Verifique usuário/senha');
-    }
-}
-
-// Processar login
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-    if ($_POST['action'] === 'login') {
-        $ssh_user = trim($_POST['ssh_user'] ?? '');
-        $ssh_pass = $_POST['ssh_pass'] ?? '';
-        $host = trim($_POST['ssh_host'] ?? $SSH_HOST);
-        $port = intval($_POST['ssh_port'] ?? $SSH_PORT);
+    public function __construct($config) {
+        $this->current_dir = $_SESSION['current_dir'] ?? '/home/' . $config['user'];
+        $this->history_file = sys_get_temp_dir() . '/ssh_history_' . session_id();
         
-        if (empty($ssh_user) || empty($ssh_pass)) {
-            $error = "Usuário e senha são obrigatórios";
-        } else {
-            $result = ssh_connect($host, $port, $ssh_user, $ssh_pass);
-            
-            if (isset($result['conn'])) {
-                $_SESSION['ssh_user'] = $ssh_user;
-                $_SESSION['ssh_host'] = $host;
-                $_SESSION['ssh_port'] = $port;
-                $_SESSION['ssh_conn'] = $result['conn'];
-                
-                // Criar stream da shell
-                $shell = @ssh2_shell($_SESSION['ssh_conn'], 'xterm', null, 0, 0, 0, 0);
-                if (!$shell) {
-                    $shell = @ssh2_shell($_SESSION['ssh_conn'], 'vt100');
-                }
-                
-                if ($shell) {
-                    stream_set_blocking($shell, true);
-                    $_SESSION['ssh_shell'] = $shell;
-                    
-                    // Limpar output inicial
-                    $output = '';
-                    $start = time();
-                    while (time() - $start < 2) {
-                        $read = array($shell);
-                        $write = NULL;
-                        $except = NULL;
-                        if (stream_select($read, $write, $except, 0, 200000)) {
-                            $data = fread($shell, 4096);
-                            if ($data !== false && strlen($data) > 0) {
-                                $output .= $data;
-                            }
-                        } else {
-                            break;
-                        }
-                    }
-                    
-                    $_SESSION['last_output'] = htmlspecialchars($output);
-                    header('Location: ' . $_SERVER['PHP_SELF']);
-                    exit;
-                } else {
-                    $error = "Não foi possível criar a shell no servidor remoto";
-                }
-            } else {
-                $error = $result['error'];
-            }
+        // Conectar e autenticar
+        $this->connection = ssh2_connect($config['host'], $config['port']);
+        if (!$this->connection || !ssh2_auth_password($this->connection, $config['user'], $config['password'])) {
+            die("ERRO: Não foi possível conectar ao servidor SSH\n");
         }
     }
     
-    elseif ($_POST['action'] === 'comando') {
-        if (isset($_SESSION['ssh_shell'])) {
-            $comando = $_POST['comando'] . "\n";
-            fwrite($_SESSION['ssh_shell'], $comando);
-            fflush($_SESSION['ssh_shell']);
-            
-            // Aguardar resposta
-            usleep(500000); // 500ms
-            
-            $output = '';
-            $timeout = time() + 5; // Timeout de 5 segundos
-            
-            while (time() < $timeout) {
-                $read = array($_SESSION['ssh_shell']);
-                $write = NULL;
-                $except = NULL;
-                
-                $streams = stream_select($read, $write, $except, 0, 200000);
-                if ($streams === false || $streams === 0) {
-                    break;
-                }
-                
-                if ($streams > 0) {
-                    $data = fread($_SESSION['ssh_shell'], 4096);
-                    if ($data !== false && strlen($data) > 0) {
-                        $output .= $data;
-                    } else {
-                        break;
-                    }
-                }
-            }
-            
-            // Se não houve output, tenta ler mais uma vez
-            if (empty($output)) {
-                usleep(200000);
-                $output = fread($_SESSION['ssh_shell'], 8192);
-                if ($output === false) $output = '';
-            }
-            
-            $_SESSION['last_output'] = htmlspecialchars($output);
+    public function executeCommand($command) {
+        if (empty($command)) return '';
+        
+        // Comandos internos
+        if ($command === 'clear' || $command === 'cls') {
+            return 'CLEAR_SCREEN';
+        }
+        
+        if ($command === 'exit' || $command === 'quit') {
+            session_destroy();
             header('Location: ' . $_SERVER['PHP_SELF']);
             exit;
         }
+        
+        // Comando cd (change directory)
+        if (preg_match('/^cd\s+(.+)$/', $command, $matches)) {
+            return $this->changeDirectory($matches[1]);
+        }
+        
+        // Comando pwd interno
+        if ($command === 'pwd') {
+            return $this->current_dir . "\n";
+        }
+        
+        // Executar comando via SSH
+        $full_command = "cd " . escapeshellarg($this->current_dir) . " 2>&1 && ";
+        $full_command .= $command . " 2>&1; echo 'EXIT_CODE:'$?";
+        
+        $stream = ssh2_exec($this->connection, $full_command);
+        stream_set_blocking($stream, true);
+        $output = stream_get_contents($stream);
+        fclose($stream);
+        
+        // Verificar exit code
+        if (preg_match('/EXIT_CODE:(\d+)$/', $output, $matches)) {
+            $exit_code = $matches[1];
+            $output = preg_replace('/EXIT_CODE:\d+$/', '', $output);
+            if ($exit_code != 0) {
+                $output .= "\n[Erro: Código de saída $exit_code]";
+            }
+        }
+        
+        return rtrim($output);
     }
     
-    elseif ($_POST['action'] === 'logout') {
-        if (isset($_SESSION['ssh_shell'])) {
-            fclose($_SESSION['ssh_shell']);
+    private function changeDirectory($path) {
+        $new_dir = $path;
+        
+        if ($new_dir === '..') {
+            $new_dir = dirname($this->current_dir);
+        } elseif ($new_dir === '~') {
+            $new_dir = '/home/' . explode('@', $config['user'])[0];
+        } elseif ($new_dir[0] !== '/') {
+            $new_dir = $this->current_dir . '/' . $new_dir;
         }
-        if (isset($_SESSION['ssh_conn'])) {
-            ssh2_disconnect($_SESSION['ssh_conn']);
+        
+        // Verificar se o diretório existe via SSH
+        $test_command = "cd " . escapeshellarg($new_dir) . " 2>&1 && echo 'OK'";
+        $stream = ssh2_exec($this->connection, $test_command);
+        stream_set_blocking($stream, true);
+        $result = stream_get_contents($stream);
+        fclose($stream);
+        
+        if (trim($result) === 'OK') {
+            $this->current_dir = realpath($new_dir) ?: $new_dir;
+            $_SESSION['current_dir'] = $this->current_dir;
+            return "Diretório alterado para: " . $this->current_dir . "\n";
+        } else {
+            return "Erro: Diretório não encontrado\n";
         }
-        session_destroy();
-        header('Location: ' . $_SERVER['PHP_SELF']);
-        exit;
+    }
+    
+    public function getCurrentDir() {
+        return $this->current_dir;
+    }
+    
+    public function __destruct() {
+        if ($this->connection) {
+            ssh2_disconnect($this->connection);
+        }
     }
 }
 
-// Verificar se está logado
-$is_logged = isset($_SESSION['ssh_shell']);
-?>
+// Processar comando
+$output = '';
+$command = $_POST['command'] ?? '';
 
+if ($command !== '') {
+    $terminal = new WebSSHTerminal($config);
+    $output = $terminal->executeCommand($command);
+    
+    if ($output === 'CLEAR_SCREEN') {
+        $_SESSION['history'] = [];
+        $output = '';
+    } else {
+        $_SESSION['history'][] = ['command' => $command, 'output' => $output, 'time' => time()];
+    }
+    
+    // Limitar histórico
+    if (count($_SESSION['history']) > 200) {
+        array_shift($_SESSION['history']);
+    }
+}
+
+$current_dir = $_SESSION['current_dir'] ?? '/home/' . $config['user'];
+$current_user = $config['user'];
+$hostname = gethostname();
+
+?>
 <!DOCTYPE html>
-<html lang="pt-br">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terminal Web SSH</title>
+    <title>Web Terminal SSH</title>
     <style>
         * {
             margin: 0;
@@ -158,237 +148,210 @@ $is_logged = isset($_SESSION['ssh_shell']);
         }
         
         body {
-            background: #000000;
-            color: #00ff00;
+            background: #0a0e0a;
+            color: #33ff33;
             font-family: 'Courier New', 'Lucida Console', monospace;
-            padding: 15px;
             font-size: 14px;
+            padding: 15px;
         }
         
         .container {
             max-width: 100%;
-            margin: 0 auto;
-        }
-        
-        h1 {
-            color: #00ff00;
-            border-bottom: 2px solid #00ff00;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-            font-size: 20px;
-        }
-        
-        .terminal {
             background: #000000;
-            border: 2px solid #00ff00;
+            border: 2px solid #33ff33;
+            border-radius: 5px;
             padding: 15px;
-            margin-bottom: 20px;
-            min-height: 400px;
-            height: auto;
-            overflow-y: auto;
-            overflow-x: auto;
+            box-shadow: 0 0 10px rgba(51, 255, 51, 0.3);
         }
         
-        .output {
-            font-family: 'Courier New', monospace;
+        .terminal-header {
+            border-bottom: 1px solid #33ff33;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        
+        .terminal-output {
             white-space: pre-wrap;
             word-wrap: break-word;
+            margin-bottom: 15px;
+            max-height: 70vh;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
             font-size: 13px;
             line-height: 1.4;
         }
         
-        .output pre {
-            margin: 0;
-            padding: 0;
-            background: transparent;
-            color: #00ff00;
-            font-family: inherit;
-        }
-        
-        .input-area {
-            background: #000000;
-            border-top: 2px solid #00ff00;
-            padding: 15px 0;
+        .command-line {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-top: 10px;
+            border-top: 1px solid #33ff33;
+            padding-top: 10px;
         }
         
         .prompt {
-            color: #00ff00;
-            display: inline;
+            color: #33ff33;
             font-weight: bold;
-            font-size: 13px;
+            margin-right: 8px;
+            white-space: nowrap;
+        }
+        
+        .prompt-user {
+            color: #00cc00;
+        }
+        
+        .prompt-path {
+            color: #33ff33;
         }
         
         form {
-            display: inline;
-            width: 100%;
-        }
-        
-        input, button {
-            background: #000000;
-            color: #00ff00;
-            border: 1px solid #00ff00;
-            padding: 8px;
-            font-family: 'Courier New', monospace;
-            font-size: 13px;
+            flex: 1;
+            min-width: 150px;
         }
         
         input {
-            width: 70%;
-            background: #000000;
+            background: transparent;
+            border: none;
+            color: #33ff33;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            width: 100%;
+            outline: none;
+            padding: 5px 0;
+        }
+        
+        input:focus {
+            border-bottom: 1px solid #33ff33;
+        }
+        
+        .button-group {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
         }
         
         button {
+            background: #1a1f1a;
+            color: #33ff33;
+            border: 1px solid #33ff33;
+            padding: 5px 12px;
             cursor: pointer;
-            margin-left: 5px;
-            padding: 8px 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            transition: all 0.2s;
         }
         
         button:hover {
-            background: #00ff00;
+            background: #33ff33;
             color: #000000;
         }
         
-        .login-box {
-            background: #000000;
-            border: 2px solid #00ff00;
-            padding: 20px;
-            max-width: 400px;
-            margin: 40px auto;
-        }
-        
-        .login-box h2 {
-            color: #00ff00;
-            margin-bottom: 20px;
-            font-size: 18px;
-        }
-        
-        .login-box input {
-            width: 100%;
-            margin-bottom: 12px;
-            padding: 8px;
-        }
-        
-        .info {
-            color: #ffff00;
-            margin-bottom: 15px;
-            padding: 10px;
-            border: 1px solid #ffff00;
-            font-size: 12px;
-        }
-        
-        .error {
-            color: #ff0000;
-            border-color: #ff0000;
-        }
-        
         .status-bar {
-            background: #001100;
-            padding: 8px;
-            margin-bottom: 15px;
-            border: 1px solid #00ff00;
-            font-size: 12px;
+            font-size: 11px;
+            color: #669966;
+            margin-top: 10px;
+            padding-top: 5px;
+            border-top: 1px solid #1a3f1a;
         }
         
-        @media (max-width: 768px) {
+        @media (max-width: 600px) {
             body {
-                padding: 8px;
+                padding: 5px;
+            }
+            .container {
+                padding: 10px;
+            }
+            .terminal-output {
+                font-size: 11px;
+            }
+            input {
                 font-size: 12px;
             }
-            
-            input {
-                width: 65%;
-                font-size: 11px;
-            }
-            
-            button {
-                padding: 6px 10px;
-                font-size: 11px;
-            }
-            
-            .terminal {
-                padding: 10px;
-                min-height: 300px;
-            }
+        }
+        
+        ::-webkit-scrollbar {
+            width: 8px;
+            background: #000;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #33ff33;
+            border-radius: 4px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🌐 Terminal Web SSH</h1>
-        
-        <?php if (!$is_logged): ?>
-            <!-- Formulário de Login -->
-            <div class="login-box">
-                <h2>🔐 Conexão SSH</h2>
-                
-                <?php if (isset($error)): ?>
-                    <div class="info error">❌ <?php echo htmlspecialchars($error); ?></div>
-                <?php endif; ?>
-                
-                <form method="POST" action="">
-                    <input type="hidden" name="action" value="login">
-                    <input type="text" name="ssh_host" placeholder="Servidor (IP ou hostname)" value="<?php echo $SSH_HOST; ?>" required autocomplete="off">
-                    <input type="text" name="ssh_port" placeholder="Porta SSH" value="<?php echo $SSH_PORT; ?>" required>
-                    <input type="text" name="ssh_user" placeholder="Usuário" required autocomplete="off">
-                    <input type="password" name="ssh_pass" placeholder="Senha" required autocomplete="off">
-                    <button type="submit" style="width: 100%; margin-top: 10px;">🔌 Conectar</button>
-                </form>
-                
-                <div class="info" style="margin-top: 15px; font-size: 11px;">
-                    💡 Dica: Use IP local ou remoto com permissão SSH
-                </div>
-            </div>
-        
-        <?php else: ?>
-            <!-- Barra de status -->
-            <div class="status-bar">
-                ✅ Conectado: <strong><?php echo htmlspecialchars($_SESSION['ssh_user']); ?>@<?php echo htmlspecialchars($_SESSION['ssh_host']); ?></strong>
-            </div>
-            
-            <!-- Terminal -->
-            <div class="terminal">
-                <div class="output">
-                    <?php
-                    if (isset($_SESSION['last_output'])) {
-                        echo "<pre>" . $_SESSION['last_output'] . "</pre>";
-                        unset($_SESSION['last_output']);
-                    } else {
-                        echo "<pre>Terminal pronto. Digite um comando abaixo.</pre>";
-                    }
-                    ?>
-                </div>
-            </div>
-            
-            <div class="input-area">
-                <form method="POST" action="" style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
-                    <input type="hidden" name="action" value="comando">
-                    <span class="prompt">[<?php echo htmlspecialchars($_SESSION['ssh_user']); ?>@<?php echo htmlspecialchars($_SESSION['ssh_host']); ?> ~]$ </span>
-                    <input type="text" name="comando" id="comando" value="<?php echo isset($_POST['comando']) ? htmlspecialchars($_POST['comando']) : ''; ?>" autocomplete="off" style="flex: 1; min-width: 150px;">
-                    <button type="submit">▶ Executar</button>
-                    <button type="button" onclick="clearInput()">🗑 Limpar</button>
-                </form>
-            </div>
-            
-            <div style="margin-top: 20px; text-align: center;">
-                <form method="POST" action="" style="display: inline;">
-                    <input type="hidden" name="action" value="logout">
-                    <button type="submit" style="background: #330000; color: #ff0000;">🔌 Desconectar</button>
-                </form>
-            </div>
-            
-            <script>
-                // Script simples para limpar input - só isso, não afeta funcionalidade principal
-                function clearInput() {
-                    document.getElementById('comando').value = '';
-                    document.getElementById('comando').focus();
-                }
-                
-                // Manter foco no input
-                if (document.getElementById('comando')) {
-                    document.getElementById('comando').focus();
-                }
-            </script>
-        <?php endif; ?>
+<div class="container">
+    <div class="terminal-header">
+        🔌 Web Terminal SSH | <?php echo htmlspecialchars($current_user); ?>@<?php echo htmlspecialchars($hostname); ?>
     </div>
+    
+    <div class="terminal-output" id="terminal-output">
+        <?php 
+        if (isset($_SESSION['history']) && is_array($_SESSION['history'])) {
+            foreach ($_SESSION['history'] as $entry) {
+                $prompt_display = $current_user . '@' . $hostname . ':' . $current_dir . '$ ';
+                echo '<span style="color:#00cc00">' . htmlspecialchars($prompt_display) . '</span>';
+                echo htmlspecialchars($entry['command']) . "\n";
+                
+                $output_lines = explode("\n", $entry['output']);
+                foreach ($output_lines as $line) {
+                    if (trim($line) !== '') {
+                        echo htmlspecialchars($line) . "\n";
+                    }
+                }
+                echo "\n";
+            }
+        }
+        ?>
+    </div>
+    
+    <div class="command-line">
+        <span class="prompt">
+            <span class="prompt-user"><?php echo htmlspecialchars($current_user); ?></span>@
+            <span class="prompt-user"><?php echo htmlspecialchars($hostname); ?></span>:<span class="prompt-path"><?php echo htmlspecialchars($current_dir); ?></span>$
+        </span>
+        <form method="POST" action="">
+            <input type="text" name="command" id="command-input" autocomplete="off" autofocus>
+        </form>
+    </div>
+    
+    <div class="button-group">
+        <form method="POST" action="" style="flex:0">
+            <input type="hidden" name="command" value="clear">
+            <button type="submit">🧹 Limpar</button>
+        </form>
+        <form method="POST" action="" style="flex:0">
+            <input type="hidden" name="command" value="ls -la">
+            <button type="submit">📁 Listar arquivos</button>
+        </form>
+        <form method="POST" action="" style="flex:0">
+            <input type="hidden" name="command" value="pwd">
+            <button type="submit">📂 Mostrar caminho</button>
+        </form>
+        <form method="POST" action="" style="flex:0">
+            <input type="hidden" name="command" value="df -h">
+            <button type="submit">💾 Disco</button>
+        </form>
+        <form method="POST" action="" style="flex:0">
+            <input type="hidden" name="command" value="free -m">
+            <button type="submit">🧠 Memória</button>
+        </form>
+    </div>
+    
+    <div class="status-bar">
+        ℹ️ Comandos básicos: ls, cd, pwd, mkdir, rm, cat, clear, exit
+    </div>
+</div>
+
+<?php
+// Scroll automático via meta refresh (sem JS)
+if ($command !== '') {
+    echo '<meta http-equiv="refresh" content="0.1">';
+}
+?>
 </body>
 </html>
