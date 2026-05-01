@@ -8,19 +8,22 @@ if arg[1] == "-c" then
         os.exit(2)
     end
 elseif arg[1] then
+    local ok, status = true, nil
     local file = io.read(arg[1])
     if file ~= "" then
         local cmds = string.split(file, "\n")
         for _,cmd in pairs(cmds) do
-            local ok, status = pcall(os.execute, cmd)
+            ok, status = pcall(os.execute, cmd)
             if not ok then
                 print(tostring(status))
                 os.exit(1)
             elseif status ~= 0 then
-                os.exit(status)
+                break
             end
         end
     end
+
+    os.exit(status)
 end
 
 if arg[0] == "/bin/sh" then
