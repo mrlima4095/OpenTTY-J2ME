@@ -21,21 +21,33 @@ if ($isOld) {
             body, html { background: #000; color: #fff; font-family: monospace; padding: 20px; }
             .card, .header, .links, .meta { all: unset; }
             a { color: #6cf; text-decoration: none; display: block; margin: 6px 0; }
+            pre { background: #111; padding: 12px; overflow-x: auto; border-left: 3px solid #0cf; }
+            hr { border-color: #333; }
         </style>
     </head>
     <body>
         <h1>OpenTTY</h1>
         <p>Terminal Emulator for J2ME Phones</p><br>
-        <a href="/assets/">Mirror</a>
-        <a href="/dist/">Downloads</a>
-        <a href="https://github.com/mrlima4095/OpenTTY-J2ME">Repository</a>
+        <a href="/assets/">📁 Mirror</a>
+        <a href="/dist/">⬇️ Downloads</a>
+        <a href="https://github.com/mrlima4095/OpenTTY-J2ME">📦 Repository</a>
+        <a href="http://git.opentty.xyz">📝 Gitea</a>
+        <a href="/cli">🌐 WebProxy</a>
+        <hr>
+        <h3>🛠️ Building OpenTTY from Source</h3>
+        <pre>📥 Step 1: Download SDK.jar from http://opentty.xyz/dl/SDK.jar
+📁 Step 2: Navigate to OpenTTY repo folder
+🔨 Step 3: Launch SDK.jar, browse repo, press Build button (hammer icon)
+
+📦 Output: dist/OpenTTY.jar + OpenTTY.jad
+📲 Install: run OpenTTY.jar or OpenTTY.jad on your J2ME phone</pre>
     </body>
     </html>
     <?php
 } 
 else {
     ?>
-    <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -60,7 +72,6 @@ else {
       scroll-behavior: smooth;
     }
 
-    /* terminal-like accent */
     :root {
       --glow-cyan: #2dd4bf;
       --glow-blue: #3b82f6;
@@ -68,7 +79,6 @@ else {
       --border-dim: #2a3342;
     }
 
-    /* navbar glassmorphism */
     .navbar-glass {
       backdrop-filter: blur(12px);
       background: rgba(10, 14, 23, 0.75);
@@ -221,6 +231,12 @@ else {
       font-size: 1.2rem;
     }
 
+    .build-steps {
+      background: #0c111c;
+      border-radius: 28px;
+      border: 1px solid #2a3442;
+    }
+
     @media (max-width: 640px) {
       .hero-section {
         padding: 3.5rem 0 3rem;
@@ -248,6 +264,7 @@ else {
         <li class="nav-item"><a class="nav-link" href="#features">Features</a></li>
         <li class="nav-item"><a class="nav-link" href="#tech">Tech stack</a></li>
         <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
+        <li class="nav-item"><a class="nav-link" href="#build">Build</a></li>
         <li class="nav-item"><a class="nav-link" href="#downloads">Get started</a></li>
       </ul>
     </div>
@@ -275,6 +292,7 @@ else {
           <a class="btn btn-outline-terminal" href="http://git.opentty.xyz"><i class="bi bi-code-square"></i><span>Gitea</span></a>
           <a class="btn btn-outline-terminal" href="https://github.com/mrlima4095/OpenTTY-J2ME"><i class="bi bi-github"></i><span>Repository</span></a>
           <a class="btn btn-outline-terminal" href="/cli"><i class="bi bi-globe2"></i><span>WebProxy</span></a>
+          <a class="btn btn-outline-terminal" href="/assets/"><i class="bi bi-arrow-repeat"></i><span>Mirror</span></a>
         </div>
         <div class="code-badge d-inline-flex mt-2">
           <i class="bi bi-cpu me-2 text-cyan"></i> 
@@ -287,12 +305,12 @@ else {
             <span class="window-dot" style="background:#ff5f56;"></span>
             <span class="window-dot" style="background:#ffbd2e;"></span>
             <span class="window-dot" style="background:#27c93f;"></span>
-            <span class="ms-2 small text-secondary">root@opentty:~/home#</span>
+            <span class="ms-2 small text-secondary">root@opentty:~/home/#</span>
           </div>
           <div class="terminal-body p-3" style="min-height: 260px; background:#0b0e12;">
             <pre style="background: transparent; border: none; color:#bbd4ff; margin:0; font-size:0.8rem;">
 <span style="color:#2dd4bf;">$</span> uname -a
-Linux opentty 3.2.0 #1 armv5tejl OpenTTY
+Nokia 6233 (OpenTTY 1.18.1) main/mod 2026-1.18.1-03x27 - CLDC-1.1 MIDP-2.0
 
 <span style="color:#2dd4bf;">$</span> ./hello.elf
 Hello from ARM ELF on J2ME!
@@ -303,7 +321,7 @@ Tue Apr 30 16:20:01 2026
 <span style="color:#2dd4bf;">$</span> ps
 PID  PROCESS
 1    init
-142  lua script.lua
+1420 lua script.lua
 <span style="color:#9cdcfe;">status: running</span></pre>
           </div>
         </div>
@@ -330,7 +348,7 @@ PID  PROCESS
       <div class="col-md-6 col-lg-4">
         <div class="feature-card p-4">
           <i class="bi bi-lua fs-1 text-cyan" style="color:#2dd4bf;"></i>
-          <h4 class="mt-3 fw-semibold">Lua 5.x Runtime</h4>
+          <h4 class="mt-3 fw-semibold">Lua J2ME</h4>
           <p class="text-secondary">Complete Lua interpreter with coroutines, tables, metatables, and custom modules: `os`, `io`, `socket`, `graphics`, `audio`, `push` API.</p>
         </div>
       </div>
@@ -403,7 +421,7 @@ PID  PROCESS
   </div>
 </section>
 
-<!-- about + architecture quotes -->
+<!-- about + architecture -->
 <section id="about" class="py-5">
   <div class="container">
     <div class="row g-5">
@@ -435,6 +453,52 @@ PID  PROCESS
   </div>
 </section>
 
+<!-- 🛠️ BUILD SECTION (from source instructions) -->
+<section id="build" class="py-5">
+  <div class="container">
+    <div class="build-steps p-4 p-md-5">
+      <div class="text-center mb-4">
+        <i class="bi bi-hammer fs-1 text-cyan"></i>
+        <h2 class="fw-bold mt-2">Building OpenTTY from Source Code</h2>
+        <p class="text-secondary">Compile OpenTTY directly on your mobile device using the official SDK tool</p>
+      </div>
+      <div class="row g-4">
+        <div class="col-md-6">
+          <div class="bg-black bg-opacity-40 p-3 rounded-3 h-100">
+            <h5><i class="bi bi-1-square-fill text-cyan"></i> Download SDK</h5>
+            <p>Get <a href="http://opentty.xyz/dl/SDK.jar" class="text-cyan">SDK.jar</a> and transfer it to your device's storage or SD card.</p>
+            <h5 class="mt-3"><i class="bi bi-2-square-fill text-cyan"></i> Access Repository</h5>
+            <p>Open file manager, navigate to the OpenTTY source folder. Ensure all Java files are present.</p>
+            <h5 class="mt-3"><i class="bi bi-3-square-fill text-cyan"></i> Compile with SDK</h5>
+            <p>Launch <code>SDK.jar</code>, browse to OpenTTY directory, press the <strong>Build button (🛠️ hammer icon)</strong>. Wait for compilation.</p>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="bg-black bg-opacity-40 p-3 rounded-3 h-100">
+            <h5><i class="bi bi-archive"></i> Output Files</h5>
+            <p>After success, check the <code>dist/</code> folder:</p>
+            <ul>
+              <li><strong>OpenTTY.jar</strong> – main executable</li>
+              <li><strong>OpenTTY.jad</strong> – descriptor file</li>
+            </ul>
+            <h5 class="mt-3"><i class="bi bi-phone"></i> Installation</h5>
+            <p><strong>Method 1:</strong> Open <code>OpenTTY.jar</code> directly → install → launch.</p>
+            <p><strong>Method 2:</strong> Use <code>OpenTTY.jad</code> for devices that prefer JAD installers.</p>
+            <div class="alert alert-dark mt-2 mb-0 py-2 small">✅ After install, find "OpenTTY" in your apps → start terminal.</div>
+          </div>
+        </div>
+      </div>
+      <div class="mt-4 pt-2 border-top border-secondary border-opacity-25">
+        <div class="row text-secondary small">
+          <div class="col-md-4"><i class="bi bi-wrench"></i> <strong>Troubleshooting:</strong> verify source files & memory</div>
+          <div class="col-md-4"><i class="bi bi-exclamation-triangle"></i> JAD vs JAR: try alternate method</div>
+          <div class="col-md-4"><i class="bi bi-shield-check"></i> MIDP-2.0 / CLDC-1.1 required</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- download & resources -->
 <section id="downloads" class="py-5" style="background: linear-gradient(115deg, #0b1118 0%, #0f1622 100%);">
   <div class="container text-center">
@@ -450,17 +514,18 @@ PID  PROCESS
         <div class="terminal-window mb-4">
           <div class="terminal-header ps-3 py-2"><span class="text-white-50">Quick setup</span></div>
           <div class="terminal-body p-3 text-start">
-            <pre style="margin:0; font-size: 0.8rem;"># compile & deploy via Ant / J2ME SDK
-$ ant jar
-$ openttty install /dist/OpenTTY.jar
+            <pre style="margin:0; font-size: 0.8rem;"># compile using mobile SDK.jar
+$ java -jar SDK.jar (on phone via J2ME runner)
+$ select OpenTTY folder → click Build (🛠️)
 
-# or upload directly to J2ME phone via OTA
-# browse internal RMS programs:</pre>
+# output: dist/OpenTTY.jar + OpenTTY.jad
+# install on any MIDP 2.0 device</pre>
           </div>
         </div>
         <div class="mt-3">
           <a href="http://git.opentty.xyz" class="text-decoration-none me-3"><i class="bi bi-git"></i> Git repository (Gitea)</a>
           <a href="/assets/" class="text-decoration-none"><i class="bi bi-archive"></i> Assets & mirrors</a>
+          <a href="http://opentty.xyz/dl/SDK.jar" class="text-decoration-none ms-3"><i class="bi bi-tools"></i> Download SDK.jar</a>
         </div>
       </div>
     </div>
@@ -509,3 +574,4 @@ $ openttty install /dist/OpenTTY.jar
 </html>
     <?php
 }
+?>
