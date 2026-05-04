@@ -48,20 +48,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 try {
                     Hashtable args = new Hashtable(); args.put(new Double(0), "/bin/init");
                     globals.put("PWD", "/home/"); globals.put("USER", "root"); globals.put("ROOT", "/"); globals.put("ALIAS", new Hashtable()); userID.put(username, 1000);
-                    
-                    Alert alert = new Alert("OpenTTY", "This message appears BEFORE Lua starts", null, AlertType.INFO);
-                    alert.setTimeout(Alert.FOREVER);
-                    alert.addCommand(new Command("Exit", Command.EXIT, 1));
-                    alert.setCommandListener(this);
-                    display.setCurrent(alert);
 
                     Process proc = new Process(this, "init", "/bin/init", "root", 0, "1", stdout, globals);
-
-                    alert = new Alert("OpenTTY", "This message appears AFTER lua starts", null, AlertType.INFO);
-                    alert.setTimeout(Alert.FOREVER);
-                    alert.addCommand(new Command("Exit", Command.EXIT, 1));
-                    alert.setCommandListener(this);
-                    display.setCurrent(alert);
 
                     sys.put("1", proc); proc.lua.globals.put("arg", args); proc.handler = proc.lua.getKernel();
                     proc.lua.tokens = proc.lua.tokenize(read("/bin/init", globals)); 
