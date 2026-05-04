@@ -57,7 +57,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                     Process proc = new Process(this, "init", "/bin/init", "root", 0, "1", stdout, globals);
 
-                    Alert alert = new Alert("OpenTTY", "This message appears AFTER lua starts", null, AlertType.INFO);
+                    alert = new Alert("OpenTTY", "This message appears AFTER lua starts", null, AlertType.INFO);
                     alert.setTimeout(Alert.FOREVER);
                     alert.addCommand(new Command("Exit", Command.EXIT, 1));
                     alert.setCommandListener(this);
