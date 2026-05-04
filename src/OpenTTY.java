@@ -70,7 +70,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
                 catch (IllegalStateException e) { }
                 catch (OutOfMemoryError e) {
-                    Alert alert = new Alert("OpenTTY", "Insufficient Memory\n" + (runtime.freeMemory() / 1024) + " KB free\n" + (midlet.runtime.totalMemory() / 1024) + "KB total", null, AlertType.INFO);
+                    Alert alert = new Alert("OpenTTY", "Insufficient Memory\n" + (runtime.freeMemory() / 1024) + " KB free\n" + (runtime.totalMemory() / 1024) + "KB total", null, AlertType.INFO);
                     alert.setTimeout(Alert.FOREVER);
                     alert.addCommand(new Command("Exit", Command.EXIT, 1));
                     alert.setCommandListener(this);
