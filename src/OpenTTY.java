@@ -58,39 +58,29 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 }
                 catch (IllegalStateException e) { }
                 catch (OutOfMemoryError e) {
-                    Alert alert = new Alert("OpenTTY", "Insufficient Memory\n" + (runtime.freeMemory() / 1024) + " KB free\n" + (runtime.totalMemory() / 1024) + "KB total", null, AlertType.INFO);
-                    alert.setTimeout(Alert.FOREVER);
-                    alert.addCommand(new Command("Exit", Command.EXIT, 1));
-                    alert.setCommandListener(this);
-                    display.setCurrent(alert);
+                    Form screen = new Form("SandBox");
+                    screen.append("Insufficient Memory");
+                    screen.append("Used Memory: " + ((runtime.totalMemory() / 1024) - (runtime.freeMemory())) + " KB\nFree Memory: " + (runtime.freeMemory() / 1024) + " KB\nTotal Memory: " + (runtime.totalMemory() / 1024) + "KB total");
+
+                    screen.addCommand(new Command("Exit", Command.OK, 1));
+                    screen.setCommandListener(this);
+                    display.setCurrent(screen);
                 }
-                catch (Throwable e) { panic(e); }
+                catch (Throwable e) {
+                    Form screen = new Form(e instanceof Exception ? "SandBox" : "Kernel Panic");
+                    screen.append("An error occurred while OpenTTY tried to start!\n\nError: " + getCatch(e));
+                    screen.append(e instanceof Exception ? "If you tried to install a program in /bin/init it can be the error" : "Try to clear your data or update OpenTTY");
+
+                    screen.addCommand(new Command("Exit", Command.OK, 1));
+                    screen.setCommandListener(this);
+                    display.setCurrent(screen);
+                }
             }
         }
     }
     public void pauseApp() { }
     public void destroyApp(boolean unconditional) { notifyDestroyed(); }
-    // | (Kernel Panic)
-    private void panic(Throwable e) {
-        Form screen = new Form(e instanceof Exception ? "SandBox" : "Kernel Panic");
-        screen.append("An error occurred while OpenTTY tried to start!\n\nError: " + getCatch(e));
-        screen.append(e instanceof Exception ? "If you tried to install a program in /bin/init it can be the error" : "Try to clear your data or update OpenTTY");
-
-        screen.addCommand(new Command("Exit", Command.OK, 1));
-        screen.addCommand(new Command("Recovery", Command.SCREEN, 1));
-        screen.setCommandListener(this);
-        display.setCurrent(screen);
-    }
-    private void recovery() {
-        List menu = new List("Recovery", List.IMPLICIT);
-        menu.append("Retry boot", null); menu.append("Update", null); menu.append("---", null);
-        menu.append("Clear data", null); menu.append("Reset config", null); menu.append("Factory reset", null); menu.append("---", null);
-        menu.append("System Info", null); menu.append("Questions", null);
-        menu.addCommand(new Command("Exit", Command.BACK, 1));
-        menu.addCommand(new Command("Open", Command.OK, 1));
-        menu.setCommandListener(this);
-        display.setCurrent(menu);
-    }
+    // |
     private void logged() {
         Alert alert = new Alert("OpenTTY", "Reopen MIDlet to access console", null, AlertType.INFO);
         alert.setTimeout(Alert.FOREVER);
@@ -101,46 +91,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // | (Graphical Handler)
     public void commandAction(Command c, Displayable d) {
         if (c.getLabel() == "Exit") { destroyApp(true); }
-        else if (c.getLabel() == "Recovery" || c.getLabel() == "Back") { recovery(); }
-        else if (d instanceof List && c.getLabel() == "Open" || c == List.SELECT_COMMAND) {
-            List menu = (List) d;
-            int selected = menu.getSelectedIndex();
-            String item = menu.getString(selected);
-            
-            if (item.equals("Retry boot")) { }
-            else if (item.equals("Update")) { try { platformRequest("http://opentty.xyz/dist/"); } catch (Exception e) { } }
-            else if (item.equals("Clear data")) { deleteFile("/bin/init", 0, globals); writeRMS("OpenRMS", "".getBytes(), 1); writeRMS("OpenRMS", "".getBytes(), 2); warn("Clear Data", "User data cleared. Restart OpenTTY."); }
-            else if (item.equals("Reset config")) {
-                String[] files = { "fstab", "hostname", "motd", "os-release", "services" };
-                for (int i = 0; i < files.length; i++) { deleteFile("/etc/" + files[i], 0, globals); }
-                warn("Reset Config", "Configuration reset to defaults.");
-            }
-            else if (item.equals("Factory reset")) {
-                deleteFile("/bin/init", 0, globals);
-                try { RecordStore.deleteRecordStore("OpenRMS"); } catch (Exception e) { }
-
-                warn("Factory Reset", "All data cleared. Restart OpenTTY.");
-            }
-            else if (item.equals("System Info")) {
-                StringBuffer info = new StringBuffer();
-                info.append("OpenTTY " + build + "\n").append("Uptime: " + ((System.currentTimeMillis() - uptime) / 1000) + "s\n").append("User: " + username + "\n").append("Memory: " + (runtime.freeMemory() / 1024) + " KB free\n").append("Processes: " + sys.size() + "\n").append("\nJVM Info:\n" + getName());
-
-                Form infoScreen = new Form("System Information");
-                infoScreen.append(info.toString());
-                infoScreen.addCommand(new Command("Back", Command.BACK, 1));
-                infoScreen.setCommandListener(this);
-                display.setCurrent(infoScreen);
-            }
-            else if (item.equals("Questions")) {
-                Form faq = new Form("Frequently Asked Questions");
-                faq.append(new StringItem("Why am I seeing a Kernel Panic?", "A bug damage /bin/init - program that initialize OpenTTY or Lua Runtime"));
-                faq.append(new StringItem("I installed MIDlet and was already having problems.", "Report this Kernel Panic on Github and wait a bug fix. The package that you download may be corromped."));
-
-                faq.addCommand(new Command("Back", Command.BACK, 1));
-                faq.setCommandListener(this);
-                display.setCurrent(faq);
-            }
-        }
         else {
             int size = ((Form) d).size();
             if (size == 2) {
