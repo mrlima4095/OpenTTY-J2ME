@@ -1174,6 +1174,7 @@ public class Lua {
         LuaFunction(Hashtable cmds) { this.cmds = cmds; }
         LuaFunction(LuaFunction root) { this.root = root; }
         LuaFunction(int type) { this.MOD = type; }
+        // |
         // | (Main)
         public Object call(Vector args) throws Exception {
             if (MOD != -1) { return internals(args); }
