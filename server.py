@@ -4,7 +4,6 @@
 #   python server.py
 #
 
-
 import sys, os
 import socket
 import subprocess
