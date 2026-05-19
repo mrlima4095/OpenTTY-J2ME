@@ -9,7 +9,7 @@ Before building OpenTTY, ensure you have:
 
 ## 🛠️ Build Process
 
-### 📥 Step 1: Download SDK
+### 📥 Step 1: Download SDK  
 1. Download [`SDK.jar`](http://opentty.xyz/dl/SDK.jar) to your mobile device
 2. Transfer the file to your device's main storage or SD card
 
