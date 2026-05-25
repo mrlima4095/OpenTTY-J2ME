@@ -402,9 +402,7 @@ public class ELF {
         } 
         finally { 
             if (midlet.debug) midlet.print("=== ELF FINALLY DEBUG ===", stdout, id, scope);
-            if (midlet.sys.containsKey(pid)) { 
-                midlet.sys.remove(pid); 
-            } 
+            if (midlet.sys.containsKey(pid)) { midlet.sys.remove(pid); } 
         }
 
         ITEM.put("status", new Double(0));
