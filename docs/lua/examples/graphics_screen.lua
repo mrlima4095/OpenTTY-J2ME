@@ -1,0 +1,2 @@
+-- Lua J2ME - Code examples
+-- This is an example of writing a file content with Lua API
