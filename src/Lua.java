@@ -1222,30 +1222,31 @@ public class Lua {
             return returnValue;
         }
         public Object internals(Vector args) throws Exception {
-            // Globals
-            if (MOD == PRINT) { 
-                if (args.isEmpty()) { }
-                else {
-                    StringBuffer buffer = new StringBuffer(); 
-                    for (int i = 0; i < args.size(); i++) {
-                        Object a = args.elementAt(i);
+            switch (MOD) {
+                case PRINT:
+                    if (args.isEmpty()) { }
+                    else {
+                        StringBuffer buffer = new StringBuffer(); 
+                        for (int i = 0; i < args.size(); i++) {
+                            Object a = args.elementAt(i);
 
-                        if (a instanceof Vector) {
-                            Vector vv = (Vector) a;
-                            for (int j = 0; j < vv.size(); j++) {
-                                buffer.append(toLuaString(vv.elementAt(j)));
-                                if (j < vv.size() - 1) { buffer.append("\t"); }
-                            }
-                        } 
-                        else { buffer.append(toLuaString(a)); }
+                            if (a instanceof Vector) {
+                                Vector vv = (Vector) a;
+                                for (int j = 0; j < vv.size(); j++) {
+                                    buffer.append(toLuaString(vv.elementAt(j)));
+                                    if (j < vv.size() - 1) { buffer.append("\t"); }
+                                }
+                            } 
+                            else { buffer.append(toLuaString(a)); }
 
-                        if (i < args.size() - 1) buffer.append("\t");
+                            if (i < args.size() - 1) buffer.append("\t");
+                        }
+
+                        midlet.print(buffer.toString(), stdout, id, father); 
                     }
+                case ERROR: String msg = toLuaString((args.size() > 0) ? args.elementAt(0) : null); throw new Exception(msg.equals("nil") ? "error" : msg);
 
-                    midlet.print(buffer.toString(), stdout, id, father); 
-                } 
             }
-            else if (MOD == ERROR) { String msg = toLuaString((args.size() > 0) ? args.elementAt(0) : null); throw new Exception(msg.equals("nil") ? "error" : msg); } 
             else if (MOD == PCALL) {
                 if (args.isEmpty()) { return gotbad(1, "pcall", "function expected"); }
                 else {
