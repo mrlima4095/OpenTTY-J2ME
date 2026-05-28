@@ -1247,7 +1247,7 @@ public class Lua {
                 case ERROR: String msg = toLuaString((args.size() > 0) ? args.elementAt(0) : null); throw new Exception(msg.equals("nil") ? "error" : msg);
 
             }
-            else if (MOD == PCALL) {
+            if (MOD == PCALL) {
                 if (args.isEmpty()) { return gotbad(1, "pcall", "function expected"); }
                 else {
                     Vector result = new Vector(), fnArgs = new Vector();
