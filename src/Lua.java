@@ -1396,746 +1396,660 @@ public class Lua {
                     }
                 // Package [os]
                 case EXEC: return exec(args); 
-                case GETENV:
-                case SETENV:
-                case CLOCK:
-                case SETLOC:
-                case EXIT:
-                case DATE:
-                case GETPID:
+                case GETENV: return args.isEmpty() ? midlet.attributes : midlet.attributes.get(toLuaString(args.elementAt(0)));
+                case SETENV: 
+                    if (args.isEmpty()) { } 
+                    else {
+                        Object value = args.size() > 1 ? toLuaString(args.elementAt(1)) : null;
+
+                        if (value == null) { midlet.attributes.remove(toLuaString(args.elementAt(0))); }
+                        else { midlet.attributes.put(toLuaString(args.elementAt(0)), value); }
+                        break;
+                    }
+                case CLOCK: return System.currentTimeMillis() - uptime;
+                case SETLOC: if (args.isEmpty()) { break; } else { midlet.attributes.put("LOCALE", toLuaString(args.elementAt(0))); }
+                case EXIT: exit(args); 
+                case DATE: return new java.util.Date().toString();
+                case GETPID: return args.isEmpty() || args.elementAt(0) == null ? PID : midlet.getpid(toLuaString(args.elementAt(0)));
                 case GETPROC:
-                case SETPROC:
-                case GETCWD:
-                case REQUEST:
-                case GETUID:
-                case CHDIR:
-                case SU:
-                case REMOVE:
-                case SCOPE:
-                case JOIN:
-                case MKDIR:
-            
-            // Package: os
-            else if (MOD == EXEC) { }
-            else if (MOD == GETENV) { return args.isEmpty() ? midlet.attributes : midlet.attributes.get(toLuaString(args.elementAt(0))); }
-            else if (MOD == SETENV) { 
-                if (args.isEmpty()) { } 
-                else {
-                    Object value = args.size() > 1 ? toLuaString(args.elementAt(1)) : null;
+                    if (args.isEmpty()) {
+                        Hashtable result = new Hashtable();
+                        for (Enumeration procs = midlet.sys.keys(); procs.hasMoreElements();) {
+                            String pid = (String) procs.nextElement();
 
-                    if (value == null) { midlet.attributes.remove(toLuaString(args.elementAt(0))); }
-                    else { midlet.attributes.put(toLuaString(args.elementAt(0)), value); }
-                }
-            }
-            else if (MOD == CLOCK) { return System.currentTimeMillis() - uptime; }
-            else if (MOD == SETLOC) { if (args.isEmpty()) { } else { midlet.attributes.put("LOCALE", toLuaString(args.elementAt(0))); } }
-            else if (MOD == EXIT) { exit(args); }
-            else if (MOD == DATE) { return new java.util.Date().toString(); }
-            else if (MOD == GETPID) { return args.isEmpty() || args.elementAt(0) == null ? PID : midlet.getpid(toLuaString(args.elementAt(0))); }
-            else if (MOD == SETPROC) {
-                if (args.isEmpty()) { }
-                else if (args.elementAt(0) instanceof Boolean) { kill = ((Boolean) args.elementAt(0)).booleanValue(); }
-                else {
-                    String attribute = toLuaString(args.elementAt(0)).trim().toLowerCase();
-                    Object value = args.size() < 2 ? null : args.elementAt(1);
-
-                    if (attribute.equals("owner")) { return gotbad(1, "setproc", "permission denied"); } 
-                    else if (attribute.equals("scope")) { if (value instanceof Hashtable) { proc.scope = (Hashtable) value; } else { return gotbad(1, "setproc", "table expected"); } }
-                    else if (attribute.equals("name")) { if (value != null) { proc.name = toLuaString(value); } else { return gotbad(1, "setproc", "string expected"); } }
-                    else if (attribute.equals("handler")) { if (value instanceof LuaFunction) { proc.handler = value; kill = false; } else { return gotbad(1, "setproc", "function expected"); } }
-                    else if (attribute.equals("cmd")) { if (value != null) { proc.cmd = toLuaString(value); } else { return gotbad(1, "setproc", "string expected"); } }
-                    else if (attribute.equals("sighandler")) { if (value instanceof LuaFunction) { proc.sighandler = value; } else { return gotbad(1, "setproc", "function expected"); } }
-                    else { if (value == null) { proc.db.remove(attribute); } else { proc.db.put(attribute, value); } }
-                } 
-            }
-            else if (MOD == GETPROC) {
-                if (args.isEmpty()) {
-                    Hashtable result = new Hashtable();
-                    for (Enumeration procs = midlet.sys.keys(); procs.hasMoreElements();) {
-                        String pid = (String) procs.nextElement();
-
-                        result.put(pid, ((Process) midlet.sys.get(pid)).name);
-                    }
-                    return result;
-                }
-                else {
-                    String pid = toLuaString(args.elementAt(0)).trim();
-                    Process process = (Process) midlet.sys.get(pid);
-
-                    if (process != null) {
-                        if (process.uid != id && id != 0) { return gotbad(1, "getproc", "permissiond denied"); }
-
-                        if (args.size() > 1) { return process.db.get(toLuaString(args.elementAt(1)).trim()); } 
-                        else { return gotbad(2, "getproc", "field expected, got no value"); }
-                    } 
-                }
-            }
-            else if (MOD == GETCWD) { return father.get("PWD"); }
-            else if (MOD == REQUEST) {
-                if (args.isEmpty()) { return gotbad(1, "request", "string expected, got no value"); }
-                else if (args.size() < 2) { return gotbad(2, "request", "value expected, got no value"); }
-                else if (midlet.sys.containsKey(toLuaString(args.elementAt(0)))) {
-                    Process process = (Process) midlet.sys.get(toLuaString(args.elementAt(0)));
-                    if (process.lua != null && process.handler != null) {
-                        Lua lua = (Lua) process.lua;
-                        Vector arg = new Vector(); arg.addElement(toLuaString(args.elementAt(1))); arg.addElement(args.size() > 2 ? args.elementAt(2) : null); arg.addElement(father); arg.addElement(PID); arg.addElement(new Double(id));
-                        Object response = null;
-
-                        try { response = ((Lua.LuaFunction) process.handler).call(arg); }
-                        catch (Exception e) { return midlet.getCatch(e); } 
-                        catch (Error e) { if (e.getMessage() != null) { midlet.print(e.getMessage(), stdout, id, father); } return new Double(lua.status); }
-
-                        return response;
-                    } 
-                    else { return gotbad(1, "request", "not a service"); }
-                } 
-                else { return gotbad(1, "request", "process not found"); }
-            }
-            else if (MOD == GETUID) { if (args.isEmpty() || args.elementAt(0) == null) { return new Double(id); } return new Double(midlet.getUserID(toLuaString(args.elementAt(0)))); }
-            else if (MOD == CHDIR) { return chdir(args); }
-            else if (MOD == SU) {
-                if (args.isEmpty()) { return gotbad(1, "su", "username and password expected"); } 
-                else {
-                    String user = toLuaString(args.elementAt(0)), query = args.size() > 1 ? toLuaString(args.elementAt(1)) : null;
-                    if (user.equals(midlet.username)) { id = 1000; father.put("USER", user); proc.uid = 1000; return new Double(0); }
-                    else if (midlet.userID.containsKey(user)) { id = midlet.getUserID(user); father.put("USER", user); proc.uid = id; return new Double(0); }
-                    else if (query == null) { return gotbad(2, "su", "string expected, got nil"); }
-                    else if (user.equals("root") && midlet.passwd(query)) { id = 0; father.put("USER", "root"); proc.uid = 0; return new Double(0); }
-                    else { return new Double(13); }
-                }
-            }
-            else if (MOD == REMOVE) { return args.isEmpty() ? (Double) gotbad(1, "remove", "string expected, got no value") : new Double(midlet.deleteFile(toLuaString(args.elementAt(0)), id, father)); }
-            else if (MOD == SCOPE) {
-                if (args.isEmpty()) { return father; }
-                else {
-                    if (args.elementAt(0) instanceof Hashtable) { 
-                        father = (Hashtable) args.elementAt(0);
-
-                        if (father.containsKey("USER")) {
-                            String user = (String) father.get("USER");
-                            if (user.equals("root")) {
-                                if (id == 1000) {
-                                    father.put("USER", midlet.loadRMS("OpenRMS", 1));
-                                }
-                            }
+                            result.put(pid, ((Process) midlet.sys.get(pid)).name);
                         }
-                    }
-                    else { return gotbad(1, "scope", "table expected, got " + type(args.elementAt(0))); }
-                }
-            }
-            else if (MOD == JOIN) { return args.isEmpty() ? (String) gotbad(1, "join", "string expected, got no value") : (String) midlet.joinpath(toLuaString(args.elementAt(0)), father); }
-            else if (MOD == MKDIR) {
-                if (args.isEmpty()) { }
-                else {
-                    String dir = toLuaString(args.elementAt(0));
-
-                    if (!dir.equals("/mnt/") && dir.startsWith("/mnt/")) {
-                        FileConnection fc = null;
-                        try {
-                            fc = (FileConnection) Connector.open("file:///" + dir.substring(5), Connector.READ_WRITE);
-                            
-                            if (fc.exists()) { return new Double(128); } else { fc.mkdir(); return new Double(0); }
-                        }
-                        catch (Exception e) { return e instanceof SecurityException ? 13 : 1; }
-                        finally { if (fc != null) { try { fc.close(); } catch (Exception e) { } } }
-                    } else { return new Double(5); }
-                    
-                }
-                    
-            }
-            // Package: io
-            else if (MOD == READ) {
-                if (args.isEmpty()) { return stdout instanceof StringItem ? ((StringItem) stdout).getText() : stdout instanceof StringBuffer ? ((StringBuffer) stdout).toString() : stdout instanceof String ? midlet.getcontent((String) stdout, father) : ""; }
-                else {
-                    Object arg = args.elementAt(0);
-
-                    if (arg instanceof InputStream) { return midlet.read((InputStream) arg, args.size() > 1 && args.elementAt(1) instanceof Double ? ((Double) args.elementAt(1)).intValue() : 1024, false); }
-                    else if (arg instanceof StringBuffer) { ((StringBuffer) arg).toString(); }
-                    else if (arg instanceof OutputStream) { return gotbad(1, "read", "input stream expected, got output"); } 
-                    else { return midlet.getcontent(toLuaString(arg), father); } 
-                }
-            }
-            else if (MOD == WRITE) {
-                if (args.isEmpty()) { }
-                else {
-                    Object buffer = args.elementAt(0), target = args.size() > 1 ? args.elementAt(1) : null, how = args.size() > 2 ? args.elementAt(2) : null;
-                    boolean mode = how != null && toLuaString(how).equals("a");
-
-                    if (target instanceof OutputStream) {
-                        OutputStream outputStream = (OutputStream) target;
-
-                        if (buffer instanceof ByteArrayOutputStream) {
-                            ByteArrayOutputStream baos = (ByteArrayOutputStream) buffer;
-                            byte[] bytes = baos.toByteArray();
-                            outputStream.write(bytes);
-                        } else {
-                            outputStream.write(toLuaString(buffer).getBytes("UTF-8"));
-                        }
-                        outputStream.flush();
-                        return new Double(0);
-                    }
-                    else if (buffer instanceof OutputStream) {
-                        OutputStream outputStream = (OutputStream) buffer;
-
-                        if (target instanceof ByteArrayOutputStream) {
-                            ByteArrayOutputStream baos = (ByteArrayOutputStream) target;
-                            byte[] bytes = baos.toByteArray();
-                            outputStream.write(bytes);
-                        } else {
-                            outputStream.write(toLuaString(target).getBytes("UTF-8"));
-                        }
-                        outputStream.flush();
-                        return new Double(0);
-                    }
-                    else if (target instanceof StringBuffer) { StringBuffer sb = (StringBuffer) target; String content = toLuaString(buffer); sb.append(content); return new Double(0); }
-                    else if (buffer instanceof ByteArrayOutputStream) {
-                        ByteArrayOutputStream baos = (ByteArrayOutputStream) buffer;
-                        byte[] bytes = baos.toByteArray();
-                        String filename = target != null ? toLuaString(target) : "/dev/stdout";
-                        if (mode) { return new Double(midlet.write(filename, midlet.getcontent(filename, father) + new String(bytes, "UTF-8"), id, father)); }
-                        else { return new Double(midlet.write(filename, bytes, id, father)); }
+                        return result;
                     }
                     else {
-                        String content = toLuaString(buffer), filename = target != null ? toLuaString(target) : "/dev/stdout";
-                        return new Double(midlet.write(filename, mode ? midlet.getcontent(filename, father) + content : content, id, father));
-                    }
-                }
-            }
-            else if (MOD == CLOSE) {
-                if (args.isEmpty()) { }
-                else {
-                    for (int i = 0; i < args.size(); i++) {
-                        Object arg = args.elementAt(i);
+                        String pid = toLuaString(args.elementAt(0)).trim();
+                        Process process = (Process) midlet.sys.get(pid);
 
-                        if (arg instanceof ServerSocketConnection) { ((ServerSocketConnection) arg).close(); }
-                        else if (arg instanceof StreamConnection) { ((StreamConnection) arg).close(); }
-                        else if (arg instanceof InputStream) { ((InputStream) arg).close(); }
-                        else if (arg instanceof OutputStream) { ((OutputStream) arg).close(); }
-                        else if (arg instanceof StringBuffer || arg instanceof StringItem) { }
-                        else if (arg instanceof Player) { Player player = (Player) arg; player.stop(); player.deallocate(); player.close(); }
-                        else { return gotbad(i + 1, "close", "stream expected, got " + type(arg)); }
+                        if (process != null) {
+                            if (process.uid != id && id != 0) { return gotbad(1, "getproc", "permissiond denied"); }
 
-                        proc.net.remove(arg);
-                    }
-                } 
-            }
-            else if (MOD == OPEN) { if (args.isEmpty()) { return new ByteArrayOutputStream(); } else { try { return midlet.getInputStream(toLuaString(args.elementAt(0)), father); } catch (Exception e) { return null; } } } 
-            else if (MOD == POPEN) { return popen(args); } 
-            else if (MOD == DIRS) { return dirs(args); }
-            else if (MOD == SETOUT) { if (args.isEmpty()) { } else { stdout = args.elementAt(0); } }
-            else if (MOD == MOUNT) {
-                if (args.isEmpty()) { }
-                else {
-                    String struct = toLuaString(args.elementAt(0));
-                    
-                    if (struct == null || struct.length() == 0) { midlet.fs.clear(); } 
-                    String[] lines = midlet.split(struct, '\n'); 
-                    for (int i = 0; i < lines.length; i++) {
-                        String line = lines[i].trim(); 
-                        int div = line.indexOf('='); 
-                        if (line.startsWith("#") || line.length() == 0 || div == -1) { continue; } 
-                        else { 
-                            String base = line.substring(0, div).trim(); 
-                            String[] files = midlet.split(line.substring(div + 1).trim(), ','); 
-                            Vector content = new Vector(); 
-                            content.addElement(".."); 
-                            for (int j = 0; j < files.length; j++) { 
-                                if (!content.contains(files[j])) { 
-                                    if (files[j].endsWith("/")) { 
-                                        Vector dir = new Vector(); 
-                                        dir.addElement(".."); 
-                                        midlet.fs.put(base + files[j], dir); 
-                                    } 
-                                    
-                                    content.addElement(files[j]);
-                                }
-                            } 
-                            midlet.fs.put(base, content);
+                            if (args.size() > 1) { return process.db.get(toLuaString(args.elementAt(1)).trim()); } 
+                            else { return gotbad(2, "getproc", "field expected, got no value"); }
                         } 
                     }
-                }
-            }
-            else if (MOD == GEN) { return new StringBuffer(); }
-            else if (MOD == COPY) {
-                if (args.size() < 2) { return gotbad(1, "copy", "wrong number of arguments"); }
+                case SETPROC:
+                    if (args.isEmpty()) { }
+                    else if (args.elementAt(0) instanceof Boolean) { kill = ((Boolean) args.elementAt(0)).booleanValue(); }
+                    else {
+                        String attribute = toLuaString(args.elementAt(0)).trim().toLowerCase();
+                        Object value = args.size() < 2 ? null : args.elementAt(1);
+
+                        if (attribute.equals("owner")) { return gotbad(1, "setproc", "permission denied"); } 
+                        else if (attribute.equals("scope")) { if (value instanceof Hashtable) { proc.scope = (Hashtable) value; } else { return gotbad(1, "setproc", "table expected"); } }
+                        else if (attribute.equals("name")) { if (value != null) { proc.name = toLuaString(value); } else { return gotbad(1, "setproc", "string expected"); } }
+                        else if (attribute.equals("handler")) { if (value instanceof LuaFunction) { proc.handler = value; kill = false; } else { return gotbad(1, "setproc", "function expected"); } }
+                        else if (attribute.equals("cmd")) { if (value != null) { proc.cmd = toLuaString(value); } else { return gotbad(1, "setproc", "string expected"); } }
+                        else if (attribute.equals("sighandler")) { if (value instanceof LuaFunction) { proc.sighandler = value; } else { return gotbad(1, "setproc", "function expected"); } }
+                        else { if (value == null) { proc.db.remove(attribute); } else { proc.db.put(attribute, value); } }
+                    } 
+                case GETCWD: return father.get("PWD");
+                case REQUEST:
+                    if (args.isEmpty()) { return gotbad(1, "request", "string expected, got no value"); }
+                    else if (args.size() < 2) { return gotbad(2, "request", "value expected, got no value"); }
+                    else if (midlet.sys.containsKey(toLuaString(args.elementAt(0)))) {
+                        Process process = (Process) midlet.sys.get(toLuaString(args.elementAt(0)));
+                        if (process.lua != null && process.handler != null) {
+                            Lua lua = (Lua) process.lua;
+                            Vector arg = new Vector(); arg.addElement(toLuaString(args.elementAt(1))); arg.addElement(args.size() > 2 ? args.elementAt(2) : null); arg.addElement(father); arg.addElement(PID); arg.addElement(new Double(id));
+                            Object response = null;
+
+                            try { response = ((Lua.LuaFunction) process.handler).call(arg); }
+                            catch (Exception e) { return midlet.getCatch(e); } 
+                            catch (Error e) { if (e.getMessage() != null) { midlet.print(e.getMessage(), stdout, id, father); } return new Double(lua.status); }
+
+                            return response;
+                        } 
+                        else { return gotbad(1, "request", "not a service"); }
+                    } 
+                    else { return gotbad(1, "request", "process not found"); }
+                case GETUID: if (args.isEmpty() || args.elementAt(0) == null) { return new Double(id); } return new Double(midlet.getUserID(toLuaString(args.elementAt(0))));
+                case CHDIR: return chdir(args);
+                case SU:
+                    if (args.isEmpty()) { return gotbad(1, "su", "username and password expected"); } 
+                    else {
+                        String user = toLuaString(args.elementAt(0)), query = args.size() > 1 ? toLuaString(args.elementAt(1)) : null;
+                        if (user.equals(midlet.username)) { id = 1000; father.put("USER", user); proc.uid = 1000; return new Double(0); }
+                        else if (midlet.userID.containsKey(user)) { id = midlet.getUserID(user); father.put("USER", user); proc.uid = id; return new Double(0); }
+                        else if (query == null) { return gotbad(2, "su", "string expected, got nil"); }
+                        else if (user.equals("root") && midlet.passwd(query)) { id = 0; father.put("USER", "root"); proc.uid = 0; return new Double(0); }
+                        else { return new Double(13); }
+                    }
+                case REMOVE: return args.isEmpty() ? (Double) gotbad(1, "remove", "string expected, got no value") : new Double(midlet.deleteFile(toLuaString(args.elementAt(0)), id, father));
+                case SCOPE:
+                    if (args.isEmpty()) { return father; }
+                    else {
+                        if (args.elementAt(0) instanceof Hashtable) { 
+                            father = (Hashtable) args.elementAt(0);
+
+                            if (father.containsKey("USER")) {
+                                String user = (String) father.get("USER");
+                                if (user.equals("root")) {
+                                    if (id == 1000) {
+                                        father.put("USER", midlet.loadRMS("OpenRMS", 1));
+                                    }
+                                }
+                            }
+
+                            break;
+                        }
+                        else { return gotbad(1, "scope", "table expected, got " + type(args.elementAt(0))); }
+                    }
+                case JOIN: return args.isEmpty() ? (String) gotbad(1, "join", "string expected, got no value") : (String) midlet.joinpath(toLuaString(args.elementAt(0)), father);
+                case MKDIR:
+                    if (args.isEmpty()) { }
+                    else {
+                        String dir = toLuaString(args.elementAt(0));
+
+                        if (!dir.equals("/mnt/") && dir.startsWith("/mnt/")) {
+                            FileConnection fc = null;
+                            try {
+                                fc = (FileConnection) Connector.open("file:///" + dir.substring(5), Connector.READ_WRITE);
+                                
+                                if (fc.exists()) { return new Double(128); } else { fc.mkdir(); return new Double(0); }
+                            }
+                            catch (Exception e) { return e instanceof SecurityException ? 13 : 1; }
+                            finally { if (fc != null) { try { fc.close(); } catch (Exception e) { } } }
+                        } else { return new Double(5); }
+                    }
+                // Package [io]
+                case READ:
+                    if (args.isEmpty()) { return stdout instanceof StringItem ? ((StringItem) stdout).getText() : stdout instanceof StringBuffer ? ((StringBuffer) stdout).toString() : stdout instanceof String ? midlet.getcontent((String) stdout, father) : ""; }
+                    else {
+                        Object arg = args.elementAt(0);
+
+                        if (arg instanceof InputStream) { return midlet.read((InputStream) arg, args.size() > 1 && args.elementAt(1) instanceof Double ? ((Double) args.elementAt(1)).intValue() : 1024, false); }
+                        else if (arg instanceof StringBuffer) { ((StringBuffer) arg).toString(); }
+                        else if (arg instanceof OutputStream) { return gotbad(1, "read", "input stream expected, got output"); } 
+                        else { return midlet.getcontent(toLuaString(arg), father); } 
+                    }
+                case WRITE:
+                    if (args.isEmpty()) { break; }
+                    else {
+                        Object buffer = args.elementAt(0), target = args.size() > 1 ? args.elementAt(1) : null, how = args.size() > 2 ? args.elementAt(2) : null;
+                        boolean mode = how != null && toLuaString(how).equals("a");
+
+                        if (target instanceof OutputStream) {
+                            OutputStream outputStream = (OutputStream) target;
+
+                            if (buffer instanceof ByteArrayOutputStream) {
+                                ByteArrayOutputStream baos = (ByteArrayOutputStream) buffer;
+                                byte[] bytes = baos.toByteArray();
+                                outputStream.write(bytes);
+                            } else {
+                                outputStream.write(toLuaString(buffer).getBytes("UTF-8"));
+                            }
+                            outputStream.flush();
+                            return new Double(0);
+                        }
+                        else if (buffer instanceof OutputStream) {
+                            OutputStream outputStream = (OutputStream) buffer;
+
+                            if (target instanceof ByteArrayOutputStream) {
+                                ByteArrayOutputStream baos = (ByteArrayOutputStream) target;
+                                byte[] bytes = baos.toByteArray();
+                                outputStream.write(bytes);
+                            } else {
+                                outputStream.write(toLuaString(target).getBytes("UTF-8"));
+                            }
+                            outputStream.flush();
+                            return new Double(0);
+                        }
+                        else if (target instanceof StringBuffer) { StringBuffer sb = (StringBuffer) target; String content = toLuaString(buffer); sb.append(content); return new Double(0); }
+                        else if (buffer instanceof ByteArrayOutputStream) {
+                            ByteArrayOutputStream baos = (ByteArrayOutputStream) buffer;
+                            byte[] bytes = baos.toByteArray();
+                            String filename = target != null ? toLuaString(target) : "/dev/stdout";
+                            if (mode) { return new Double(midlet.write(filename, midlet.getcontent(filename, father) + new String(bytes, "UTF-8"), id, father)); }
+                            else { return new Double(midlet.write(filename, bytes, id, father)); }
+                        }
+                        else {
+                            String content = toLuaString(buffer), filename = target != null ? toLuaString(target) : "/dev/stdout";
+                            return new Double(midlet.write(filename, mode ? midlet.getcontent(filename, father) + content : content, id, father));
+                        }
+                    }
+                case CLOSE:
+                    if (args.isEmpty()) { }
+                    else {
+                        for (int i = 0; i < args.size(); i++) {
+                            Object arg = args.elementAt(i);
+
+                            if (arg instanceof ServerSocketConnection) { ((ServerSocketConnection) arg).close(); }
+                            else if (arg instanceof StreamConnection) { ((StreamConnection) arg).close(); }
+                            else if (arg instanceof InputStream) { ((InputStream) arg).close(); }
+                            else if (arg instanceof OutputStream) { ((OutputStream) arg).close(); }
+                            else if (arg instanceof StringBuffer || arg instanceof StringItem) { }
+                            else if (arg instanceof Player) { Player player = (Player) arg; player.stop(); player.deallocate(); player.close(); }
+                            else { return gotbad(i + 1, "close", "stream expected, got " + type(arg)); }
+
+                            proc.net.remove(arg); break;
+                        }
+                    } 
+                case OPEN: if (args.isEmpty()) { return new ByteArrayOutputStream(); } else { try { return midlet.getInputStream(toLuaString(args.elementAt(0)), father); } catch (Exception e) { return null; } }
+                case POPEN: return popen(args);
+                case DIRS: return dirs(args);
+                case SETOUT: if (args.isEmpty()) { } else { stdout = args.elementAt(0); }
+                case MOUNT:
+                    if (args.isEmpty()) { break; }
+                    else {
+                        String struct = toLuaString(args.elementAt(0));
+                        
+                        if (struct == null || struct.length() == 0) { midlet.fs.clear(); } 
+                        String[] lines = midlet.split(struct, '\n'); 
+                        for (int i = 0; i < lines.length; i++) {
+                            String line = lines[i].trim(); 
+                            int div = line.indexOf('='); 
+                            if (line.startsWith("#") || line.length() == 0 || div == -1) { continue; } 
+                            else { 
+                                String base = line.substring(0, div).trim(); 
+                                String[] files = midlet.split(line.substring(div + 1).trim(), ','); 
+                                Vector content = new Vector(); 
+                                content.addElement(".."); 
+                                for (int j = 0; j < files.length; j++) { 
+                                    if (!content.contains(files[j])) { 
+                                        if (files[j].endsWith("/")) { 
+                                            Vector dir = new Vector(); 
+                                            dir.addElement(".."); 
+                                            midlet.fs.put(base + files[j], dir); 
+                                        } 
+                                        
+                                        content.addElement(files[j]);
+                                    }
+                                } 
+                                midlet.fs.put(base, content);
+                            } 
+                        }
+                        break;
+                    }
+                case GEN: return new StringBuffer();
+                case COPY:
+                    if (args.size() < 2) { return gotbad(1, "copy", "wrong number of arguments"); }
                 
-                Object source = args.elementAt(0), target = args.elementAt(1);
+                    Object source = args.elementAt(0), target = args.elementAt(1);
 
-                if (source instanceof InputStream) {
-                    InputStream in = (InputStream) source;
+                    if (source instanceof InputStream) {
+                        InputStream in = (InputStream) source;
 
-                    if (target instanceof OutputStream) {
-                        OutputStream os = (OutputStream) target;
-                        
-                        byte[] buffer = new byte[1024];
-                        int bytesRead;
-                        while ((bytesRead = in.read(buffer)) != -1) { os.write(buffer, 0, bytesRead); }
-                        os.flush();
-                        return new Double(0);
-                    }
-                    else if (target instanceof StringBuffer || target instanceof String) {
-                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        byte[] buffer = new byte[1024], data;
-                        int bytesRead;
-                        while ((bytesRead = in.read(buffer)) != -1) { baos.write(buffer, 0, bytesRead); }
-
-                        data = baos.toByteArray(); baos.close();    
-                    
-                        if (target instanceof StringBuffer) { ((StringBuffer) target).append(new String(data, "UTF-8")); return new Double(0); }
-                        else { return new Double(midlet.write(toLuaString(target), data, id, father)); }
-                    }
-                }
-                else if (source instanceof StringBuffer) {
-                    StringBuffer in = (StringBuffer) source;
-
-                    if (target instanceof OutputStream) {
-                        OutputStream os = (OutputStream) target;
-                        
-                        os.write(in.toString().getBytes("UTF-8")); os.flush();
-                        return new Double(0);
-                    }
-                    else if (target instanceof StringBuffer || target instanceof String) {
-                        if (target instanceof StringBuffer) { ((StringBuffer) target).append(in.toString()); return new Double(0); }
-                        else { return new Double(midlet.write(toLuaString(target), in.toString().getBytes("UTF-8"), id, father)); }
-                    }
-                }
-                else if (source instanceof String) {
-                    String file = (String) source;
-
-                    if (target instanceof OutputStream) {
-                        OutputStream os = (OutputStream) target;
-                        
-                        InputStream is = midlet.getInputStream(file, father);
-                        if (is == null) { return new Double(127); }
-                        
-                        byte[] buffer = new byte[1024];
-                        int bytesRead;
-                        while ((bytesRead = is.read(buffer)) != -1) { os.write(buffer, 0, bytesRead); }
-                        os.flush(); is.close();
-                        return new Double(0);
-                    }
-                    else if (target instanceof StringBuffer || target instanceof String) {
-                        if (target instanceof StringBuffer) { ((StringBuffer) target).append(midlet.read(file, father)); }
-                        else { 
-                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-                            InputStream is = midlet.getInputStream(file, father);
-                            if (is == null) { return new Double(127); }
-
+                        if (target instanceof OutputStream) {
+                            OutputStream os = (OutputStream) target;
+                            
                             byte[] buffer = new byte[1024];
                             int bytesRead;
-                            while ((bytesRead = is.read(buffer)) != -1) { baos.write(buffer, 0, bytesRead); }
+                            while ((bytesRead = in.read(buffer)) != -1) { os.write(buffer, 0, bytesRead); }
+                            os.flush();
+                            return new Double(0);
+                        }
+                        else if (target instanceof StringBuffer || target instanceof String) {
+                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                            byte[] buffer = new byte[1024], data;
+                            int bytesRead;
+                            while ((bytesRead = in.read(buffer)) != -1) { baos.write(buffer, 0, bytesRead); }
 
-                            return new Double(midlet.write(toLuaString(target), baos.toByteArray(), id, father));
+                            data = baos.toByteArray(); baos.close();    
+                        
+                            if (target instanceof StringBuffer) { ((StringBuffer) target).append(new String(data, "UTF-8")); return new Double(0); }
+                            else { return new Double(midlet.write(toLuaString(target), data, id, father)); }
                         }
                     }
-                }
-                else if (source instanceof ByteArrayOutputStream) {
-                    ByteArrayOutputStream baos = (ByteArrayOutputStream) source;
-                    byte[] data = baos.toByteArray();
-                    
-                    if (target instanceof OutputStream) { OutputStream os = (OutputStream) target; os.write(data); os.flush(); } 
-                    else if (target instanceof StringBuffer) { ((StringBuffer) target).append(new String(data, "UTF-8")); } 
-                    else if (target instanceof String) { return new Double(midlet.write(toLuaString(target), data, id, father)); }
-                }
+                    else if (source instanceof StringBuffer) {
+                        StringBuffer in = (StringBuffer) source;
 
-                return new Double(0);
-            }
-            // Package: table
-            else if (MOD == TB_INSERT) {
-                if (args.size() < 2) { return gotbad(1, "insert", "wrong number of arguments"); }
-                else {
-                    Object tObj = unwrap(args.elementAt(0));
-                    if (tObj instanceof Hashtable) {
-                        Hashtable table = (Hashtable) tObj;
-                        if (isListTable(table)) {
-                            int pos = table.size() + 1; // default: append
-                            Object value = unwrap(args.elementAt(1));
-                            if (args.size() >= 3) {
-                                Object posObj = unwrap(args.elementAt(2));
-                                if (!(posObj instanceof Double)) { return gotbad(3, "insert", "number expected, got " + type(posObj)); }
-                                pos = ((Double) posObj).intValue();
-                                if (pos < 0 || pos > table.size() + 1) { return gotbad(3, "insert", "position out of bounds"); }
-                                // value continua sendo args[1]
+                        if (target instanceof OutputStream) {
+                            OutputStream os = (OutputStream) target;
+                            
+                            os.write(in.toString().getBytes("UTF-8")); os.flush();
+                            return new Double(0);
+                        }
+                        else if (target instanceof StringBuffer || target instanceof String) {
+                            if (target instanceof StringBuffer) { ((StringBuffer) target).append(in.toString()); return new Double(0); }
+                            else { return new Double(midlet.write(toLuaString(target), in.toString().getBytes("UTF-8"), id, father)); }
+                        }
+                    }
+                    else if (source instanceof String) {
+                        String file = (String) source;
+
+                        if (target instanceof OutputStream) {
+                            OutputStream os = (OutputStream) target;
+                            
+                            InputStream is = midlet.getInputStream(file, father);
+                            if (is == null) { return new Double(127); }
+                            
+                            byte[] buffer = new byte[1024];
+                            int bytesRead;
+                            while ((bytesRead = is.read(buffer)) != -1) { os.write(buffer, 0, bytesRead); }
+                            os.flush(); is.close();
+                            return new Double(0);
+                        }
+                        else if (target instanceof StringBuffer || target instanceof String) {
+                            if (target instanceof StringBuffer) { ((StringBuffer) target).append(midlet.read(file, father)); }
+                            else { 
+                                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+                                InputStream is = midlet.getInputStream(file, father);
+                                if (is == null) { return new Double(127); }
+
+                                byte[] buffer = new byte[1024];
+                                int bytesRead;
+                                while ((bytesRead = is.read(buffer)) != -1) { baos.write(buffer, 0, bytesRead); }
+
+                                return new Double(midlet.write(toLuaString(target), baos.toByteArray(), id, father));
                             }
-                            // Desloca elementos para abrir espaço (shift right)
-                            for (int i = table.size(); i >= pos; i--) {
-                                Object val = table.get(new Double(i));
-                                if (val != null) {
-                                    table.put(new Double(i + 1), val);
+                        }
+                    }
+                    else if (source instanceof ByteArrayOutputStream) {
+                        ByteArrayOutputStream baos = (ByteArrayOutputStream) source;
+                        byte[] data = baos.toByteArray();
+                        
+                        if (target instanceof OutputStream) { OutputStream os = (OutputStream) target; os.write(data); os.flush(); } 
+                        else if (target instanceof StringBuffer) { ((StringBuffer) target).append(new String(data, "UTF-8")); } 
+                        else if (target instanceof String) { return new Double(midlet.write(toLuaString(target), data, id, father)); }
+                    }
+
+                    return new Double(0);
+                // Package [table]
+                case TB_INSERT:
+                    if (args.size() < 2) { return gotbad(1, "insert", "wrong number of arguments"); }
+                    else {
+                        Object tObj = unwrap(args.elementAt(0));
+                        if (tObj instanceof Hashtable) {
+                            Hashtable table = (Hashtable) tObj;
+                            if (isListTable(table)) {
+                                int pos = table.size() + 1; // default: append
+                                Object value = unwrap(args.elementAt(1));
+                                if (args.size() >= 3) {
+                                    Object posObj = unwrap(args.elementAt(2));
+                                    if (!(posObj instanceof Double)) { return gotbad(3, "insert", "number expected, got " + type(posObj)); }
+                                    pos = ((Double) posObj).intValue();
+                                    if (pos < 0 || pos > table.size() + 1) { return gotbad(3, "insert", "position out of bounds"); }
+                                    // value continua sendo args[1]
+                                }
+                                // Desloca elementos para abrir espaço (shift right)
+                                for (int i = table.size(); i >= pos; i--) {
+                                    Object val = table.get(new Double(i));
+                                    if (val != null) { table.put(new Double(i + 1), val); }
+                                    else { table.remove(new Double(i)); }
+                                }
+                                table.put(new Double(pos), value == null ? LUA_NIL : value);
+                                return null;
+                            } else { return gotbad(1, "insert", "table must be array-like"); }
+                        } else { return gotbad(1, "insert", "table expected, got " + type(tObj)); }
+                    }
+                case TB_CONCAT:
+                    if (args.isEmpty()) { return gotbad(1, "concat", "table expected, got no value"); }
+                    else {
+                        Object tObj = unwrap(args.elementAt(0));
+                        if (tObj instanceof Hashtable) {
+                            Hashtable table = (Hashtable) tObj;
+                            if (isListTable(table)) {
+                                Vector list = toVector(table);
+                                String sep = args.size() > 1 ? toLuaString(unwrap(args.elementAt(1))) : "";
+                                int i = args.size() > 2 ? ((Double) unwrap(args.elementAt(2))).intValue() : 1;
+                                int j = args.size() > 3 ? ((Double) unwrap(args.elementAt(3))).intValue() : list.size();
+                                if (i < 1 || j > list.size() || i > j) { return ""; }
+                                StringBuffer sb = new StringBuffer();
+                                for (int k = i - 1; k < j; k++) {
+                                    sb.append(toLuaString(list.elementAt(k)));
+                                    if (k < j - 1) sb.append(sep);
+                                }
+                                return sb.toString();
+                            } else { return gotbad(1, "concat", "table must be array-like"); }
+                        } else { return gotbad(1, "concat", "table expected, got " + type(tObj)); }
+                    }
+                case TB_REMOVE:
+                    if (args.isEmpty()) { return gotbad(1, "remove", "table expected, got no value"); }
+                    else {
+                        Object tObj = unwrap(args.elementAt(0));
+                        if (tObj instanceof Hashtable) {
+                            Hashtable table = (Hashtable) tObj;
+                            if (isListTable(table)) {
+                                int pos = table.size(); // default: remove o último
+                                if (args.size() >= 2) {
+                                    Object posObj = unwrap(args.elementAt(1));
+                                    if (!(posObj instanceof Double)) { return gotbad(2, "remove", "number expected, got " + type(posObj)); }
+                                    pos = ((Double) posObj).intValue();
+                                    if (pos < 1 || pos > table.size()) { return gotbad(2, "remove", "position out of bounds"); }
+                                }
+                                Object removed = table.get(new Double(pos));
+                                if (removed != null) {
+                                    table.remove(new Double(pos));
+                                    // Desloca elementos para preencher o buraco (shift left)
+                                    for (int i = pos; i < table.size(); i++) {
+                                        Object val = table.get(new Double(i + 1));
+                                        if (val != null) {
+                                            table.put(new Double(i), val);
+                                        } else {
+                                            table.remove(new Double(i));
+                                        }
+                                    }
+                                    // Remove o último índice se vazio
+                                    if (table.containsKey(new Double(table.size()))) {
+                                        table.remove(new Double(table.size()));
+                                    }
+                                }
+                                return removed == null ? LUA_NIL : removed;
+                            } else { return gotbad(1, "remove", "table must be array-like"); }
+                        } else { return gotbad(1, "remove", "table expected, got " + type(tObj)); }
+                    }
+                case TB_SORT:
+                    if (args.isEmpty()) { return gotbad(1, "sort", "table expected, got no value"); }
+                    else {
+                        Object tObj = unwrap(args.elementAt(0));
+                        if (tObj instanceof Hashtable) {
+                            Hashtable table = (Hashtable) tObj;
+                            if (isListTable(table)) {
+                                Vector list = toVector(table);
+                                // Bubble sort simples (sem comparador customizado)
+                                for (int i = 0; i < list.size() - 1; i++) {
+                                    for (int j = 0; j < list.size() - i - 1; j++) {
+                                        Object a = list.elementAt(j), b = list.elementAt(j + 1);
+                                        int cmp = compareLua(a, b);
+                                        if (cmp > 0) {
+                                            list.setElementAt(b, j);
+                                            list.setElementAt(a, j + 1);
+                                        }
+                                    }
+                                }
+                                // Reconstrói a tabela ordenada
+                                table.clear();
+                                for (int i = 0; i < list.size(); i++) {
+                                    table.put(new Double(i + 1), list.elementAt(i));
+                                }
+                                return null;
+                            } else { return gotbad(1, "sort", "table must be array-like"); }
+                        } else { return gotbad(1, "sort", "table expected, got " + type(tObj)); }
+                    }
+                case TB_MOVE:
+                    if (args.size() < 4) { return gotbad(1, "move", "insufficient arguments (need table, from, to, len)"); }
+                    else {
+                        Object tObj = unwrap(args.elementAt(0));
+                        if (tObj instanceof Hashtable) {
+                            Hashtable table = (Hashtable) tObj;
+                            if (isListTable(table)) {
+                                Object fromObj = unwrap(args.elementAt(1));
+                                Object toObj = unwrap(args.elementAt(2));
+                                Object lenObj = unwrap(args.elementAt(3));
+                                if (!(fromObj instanceof Double) || !(toObj instanceof Double) || !(lenObj instanceof Double)) {
+                                    return gotbad(1, "move", "from/to/len must be numbers");
+                                }
+                                int from = ((Double) fromObj).intValue();
+                                int to = ((Double) toObj).intValue();
+                                int len = ((Double) lenObj).intValue();
+                                int a = args.size() > 4 ? ((Double) unwrap(args.elementAt(4))).intValue() : 1;
+                                int b = a + len - 1;
+                                if (from < 1 || to < 1 || len < 0 || a < 1 || b > table.size()) {
+                                    return gotbad(1, "move", "bounds out of range");
+                                }
+                                Vector list = toVector(table);
+                                // Extrai o slice a mover
+                                Vector slice = new Vector();
+                                for (int i = 0; i < len; i++) {
+                                    int idx = from + i - 1;
+                                    if (idx >= 0 && idx < list.size()) {
+                                        slice.addElement(list.elementAt(idx));
+                                    }
+                                }
+                                // Remove o bloco original (shift left)
+                                for (int i = from + len - 1; i >= from; i--) {
+                                    if (i - 1 >= 0 && i - 1 < list.size()) {
+                                        list.removeElementAt(i - 1);
+                                    }
+                                }
+                                // Insere o slice na nova posição
+                                for (int i = 0; i < slice.size(); i++) {
+                                    list.insertElementAt(slice.elementAt(i), to + i - 1);
+                                }
+                                // Reconstrói a tabela
+                                table.clear();
+                                for (int i = 0; i < list.size(); i++) {
+                                    table.put(new Double(i + 1), list.elementAt(i));
+                                }
+                                return table;
+                            } else { return gotbad(1, "move", "table must be array-like"); }
+                        } else { return gotbad(1, "move", "table expected, got " + type(tObj)); }
+                    }
+                case TB_UNPACK:
+                    if (args.isEmpty()) { return gotbad(1, "unpack", "table expected, got no value"); }
+                    else {
+                        Object tObj = unwrap(args.elementAt(0));
+                        if (tObj instanceof Hashtable) {
+                            Hashtable table = (Hashtable) tObj;
+                            if (isListTable(table)) {
+                                Vector list = toVector(table);
+                                int i = args.size() > 1 ? ((Double) unwrap(args.elementAt(1))).intValue() : 1;
+                                int j = args.size() > 2 ? ((Double) unwrap(args.elementAt(2))).intValue() : list.size();
+                                if (i < 1 || j > list.size() || i > j) { return new Vector(); }
+                                Vector result = new Vector();
+                                for (int k = i - 1; k < j; k++) {
+                                    result.addElement(list.elementAt(k));
+                                }
+                                return result;
+                            } else { return gotbad(1, "unpack", "table must be array-like"); }
+                        } else { return gotbad(1, "unpack", "table expected, got " + type(tObj)); }
+                    }
+                case TB_DECODE:
+                    if (args.isEmpty()) { return gotbad(1, "decode", "string expected, got no value"); }
+                    else {
+                        String text = toLuaString(args.elementAt(0));
+                        if (text.equals("")) { return new Hashtable(); }
+                        Hashtable properties = new Hashtable();
+
+                        String[] lines = midlet.split(text, '\n');
+                        for (int i = 0; i < lines.length; i++) {
+                            String line = lines[i];
+                            if (line.startsWith("#")) { }
+                            else { 
+                                int equalIndex = line.indexOf('='); 
+                                if (equalIndex > 0 && equalIndex < line.length() - 1) { properties.put(line.substring(0, equalIndex).trim(), midlet.getpattern(line.substring(equalIndex + 1).trim())); } 
+                            }
+                        }
+                        return properties;
+                    }
+                case TB_PACK:
+                    Hashtable packed = new Hashtable();
+                    for (int i = 0; i < args.size(); i++) {
+                        Object val = args.elementAt(i);
+                        packed.put(new Double(i + 1), val == null ? LUA_NIL : val);
+                    }
+                    packed.put("n", new Double(args.size()));
+                    return packed;
+                // Package [base64]
+                case BASE64_ENCODE:
+                    if (args.isEmpty()) { return gotbad(1, "encode", "string or table expected, got no value"); }
+                    
+                    Object arg = args.elementAt(0);
+                    byte[] data;
+                    
+                    if (arg instanceof Hashtable) {
+                        Hashtable table = (Hashtable) arg;
+                        if (isListTable(table)) {
+                            Vector vec = toVector(table);
+                            data = new byte[vec.size()];
+                            for (int i = 0; i < vec.size(); i++) {
+                                Object val = vec.elementAt(i);
+                                if (val instanceof Double) {
+                                    double d = ((Double) val).doubleValue();
+                                    if (d < 0 || d > 255) {
+                                        return gotbad(1, "encode", "byte value out of range (0-255)");
+                                    }
+                                    data[i] = (byte) d;
                                 } else {
-                                    table.remove(new Double(i));
+                                    return gotbad(1, "encode", "table must contain numbers");
                                 }
                             }
-                            table.put(new Double(pos), value == null ? LUA_NIL : value);
-                            return null;
-                        } else { return gotbad(1, "insert", "table must be array-like"); }
-                    } else { return gotbad(1, "insert", "table expected, got " + type(tObj)); }
-                }
-            }
-            else if (MOD == TB_CONCAT) {
-                if (args.isEmpty()) { return gotbad(1, "concat", "table expected, got no value"); }
-                else {
-                    Object tObj = unwrap(args.elementAt(0));
-                    if (tObj instanceof Hashtable) {
-                        Hashtable table = (Hashtable) tObj;
-                        if (isListTable(table)) {
-                            Vector list = toVector(table);
-                            String sep = args.size() > 1 ? toLuaString(unwrap(args.elementAt(1))) : "";
-                            int i = args.size() > 2 ? ((Double) unwrap(args.elementAt(2))).intValue() : 1;
-                            int j = args.size() > 3 ? ((Double) unwrap(args.elementAt(3))).intValue() : list.size();
-                            if (i < 1 || j > list.size() || i > j) { return ""; }
-                            StringBuffer sb = new StringBuffer();
-                            for (int k = i - 1; k < j; k++) {
-                                sb.append(toLuaString(list.elementAt(k)));
-                                if (k < j - 1) sb.append(sep);
-                            }
-                            return sb.toString();
-                        } else { return gotbad(1, "concat", "table must be array-like"); }
-                    } else { return gotbad(1, "concat", "table expected, got " + type(tObj)); }
-                }
-            }
-            else if (MOD == TB_REMOVE) {
-                if (args.isEmpty()) { return gotbad(1, "remove", "table expected, got no value"); }
-                else {
-                    Object tObj = unwrap(args.elementAt(0));
-                    if (tObj instanceof Hashtable) {
-                        Hashtable table = (Hashtable) tObj;
-                        if (isListTable(table)) {
-                            int pos = table.size(); // default: remove o último
-                            if (args.size() >= 2) {
-                                Object posObj = unwrap(args.elementAt(1));
-                                if (!(posObj instanceof Double)) { return gotbad(2, "remove", "number expected, got " + type(posObj)); }
-                                pos = ((Double) posObj).intValue();
-                                if (pos < 1 || pos > table.size()) { return gotbad(2, "remove", "position out of bounds"); }
-                            }
-                            Object removed = table.get(new Double(pos));
-                            if (removed != null) {
-                                table.remove(new Double(pos));
-                                // Desloca elementos para preencher o buraco (shift left)
-                                for (int i = pos; i < table.size(); i++) {
-                                    Object val = table.get(new Double(i + 1));
-                                    if (val != null) {
-                                        table.put(new Double(i), val);
-                                    } else {
-                                        table.remove(new Double(i));
-                                    }
-                                }
-                                // Remove o último índice se vazio
-                                if (table.containsKey(new Double(table.size()))) {
-                                    table.remove(new Double(table.size()));
-                                }
-                            }
-                            return removed == null ? LUA_NIL : removed;
-                        } else { return gotbad(1, "remove", "table must be array-like"); }
-                    } else { return gotbad(1, "remove", "table expected, got " + type(tObj)); }
-                }
-            }
-            else if (MOD == TB_SORT) {
-                if (args.isEmpty()) { return gotbad(1, "sort", "table expected, got no value"); }
-                else {
-                    Object tObj = unwrap(args.elementAt(0));
-                    if (tObj instanceof Hashtable) {
-                        Hashtable table = (Hashtable) tObj;
-                        if (isListTable(table)) {
-                            Vector list = toVector(table);
-                            // Bubble sort simples (sem comparador customizado)
-                            for (int i = 0; i < list.size() - 1; i++) {
-                                for (int j = 0; j < list.size() - i - 1; j++) {
-                                    Object a = list.elementAt(j), b = list.elementAt(j + 1);
-                                    int cmp = compareLua(a, b);
-                                    if (cmp > 0) {
-                                        list.setElementAt(b, j);
-                                        list.setElementAt(a, j + 1);
-                                    }
-                                }
-                            }
-                            // Reconstrói a tabela ordenada
-                            table.clear();
-                            for (int i = 0; i < list.size(); i++) {
-                                table.put(new Double(i + 1), list.elementAt(i));
-                            }
-                            return null;
-                        } else { return gotbad(1, "sort", "table must be array-like"); }
-                    } else { return gotbad(1, "sort", "table expected, got " + type(tObj)); }
-                }
-            }
-            else if (MOD == TB_MOVE) {
-                if (args.size() < 4) { return gotbad(1, "move", "insufficient arguments (need table, from, to, len)"); }
-                else {
-                    Object tObj = unwrap(args.elementAt(0));
-                    if (tObj instanceof Hashtable) {
-                        Hashtable table = (Hashtable) tObj;
-                        if (isListTable(table)) {
-                            Object fromObj = unwrap(args.elementAt(1));
-                            Object toObj = unwrap(args.elementAt(2));
-                            Object lenObj = unwrap(args.elementAt(3));
-                            if (!(fromObj instanceof Double) || !(toObj instanceof Double) || !(lenObj instanceof Double)) {
-                                return gotbad(1, "move", "from/to/len must be numbers");
-                            }
-                            int from = ((Double) fromObj).intValue();
-                            int to = ((Double) toObj).intValue();
-                            int len = ((Double) lenObj).intValue();
-                            int a = args.size() > 4 ? ((Double) unwrap(args.elementAt(4))).intValue() : 1;
-                            int b = a + len - 1;
-                            if (from < 1 || to < 1 || len < 0 || a < 1 || b > table.size()) {
-                                return gotbad(1, "move", "bounds out of range");
-                            }
-                            Vector list = toVector(table);
-                            // Extrai o slice a mover
-                            Vector slice = new Vector();
-                            for (int i = 0; i < len; i++) {
-                                int idx = from + i - 1;
-                                if (idx >= 0 && idx < list.size()) {
-                                    slice.addElement(list.elementAt(idx));
-                                }
-                            }
-                            // Remove o bloco original (shift left)
-                            for (int i = from + len - 1; i >= from; i--) {
-                                if (i - 1 >= 0 && i - 1 < list.size()) {
-                                    list.removeElementAt(i - 1);
-                                }
-                            }
-                            // Insere o slice na nova posição
-                            for (int i = 0; i < slice.size(); i++) {
-                                list.insertElementAt(slice.elementAt(i), to + i - 1);
-                            }
-                            // Reconstrói a tabela
-                            table.clear();
-                            for (int i = 0; i < list.size(); i++) {
-                                table.put(new Double(i + 1), list.elementAt(i));
-                            }
-                            return table;
-                        } else { return gotbad(1, "move", "table must be array-like"); }
-                    } else { return gotbad(1, "move", "table expected, got " + type(tObj)); }
-                }
-            }
-            else if (MOD == TB_UNPACK) {
-                if (args.isEmpty()) { return gotbad(1, "unpack", "table expected, got no value"); }
-                else {
-                    Object tObj = unwrap(args.elementAt(0));
-                    if (tObj instanceof Hashtable) {
-                        Hashtable table = (Hashtable) tObj;
-                        if (isListTable(table)) {
-                            Vector list = toVector(table);
-                            int i = args.size() > 1 ? ((Double) unwrap(args.elementAt(1))).intValue() : 1;
-                            int j = args.size() > 2 ? ((Double) unwrap(args.elementAt(2))).intValue() : list.size();
-                            if (i < 1 || j > list.size() || i > j) { return new Vector(); }
-                            Vector result = new Vector();
-                            for (int k = i - 1; k < j; k++) {
-                                result.addElement(list.elementAt(k));
-                            }
-                            return result;
-                        } else { return gotbad(1, "unpack", "table must be array-like"); }
-                    } else { return gotbad(1, "unpack", "table expected, got " + type(tObj)); }
-                }
-            }
-            else if (MOD == TB_DECODE) {
-                if (args.isEmpty()) { return gotbad(1, "decode", "string expected, got no value"); }
-                else {
-                    String text = toLuaString(args.elementAt(0));
-                    if (text.equals("")) { return new Hashtable(); }
-                    Hashtable properties = new Hashtable();
-
-                    String[] lines = midlet.split(text, '\n');
-                    for (int i = 0; i < lines.length; i++) {
-                        String line = lines[i];
-                        if (line.startsWith("#")) { }
-                        else { 
-                            int equalIndex = line.indexOf('='); 
-                            if (equalIndex > 0 && equalIndex < line.length() - 1) { properties.put(line.substring(0, equalIndex).trim(), midlet.getpattern(line.substring(equalIndex + 1).trim())); } 
+                        } else {
+                            return gotbad(1, "encode", "table must be array-like");
                         }
-                    }
-                    return properties;
-                }
-            }
-            else if (MOD == TB_PACK) {
-                Hashtable packed = new Hashtable();
-                for (int i = 0; i < args.size(); i++) {
-                    Object val = args.elementAt(i);
-                    packed.put(new Double(i + 1), val == null ? LUA_NIL : val);
-                }
-                packed.put("n", new Double(args.size()));
-                return packed;
-            }
-            // Package: base64
-            else if (MOD == BASE64_ENCODE) {
-                if (args.isEmpty()) { return gotbad(1, "encode", "string or table expected, got no value"); }
-                
-                Object arg = args.elementAt(0);
-                byte[] data;
-                
-                if (arg instanceof Hashtable) {
-                    Hashtable table = (Hashtable) arg;
-                    if (isListTable(table)) {
-                        Vector vec = toVector(table);
-                        data = new byte[vec.size()];
-                        for (int i = 0; i < vec.size(); i++) {
-                            Object val = vec.elementAt(i);
-                            if (val instanceof Double) {
-                                double d = ((Double) val).doubleValue();
-                                if (d < 0 || d > 255) {
-                                    return gotbad(1, "encode", "byte value out of range (0-255)");
-                                }
-                                data[i] = (byte) d;
-                            } else {
-                                return gotbad(1, "encode", "table must contain numbers");
-                            }
-                        }
+                    } else if (arg instanceof String) {
+                        data = toLuaString(arg).getBytes("UTF-8");
                     } else {
-                        return gotbad(1, "encode", "table must be array-like");
+                        return gotbad(1, "encode", "string or table expected, got " + type(arg));
                     }
-                } else if (arg instanceof String) {
-                    data = toLuaString(arg).getBytes("UTF-8");
-                } /*else if (arg instanceof InputStream) {
-                    
-                } e*/else {
-                    return gotbad(1, "encode", "string or table expected, got " + type(arg));
-                }
                 
-                return midlet.encodeBase64(data);
-            }
-            else if (MOD == BASE64_DECODE) {
-                if (args.isEmpty()) { return gotbad(1, "decode", "string expected, got no value"); }
-                else {
-                    String encoded = toLuaString(args.elementAt(0));
-                    byte[] decoded = midlet.decodeBase64(encoded);
+                    return midlet.encodeBase64(data);
+                case BASE64_DECODE:
+                    if (args.isEmpty()) { return gotbad(1, "decode", "string expected, got no value"); }
+                    else {
+                        String encoded = toLuaString(args.elementAt(0));
+                        byte[] decoded = midlet.decodeBase64(encoded);
 
-                    if (args.size() > 1) { return new ByteArrayInputStream(decoded); }
+                        if (args.size() > 1) { return new ByteArrayInputStream(decoded); }
 
-                    if (decoded == null) { return null; }
+                        if (decoded == null) { return null; }
 
-                    Hashtable result = new Hashtable();
-                    for (int i = 0; i < decoded.length; i++) { result.put(new Double(i + 1), new Double(decoded[i] & 0xFF)); }
-                    return result;
-                }                
-            }
-            // Package: socket.http
-            else if (MOD == HTTP_GET || MOD == HTTP_POST) { return (args.isEmpty() || args.elementAt(0) == null ? gotbad(1, MOD == HTTP_GET ? "get" : "post", "string expected, got no value") : http(MOD == HTTP_GET ? "GET" : "POST", toLuaString(args.elementAt(0)), args.size() > 1 ? toLuaString(args.elementAt(1)) : "", args.size() > 2 ? args.elementAt(2) : null, false)); }
-            else if (MOD == HTTP_RGET || MOD == HTTP_RPOST) { return (args.isEmpty() || args.elementAt(0) == null ? gotbad(1, MOD == HTTP_GET ? "get" : "post", "string expected, got no value") : http(MOD == HTTP_GET ? "GET" : "POST", toLuaString(args.elementAt(0)), args.size() > 1 ? toLuaString(args.elementAt(1)) : "", args.size() > 2 ? args.elementAt(2) : null, true)); }
-            // Package: socket
-            else if (MOD == CONNECT) {
-                if (args.isEmpty() || args.elementAt(0) == null) { return gotbad(1, "connect", "string expected, got no value"); }
-                else {
-                    Vector result = new Vector();
-
-                    SocketConnection conn = (SocketConnection) Connector.open(toLuaString(args.elementAt(0)));
-                        
-                    result.addElement(conn); result.addElement(conn.openInputStream()); result.addElement(conn.openOutputStream()); result.addElement(args.elementAt(0)); result.addElement(new Double(id));
-                    proc.net.put(toLuaString(args.elementAt(0)), result);
-
-                    return result;
-                } 
-            }
-            else if (MOD == PEER || MOD == DEVICE) {
-                if (args.isEmpty()) { return gotbad(1, MOD == PEER ? "peer" : "device", "connection expected, got no value"); }
-                else {
-                    if (args.elementAt(0) instanceof SocketConnection) {
-                        SocketConnection conn = (SocketConnection) args.elementAt(0);
-
-                        Vector result = new Vector();
-                        result.addElement(MOD == PEER ? conn.getAddress() : conn.getLocalAddress());
-                        result.addElement(MOD == PEER ? conn.getPort() : conn.getLocalPort());
+                        Hashtable result = new Hashtable();
+                        for (int i = 0; i < decoded.length; i++) { result.put(new Double(i + 1), new Double(decoded[i] & 0xFF)); }
                         return result;
-                    } else { return gotbad(1, MOD == PEER ? "peer" : "device", "connection expected, got " + type(args.elementAt(0))); }
-                }
-            }
-            else if (MOD == SERVER) {
-                if (args.isEmpty() || !(args.elementAt(0) instanceof Double)) { return gotbad(1, "server" , "number expected, got " + (args.isEmpty() ? "no value" : type(args.elementAt(0)))); }
-                else {
-                    ServerSocketConnection server = (ServerSocketConnection) Connector.open("socket://:" + toLuaString(args.elementAt(0)));
-                    midlet.servers.put(toLuaString(args.elementAt(0)), server);
-                    proc.net.put(toLuaString(args.elementAt(0)), server);
-                    return server;
-                }
-            }
-            else if (MOD == ACCEPT) {
-                if (args.isEmpty() || !(args.elementAt(0) instanceof ServerSocketConnection)) { return gotbad(1, "server" , "server expected, got " + (args.isEmpty() ? " no value" : type(args.elementAt(0)))); }
-                else {
-                    Vector result = new Vector();
+                    }  
+                // Package [socket]
+                case CONNECT:
+                    if (args.isEmpty() || args.elementAt(0) == null) { return gotbad(1, "connect", "string expected, got no value"); }
+                    else {
+                        Vector result = new Vector();
 
-                    SocketConnection conn = (SocketConnection) ((ServerSocketConnection) args.elementAt(0)).acceptAndOpen();
-                        
-                    result.addElement(conn); result.addElement(conn.openInputStream()); result.addElement(conn.openOutputStream());
-                    proc.net.put("socket://:" + ((ServerSocketConnection) args.elementAt(0)).getLocalPort(), result);
+                        SocketConnection conn = (SocketConnection) Connector.open(toLuaString(args.elementAt(0)));
+                            
+                        result.addElement(conn); result.addElement(conn.openInputStream()); result.addElement(conn.openOutputStream()); result.addElement(args.elementAt(0)); result.addElement(new Double(id));
+                        proc.net.put(toLuaString(args.elementAt(0)), result);
 
-                    return result;
-                }
-            }
-            // Package: push
-            else if (MOD == PUSH_REGISTER) {
-                if (args.size() < 3) { return gotbad(1, "register", "insufficient arguments"); }
-                
-                String connection = toLuaString(args.elementAt(0)), filter = toLuaString(args.elementAt(1));
-                String midletClass = toLuaString(args.elementAt(2)), sender = args.size() > 3 ? toLuaString(args.elementAt(3)) : null;
-                
-                try {
-                    PushRegistry.registerConnection(connection, midletClass, filter);
-                    
-                    return TRUE;
-                } catch (ClassNotFoundException e) {
-                    return gotbad(3, "register", "MIDlet class not found: " + midletClass);
-                } catch (Exception e) {
-                    return gotbad(1, "register", midlet.getCatch(e));
-                }
-            }
-            else if (MOD == PUSH_UNREGISTER) {
-                if (args.isEmpty()) { return gotbad(1, "unregister", "connection string expected"); }
-                
-                String connection = toLuaString(args.elementAt(0));
-                
-                try {
-                    boolean result = PushRegistry.unregisterConnection(connection);
-                    return new Boolean(result);
-                } catch (Exception e) {
-                    return gotbad(1, "unregister", midlet.getCatch(e));
-                }
-            }
-            else if (MOD == PUSH_LIST) {
-                if (args.isEmpty()) { return gotbad(1, "list", "connection string expected"); }
-                
-                String connection = toLuaString(args.elementAt(0));
-                
-                try {
-                    String[] connections = PushRegistry.listConnections(false);
-                    Hashtable result = new Hashtable(); int j = 1;
-                    
-                    if (connections != null) {
-                        for (int i = 0; i < connections.length; i++) {
-                            if (connections[i].startsWith(connection) || connection.equals("*")) {
-                                result.put(new Double(j), connections[i]); j++;
-                            }
-                        }
+                        return result;
+                    } 
+                case PEER: case DEVICE:
+                    if (args.isEmpty()) { return gotbad(1, MOD == PEER ? "peer" : "device", "connection expected, got no value"); }
+                    else {
+                        if (args.elementAt(0) instanceof SocketConnection) {
+                            SocketConnection conn = (SocketConnection) args.elementAt(0);
+
+                            Vector result = new Vector();
+                            result.addElement(MOD == PEER ? conn.getAddress() : conn.getLocalAddress());
+                            result.addElement(MOD == PEER ? conn.getPort() : conn.getLocalPort());
+                            return result;
+                        } else { return gotbad(1, MOD == PEER ? "peer" : "device", "connection expected, got " + type(args.elementAt(0))); }
                     }
-                    
-                    return result;
-                } catch (Exception e) {
-                    return gotbad(1, "list", midlet.getCatch(e));
-                }
-            }
-            else if (MOD == PUSH_PENDING) {
-                try {
-                    boolean hasPending = PushRegistry.listConnections(true).length > 0;
-                    return new Boolean(hasPending);
-                } catch (Exception e) { return gotbad(1, "hasPending", midlet.getCatch(e)); }
-            }
-            else if (MOD == PUSH_SET_ALARM) {
-                if (args.size() < 2) {
-                    return gotbad(1, "setAlarm", "insufficient arguments");
-                }
+                case SERVER:
+                    if (args.isEmpty() || !(args.elementAt(0) instanceof Double)) { return gotbad(1, "server" , "number expected, got " + (args.isEmpty() ? "no value" : type(args.elementAt(0)))); }
+                    else {
+                        ServerSocketConnection server = (ServerSocketConnection) Connector.open("socket://:" + toLuaString(args.elementAt(0)));
+                        midlet.servers.put(toLuaString(args.elementAt(0)), server);
+                        proc.net.put(toLuaString(args.elementAt(0)), server);
+                        return server;
+                    }
+                case ACCEPT:
+                    if (args.isEmpty() || !(args.elementAt(0) instanceof ServerSocketConnection)) { return gotbad(1, "server" , "server expected, got " + (args.isEmpty() ? " no value" : type(args.elementAt(0)))); }
+                    else {
+                        Vector result = new Vector();
+
+                        SocketConnection conn = (SocketConnection) ((ServerSocketConnection) args.elementAt(0)).acceptAndOpen();
+                            
+                        result.addElement(conn); result.addElement(conn.openInputStream()); result.addElement(conn.openOutputStream());
+                        proc.net.put("socket://:" + ((ServerSocketConnection) args.elementAt(0)).getLocalPort(), result);
+
+                        return result;
+                    }
+                // Package [socket.http]
+                case HTTP_GET: case HTTP_POST: return (args.isEmpty() || args.elementAt(0) == null ? gotbad(1, MOD == HTTP_GET ? "get" : "post", "string expected, got no value") : http(MOD == HTTP_GET ? "GET" : "POST", toLuaString(args.elementAt(0)), args.size() > 1 ? toLuaString(args.elementAt(1)) : "", args.size() > 2 ? args.elementAt(2) : null, false));
+                case HTTP_RGET: case HTTP_RPOST: return (args.isEmpty() || args.elementAt(0) == null ? gotbad(1, MOD == HTTP_GET ? "get" : "post", "string expected, got no value") : http(MOD == HTTP_GET ? "GET" : "POST", toLuaString(args.elementAt(0)), args.size() > 1 ? toLuaString(args.elementAt(1)) : "", args.size() > 2 ? args.elementAt(2) : null, true));
+                // Package [push]
+                case PUSH_REGISTER:
+                    if (args.size() < 3) { return gotbad(1, "register", "insufficient arguments"); }
+                    else {
+                        String connection = toLuaString(args.elementAt(0)), filter = toLuaString(args.elementAt(1));
+                        String midletClass = toLuaString(args.elementAt(2)), sender = args.size() > 3 ? toLuaString(args.elementAt(3)) : null;
+                        
+                        try { PushRegistry.registerConnection(connection, midletClass, filter); return TRUE; }
+                        catch (ClassNotFoundException e) { return gotbad(3, "register", "MIDlet class not found: " + midletClass); }
+                        catch (Exception e) { return gotbad(1, "register", midlet.getCatch(e)); }
+                    }
+                case PUSH_UNREGISTER:
+                    if (args.isEmpty()) { return gotbad(1, "unregister", "connection string expected"); }
+                    else {
+                        String connection = toLuaString(args.elementAt(0));
+                        
+                        try { return new Boolean(PushRegistry.unregisterConnection(connection)); }
+                        catch (Exception e) { return gotbad(1, "unregister", midlet.getCatch(e)); }
+                    }
+                case PUSH_LIST:
+                    if (args.isEmpty()) { return gotbad(1, "list", "connection string expected"); }
+                    else {
+                        String connection = toLuaString(args.elementAt(0));
                 
-                String midletClass = toLuaString(args.elementAt(0));
-                long time = ((Double) args.elementAt(1)).longValue();
-                
-                try {
-                    long alarmTime = PushRegistry.registerAlarm(midletClass, time);
-                    return new Double(alarmTime);
-                } catch (ClassNotFoundException e) {
-                    return gotbad(1, "setAlarm", "MIDlet class not found: " + e.getMessage());
-                } catch (ConnectionNotFoundException e) {
-                    return gotbad(1, "setAlarm", "Connection not found: " + e.getMessage());
-                }
-            }
+                        try {
+                            String[] connections = PushRegistry.listConnections(false);
+                            Hashtable result = new Hashtable(); int j = 1;
+                            
+                            if (connections != null) { for (int i = 0; i < connections.length; i++) { if (connections[i].startsWith(connection) || connection.equals("*")) { result.put(new Double(j), connections[i]); j++; } } }
+                            
+                            return result;
+                        } catch (Exception e) { return gotbad(1, "list", midlet.getCatch(e)); }
+                    }
+                case PUSH_PENDING: try { return new Boolean(PushRegistry.listConnections(true).length > 0); } catch (Exception e) { return gotbad(1, "hasPending", midlet.getCatch(e)); }
+                case PUSH_SET_ALARM: if (args.size() < 2) { return gotbad(1, "setAlarm", "insufficient arguments"); } else { String midletClass = toLuaString(args.elementAt(0)); long time = ((Double) args.elementAt(1)).longValue(); try { return new Double(PushRegistry.registerAlarm(midletClass, time)); } catch (ClassNotFoundException e) { return gotbad(1, "setAlarm", "MIDlet class not found: " + e.getMessage()); } catch (ConnectionNotFoundException e) { return gotbad(1, "setAlarm", "Connection not found: " + e.getMessage()); } } 
+                // Package [graphics]
+                // Package [string]
+
             // Package: graphics 
             else if (MOD == DISPLAY) {
                 if (args.isEmpty()) { }
