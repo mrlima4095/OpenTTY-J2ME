@@ -1270,7 +1270,6 @@ public class Lua {
 
                         return result;
                     }
-                    break;
                 case REQUIRE:
                     if (args.isEmpty()) { return gotbad(1, "require", "string expected, got no value"); }
                     else if (args.elementAt(0) instanceof String) {
