@@ -1222,6 +1222,8 @@ public class Lua {
             return returnValue;
         }
         public Object internals(Vector args) throws Exception {
+            Object arg;
+
             switch (MOD) {
                 // Package [global]
                 case PRINT:
@@ -1519,7 +1521,7 @@ public class Lua {
                 case READ:
                     if (args.isEmpty()) { return stdout instanceof StringItem ? ((StringItem) stdout).getText() : stdout instanceof StringBuffer ? ((StringBuffer) stdout).toString() : stdout instanceof String ? midlet.getcontent((String) stdout, father) : ""; }
                     else {
-                        Object arg = args.elementAt(0);
+                        arg = args.elementAt(0);
 
                         if (arg instanceof InputStream) { return midlet.read((InputStream) arg, args.size() > 1 && args.elementAt(1) instanceof Double ? ((Double) args.elementAt(1)).intValue() : 1024, false); }
                         else if (arg instanceof StringBuffer) { ((StringBuffer) arg).toString(); }
@@ -1575,7 +1577,7 @@ public class Lua {
                     if (args.isEmpty()) { }
                     else {
                         for (int i = 0; i < args.size(); i++) {
-                            Object arg = args.elementAt(i);
+                            arg = args.elementAt(i);
 
                             if (arg instanceof ServerSocketConnection) { ((ServerSocketConnection) arg).close(); }
                             else if (arg instanceof StreamConnection) { ((StreamConnection) arg).close(); }
@@ -1919,7 +1921,7 @@ public class Lua {
                 case BASE64_ENCODE:
                     if (args.isEmpty()) { return gotbad(1, "encode", "string or table expected, got no value"); }
                     
-                    Object arg = args.elementAt(0);
+                    arg = args.elementAt(0);
                     byte[] data;
                     
                     if (arg instanceof Hashtable) {
@@ -2334,7 +2336,7 @@ public class Lua {
                             Hashtable table = (Hashtable) firstArg;
                             StringBuffer sb = new StringBuffer();
                             for (int i = 0; i <= table.size(); i++) {
-                                Object arg = table.get(new Double(i + 1));
+                                arg = table.get(new Double(i + 1));
                                 if (arg == null) { continue; }
                                 double num;
                                 if (arg instanceof Double) { num = ((Double) arg).doubleValue(); } 
@@ -2347,7 +2349,7 @@ public class Lua {
                         } else {
                             StringBuffer sb = new StringBuffer();
                             for (int i = 0; i < args.size(); i++) {
-                                Object arg = args.elementAt(i);
+                                arg = args.elementAt(i);
                                 if (arg == null) { return gotbad(1, "char", "number expected, got nil"); }
                                 double num;
                                 if (arg instanceof Double) { num = ((Double) arg).doubleValue(); } 
@@ -2463,7 +2465,7 @@ public class Lua {
                 case SLEEP:
                     if (args.isEmpty()) { }
                     else {
-                        Object arg = args.elementAt(0);
+                        arg = args.elementAt(0);
                         if (arg instanceof Double) { Thread.sleep(((Double) arg).longValue()); }
                         else { return gotbad(1, "sleep", "number expected, got " + type(arg)); }
                     }
