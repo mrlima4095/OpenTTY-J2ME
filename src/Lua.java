@@ -2251,400 +2251,369 @@ public class Lua {
                         break;
                     }
                 // Package [string]
-                case LOWER: case UPPER:
-                case DISPLAY:
-                case DISPLAY:
-                case DISPLAY:
-                case DISPLAY:
-                // Package [audio]
-                // Package [java]
-                
-            else if (MOD == LOWER || MOD == UPPER) { if (args.isEmpty()) { return gotbad(1, MOD == LOWER ? "lower" : "upper", "string expected, got no value"); } else { String text = toLuaString(args.elementAt(0)); return MOD == LOWER ? text.toLowerCase() : text.toUpperCase(); } }
-            else if (MOD == FIND || MOD == MATCH || MOD == LEN) {
-                if (args.isEmpty()) { }
-                else {
-                    Object obj = args.elementAt(0);
-                    String text = toLuaString(obj), pattern = args.size() > 1 ? toLuaString(args.elementAt(1)) : null;
-                
-                    if (MOD == LEN) {
-                        if (obj == null) { }
-                        else if (obj instanceof String) { return new Double(text.length()); } 
-                        else { throw new RuntimeException("string.len expected a string"); }
-                    }
-
-                    if (args.elementAt(0) == null || pattern == null) { }
+                case LOWER: case UPPER: if (args.isEmpty()) { return gotbad(1, MOD == LOWER ? "lower" : "upper", "string expected, got no value"); } else { String text = toLuaString(args.elementAt(0)); return MOD == LOWER ? text.toLowerCase() : text.toUpperCase(); }
+                case FIND: case MATCH: case LEN:
+                    if (args.isEmpty()) { }
                     else {
-                        int startIdx = 0;
-                        if (args.size() > 2) {
-                            Object startObj = args.elementAt(2);
-                            if (!(startObj instanceof Double)) { return gotbad(3, "match", "number expected, got " + type(startObj)); }
-                            startIdx = Math.max(0, ((Double) startObj).intValue() - 1);
+                        Object obj = args.elementAt(0);
+                        String text = toLuaString(obj), pattern = args.size() > 1 ? toLuaString(args.elementAt(1)) : null;
+                    
+                        if (MOD == LEN) {
+                            if (obj == null) { }
+                            else if (obj instanceof String) { return new Double(text.length()); } 
+                            else { throw new RuntimeException("string.len expected a string"); }
                         }
-                        int pos = text.indexOf(pattern, startIdx);
-                        if (pos == -1) { return null; } 
-                        else if (MOD == FIND) { return new Double(pos + 1); } 
-                        else if (MOD == MATCH) { return text.substring(pos, pos + pattern.length()); }
+
+                        if (args.elementAt(0) == null || pattern == null) { }
+                        else {
+                            int startIdx = 0;
+                            if (args.size() > 2) {
+                                Object startObj = args.elementAt(2);
+                                if (!(startObj instanceof Double)) { return gotbad(3, "match", "number expected, got " + type(startObj)); }
+                                startIdx = Math.max(0, ((Double) startObj).intValue() - 1);
+                            }
+                            int pos = text.indexOf(pattern, startIdx);
+                            if (pos == -1) { return null; } 
+                            else if (MOD == FIND) { return new Double(pos + 1); } 
+                            else if (MOD == MATCH) { return text.substring(pos, pos + pattern.length()); }
+                        }
                     }
-                }
-            }
-            else if (MOD == REVERSE) { if (args.isEmpty()) { return gotbad(1, "reverse", "string expected, got no value"); } else { StringBuffer sb = new StringBuffer(toLuaString(args.elementAt(0))); return sb.reverse().toString(); } }
-            else if (MOD == SUB) {
-                if (args.isEmpty()) { return gotbad(1, "sub", "string expected, got no value"); }
-                else {
-                    String text = toLuaString(args.elementAt(0));
-
-                    if (args.elementAt(0) == null) { }
+                case REVERSE: if (args.isEmpty()) { return gotbad(1, "reverse", "string expected, got no value"); } else { StringBuffer sb = new StringBuffer(toLuaString(args.elementAt(0))); return sb.reverse().toString(); }
+                case SUB:
+                    if (args.isEmpty()) { return gotbad(1, "sub", "string expected, got no value"); }
                     else {
-                        if (args.size() == 1) { return text; }
+                        String text = toLuaString(args.elementAt(0));
 
-                        int len = text.length(), start = getNumber(toLuaString(args.elementAt(1)), 1), end = args.size() > 2 ? getNumber(toLuaString(args.elementAt(2)), len) : len;
+                        if (args.elementAt(0) == null) { }
+                        else {
+                            if (args.size() == 1) { return text; }
 
+                            int len = text.length(), start = getNumber(toLuaString(args.elementAt(1)), 1), end = args.size() > 2 ? getNumber(toLuaString(args.elementAt(2)), len) : len;
+
+                            if (start < 0) { start = len + start + 1; }
+                            if (end < 0) { end = len + end + 1; }
+
+                            if (start < 1) { start = 1; }
+                            if (end > len) { end = len; }
+
+                            if (start > end || start > len) { return ""; }
+
+                            int jBegin = start - 1;
+
+                            return text.substring(jBegin < 0 ? 0 : jBegin, end);
+                        }
+                    }
+                case HASH: return args.isEmpty() || args.elementAt(0) == null ? null : new Double(args.elementAt(0).hashCode());
+                case BYTE:
+                    if (args.isEmpty() || args.elementAt(0) == null) { return gotbad(1, "byte", "string expected, got no value"); }
+                    else {
+                        String s = toLuaString(args.elementAt(0));
+                        int len = s.length(), start = 1, end = 1;
+                        if (args.size() >= 2) { start = getNumber(toLuaString(args.elementAt(1)), 1); }
+                        if (args.size() >= 3) { end = getNumber(toLuaString(args.elementAt(2)), start); }
+                        
                         if (start < 0) { start = len + start + 1; }
                         if (end < 0) { end = len + end + 1; }
-
                         if (start < 1) { start = 1; }
-                        if (end > len) { end = len; }
-
-                        if (start > end || start > len) { return ""; }
-
-                        int jBegin = start - 1;
-
-                        return text.substring(jBegin < 0 ? 0 : jBegin, end);
-                    }
-                }
-            }
-            else if (MOD == HASH) { return args.isEmpty() || args.elementAt(0) == null ? null : new Double(args.elementAt(0).hashCode()); }
-            else if (MOD == BYTE) {
-                if (args.isEmpty() || args.elementAt(0) == null) { return gotbad(1, "byte", "string expected, got no value"); }
-                else {
-                    String s = toLuaString(args.elementAt(0));
-                    int len = s.length(), start = 1, end = 1;
-                    if (args.size() >= 2) { start = getNumber(toLuaString(args.elementAt(1)), 1); }
-                    if (args.size() >= 3) { end = getNumber(toLuaString(args.elementAt(2)), start); }
-                    
-                    if (start < 0) { start = len + start + 1; }
-                    if (end < 0) { end = len + end + 1; }
-                    if (start < 1) { start = 1; }
-                    if (end > len) { end = len; } 
-                    if (start > end || start > len) { return null; }
-                    
-                    if (end - start + 1 == 1) { return new Double((double) s.charAt(start - 1)); } 
-                    else {
-                        Hashtable result = new Hashtable();
-                        for (int i = start; i <= end; i++) { result.put(new Double(i), new Double((double) s.charAt(i - 1))); }
-
-                        return result;
-                    }
-                }
-            }
-            else if (MOD == CHAR) {
-                if (args.isEmpty()) { return ""; } 
-                else {
-                    Object firstArg = args.elementAt(0);
-                    
-                    if (firstArg instanceof Hashtable) {
-                        Hashtable table = (Hashtable) firstArg;
-                        StringBuffer sb = new StringBuffer();
-                        for (int i = 0; i <= table.size(); i++) {
-                            Object arg = table.get(new Double(i + 1));
-                            if (arg == null) { continue; }
-                            double num;
-                            if (arg instanceof Double) { num = ((Double) arg).doubleValue(); } 
-                            else { return gotbad(1, "char", "value out of range"); }
-                            int c = (int) num;
-                            if (c < 0 || c > 255) { return gotbad(1, "char", "value out of range"); }
-                            sb.append((char) c);
-                        }
-                        return sb.toString();
-                    } else {
-                        StringBuffer sb = new StringBuffer();
-                        for (int i = 0; i < args.size(); i++) {
-                            Object arg = args.elementAt(i);
-                            if (arg == null) { return gotbad(1, "char", "number expected, got nil"); }
-                            double num;
-                            if (arg instanceof Double) { num = ((Double) arg).doubleValue(); } 
-                            else {
-                                try { num = Double.parseDouble(toLuaString(arg)); } 
-                                catch (Exception e) { return gotbad(1, "char", "number expected, got " + type(arg)); }
-                            }
-                            int c = (int) num;
-                            if (c < 0 || c > 255) { return gotbad(1, "char", "value out of range"); }
-                            sb.append((char) c);
-                        }
-                        return sb.toString();
-                    }
-                }
-            }
-            else if (MOD == TRIM) { return args.isEmpty() ? null : toLuaString(args.elementAt(0)).trim(); }
-            else if (MOD == UUID) { String chars = "0123456789abcdef"; StringBuffer uuid = new StringBuffer(); for (int i = 0; i < 36; i++) { if (i == 8 || i == 13 || i == 18 || i == 23) { uuid.append('-'); } else if (i == 14) { uuid.append('4'); } else if (i == 19) { uuid.append(chars.charAt(8 + midlet.random.nextInt(4))); } else { uuid.append(chars.charAt(midlet.random.nextInt(16))); } } return uuid.toString(); }
-            else if (MOD == SPLIT) {
-                if (args.isEmpty()) { return gotbad(1, "split", "string expected, got no value"); } 
-                else if (args.size() > 1 && args.elementAt(1) == null) {
-                    String[] array = midlet.splitArgs(toLuaString(args.elementAt(0)));
-                    Hashtable result = new Hashtable();
-                    for (int i = 0; i < array.length; i++) { result.put(new Double(i + 1), array[i]); }
-                    return result;
-                }
-                else {
-                    String text = toLuaString(args.elementAt(0));
-                    String separator = args.size() > 1 ? toLuaString(args.elementAt(1)) : " ";
-                    
-                    if (text == null || text.length() == 0) { return new Hashtable(); }
-                    if (separator == null || separator.length() == 0) {
-                        Hashtable result = new Hashtable();
-                        for (int i = 0; i < text.length(); i++) { result.put(new Double(i + 1), String.valueOf(text.charAt(i))); }
-                        return result;
-                    }
-                    
-                    Hashtable result = new Hashtable();
-                    int index = 1, startPos = 0, sepLength = separator.length();
-                    
-                    while (startPos < text.length()) {
-                        int foundPos = text.indexOf(separator, startPos);
+                        if (end > len) { end = len; } 
+                        if (start > end || start > len) { return null; }
                         
-                        if (foundPos == -1) {
-                            result.put(new Double(index++), text.substring(startPos));
-                            break;
-                        } else {
-                            result.put(new Double(index++), text.substring(startPos, foundPos));
-                            startPos = foundPos + sepLength;
-                        }
-                    }
-                    
-                    return result;
-                }
-            }
-            else if (MOD == GETCMD) { return args.isEmpty() ? null : midlet.getCommand(toLuaString(args.elementAt(0))); } 
-            else if (MOD == GETARGS) { return args.isEmpty() ? null : midlet.getArgument(toLuaString(args.elementAt(0))); }
-            else if (MOD == GETPATTERN) { return args.isEmpty() ? null : midlet.getpattern(toLuaString(args.elementAt(0))); }
-            else if (MOD == ENV) { return args.isEmpty() ? null : midlet.env(toLuaString(args.elementAt(0))); }
-            else if (MOD == STARTSWITH) { return args.size() < 2 ? (Boolean) gotbad(1, "startswith", "string expected") : new Boolean(toLuaString(args.elementAt(0)).startsWith(toLuaString(args.elementAt(1)))); }
-            else if (MOD == ENDSWITH) { return args.size() < 2 ? (Boolean) gotbad(1, "endswith", "string expected") : new Boolean(toLuaString(args.elementAt(0)).endsWith(toLuaString(args.elementAt(1)))); }
-            // Package: audio
-            else if (MOD == AUDIO_LOAD) {
-                if (args.isEmpty()) { return gotbad(1, "load", "string expected, got no value"); }
-                else {
-                    InputStream is = midlet.getInputStream(toLuaString(args.elementAt(0)), father);
-                    if (is != null) {
-                        Player player = Manager.createPlayer(is, args.size() > 1 ? toLuaString(args.elementAt(1)) : "audio/mpeg"); 
-                        player.prefetch();
-                        
-                        return player;
-                    }
-                }
-            }
-            else if (MOD == AUDIO_PLAY) {
-                if (args.isEmpty() || !(args.elementAt(0) instanceof Player)) { return gotbad(1, "play", "audio object expected"); }
-                else { ((Player) args.elementAt(0)).start(); return new Double(0); }
-            }
-            else if (MOD == AUDIO_PAUSE) {
-                if (args.isEmpty() || !(args.elementAt(0) instanceof Player)) { return gotbad(1, "pause", "audio object expected"); }
-                else { ((Player) args.elementAt(0)).stop(); return new Double(0); }
-            }
-            else if (MOD == AUDIO_VOLUME) {
-                if (args.isEmpty() || !(args.elementAt(0) instanceof Player)) { return gotbad(1, "pause", "audio object expected"); }
-                else {
-                    Player player = (Player) args.elementAt(0);
-                    VolumeControl vc = (VolumeControl) player.getControl("VolumeControl");
-
-                    if (args.size() > 1 || args.elementAt(1) instanceof Double) {
-                        int value = ((Double) args.elementAt(1)).intValue();
-                        if (vc != null) { vc.setLevel(value); return new Double(0); }
-                    }
-                    else { return new Double(vc.getLevel()); }
-                }
-            }
-            else if (MOD == AUDIO_DURATION) {
-                if (args.isEmpty() || !(args.elementAt(0) instanceof Player)) { return gotbad(1, "pause", "audio object expected"); }
-                else {
-                    Player player = (Player) args.elementAt(0);
-                    long duration = player.getDuration();
-                    return new Double(duration == Player.TIME_UNKNOWN ? -1 : duration / 1000.0);
-                }
-            }
-            else if (MOD == AUDIO_TIME) { 
-                if (args.isEmpty() || !(args.elementAt(0) instanceof Player)) { return gotbad(1, "time", "audio object expected"); }
-                else {
-                    Player player = (Player) args.elementAt(0);
-
-                    if (args.size() > 1 || args.elementAt(1) instanceof Double) {
-                        long time = (long) (((Double) args.elementAt(1)).doubleValue() * 1000);
-                        player.setMediaTime(time); return new Double(0);
-                    } else {
-                        long time = player.getMediaTime();
-                        return new Double(time == Player.TIME_UNKNOWN ? -1 : time / 1000.0);
-                    }
-                }
-            }
-            // Package: java
-            else if (MOD == CLASS) { if (args.isEmpty() || args.elementAt(0) == null) { return gotbad(1, "class", "string expected, got no value"); } else { return new Boolean(midlet.javaClass(toLuaString(args.elementAt(0))) == 0); } }
-            else if (MOD == NAME) { return midlet.getName(); } 
-            else if (MOD == DELETE) {
-                if (args.isEmpty() || !(args.elementAt(0) instanceof Hashtable)) { return gotbad(1, "delete", "table expected, got " + (args.isEmpty() ? "no value" : type(args.elementAt(0)))); }
-                else if (args.size() < 2 || args.elementAt(1) == null) { return gotbad(2, "delete", "value expected, got " + (args.size() < 2 ? "no value" : "nil")); }
-                else { ((Hashtable) args.elementAt(0)).remove(args.elementAt(1)); }
-            }
-            else if (MOD == RUN) { if (args.isEmpty()) { } else if (args.elementAt(0) instanceof LuaFunction) { kill = false; new Thread((Runnable) new LuaFunction((LuaFunction) args.elementAt(0)), args.size() > 1 ? toLuaString(args.elementAt(1)) : "Background").start(); } else { return gotbad(1, "run", "function expected, got" + type(args.elementAt(0))); } }
-            else if (MOD == PREQ) { if (args.isEmpty()) { } else { return new Boolean(midlet.platformRequest(toLuaString(args.elementAt(0)))); } }
-            else if (MOD == THREAD) { return midlet.getThreadName(Thread.currentThread()); }
-            else if (MOD == UPTIME) { return new Double(System.currentTimeMillis() - midlet.uptime); }
-            else if (MOD == SLEEP) {
-                if (args.isEmpty()) { }
-                else {
-                    Object arg = args.elementAt(0);
-                    if (arg instanceof Double) {
-                        Thread.sleep(((Double) arg).longValue());
-                    } else {
-                        return gotbad(1, "sleep", "number expected, got " + type(arg));
-                    }
-                }
-            }
-
-            else if (MOD == KERNEL) {
-                Object payload = args.elementAt(0), arg = args.elementAt(1), scope = args.elementAt(2), pid = args.elementAt(3);
-                int uid = ((Double) args.elementAt(4)).intValue();
-
-                if (payload == null || payload.equals("")) { return null; }
-                if (payload instanceof String) {
-                    if (payload.equals("sendsig")) {
-                        if (arg == null || !(arg instanceof Hashtable)) { return new Double(2); }
+                        if (end - start + 1 == 1) { return new Double((double) s.charAt(start - 1)); } 
                         else {
-                            Hashtable info = (Hashtable) arg;
-                            String pid = (String) info.get("pid"), signal = toLuaString(info.get("signal"));
-
-                            if (midlet.sys.containsKey(pid)) {
-                                Process process = (Process) midlet.sys.get(pid);
-
-                                if (process.uid == uid || uid == 0) {
-                                    if (!signal.equals("9") && process.sighandler != null) {
-                                        try { 
-                                            Vector arguments = new Vector(); arguments.addElement(signal);
-                                            ((LuaFunction) process.sighandler).call(arguments);
-                                        }
-                                        catch (Throwable e) {  }
-                                    }
-
-                                    midlet.sys.remove(pid);
-                                    if (signal.equals("9") && arg.equals("1")) { midlet.destroyApp(true); }
-                                    return new Double(0);
-                                } else { return new Double(13); }
-                            }
-                            else { return new Double(127); }
-                        }
-                    }
-                    else if (payload.equals("proc")) {
-                        if (arg == null || arg.equals("")) { return new Double(2); }
-                        else if (midlet.sys.containsKey(arg)) {
-                            Process process = (Process) midlet.sys.get(arg);
-                            if (process.uid == uid || uid == 0) { return process; }
-                            else { return new Double(13); }
-                        }
-                        else { return new Double(127); }
-                    }
-                    else if (payload.equals("nice")) {
-                        if (arg == null || !(arg instanceof Hashtable)) { return new Double(2); }
-                        else {
-                            Hashtable info = (Hashtable) arg;
-                            String pid = (String) info.get("pid");
-                            int priority = ((Double) info.get("priority")).intValue();
-                            if (midlet.sys.containsKey(pid)) {
-                                Process process = (Process) midlet.sys.get(pid);
-
-                                if (process.uid == uid || uid == 0) {
-                                    process.priority = Math.max(Process.MIN_PRIORITY, Math.min(Process.MAX_PRIORITY, priority));
-                                    return new Double(0);
-                                } else { return new Double(13); }
-                            }
-                            else { return new Double(127); }
-                        }
-                    }
-                    else if (payload.equals("passwd")) {
-                        if (arg instanceof String) { return new Boolean(midlet.passwd((String) arg)); }
-                        else if (arg instanceof Hashtable) {
-                            Hashtable query = (Hashtable) arg;
-                            String old = (String) query.get("old"), newpw = (String) query.get("new");
-
-                            if (old == null || newpw == null || old.equals("") || newpw.equals("")) { return new Double(2); }
-                            else if (uid == 0 || midlet.passwd(old)) { return new Double(midlet.writeRMS("OpenRMS", String.valueOf(newpw.hashCode()).getBytes(), 2)); }
-                            else { return new Double(13); }
-                        }
-                    }
-                    else if (payload.equals("setsh")) {
-                        if (arg == null || arg.equals("")) { midlet.shell = new LuaFunction(EXEC); }
-                        else if (arg instanceof LuaFunction) { midlet.shell = arg; }
-                        else { return new Double(2); }
-                    }
-                    else if (payload.equals("cache")) { if (arg == null || arg.equals("")) { return new Boolean(midlet.useCache); } else if (arg == TRUE || toLuaString(arg).equals("true")) { midlet.useCache = true; } else if (arg == FALSE || toLuaString(arg).equals("false")) { midlet.useCache = false; midlet.cache.clear(); midlet.cacheLua.clear(); } else { return new Double(2); } }
-                    else if (payload.equals("debug")) { if (arg == null || arg.equals("")) { return new Boolean(midlet.debug); } else if (arg == TRUE || toLuaString(arg).equals("true")) { midlet.debug = true; } else if (arg == FALSE || toLuaString(arg).equals("false")) { midlet.debug = false; } else { return new Double(2); } } 
-                    else if (payload.equals("netsh")) {
-                        if (arg == null || arg.equals("")) {
                             Hashtable result = new Hashtable();
-                            for (Enumeration procs = midlet.sys.keys(); procs.hasMoreElements();) {
-                                String pid = (String) procs.nextElement();
-                                Process p = (Process) midlet.sys.get(pid);
-                                
-                                if (p.net.isEmpty()) { }
-                                else {
-                                    Hashtable map = new Hashtable(); int i = 1;
-                                    for (Enumeration sockets = p.net.keys(); sockets.hasMoreElements();) {
-                                        map.put(new Double(1), sockets.nextElement());
-                                    }
-                                    result.put(pid, map);
-                                }
-                            }
+                            for (int i = start; i <= end; i++) { result.put(new Double(i), new Double((double) s.charAt(i - 1))); }
+
                             return result;
                         }
                     }
-
-                    else if (payload.equals("serve")) {
-                        if (arg == null || arg.equals("")) { return new Double(2); }
-                        else {
-                            String program = toLuaString(arg), code = midlet.read(program, father);
-                            Process process = new Process(midlet, program, "/bin/init --serve=" + program, midlet.getUser(uid), uid, midlet.genpid(), stdout, father);
-                            process.lua.kill = false;
-
-                            Hashtable arg = new Hashtable(); arg.put(new Double(0), program); arg.put(new Double(1), "--deamon");
-                            Hashtable res = process.lua.run(program, code, arg);
-
-                            Object handler = res.get("object");
-                            if (handler instanceof Vector) {
-                                Vector resx = (Vector) handler;
-                                handler = resx.elementAt(0);
+                case CHAR:
+                    if (args.isEmpty()) { return ""; } 
+                    else {
+                        Object firstArg = args.elementAt(0);
+                        
+                        if (firstArg instanceof Hashtable) {
+                            Hashtable table = (Hashtable) firstArg;
+                            StringBuffer sb = new StringBuffer();
+                            for (int i = 0; i <= table.size(); i++) {
+                                Object arg = table.get(new Double(i + 1));
+                                if (arg == null) { continue; }
+                                double num;
+                                if (arg instanceof Double) { num = ((Double) arg).doubleValue(); } 
+                                else { return gotbad(1, "char", "value out of range"); }
+                                int c = (int) num;
+                                if (c < 0 || c > 255) { return gotbad(1, "char", "value out of range"); }
+                                sb.append((char) c);
                             }
-
-                            if (handler instanceof Lua.LuaFunction) { process.handler = handler; }
+                            return sb.toString();
+                        } else {
+                            StringBuffer sb = new StringBuffer();
+                            for (int i = 0; i < args.size(); i++) {
+                                Object arg = args.elementAt(i);
+                                if (arg == null) { return gotbad(1, "char", "number expected, got nil"); }
+                                double num;
+                                if (arg instanceof Double) { num = ((Double) arg).doubleValue(); } 
+                                else {
+                                    try { num = Double.parseDouble(toLuaString(arg)); } 
+                                    catch (Exception e) { return gotbad(1, "char", "number expected, got " + type(arg)); }
+                                }
+                                int c = (int) num;
+                                if (c < 0 || c > 255) { return gotbad(1, "char", "value out of range"); }
+                                sb.append((char) c);
+                            }
+                            return sb.toString();
                         }
                     }
+                case TRIM: return args.isEmpty() ? null : toLuaString(args.elementAt(0)).trim();
+                case UUID: String chars = "0123456789abcdef"; StringBuffer uuid = new StringBuffer(); for (int i = 0; i < 36; i++) { if (i == 8 || i == 13 || i == 18 || i == 23) { uuid.append('-'); } else if (i == 14) { uuid.append('4'); } else if (i == 19) { uuid.append(chars.charAt(8 + midlet.random.nextInt(4))); } else { uuid.append(chars.charAt(midlet.random.nextInt(16))); } } return uuid.toString();
+                case SPLIT:
+                    if (args.isEmpty()) { return gotbad(1, "split", "string expected, got no value"); } 
+                    else if (args.size() > 1 && args.elementAt(1) == null) {
+                        String[] array = midlet.splitArgs(toLuaString(args.elementAt(0)));
+                        Hashtable result = new Hashtable();
+                        for (int i = 0; i < array.length; i++) { result.put(new Double(i + 1), array[i]); }
+                        return result;
+                    }
+                    else {
+                        String text = toLuaString(args.elementAt(0));
+                        String separator = args.size() > 1 ? toLuaString(args.elementAt(1)) : " ";
+                        
+                        if (text == null || text.length() == 0) { return new Hashtable(); }
+                        if (separator == null || separator.length() == 0) {
+                            Hashtable result = new Hashtable();
+                            for (int i = 0; i < text.length(); i++) { result.put(new Double(i + 1), String.valueOf(text.charAt(i))); }
+                            return result;
+                        }
+                        
+                        Hashtable result = new Hashtable();
+                        int index = 1, startPos = 0, sepLength = separator.length();
+                        
+                        while (startPos < text.length()) {
+                            int foundPos = text.indexOf(separator, startPos);
+                            
+                            if (foundPos == -1) {
+                                result.put(new Double(index++), text.substring(startPos));
+                                break;
+                            } else {
+                                result.put(new Double(index++), text.substring(startPos, foundPos));
+                                startPos = foundPos + sepLength;
+                            }
+                        }
+                        
+                        return result;
+                    }
+                case GETCMD: return args.isEmpty() ? null : midlet.getCommand(toLuaString(args.elementAt(0)));
+                case GETARGS: return args.isEmpty() ? null : midlet.getArgument(toLuaString(args.elementAt(0)));
+                case GETPATTERN: return args.isEmpty() ? null : midlet.getpattern(toLuaString(args.elementAt(0)));
+                case ENV: return args.isEmpty() ? null : midlet.env(toLuaString(args.elementAt(0)));
+                case STARTSWITH: return args.size() < 2 ? (Boolean) gotbad(1, "startswith", "string expected") : new Boolean(toLuaString(args.elementAt(0)).startsWith(toLuaString(args.elementAt(1))));
+                case ENDSWITH: return args.size() < 2 ? (Boolean) gotbad(1, "endswith", "string expected") : new Boolean(toLuaString(args.elementAt(0)).endsWith(toLuaString(args.elementAt(1))));
+                // Package [audio]
+                case AUDIO_LOAD:
+                    if (args.isEmpty()) { return gotbad(1, "load", "string expected, got no value"); }
+                    else {
+                        InputStream is = midlet.getInputStream(toLuaString(args.elementAt(0)), father);
+                        if (is != null) {
+                            Player player = Manager.createPlayer(is, args.size() > 1 ? toLuaString(args.elementAt(1)) : "audio/mpeg"); 
+                            player.prefetch();
+                            
+                            return player;
+                        }
+                    }
+                case AUDIO_PLAY: if (args.isEmpty() || !(args.elementAt(0) instanceof Player)) { return gotbad(1, "play", "audio object expected"); } else { ((Player) args.elementAt(0)).start(); return new Double(0); }
+                case AUDIO_PAUSE: if (args.isEmpty() || !(args.elementAt(0) instanceof Player)) { return gotbad(1, "pause", "audio object expected"); } else { ((Player) args.elementAt(0)).stop(); return new Double(0); }
+                case AUDIO_VOLUME:
+                    if (args.isEmpty() || !(args.elementAt(0) instanceof Player)) { return gotbad(1, "pause", "audio object expected"); }
+                    else {
+                        Player player = (Player) args.elementAt(0);
+                        VolumeControl vc = (VolumeControl) player.getControl("VolumeControl");
 
-                    else if (payload.equals("rms")) {
-                        if (uid == 0) {
+                        if (args.size() > 1 || args.elementAt(1) instanceof Double) {
+                            int value = ((Double) args.elementAt(1)).intValue();
+                            if (vc != null) { vc.setLevel(value); return new Double(0); }
+                        }
+                        else { return new Double(vc.getLevel()); }
+                    }
+                case AUDIO_DURATION:
+                    if (args.isEmpty() || !(args.elementAt(0) instanceof Player)) { return gotbad(1, "pause", "audio object expected"); }
+                    else {
+                        Player player = (Player) args.elementAt(0);
+                        long duration = player.getDuration();
+                        return new Double(duration == Player.TIME_UNKNOWN ? -1 : duration / 1000.0);
+                    }
+                case AUDIO_TIME:
+                    if (args.isEmpty() || !(args.elementAt(0) instanceof Player)) { return gotbad(1, "time", "audio object expected"); }
+                    else {
+                        Player player = (Player) args.elementAt(0);
+
+                        if (args.size() > 1 || args.elementAt(1) instanceof Double) {
+                            long time = (long) (((Double) args.elementAt(1)).doubleValue() * 1000);
+                            player.setMediaTime(time); return new Double(0);
+                        } else {
+                            long time = player.getMediaTime();
+                            return new Double(time == Player.TIME_UNKNOWN ? -1 : time / 1000.0);
+                        }
+                    }
+                // Package [java]
+                case CLASS: if (args.isEmpty() || args.elementAt(0) == null) { return gotbad(1, "class", "string expected, got no value"); } else { return new Boolean(midlet.javaClass(toLuaString(args.elementAt(0))) == 0); }
+                case NAME: return midlet.getName(); 
+                case DELETE: if (args.isEmpty() || !(args.elementAt(0) instanceof Hashtable)) { return gotbad(1, "delete", "table expected, got " + (args.isEmpty() ? "no value" : type(args.elementAt(0)))); } else if (args.size() < 2 || args.elementAt(1) == null) { return gotbad(2, "delete", "value expected, got " + (args.size() < 2 ? "no value" : "nil")); } else { ((Hashtable) args.elementAt(0)).remove(args.elementAt(1)); } break;
+                case RUN: if (args.isEmpty()) { } else if (args.elementAt(0) instanceof LuaFunction) { kill = false; new Thread((Runnable) new LuaFunction((LuaFunction) args.elementAt(0)), args.size() > 1 ? toLuaString(args.elementAt(1)) : "Background").start(); } else { return gotbad(1, "run", "function expected, got" + type(args.elementAt(0))); }
+                case PREQ: if (args.isEmpty()) { } else { return new Boolean(midlet.platformRequest(toLuaString(args.elementAt(0)))); }
+                case THREAD: return midlet.getThreadName(Thread.currentThread());
+                case UPTIME: return new Double(System.currentTimeMillis() - midlet.uptime);
+                case SLEEP:
+                    if (args.isEmpty()) { }
+                    else {
+                        Object arg = args.elementAt(0);
+                        if (arg instanceof Double) { Thread.sleep(((Double) arg).longValue()); }
+                        else { return gotbad(1, "sleep", "number expected, got " + type(arg)); }
+                    }
+                // Kernel Core
+                case KERNEL:
+                    Object payload = args.elementAt(0), arg = args.elementAt(1), scope = args.elementAt(2), pid = args.elementAt(3);
+                    int uid = ((Double) args.elementAt(4)).intValue();
+
+                    if (payload == null || payload.equals("")) { return null; }
+                    if (payload instanceof String) {
+                        if (payload.equals("sendsig")) {
+                            if (arg == null || !(arg instanceof Hashtable)) { return new Double(2); }
+                            else {
+                                Hashtable info = (Hashtable) arg;
+                                String pid = (String) info.get("pid"), signal = toLuaString(info.get("signal"));
+
+                                if (midlet.sys.containsKey(pid)) {
+                                    Process process = (Process) midlet.sys.get(pid);
+
+                                    if (process.uid == uid || uid == 0) {
+                                        if (!signal.equals("9") && process.sighandler != null) {
+                                            try { 
+                                                Vector arguments = new Vector(); arguments.addElement(signal);
+                                                ((LuaFunction) process.sighandler).call(arguments);
+                                            }
+                                            catch (Throwable e) {  }
+                                        }
+
+                                        midlet.sys.remove(pid);
+                                        if (signal.equals("9") && arg.equals("1")) { midlet.destroyApp(true); }
+                                        return new Double(0);
+                                    } else { return new Double(13); }
+                                }
+                                else { return new Double(127); }
+                            }
+                        }
+                        else if (payload.equals("proc")) {
                             if (arg == null || arg.equals("")) { return new Double(2); }
-                            else if (arg.equals("/bin/")) { midlet.writeRMS("OpenRMS", new byte[0], 3); }
-                            else if (arg.equals("/etc/")) { midlet.writeRMS("OpenRMS", new byte[0], 5); }
-                            else if (arg.equals("/lib/")) { midlet.writeRMS("OpenRMS", new byte[0], 4); }
-                        } else { return new Double(13); }
-                    }
-                    else if (payload.equals("useradd")) {
-                        if (arg == null || arg.equals("") || arg.equals("root")) { return new Double(2); }
-                        else if (midlet.userID.containsKey(arg)) { return new Double(128); }
-                        else { midlet.userID.put(arg, new Integer(midlet.lastID + 1)); midlet.lastID++; return new Double(0); }
-                    }
-                    else if (payload.equals("userdel")) {
-                        if (arg == null || arg.equals("") || arg.equals("root") || arg.equals(midlet.username)) { return new Double(13); }
-                        else if (midlet.userID.containsKey(arg)) { if (uid == 0) { midlet.userID.remove(arg); return new Double(0); } else { return new Double(13); } }
-                        else { return new Double(127); }
-                    }
-                    else if (payload.equals("user")) {
-                        if (arg == null || arg.equals("") || !(arg instanceof Double)) { return new Double(2); }
-                        else {
-                            String user = midlet.getUser(((Double) arg).intValue());
-                            if (user == null) { return new Double(127); }
-                            else { return user; }
+                            else if (midlet.sys.containsKey(arg)) {
+                                Process process = (Process) midlet.sys.get(arg);
+                                if (process.uid == uid || uid == 0) { return process; }
+                                else { return new Double(13); }
+                            }
+                            else { return new Double(127); }
+                        }
+                        else if (payload.equals("nice")) {
+                            if (arg == null || !(arg instanceof Hashtable)) { return new Double(2); }
+                            else {
+                                Hashtable info = (Hashtable) arg;
+                                String pid = (String) info.get("pid");
+                                int priority = ((Double) info.get("priority")).intValue();
+                                if (midlet.sys.containsKey(pid)) {
+                                    Process process = (Process) midlet.sys.get(pid);
+
+                                    if (process.uid == uid || uid == 0) {
+                                        process.priority = Math.max(Process.MIN_PRIORITY, Math.min(Process.MAX_PRIORITY, priority));
+                                        return new Double(0);
+                                    } else { return new Double(13); }
+                                }
+                                else { return new Double(127); }
+                            }
+                        }
+                        else if (payload.equals("passwd")) {
+                            if (arg instanceof String) { return new Boolean(midlet.passwd((String) arg)); }
+                            else if (arg instanceof Hashtable) {
+                                Hashtable query = (Hashtable) arg;
+                                String old = (String) query.get("old"), newpw = (String) query.get("new");
+
+                                if (old == null || newpw == null || old.equals("") || newpw.equals("")) { return new Double(2); }
+                                else if (uid == 0 || midlet.passwd(old)) { return new Double(midlet.writeRMS("OpenRMS", String.valueOf(newpw.hashCode()).getBytes(), 2)); }
+                                else { return new Double(13); }
+                            }
+                        }
+                        else if (payload.equals("setsh")) {
+                            if (arg == null || arg.equals("")) { midlet.shell = new LuaFunction(EXEC); }
+                            else if (arg instanceof LuaFunction) { midlet.shell = arg; }
+                            else { return new Double(2); }
+                        }
+                        else if (payload.equals("cache")) { if (arg == null || arg.equals("")) { return new Boolean(midlet.useCache); } else if (arg == TRUE || toLuaString(arg).equals("true")) { midlet.useCache = true; } else if (arg == FALSE || toLuaString(arg).equals("false")) { midlet.useCache = false; midlet.cache.clear(); midlet.cacheLua.clear(); } else { return new Double(2); } }
+                        else if (payload.equals("debug")) { if (arg == null || arg.equals("")) { return new Boolean(midlet.debug); } else if (arg == TRUE || toLuaString(arg).equals("true")) { midlet.debug = true; } else if (arg == FALSE || toLuaString(arg).equals("false")) { midlet.debug = false; } else { return new Double(2); } } 
+                        else if (payload.equals("netsh")) {
+                            if (arg == null || arg.equals("")) {
+                                Hashtable result = new Hashtable();
+                                for (Enumeration procs = midlet.sys.keys(); procs.hasMoreElements();) {
+                                    String pid = (String) procs.nextElement();
+                                    Process p = (Process) midlet.sys.get(pid);
+                                    
+                                    if (p.net.isEmpty()) { }
+                                    else {
+                                        Hashtable map = new Hashtable(); int i = 1;
+                                        for (Enumeration sockets = p.net.keys(); sockets.hasMoreElements();) {
+                                            map.put(new Double(1), sockets.nextElement());
+                                        }
+                                        result.put(pid, map);
+                                    }
+                                }
+                                return result;
+                            }
+                        }
+
+                        else if (payload.equals("serve")) {
+                            if (arg == null || arg.equals("")) { return new Double(2); }
+                            else {
+                                String program = toLuaString(arg), code = midlet.read(program, father);
+                                Process process = new Process(midlet, program, "/bin/init --serve=" + program, midlet.getUser(uid), uid, midlet.genpid(), stdout, father);
+                                process.lua.kill = false;
+
+                                Hashtable arg = new Hashtable(); arg.put(new Double(0), program); arg.put(new Double(1), "--deamon");
+                                Hashtable res = process.lua.run(program, code, arg);
+
+                                Object handler = res.get("object");
+                                if (handler instanceof Vector) {
+                                    Vector resx = (Vector) handler;
+                                    handler = resx.elementAt(0);
+                                }
+
+                                if (handler instanceof Lua.LuaFunction) { process.handler = handler; }
+                            }
+                        }
+
+                        else if (payload.equals("rms")) {
+                            if (uid == 0) {
+                                if (arg == null || arg.equals("")) { return new Double(2); }
+                                else if (arg.equals("/bin/")) { midlet.writeRMS("OpenRMS", new byte[0], 3); }
+                                else if (arg.equals("/etc/")) { midlet.writeRMS("OpenRMS", new byte[0], 5); }
+                                else if (arg.equals("/lib/")) { midlet.writeRMS("OpenRMS", new byte[0], 4); }
+                            } else { return new Double(13); }
+                        }
+                        else if (payload.equals("useradd")) {
+                            if (arg == null || arg.equals("") || arg.equals("root")) { return new Double(2); }
+                            else if (midlet.userID.containsKey(arg)) { return new Double(128); }
+                            else { midlet.userID.put(arg, new Integer(midlet.lastID + 1)); midlet.lastID++; return new Double(0); }
+                        }
+                        else if (payload.equals("userdel")) {
+                            if (arg == null || arg.equals("") || arg.equals("root") || arg.equals(midlet.username)) { return new Double(13); }
+                            else if (midlet.userID.containsKey(arg)) { if (uid == 0) { midlet.userID.remove(arg); return new Double(0); } else { return new Double(13); } }
+                            else { return new Double(127); }
+                        }
+                        else if (payload.equals("user")) {
+                            if (arg == null || arg.equals("") || !(arg instanceof Double)) { return new Double(2); }
+                            else {
+                                String user = midlet.getUser(((Double) arg).intValue());
+                                if (user == null) { return new Double(127); }
+                                else { return user; }
+                            }
                         }
                     }
-                }
-            }
 
+            }
             return null;
         }
         // |
