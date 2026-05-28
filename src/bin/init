@@ -7,7 +7,7 @@ local scope, hostname = os.scope(), io.read("/etc/hostname")
 local xterm = graphics.new("screen", "OpenTTY " .. getAppProperty("MIDlet-Version"))
 local run = graphics.new("command", { label = "Run", type = "ok", priority = 1 })
 
-local function label() graphics.SetLabel(io.stdin, "[" .. scope["USER"] .. "@" .. hostname .. " ~]" .. (os.getuid() == 0 and "#" or "$")) end
+local function label() graphics.SetLabel(io.stdin, "[" .. scope["USER"] .. "@" .. hostname .. " " .. os.getcwd() .. "]" .. (os.getuid() == 0 and "#" or "$")) end
 
 io.mount(io.read("/etc/fstab"))
 print(string.env(io.read("/etc/motd")))
