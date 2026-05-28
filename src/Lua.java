@@ -1244,7 +1244,9 @@ public class Lua {
 
                         midlet.print(buffer.toString(), stdout, id, father); 
                     }
-                case ERROR: String msg = toLuaString((args.size() > 0) ? args.elementAt(0) : null); throw new Exception(msg.equals("nil") ? "error" : msg);
+
+                    break;
+                case ERROR: String msg = toLuaString((args.size() > 0) ? args.elementAt(0) : null); throw new Exception(msg.equals("nil") ? "error" : msg); break;
 
             }
             if (MOD == PCALL) {
