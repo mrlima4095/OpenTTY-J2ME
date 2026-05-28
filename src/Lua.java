@@ -2220,7 +2220,7 @@ public class Lua {
                     else {
                         Object screen = args.elementAt(0), table = args.elementAt(1);
 
-                        if (!(screen instanceof Displayable)) { return gotbad(1, "handler", "Displayable expected"); }
+                        if (!(screen instanceof Displayable)) { return gotbad(1, "handler", "Displayable expected, got " + type(table)); }
                         if (!(table instanceof Hashtable)) { return gotbad(2, "handler", "Hashtable expected, got " + type(table)); }
 
                         ((Displayable) screen).setCommandListener(new LuaFunction((Hashtable) table)); break;
