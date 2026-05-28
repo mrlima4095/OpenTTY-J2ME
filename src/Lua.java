@@ -2213,7 +2213,7 @@ public class Lua {
                         if (!(target instanceof Displayable)) { return gotbad(1, "addCommand", "Displayable expected"); }
                         if (!(cmdObj instanceof Command)) { return gotbad(1, "addCommand", "Command expected"); }
                         
-                        ((Displayable) target).addCommand((Command) cmdObj);
+                        ((Displayable) target).addCommand((Command) cmdObj); break;
                     }
                 case HANDLER:
                     if (args.size() < 2) { return gotbad(1, "handler", "wrong number of arguments"); }
