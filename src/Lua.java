@@ -2475,142 +2475,131 @@ public class Lua {
                     int uid = ((Double) args.elementAt(4)).intValue();
 
                     if (payload == null || payload.equals("")) { return null; }
-                    if (payload instanceof String) {
-                        if (payload.equals("sendsig")) {
-                            if (arg == null || !(arg instanceof Hashtable)) { return new Double(2); }
-                            else {
-                                Hashtable info = (Hashtable) arg;
-                                String pid = (String) info.get("pid"), signal = toLuaString(info.get("signal"));
+                    else if (payload instanceof String) {
+                        switch (payload) {
+                            case "sendsig":
+                                if (arg == null || !(arg instanceof Hashtable)) { return new Double(2); }
+                                else {
+                                    Hashtable info = (Hashtable) arg;
+                                    String pid = (String) info.get("pid"), signal = toLuaString(info.get("signal"));
 
-                                if (midlet.sys.containsKey(pid)) {
-                                    Process process = (Process) midlet.sys.get(pid);
+                                    if (midlet.sys.containsKey(pid)) {
+                                        Process process = (Process) midlet.sys.get(pid);
 
-                                    if (process.uid == uid || uid == 0) {
-                                        if (!signal.equals("9") && process.sighandler != null) {
-                                            try { 
-                                                Vector arguments = new Vector(); arguments.addElement(signal);
-                                                ((LuaFunction) process.sighandler).call(arguments);
+                                        if (process.uid == uid || uid == 0) {
+                                            if (!signal.equals("9") && process.sighandler != null) {
+                                                try { 
+                                                    Vector arguments = new Vector(); arguments.addElement(signal);
+                                                    ((LuaFunction) process.sighandler).call(arguments);
+                                                }
+                                                catch (Throwable e) {  }
                                             }
-                                            catch (Throwable e) {  }
-                                        }
 
-                                        midlet.sys.remove(pid);
-                                        if (signal.equals("9") && arg.equals("1")) { midlet.destroyApp(true); }
-                                        return new Double(0);
-                                    } else { return new Double(13); }
-                                }
-                                else { return new Double(127); }
-                            }
-                        }
-                        else if (payload.equals("proc")) {
-                            if (arg == null || arg.equals("")) { return new Double(2); }
-                            else if (midlet.sys.containsKey(arg)) {
-                                Process process = (Process) midlet.sys.get(arg);
-                                if (process.uid == uid || uid == 0) { return process; }
-                                else { return new Double(13); }
-                            }
-                            else { return new Double(127); }
-                        }
-                        else if (payload.equals("nice")) {
-                            if (arg == null || !(arg instanceof Hashtable)) { return new Double(2); }
-                            else {
-                                Hashtable info = (Hashtable) arg;
-                                String pid = (String) info.get("pid");
-                                int priority = ((Double) info.get("priority")).intValue();
-                                if (midlet.sys.containsKey(pid)) {
-                                    Process process = (Process) midlet.sys.get(pid);
-
-                                    if (process.uid == uid || uid == 0) {
-                                        process.priority = Math.max(Process.MIN_PRIORITY, Math.min(Process.MAX_PRIORITY, priority));
-                                        return new Double(0);
-                                    } else { return new Double(13); }
-                                }
-                                else { return new Double(127); }
-                            }
-                        }
-                        else if (payload.equals("passwd")) {
-                            if (arg instanceof String) { return new Boolean(midlet.passwd((String) arg)); }
-                            else if (arg instanceof Hashtable) {
-                                Hashtable query = (Hashtable) arg;
-                                String old = (String) query.get("old"), newpw = (String) query.get("new");
-
-                                if (old == null || newpw == null || old.equals("") || newpw.equals("")) { return new Double(2); }
-                                else if (uid == 0 || midlet.passwd(old)) { return new Double(midlet.writeRMS("OpenRMS", String.valueOf(newpw.hashCode()).getBytes(), 2)); }
-                                else { return new Double(13); }
-                            }
-                        }
-                        else if (payload.equals("setsh")) {
-                            if (arg == null || arg.equals("")) { midlet.shell = new LuaFunction(EXEC); }
-                            else if (arg instanceof LuaFunction) { midlet.shell = arg; }
-                            else { return new Double(2); }
-                        }
-                        else if (payload.equals("cache")) { if (arg == null || arg.equals("")) { return new Boolean(midlet.useCache); } else if (arg == TRUE || toLuaString(arg).equals("true")) { midlet.useCache = true; } else if (arg == FALSE || toLuaString(arg).equals("false")) { midlet.useCache = false; midlet.cache.clear(); midlet.cacheLua.clear(); } else { return new Double(2); } }
-                        else if (payload.equals("debug")) { if (arg == null || arg.equals("")) { return new Boolean(midlet.debug); } else if (arg == TRUE || toLuaString(arg).equals("true")) { midlet.debug = true; } else if (arg == FALSE || toLuaString(arg).equals("false")) { midlet.debug = false; } else { return new Double(2); } } 
-                        else if (payload.equals("netsh")) {
-                            if (arg == null || arg.equals("")) {
-                                Hashtable result = new Hashtable();
-                                for (Enumeration procs = midlet.sys.keys(); procs.hasMoreElements();) {
-                                    String pid = (String) procs.nextElement();
-                                    Process p = (Process) midlet.sys.get(pid);
-                                    
-                                    if (p.net.isEmpty()) { }
-                                    else {
-                                        Hashtable map = new Hashtable(); int i = 1;
-                                        for (Enumeration sockets = p.net.keys(); sockets.hasMoreElements();) {
-                                            map.put(new Double(1), sockets.nextElement());
-                                        }
-                                        result.put(pid, map);
+                                            midlet.sys.remove(pid);
+                                            if (signal.equals("9") && arg.equals("1")) { midlet.destroyApp(true); }
+                                            return new Double(0);
+                                        } else { return new Double(13); }
                                     }
+                                    else { return new Double(127); }
                                 }
-                                return result;
-                            }
-                        }
-
-                        else if (payload.equals("serve")) {
-                            if (arg == null || arg.equals("")) { return new Double(2); }
-                            else {
-                                String program = toLuaString(arg), code = midlet.read(program, father);
-                                Process process = new Process(midlet, program, "/bin/init --serve=" + program, midlet.getUser(uid), uid, midlet.genpid(), stdout, father);
-                                process.lua.kill = false;
-
-                                Hashtable arg = new Hashtable(); arg.put(new Double(0), program); arg.put(new Double(1), "--deamon");
-                                Hashtable res = process.lua.run(program, code, arg);
-
-                                Object handler = res.get("object");
-                                if (handler instanceof Vector) {
-                                    Vector resx = (Vector) handler;
-                                    handler = resx.elementAt(0);
-                                }
-
-                                if (handler instanceof Lua.LuaFunction) { process.handler = handler; }
-                            }
-                        }
-
-                        else if (payload.equals("rms")) {
-                            if (uid == 0) {
+                            case "proc":
                                 if (arg == null || arg.equals("")) { return new Double(2); }
-                                else if (arg.equals("/bin/")) { midlet.writeRMS("OpenRMS", new byte[0], 3); }
-                                else if (arg.equals("/etc/")) { midlet.writeRMS("OpenRMS", new byte[0], 5); }
-                                else if (arg.equals("/lib/")) { midlet.writeRMS("OpenRMS", new byte[0], 4); }
-                            } else { return new Double(13); }
-                        }
-                        else if (payload.equals("useradd")) {
-                            if (arg == null || arg.equals("") || arg.equals("root")) { return new Double(2); }
-                            else if (midlet.userID.containsKey(arg)) { return new Double(128); }
-                            else { midlet.userID.put(arg, new Integer(midlet.lastID + 1)); midlet.lastID++; return new Double(0); }
-                        }
-                        else if (payload.equals("userdel")) {
-                            if (arg == null || arg.equals("") || arg.equals("root") || arg.equals(midlet.username)) { return new Double(13); }
-                            else if (midlet.userID.containsKey(arg)) { if (uid == 0) { midlet.userID.remove(arg); return new Double(0); } else { return new Double(13); } }
-                            else { return new Double(127); }
-                        }
-                        else if (payload.equals("user")) {
-                            if (arg == null || arg.equals("") || !(arg instanceof Double)) { return new Double(2); }
-                            else {
-                                String user = midlet.getUser(((Double) arg).intValue());
-                                if (user == null) { return new Double(127); }
-                                else { return user; }
-                            }
+                                else if (midlet.sys.containsKey(arg)) {
+                                    Process process = (Process) midlet.sys.get(arg);
+                                    if (process.uid == uid || uid == 0) { return process; }
+                                    else { return new Double(13); }
+                                }
+                                else { return new Double(127); }
+                            case "nice":
+                                if (arg == null || !(arg instanceof Hashtable)) { return new Double(2); }
+                                else {
+                                    Hashtable info = (Hashtable) arg;
+                                    String pid = (String) info.get("pid");
+                                    int priority = ((Double) info.get("priority")).intValue();
+                                    if (midlet.sys.containsKey(pid)) {
+                                        Process process = (Process) midlet.sys.get(pid);
+
+                                        if (process.uid == uid || uid == 0) {
+                                            process.priority = Math.max(Process.MIN_PRIORITY, Math.min(Process.MAX_PRIORITY, priority));
+                                            return new Double(0);
+                                        } else { return new Double(13); }
+                                    }
+                                    else { return new Double(127); }
+                                }
+                            case "passwd":
+                                if (arg instanceof String) { return new Boolean(midlet.passwd((String) arg)); }
+                                else if (arg instanceof Hashtable) {
+                                    Hashtable query = (Hashtable) arg;
+                                    String old = (String) query.get("old"), newpw = (String) query.get("new");
+
+                                    if (old == null || newpw == null || old.equals("") || newpw.equals("")) { return new Double(2); }
+                                    else if (uid == 0 || midlet.passwd(old)) { return new Double(midlet.writeRMS("OpenRMS", String.valueOf(newpw.hashCode()).getBytes(), 2)); }
+                                    else { return new Double(13); }
+                                }
+                            case "setsh":
+                                if (arg == null || arg.equals("")) { midlet.shell = new LuaFunction(EXEC); }
+                                else if (arg instanceof LuaFunction) { midlet.shell = arg; }
+                                else { return new Double(2); }
+                            case "cache": if (arg == null || arg.equals("")) { return new Boolean(midlet.useCache); } else if (arg == TRUE || toLuaString(arg).equals("true")) { midlet.useCache = true; } else if (arg == FALSE || toLuaString(arg).equals("false")) { midlet.useCache = false; midlet.cache.clear(); midlet.cacheLua.clear(); } else { return new Double(2); }
+                            case "debug": if (arg == null || arg.equals("")) { return new Boolean(midlet.debug); } else if (arg == TRUE || toLuaString(arg).equals("true")) { midlet.debug = true; } else if (arg == FALSE || toLuaString(arg).equals("false")) { midlet.debug = false; } else { return new Double(2); }
+                            case "netsh":
+                                if (arg == null || arg.equals("")) {
+                                    Hashtable result = new Hashtable();
+                                    for (Enumeration procs = midlet.sys.keys(); procs.hasMoreElements();) {
+                                        String pid = (String) procs.nextElement();
+                                        Process p = (Process) midlet.sys.get(pid);
+                                        
+                                        if (p.net.isEmpty()) { }
+                                        else {
+                                            Hashtable map = new Hashtable(); int i = 1;
+                                            for (Enumeration sockets = p.net.keys(); sockets.hasMoreElements();) {
+                                                map.put(new Double(1), sockets.nextElement());
+                                            }
+                                            result.put(pid, map);
+                                        }
+                                    }
+                                    return result;
+                                }
+                            case "serve":
+                                if (arg == null || arg.equals("")) { return new Double(2); }
+                                else {
+                                    String program = toLuaString(arg), code = midlet.read(program, father);
+                                    Process process = new Process(midlet, program, "/bin/init --serve=" + program, midlet.getUser(uid), uid, midlet.genpid(), stdout, father);
+                                    process.lua.kill = false;
+
+                                    Hashtable arg = new Hashtable(); arg.put(new Double(0), program); arg.put(new Double(1), "--deamon");
+                                    Hashtable res = process.lua.run(program, code, arg);
+
+                                    Object handler = res.get("object");
+                                    if (handler instanceof Vector) {
+                                        Vector resx = (Vector) handler;
+                                        handler = resx.elementAt(0);
+                                    }
+
+                                    if (handler instanceof Lua.LuaFunction) { process.handler = handler; }
+                                }
+                            case "rms":
+                                if (uid == 0) {
+                                    if (arg == null || arg.equals("")) { return new Double(2); }
+                                    else if (arg.equals("/bin/")) { midlet.writeRMS("OpenRMS", new byte[0], 3); }
+                                    else if (arg.equals("/etc/")) { midlet.writeRMS("OpenRMS", new byte[0], 5); }
+                                    else if (arg.equals("/lib/")) { midlet.writeRMS("OpenRMS", new byte[0], 4); }
+                                } else { return new Double(13); }
+                            case "useradd": 
+                                if (arg == null || arg.equals("") || arg.equals("root")) { return new Double(2); }
+                                else if (midlet.userID.containsKey(arg)) { return new Double(128); }
+                                else { midlet.userID.put(arg, new Integer(midlet.lastID + 1)); midlet.lastID++; return new Double(0); }
+                            case "userdel":
+                                if (arg == null || arg.equals("") || arg.equals("root") || arg.equals(midlet.username)) { return new Double(13); }
+                                else if (midlet.userID.containsKey(arg)) { if (uid == 0) { midlet.userID.remove(arg); return new Double(0); } else { return new Double(13); } }
+                                else { return new Double(127); }
+                            case "user":
+                                if (arg == null || arg.equals("") || !(arg instanceof Double)) { return new Double(2); }
+                                else {
+                                    String user = midlet.getUser(((Double) arg).intValue());
+                                    if (user == null) { return new Double(127); }
+                                    else { return user; }
+                                }
                         }
                     }
 
@@ -2738,74 +2727,84 @@ public class Lua {
                         status = 127;
                     }
                 }
-                else if (mainCommand.equals("gc")) { System.gc(); }
-                else if (mainCommand.equals("cat")) {
-                    for (int i = 0; i < args.length; i++) {
-                        try {
-                            InputStream in = midlet.getInputStream(midlet.joinpath(args[i], father), father);
-                            if (in != null) { midlet.print(midlet.read(in, 1024, true), output, id, father); }
-                            else { status = 2; break; }
-                        } catch (Exception e) {
-                            status = 127; break;
-                        }
-                    }
-                }
-                else if (mainCommand.equals("ls")) {
-                    Vector payload = new Vector(); StringBuffer buffer = new StringBuffer();
-                    payload.addElement(args.length == 0 ? (String) father.get("PWD") : midlet.joinpath(args[0], father));
-                    Hashtable items = dirs(payload);
+                else {
+                    switch (mainCommand) {
+                        // Files
+                        case "cat":
+                            for (int i = 0; i < args.length; i++) {
+                                try {
+                                    InputStream in = midlet.getInputStream(midlet.joinpath(args[i], father), father);
+                                    if (in != null) { midlet.print(midlet.read(in, 1024, true), output, id, father); }
+                                    else { status = 2; break; }
+                                } catch (Exception e) {
+                                    status = 127; break;
+                                }
+                            }
+                            break;
+                        case "ls":
+                            Vector payload = new Vector(); StringBuffer buffer = new StringBuffer();
+                            payload.addElement(args.length == 0 ? (String) father.get("PWD") : midlet.joinpath(args[0], father));
+                            Hashtable items = dirs(payload);
 
-                    if (items.isEmpty()) { }
-                    else {
-                        for (Enumeration keys = items.keys(); keys.hasMoreElements();) {
-                            Double i = (Double) keys.nextElement();
-                            String file = (String) items.get(i);
+                            if (items.isEmpty()) { }
+                            else {
+                                for (Enumeration keys = items.keys(); keys.hasMoreElements();) {
+                                    Double i = (Double) keys.nextElement();
+                                    String file = (String) items.get(i);
 
-                            if (!file.startsWith(".")) { buffer.append(file).append("\t"); }
-                        }
+                                    if (!file.startsWith(".")) { buffer.append(file).append("\t"); }
+                                }
 
-                        midlet.print(buffer.toString().trim(), output, id, father);
-                    }
-                }
-                else if (mainCommand.equals("ps")) {
-                    midlet.print("PID\tPROCESS", output, id, father);
-                    for (Enumeration procs = midlet.sys.keys(); procs.hasMoreElements();) {
-                        String pid = (String) procs.nextElement();
+                                midlet.print(buffer.toString().trim(), output, id, father);
+                            }
+                            break;
 
-                        midlet.print(pid + "\t" + ((Process) midlet.sys.get(pid)).name, output, id, father);
-                    }
-                }
-                else if (mainCommand.equals("su")) {
-                    if (args.length >= 2) {
-                        if (args[0].equals("root") && midlet.passwd(args[1])) { id = 0; father.put("USER", "root"); }
-                        else { midlet.print("Permission denied!", output, id, father); status = 13; }
-                    } 
-                    else if (args.length == 1) {
-                        if (midlet.userID.containsKey(args[0])) {
-                            id = midlet.getUserID(args[0]);
-                            father.put("USER", args[0]);
-                        } else {
-                            midlet.print("Permission denied!", output, id, father);
-                            status = 13;
-                        }
-                    }
-                    else {
-                        if (id != 1000) {
-                            id = 1000;
-                            father.put("USER", midlet.username);
-                        } else {
-                            midlet.print("su: usage: su [username] [passwd]", output, id, father);
-                        }
-                    }
-                }
-                else if (mainCommand.equals("uptime")) { midlet.print(((System.currentTimeMillis() - midlet.uptime) / 1000) + " ms", output, id, father); }
-                else if (mainCommand.equals("time")) {
-                    long before = System.currentTimeMillis();
-                    Vector payload = new Vector();
-                    payload.addElement(argument);
-                    status = exec(payload).intValue();
+                        //
+                        // System
+                        case "gc": System.gc(); break;
+                        case "uptime": midlet.print(((System.currentTimeMillis() - midlet.uptime) / 1000) + " ms", output, id, father); break;
+                        case "ps": 
+                            midlet.print("PID\tPROCESS", output, id, father);
+                            for (Enumeration procs = midlet.sys.keys(); procs.hasMoreElements();) {
+                                String pid = (String) procs.nextElement();
 
-                    midlet.print("at " + (System.currentTimeMillis() - before), output, id, father);
+                                midlet.print(pid + "\t" + ((Process) midlet.sys.get(pid)).name, output, id, father);
+                            }
+                            break;
+                        // 
+                        case "time":
+                            long before = System.currentTimeMillis();
+                            Vector payload = new Vector();
+                            payload.addElement(argument);
+                            status = exec(payload).intValue();
+
+                            midlet.print("at " + (System.currentTimeMillis() - before), output, id, father);
+                            break;
+                        // Users
+                        case "su":
+                            if (args.length >= 2) {
+                                if (args[0].equals("root") && midlet.passwd(args[1])) { id = 0; father.put("USER", "root"); }
+                                else { midlet.print("Permission denied!", output, id, father); status = 13; }
+                            } 
+                            else if (args.length == 1) {
+                                if (midlet.userID.containsKey(args[0])) {
+                                    id = midlet.getUserID(args[0]);
+                                    father.put("USER", args[0]);
+                                } else {
+                                    midlet.print("Permission denied!", output, id, father);
+                                    status = 13;
+                                }
+                            }
+                            else {
+                                if (id != 1000) {
+                                    id = 1000;
+                                    father.put("USER", midlet.username);
+                                } else {
+                                    midlet.print("su: usage: su [username] [passwd]", output, id, father);
+                                }
+                            }
+                            break;
+
                 }
                 else if (mainCommand.equals("whoami")) { midlet.print((String) father.get("USER"), output, id, father); }
                 else if (mainCommand.equals("id")) {

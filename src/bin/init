@@ -1,5 +1,16 @@
 #!/bin/lua
 
+if arg[1] then
+    if string.startswith(arg[1], "--serve=") then
+        program = string.sub(arg[1], string.len("--serve="))
+        if program == "" or not program then
+            print("/bin/init: missing executable")
+            os.exit(1)
+        end
+        print(os.request(1, "serve", os.join(program)))
+    end
+end
+
 for k,v in pairs({ ["PATCH"] = "Deep Dream", ["VERSION"] = getAppProperty("MIDlet-Version"), ["RELEASE"] = "mod", ["SHELL"] = "/bin/sh" }) do os.setenv(k, v) end
 for k,v in pairs({ ["TYPE"] = "platform", ["CONFIG"] = "configuration", ["PROFILE"] = "profiles", ["LOCALE"] = "locale" }) do os.setenv(k, getAppProperty("/microedition." .. v)) end
 
