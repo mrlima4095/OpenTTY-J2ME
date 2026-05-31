@@ -2804,9 +2804,9 @@ public class Lua {
                                 }
                             }
                             break;
-                    }
+
                 }
-                if (mainCommand.equals("whoami")) { midlet.print((String) father.get("USER"), output, id, father); }
+                else if (mainCommand.equals("whoami")) { midlet.print((String) father.get("USER"), output, id, father); }
                 else if (mainCommand.equals("id")) {
                     if (args.length == 0) {
                         midlet.print("uid=" + id + "(" + midlet.getUser(id) + ")", output, id, father);
