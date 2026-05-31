@@ -8,6 +8,8 @@ if arg[1] then
             os.exit(1)
         end
         print(os.request(1, "serve", os.join(program)))
+    else
+        print("init: " .. arg[1] .. ": not found")
     end
 end
 
