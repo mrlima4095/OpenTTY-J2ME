@@ -31,7 +31,7 @@ if ($isOld) {
         <a href="/assets/">📁 Mirror</a>
         <a href="/dist/">⬇️ Downloads</a>
         <a href="https://github.com/mrlima4095/OpenTTY-J2ME">📦 Repository</a>
-        <a href="http://git.opentty.xyz">📝 Gitea</a>
+        <a href="http://git.opentty.xyz">📝 Fogejo</a>
         <a href="/cli">🌐 WebProxy</a>
         <hr>
         <h3>🛠️ Building OpenTTY from Source</h3>
@@ -540,7 +540,7 @@ $ select OpenTTY folder → click Build (🛠️)
         <p class="small text-secondary mt-2">Modern UNIX-like environment for J2ME phones. ARM ELF loader, Lua scripting, process isolation, networking, and GUI.</p>
         <div class="d-flex gap-3 footer-links">
           <a href="https://github.com/mrlima4095/OpenTTY-J2ME"><i class="bi bi-github"></i> GitHub</a>
-          <a href="http://git.opentty.xyz"><i class="bi bi-gitlab"></i> Gitea</a>
+          <a href="http://git.opentty.xyz"><i class="bi bi-gitlab"></i> Forgejo</a>
           <a href="/cli"><i class="bi bi-globe"></i> Proxy</a>
         </div>
       </div>
