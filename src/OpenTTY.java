@@ -9,7 +9,7 @@ import javax.microedition.io.*;
 import java.util.*;
 import java.io.*;
 // |
-// OpenTTY MIDlet
+// OpenTTY MIDlet 
 public class OpenTTY extends MIDlet implements CommandListener {
     // Behavior Settings
     public long uptime = System.currentTimeMillis();
