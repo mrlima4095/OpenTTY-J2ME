@@ -31,11 +31,11 @@ if ($isOld) {
         <a href="/assets/">📁 Mirror</a>
         <a href="/dist/">⬇️ Downloads</a>
         <a href="https://github.com/mrlima4095/OpenTTY-J2ME">📦 Repository</a>
-        <a href="http://git.opentty.xyz">📝 Fogejo</a>
+        <a href="http://git.opentty.fun">📝 Fogejo</a>
         <a href="/cli">🌐 WebProxy</a>
         <hr>
         <h3>🛠️ Building OpenTTY from Source</h3>
-        <pre>📥 Step 1: Download SDK.jar from http://opentty.xyz/dl/SDK.jar
+        <pre>📥 Step 1: Download SDK.jar from http://opentty.fun/dl/SDK.jar
 📁 Step 2: Navigate to OpenTTY repo folder
 🔨 Step 3: Launch SDK.jar, browse repo, press Build button (hammer icon)
 
@@ -289,7 +289,7 @@ else {
         </p>
         <div class="btn-icon-group mb-4">
           <a class="btn btn-outline-terminal" href="/dist/"><i class="bi bi-download"></i><span>Downloads</span></a>
-          <a class="btn btn-outline-terminal" href="http://git.opentty.xyz"><i class="bi bi-code-square"></i><span>Forgejo</span></a>
+          <a class="btn btn-outline-terminal" href="http://git.opentty.fun"><i class="bi bi-code-square"></i><span>Forgejo</span></a>
           <a class="btn btn-outline-terminal" href="https://github.com/mrlima4095/OpenTTY-J2ME"><i class="bi bi-github"></i><span>Repository</span></a>
           <a class="btn btn-outline-terminal" href="/cli"><i class="bi bi-globe2"></i><span>WebProxy</span></a>
         </div>
@@ -465,7 +465,7 @@ PID  PROCESS
         <div class="col-md-6">
           <div class="bg-black bg-opacity-40 p-3 rounded-3 h-100">
             <h5><i class="bi bi-1-square-fill text-cyan"></i> Download SDK</h5>
-            <p>Get <a href="http://opentty.xyz/dl/SDK.jar" class="text-cyan">SDK.jar</a> and transfer it to your device's storage or SD card.</p>
+            <p>Get <a href="http://opentty.fun/dl/SDK.jar" class="text-cyan">SDK.jar</a> and transfer it to your device's storage or SD card.</p>
             <h5 class="mt-3"><i class="bi bi-2-square-fill text-cyan"></i> Access Repository</h5>
             <p>Open file manager, navigate to the OpenTTY source folder. Ensure all Java files are present.</p>
             <h5 class="mt-3"><i class="bi bi-3-square-fill text-cyan"></i> Compile with SDK</h5>
@@ -522,9 +522,9 @@ $ select OpenTTY folder → click Build (🛠️)
           </div>
         </div>
         <div class="mt-3">
-          <a href="http://git.opentty.xyz" class="text-decoration-none me-3"><i class="bi bi-git"></i> Git repository (Forgejo)</a>
+          <a href="http://git.opentty.fun" class="text-decoration-none me-3"><i class="bi bi-git"></i> Git repository (Forgejo)</a>
           <a href="/assets/" class="text-decoration-none"><i class="bi bi-archive"></i> Assets & mirrors</a>
-          <a href="http://opentty.xyz/dl/SDK.jar" class="text-decoration-none ms-3"><i class="bi bi-tools"></i> Download SDK.jar</a>
+          <a href="http://opentty.fun/dl/SDK.jar" class="text-decoration-none ms-3"><i class="bi bi-tools"></i> Download SDK.jar</a>
         </div>
       </div>
     </div>
@@ -540,7 +540,7 @@ $ select OpenTTY folder → click Build (🛠️)
         <p class="small text-secondary mt-2">Modern UNIX-like environment for J2ME phones. ARM ELF loader, Lua scripting, process isolation, networking, and GUI.</p>
         <div class="d-flex gap-3 footer-links">
           <a href="https://github.com/mrlima4095/OpenTTY-J2ME"><i class="bi bi-github"></i> GitHub</a>
-          <a href="http://git.opentty.xyz"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" width="1em" height="1em" fill="currentColor" style="vertical-align: -0.125em;">
+          <a href="http://git.opentty.fun"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" width="1em" height="1em" fill="currentColor" style="vertical-align: -0.125em;">
     <!--!Font Awesome Free v7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.-->
     <path d="M261.5 1.2c34 0 61.6 27.6 61.6 61.6s-27.6 61.6-61.6 61.6c-23 0-43.1-12.7-53.7-31.4l-28.5 0c-24 0-47 9.5-64 26.5s-26.5 40-26.5 64l0 43.5c26-19.5 57.7-30.2 90.6-30.2l28.5 0c10.6-18.7 30.6-31.4 53.7-31.4 34 0 61.6 27.6 61.6 61.6s-27.6 61.6-61.6 61.6c-23 0-43.1-12.7-53.7-31.4l-28.5 0c-24 0-47 9.5-64 26.5s-26.5 40-26.5 64l0 47.8c18.7 10.6 31.4 30.6 31.4 53.6 0 34-27.6 61.6-61.6 61.6S-3 483.2-3 449.2c0-23 12.7-43.1 31.4-53.6l0-212c0-40 15.9-78.4 44.2-106.7s66.7-44.2 106.7-44.2l28.5 0c10.6-18.7 30.6-31.4 53.7-31.4zM58.6 423.9c-14 0-25.3 11.3-25.3 25.3s11.3 25.4 25.3 25.4 25.4-11.4 25.4-25.4-11.4-25.3-25.4-25.3zM261.5 201.7a25.4 25.4 0 1 0 0 50.7 25.4 25.4 0 1 0 0-50.7zm0-164.2a25.4 25.4 0 1 0 0 50.7 25.4 25.4 0 1 0 0-50.7z"/>
 </svg>

@@ -254,7 +254,7 @@ local vm = java.getName()
 print("Java VM: " .. vm)
 
 -- Open external URLs
-os.open("http://opentty.xyz")
+os.open("http://opentty.fun")
 ```
 
 ---

@@ -10,7 +10,7 @@ Before building OpenTTY, ensure you have:
 ## 🛠️ Build Process
 
 ### 📥 Step 1: Download SDK  
-1. Download [`SDK.jar`](http://opentty.xyz/dl/SDK.jar) to your mobile device
+1. Download [`SDK.jar`](http://opentty.fun/dl/SDK.jar) to your mobile device
 2. Transfer the file to your device's main storage or SD card
 
 ### 📁 Step 2: Access Repository
@@ -18,7 +18,7 @@ Before building OpenTTY, ensure you have:
 2. Ensure all Java source files and resources are present
 
 ### 🔨 Step 3: Compile with SDK
-1. **Launch** [`SDK.jar`](http://opentty.xyz/dl/SDK.jar) on your device
+1. **Launch** [`SDK.jar`](http://opentty.fun/dl/SDK.jar) on your device
 2. **Browse** to the OpenTTY repository directory using the SDK's file browser
 3. **Press the Build button** (identified by a hammer icon 🛠️)
 4. Wait for the compilation process to complete

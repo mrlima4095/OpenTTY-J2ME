@@ -82,7 +82,7 @@ socket = {
     accept = function (server) end,
 
     --[=[Get informations about other side of connection]=]
-    peer = function (conn) return "opentty.xyz", 31522 end,
+    peer = function (conn) return "opentty.fun", 31522 end,
     --[=[Get informations about current device on connection]=]
     device = function (conn) return "127.0.0.1", 31522 end,
 
