@@ -2,8 +2,8 @@
 
 
 local PASTEBIN_API = os.getenv("PASTEBIN_API")
-local PROXY = os.getenv("REPO") or "opentty.xyz:31522"
-local PROXY_HTTP = "http://opentty.xyz/proxy.php?"
+local PROXY = os.getenv("REPO") or "opentty.fun:31522"
+local PROXY_HTTP = "http://opentty.fun/proxy.php?"
 
 local app = {}
 

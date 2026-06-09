@@ -15,7 +15,7 @@ local function whois(domain)
     end
 end
 local function ifconfig()
-    local ok, conn, i, o = pcall(socket.connect or "socket://opentty.xyz:31522")
+    local ok, conn, i, o = pcall(socket.connect or "socket://opentty.fun:31522")
     if not ok then
         return tostring(conn)
     end

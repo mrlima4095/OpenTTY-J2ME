@@ -4,7 +4,7 @@
 local scope = { PWD = "/home/", USER = java.midlet.username, ROOT = "/", ALIAS = {} }
 local password = arg[1]
 local function app()
-    local ok, conn, i, o = pcall(socket.connect, "socket://opentty.xyz:4096")
+    local ok, conn, i, o = pcall(socket.connect, "socket://opentty.fun:4096")
     if not ok then
         print(arg[0] .. ": " .. tostring(conn))
         os.exit(101)
