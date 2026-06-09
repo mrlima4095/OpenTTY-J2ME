@@ -7,4 +7,4 @@ MicroEdition-Profile: MIDP-2.0
 MIDlet-Description: Terminal Emulator for J2ME
 MIDlet-Icon: /icon.png
 MIDlet-Info-URL: https://github.com/mrlima4095/OpenTTY-J2ME
-MIDlet-Proxy: http://opentty.xyz/proxy.php?
+MIDlet-Proxy: http://opentty.fun/proxy.php?
