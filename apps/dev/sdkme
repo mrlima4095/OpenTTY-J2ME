@@ -22,7 +22,7 @@ if option == "Nano Editor" then os.execute("nano") os.exit()
 
 local app = {
     version = "1.2",
-    proxy = getAppProperty("MIDlet-Proxy") or "http://opentty.xyz/proxy.php?",
+    proxy = getAppProperty("MIDlet-Proxy") or "http://opentty.fun/proxy.php?",
     mirror = "raw.githubusercontent.com/mrlima4095/OpenTTY-J2ME/main/",
 }
 

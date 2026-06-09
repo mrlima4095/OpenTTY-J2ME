@@ -310,7 +310,7 @@ For detailed build instructions and installation guide, check out our complete d
 📖 **[Build Documentation Wiki](https://github.com/mrlima4095/OpenTTY-J2ME/wiki/%F0%9F%9A%80-Build-Documentation)**
 
 *Quick overview:*
-- Built using [J2ME SDK Mobile](http://opentty.xyz/dl/SDK.jar)
+- Built using [J2ME SDK Mobile](http://opentty.fun/dl/SDK.jar)
 - Compiles to `OpenTTY.jar` and `OpenTTY.jad` files
 - Direct installation on Java ME compatible devices
 - Supports various mobile platforms with J2ME runtime
