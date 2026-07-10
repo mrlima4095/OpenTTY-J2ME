@@ -159,7 +159,7 @@ elseif arg[1] == "install" then
     if os.getuid() > 0 then print("Permission denied!") os.exit(13) end
 
     if arg[2] then
-        for i = 2, #arg - 1 do
+        for i = 2, #arg do
             local pkg = arg[i]
 
             if mirror[pkg] then
@@ -211,7 +211,7 @@ elseif arg[1] == "remove" then
     if os.getuid() > 0 then print("Permission denied!") os.exit(13) end
 
     if arg[2] then
-        for i = 2, #arg - 1 do
+        for i = 2, #arg do
             local pkg = arg[i]
 
             if mirror[pkg] then

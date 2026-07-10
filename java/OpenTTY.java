@@ -59,7 +59,13 @@ public class OpenTTY {
                     globals.put("ROOT", "/"); 
                     globals.put("ALIAS", new Hashtable<>()); 
                     userID.put(username, 1000);
-                    
+
+                    // Precisa existir ANTES de criar o Process, senão o construtor de Lua
+                    // recebe stdout/stdin nulos e cai no fallback (StringBuffer), e o
+                    // io.stdout do script nunca vira um componente Swing real
+                    stdout = new JTextArea();
+                    stdin = new JTextField();
+
                     Process proc = new Process(this, "init", "/bin/init", "root", 0, "1", stdout, globals);
 
                     sys.put("1", proc); 
@@ -213,6 +219,12 @@ public class OpenTTY {
     
     private void showError(String title, String message) {
         JOptionPane.showMessageDialog(null, message, title, JOptionPane.ERROR_MESSAGE);
+    }
+
+
+    public String getWindowTitle(JPanel panel) {
+        Object t = panel.getClientProperty("windowTitle");
+        return (t != null && !t.toString().isEmpty()) ? t.toString() : "OpenTTY";
     }
     
     // Control Thread

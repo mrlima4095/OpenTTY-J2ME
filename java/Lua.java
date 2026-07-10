@@ -18,6 +18,9 @@ public class Lua {
     private int id = 1000, tokenIndex, loopDepth = 0;
     public Hashtable<String, Object> globals = new Hashtable<>(), father, requireCache = new Hashtable<>(), labels = new Hashtable<>();
     public Vector<Token> tokens;
+
+    private static JFrame sharedFrame;
+    private static JTabbedPane tabs;
     
     public int status = 0;
     
@@ -3278,28 +3281,27 @@ public class Lua {
                     if (args.isEmpty()) { }
                     else {
                         Object screen = args.elementAt(0);
-                        
                         if (screen instanceof JPanel) {
                             JPanel panel = (JPanel) screen;
-                            
-                            System.out.println("Displaying panel with " + panel.getComponentCount() + " components");
-                            
-                            // Criar a janela
-                            JFrame frame = new JFrame("OpenTTY Terminal");
-                            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                            frame.setSize(800, 600);
-                            frame.setLocationRelativeTo(null);
-                            
-                            // ADICIONAR O PAINEL DIRETAMENTE - SEM BORDERLAYOUT COMPLEXO
-                            frame.getContentPane().add(panel);
-                            
-                            // Mostrar
-                            frame.setVisible(true);
-                            
-                            // Armazenar referência
-                            midlet.frame = frame;
-                            
-                            System.out.println("Frame visible: " + frame.isVisible());
+
+                            if (sharedFrame == null) {
+                                sharedFrame = new JFrame("OpenTTY");
+                                sharedFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                                tabs = new JTabbedPane();
+                                sharedFrame.getContentPane().add(tabs);
+                                sharedFrame.setSize(900, 650);
+                            }
+
+                            String tabTitle = midlet.getWindowTitle(panel); // ver função abaixo
+                            tabs.addTab(tabTitle, panel);
+                            tabs.setSelectedComponent(panel);
+
+                            sharedFrame.pack();
+                            sharedFrame.setSize(900, 650);
+                            sharedFrame.setVisible(true);
+                            sharedFrame.toFront();
+
+                            midlet.frame = sharedFrame;
                         }
                     }
                     break;
@@ -3328,28 +3330,17 @@ public class Lua {
                     else if (newType.equals("screen")) { 
                         JPanel panel = new JPanel(new BorderLayout());
                         panel.setBackground(Color.BLACK);
-                        panel.setPreferredSize(new Dimension(800, 600));
-                        
-                        if (newTitle != null && !newTitle.isEmpty()) {
-                            JLabel titleLabel = new JLabel(newTitle);
-                            titleLabel.setForeground(Color.WHITE);
-                            titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
-                            titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 14f));
-                            titleLabel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
-                            panel.add(titleLabel, BorderLayout.NORTH);
-                        }
-                        
-                        // Painel central
+                        panel.putClientProperty("windowTitle", newTitle); // guarda pra usar depois, sem desenhar JLabel
+
                         JPanel centerPanel = new JPanel(new BorderLayout());
                         centerPanel.setBackground(Color.BLACK);
                         panel.add(centerPanel, BorderLayout.CENTER);
-                        
-                        // Painel sul (input)
+
                         JPanel southPanel = new JPanel(new BorderLayout());
                         southPanel.setBackground(Color.BLACK);
                         southPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
                         panel.add(southPanel, BorderLayout.SOUTH);
-                        
+
                         return panel;
                     }
                     else if (newType.equals("command")) {
@@ -3450,129 +3441,129 @@ public class Lua {
                     }
                     return midlet.readImg(toLuaString(args.elementAt(0)), father);
                 
-case APPEND:
-    if (args.size() < 2) { return gotbad(1, "append", "wrong number of arguments"); }
-    else {
-        Object targetObj = args.elementAt(0);
-        Object itemObj = args.elementAt(1);
-        
-        if (targetObj instanceof JPanel) {
-            JPanel panel = (JPanel) targetObj;
-            
-            // Encontrar os painéis CENTER e SOUTH
-            JPanel centerPanel = null;
-            JPanel southPanel = null;
-            
-            if (panel.getLayout() instanceof BorderLayout) {
-                for (Component comp : panel.getComponents()) {
-                    Object constraints = ((BorderLayout) panel.getLayout()).getConstraints(comp);
-                    if (constraints != null) {
-                        if (constraints.equals(BorderLayout.CENTER) && comp instanceof JPanel) {
-                            centerPanel = (JPanel) comp;
-                        } else if (constraints.equals(BorderLayout.SOUTH) && comp instanceof JPanel) {
-                            southPanel = (JPanel) comp;
-                        }
-                    }
-                }
-            }
-            
-            // Se não encontrou, criar
-            if (centerPanel == null) {
-                centerPanel = new JPanel(new BorderLayout());
-                centerPanel.setBackground(Color.BLACK);
-                panel.add(centerPanel, BorderLayout.CENTER);
-            }
-            if (southPanel == null) {
-                southPanel = new JPanel(new BorderLayout());
-                southPanel.setBackground(Color.BLACK);
-                panel.add(southPanel, BorderLayout.SOUTH);
-            }
-            
-            if (itemObj instanceof JTextArea) {
-                JTextArea textArea = (JTextArea) itemObj;
-                textArea.setEditable(false);
-                textArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
-                textArea.setBackground(Color.BLACK);
-                textArea.setForeground(Color.GREEN);
-                
-                JScrollPane scrollPane = new JScrollPane(textArea);
-                scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-                scrollPane.setBorder(BorderFactory.createEmptyBorder());
-                
-                centerPanel.add(scrollPane, BorderLayout.CENTER);
-                System.out.println("Added JTextArea to CENTER");
-                
-            } else if (itemObj instanceof JTextField) {
-                JTextField field = (JTextField) itemObj;
-                field.setFont(new Font("Monospaced", Font.PLAIN, 12));
-                field.setBackground(Color.BLACK);
-                field.setForeground(Color.GREEN);
-                field.setCaretColor(Color.GREEN);
-                field.setBorder(BorderFactory.createEmptyBorder());
-                
-                // Action listener para Enter
-                field.addActionListener(e -> {
-                    try {
-                        String command = field.getText();
-                        if (!command.isEmpty() && !command.startsWith("[")) {
-                            field.setText("");
-                            Vector<Object> args2 = new Vector<>();
-                            args2.addElement(command);
-                            Object os = globals.get("os");
-                            if (os instanceof Hashtable) {
-                                Hashtable<String, Object> osTable = (Hashtable<String, Object>) os;
-                                Object execute = osTable.get("execute");
-                                if (execute instanceof LuaFunction) {
-                                    ((LuaFunction) execute).call(args2);
+                case APPEND:
+                    if (args.size() < 2) { return gotbad(1, "append", "wrong number of arguments"); }
+                    else {
+                        Object targetObj = args.elementAt(0);
+                        Object itemObj = args.elementAt(1);
+                        
+                        if (targetObj instanceof JPanel) {
+                            JPanel panel = (JPanel) targetObj;
+                            
+                            // Encontrar os painéis CENTER e SOUTH
+                            JPanel centerPanel = null;
+                            JPanel southPanel = null;
+                            
+                            if (panel.getLayout() instanceof BorderLayout) {
+                                for (Component comp : panel.getComponents()) {
+                                    Object constraints = ((BorderLayout) panel.getLayout()).getConstraints(comp);
+                                    if (constraints != null) {
+                                        if (constraints.equals(BorderLayout.CENTER) && comp instanceof JPanel) {
+                                            centerPanel = (JPanel) comp;
+                                        } else if (constraints.equals(BorderLayout.SOUTH) && comp instanceof JPanel) {
+                                            southPanel = (JPanel) comp;
+                                        }
+                                    }
                                 }
                             }
-                            // Atualizar prompt
-                            Object label = globals.get("label");
-                            if (label instanceof LuaFunction) {
-                                ((LuaFunction) label).call(new Vector<>());
+                            
+                            // Se não encontrou, criar
+                            if (centerPanel == null) {
+                                centerPanel = new JPanel(new BorderLayout());
+                                centerPanel.setBackground(Color.BLACK);
+                                panel.add(centerPanel, BorderLayout.CENTER);
                             }
+                            if (southPanel == null) {
+                                southPanel = new JPanel(new BorderLayout());
+                                southPanel.setBackground(Color.BLACK);
+                                panel.add(southPanel, BorderLayout.SOUTH);
+                            }
+                            
+                            if (itemObj instanceof JTextArea) {
+                                JTextArea textArea = (JTextArea) itemObj;
+                                textArea.setEditable(false);
+                                textArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
+                                textArea.setBackground(Color.BLACK);
+                                textArea.setForeground(Color.GREEN);
+                                
+                                JScrollPane scrollPane = new JScrollPane(textArea);
+                                scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+                                scrollPane.setBorder(BorderFactory.createEmptyBorder());
+                                
+                                centerPanel.add(scrollPane, BorderLayout.CENTER);
+                                System.out.println("Added JTextArea to CENTER");
+                                
+                            } else if (itemObj instanceof JTextField) {
+                                JTextField field = (JTextField) itemObj;
+                                field.setFont(new Font("Monospaced", Font.PLAIN, 12));
+                                field.setBackground(Color.BLACK);
+                                field.setForeground(Color.GREEN);
+                                field.setCaretColor(Color.GREEN);
+                                field.setBorder(BorderFactory.createEmptyBorder());
+                                
+                                // Action listener para Enter
+                                field.addActionListener(e -> {
+                                    try {
+                                        String command = field.getText();
+                                        if (!command.isEmpty() && !command.startsWith("[")) {
+                                            field.setText("");
+                                            Vector<Object> args2 = new Vector<>();
+                                            args2.addElement(command);
+                                            Object os = globals.get("os");
+                                            if (os instanceof Hashtable) {
+                                                Hashtable<String, Object> osTable = (Hashtable<String, Object>) os;
+                                                Object execute = osTable.get("execute");
+                                                if (execute instanceof LuaFunction) {
+                                                    ((LuaFunction) execute).call(args2);
+                                                }
+                                            }
+                                            // Atualizar prompt
+                                            Object label = globals.get("label");
+                                            if (label instanceof LuaFunction) {
+                                                ((LuaFunction) label).call(new Vector<>());
+                                            }
+                                        }
+                                    } catch (Exception ex) {
+                                        midlet.print(midlet.getCatch(ex), stdout, id, father);
+                                    }
+                                });
+                                
+                                // Painel com prompt
+                                JPanel inputPanel = new JPanel(new BorderLayout());
+                                inputPanel.setBackground(Color.BLACK);
+                                inputPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+                                
+                                JLabel promptLabel = new JLabel("$ ");
+                                promptLabel.setFont(new Font("Monospaced", Font.PLAIN, 12));
+                                promptLabel.setForeground(Color.GREEN);
+                                inputPanel.add(promptLabel, BorderLayout.WEST);
+                                inputPanel.add(field, BorderLayout.CENTER);
+                                
+                                southPanel.add(inputPanel, BorderLayout.CENTER);
+                                System.out.println("Added JTextField to SOUTH");
+                                
+                            } else if (itemObj instanceof JButton) {
+                                JButton button = (JButton) itemObj;
+                                button.setBackground(new Color(60, 60, 60));
+                                button.setForeground(Color.WHITE);
+                                button.setFont(new Font("Monospaced", Font.PLAIN, 12));
+                                button.setPreferredSize(new Dimension(80, 28));
+                                
+                                JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+                                buttonPanel.setBackground(Color.BLACK);
+                                buttonPanel.add(button);
+                                
+                                southPanel.add(buttonPanel, BorderLayout.EAST);
+                                System.out.println("Added JButton to SOUTH.EAST");
+                            }
+                            
+                            panel.revalidate();
+                            panel.repaint();
+                            
+                            System.out.println("After append, panel has " + panel.getComponentCount() + " components");
                         }
-                    } catch (Exception ex) {
-                        midlet.print(midlet.getCatch(ex), stdout, id, father);
+                        break;
                     }
-                });
-                
-                // Painel com prompt
-                JPanel inputPanel = new JPanel(new BorderLayout());
-                inputPanel.setBackground(Color.BLACK);
-                inputPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-                
-                JLabel promptLabel = new JLabel("$ ");
-                promptLabel.setFont(new Font("Monospaced", Font.PLAIN, 12));
-                promptLabel.setForeground(Color.GREEN);
-                inputPanel.add(promptLabel, BorderLayout.WEST);
-                inputPanel.add(field, BorderLayout.CENTER);
-                
-                southPanel.add(inputPanel, BorderLayout.CENTER);
-                System.out.println("Added JTextField to SOUTH");
-                
-            } else if (itemObj instanceof JButton) {
-                JButton button = (JButton) itemObj;
-                button.setBackground(new Color(60, 60, 60));
-                button.setForeground(Color.WHITE);
-                button.setFont(new Font("Monospaced", Font.PLAIN, 12));
-                button.setPreferredSize(new Dimension(80, 28));
-                
-                JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-                buttonPanel.setBackground(Color.BLACK);
-                buttonPanel.add(button);
-                
-                southPanel.add(buttonPanel, BorderLayout.EAST);
-                System.out.println("Added JButton to SOUTH.EAST");
-            }
-            
-            panel.revalidate();
-            panel.repaint();
-            
-            System.out.println("After append, panel has " + panel.getComponentCount() + " components");
-        }
-        break;
-    }
                 case ADDCMD:
                     if (args.size() < 2) { return gotbad(1, "addCommand", "wrong number of arguments"); }
                     else {
@@ -3585,10 +3576,42 @@ case APPEND:
                         if (!(cmdObj instanceof JButton)) { 
                             return gotbad(1, "addCommand", "JButton expected"); 
                         }
-                        
-                        ((JPanel) targetObj).add((JButton) cmdObj);
-                        ((JPanel) targetObj).revalidate();
-                        ((JPanel) targetObj).repaint();
+
+                        JPanel panel = (JPanel) targetObj;
+                        JButton button = (JButton) cmdObj;
+
+                        // Achar o southPanel já existente (mesma lógica usada no APPEND),
+                        // em vez de jogar o botão direto no painel raiz (que quebrava o BorderLayout)
+                        JPanel southPanel = null;
+                        if (panel.getLayout() instanceof BorderLayout) {
+                            for (Component comp : panel.getComponents()) {
+                                Object constraints = ((BorderLayout) panel.getLayout()).getConstraints(comp);
+                                if (constraints != null && constraints.equals(BorderLayout.SOUTH) && comp instanceof JPanel) {
+                                    southPanel = (JPanel) comp;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (southPanel == null) {
+                            southPanel = new JPanel(new BorderLayout());
+                            southPanel.setBackground(Color.BLACK);
+                            panel.add(southPanel, BorderLayout.SOUTH);
+                        }
+
+                        button.setBackground(new Color(60, 60, 60));
+                        button.setForeground(Color.WHITE);
+                        button.setFont(new Font("Monospaced", Font.PLAIN, 12));
+                        button.setPreferredSize(new Dimension(80, 28));
+
+                        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+                        buttonPanel.setBackground(Color.BLACK);
+                        buttonPanel.add(button);
+
+                        southPanel.add(buttonPanel, BorderLayout.EAST);
+
+                        panel.revalidate();
+                        panel.repaint();
                         break;
                     }
                     
@@ -3606,65 +3629,63 @@ case APPEND:
                         }
 
                         Hashtable<Object, Object> handlers = (Hashtable<Object, Object>) table;
-                        
-                        // Procurar por botões e associar handlers
                         Container container = (Container) screen;
-                        for (Component comp : container.getComponents()) {
-                            if (comp instanceof JButton) {
-                                JButton button = (JButton) comp;
-                                // Procurar o handler para este botão
-                                for (Enumeration<Object> keys = handlers.keys(); keys.hasMoreElements();) {
-                                    Object key = keys.nextElement();
-                                    if (key instanceof JButton) {
-                                        JButton handlerButton = (JButton) key;
-                                        if (handlerButton.getText().equals(button.getText())) {
-                                            Object handler = handlers.get(key);
-                                            if (handler instanceof LuaFunction) {
-                                                button.addActionListener(e -> {
-                                                    try {
-                                                        // Pegar o texto do campo de entrada
-                                                        JTextField inputField = findTextField(container);
-                                                        String command = inputField != null ? inputField.getText() : "";
-                                                        
-                                                        Vector<Object> args2 = new Vector<>();
-                                                        args2.addElement(command);
-                                                        ((LuaFunction) handler).call(args2);
-                                                    } catch (Exception ex) {
-                                                        midlet.print(midlet.getCatch(ex), stdout, id, father);
-                                                    }
-                                                });
-                                            }
-                                            break;
+
+                        // Busca recursiva: o botão agora vive dentro de southPanel/buttonPanel,
+                        // não é mais filho direto do painel raiz
+                        Vector<JButton> allButtons = new Vector<>();
+                        findButtonsRecursive(container, allButtons);
+
+                        for (JButton button : allButtons) {
+                            for (Enumeration<Object> keys = handlers.keys(); keys.hasMoreElements();) {
+                                Object key = keys.nextElement();
+                                if (key instanceof JButton) {
+                                    JButton handlerButton = (JButton) key;
+                                    if (handlerButton == button || handlerButton.getText().equals(button.getText())) {
+                                        Object handler = handlers.get(key);
+                                        if (handler instanceof LuaFunction) {
+                                            final Container rootContainer = container;
+                                            button.addActionListener(e -> {
+                                                try {
+                                                    JTextField inputField = findTextField(rootContainer);
+                                                    String command = inputField != null ? inputField.getText() : "";
+
+                                                    Vector<Object> args2 = new Vector<>();
+                                                    args2.addElement(command);
+                                                    ((LuaFunction) handler).call(args2);
+                                                } catch (Exception ex) {
+                                                    midlet.print(midlet.getCatch(ex), stdout, id, father);
+                                                }
+                                            });
                                         }
+                                        break;
                                     }
                                 }
                             }
                         }
                         break;
                     }
-                    
                 case TITLE:
                     if (args.isEmpty()) { break; }
                     Object targetTitle = args.elementAt(0);
                     String titleText = args.size() > 1 ? toLuaString(args.elementAt(1)) : "";
-                    
+
                     if (targetTitle instanceof JFrame) {
                         ((JFrame) targetTitle).setTitle(titleText);
-                    } else if (targetTitle instanceof JDialog) {
-                        ((JDialog) targetTitle).setTitle(titleText);
                     } else if (targetTitle instanceof JPanel) {
                         JPanel panel = (JPanel) targetTitle;
-                        if (panel.getComponentCount() > 0 && panel.getComponent(0) instanceof JLabel) {
-                            JLabel titleLabel = (JLabel) panel.getComponent(0);
-                            titleLabel.setText(titleText);
-                        } else {
-                            JLabel titleLabel = new JLabel(titleText);
-                            titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 14f));
-                            panel.add(titleLabel, 0);
+                        panel.putClientProperty("windowTitle", titleText);
+
+                        Container top = panel.getTopLevelAncestor();
+                        if (top instanceof JFrame) {
+                            ((JFrame) top).setTitle(titleText);
+                        }
+                        if (tabs != null) {
+                            int idx = tabs.indexOfComponent(panel);
+                            if (idx >= 0) tabs.setTitleAt(idx, titleText);
                         }
                     }
                     break;
-                    
                 case TICKER:
                     // Em Swing, não há equivalente direto ao Ticker J2ME
                     // Podemos usar uma JLabel ou ignorar
@@ -3692,7 +3713,23 @@ case APPEND:
                     } else if (labelItem instanceof JButton) {
                         ((JButton) labelItem).setText(labelText);
                     } else if (labelItem instanceof JTextField) {
-                        ((JTextField) labelItem).setText(labelText);
+                        // Não sobrescrever o texto do campo de entrada (isso apagava o que
+                        // o usuário digitou e fazia o prompt virar "comando"). Em vez disso,
+                        // atualiza o JLabel do prompt que fica ao lado (mesmo inputPanel).
+                        JTextField field = (JTextField) labelItem;
+                        Container parent = field.getParent();
+                        JLabel promptLabel = null;
+                        if (parent != null) {
+                            for (Component comp : parent.getComponents()) {
+                                if (comp instanceof JLabel) {
+                                    promptLabel = (JLabel) comp;
+                                    break;
+                                }
+                            }
+                        }
+                        if (promptLabel != null) {
+                            promptLabel.setText(labelText);
+                        }
                     } else if (labelItem instanceof JTextArea) {
                         // Para o stdout, adicionar o prompt
                         ((JTextArea) labelItem).append(labelText);
@@ -5127,6 +5164,20 @@ case APPEND:
                 }
             }
             return null;
+        }
+
+        // Busca recursiva por todos os JButtons dentro de um container (necessário
+        // porque addCommand agora coloca o botão dentro do southPanel/buttonPanel,
+        // não mais como filho direto do painel raiz)
+        private void findButtonsRecursive(Container container, Vector<JButton> result) {
+            for (Component comp : container.getComponents()) {
+                if (comp instanceof JButton) {
+                    result.addElement((JButton) comp);
+                }
+                if (comp instanceof Container) {
+                    findButtonsRecursive((Container) comp, result);
+                }
+            }
         }
     }
 }
