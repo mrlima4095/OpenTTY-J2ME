@@ -1,0 +1,10 @@
+#!/bin/lua
+
+local args = {}
+for k,v in pairs(arg) do
+    if k ~= 0 then
+        args[k] = v
+    end
+end
+
+os.execute("pkg " .. table.concat(args, " "))
