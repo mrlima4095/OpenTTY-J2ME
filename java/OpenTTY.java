@@ -43,7 +43,6 @@ public class OpenTTY {
     }
     
     public void startApp() {
-        // Load username from /home/OpenRMS
         username = read("/home/OpenRMS", globals);
         
         if (sys.containsKey("1")) { }
@@ -60,7 +59,7 @@ public class OpenTTY {
                     globals.put("ROOT", "/"); 
                     globals.put("ALIAS", new Hashtable<>()); 
                     userID.put(username, 1000);
-
+                    
                     Process proc = new Process(this, "init", "/bin/init", "root", 0, "1", stdout, globals);
 
                     sys.put("1", proc); 
@@ -72,8 +71,6 @@ public class OpenTTY {
                         Object res = proc.lua.statement(globals); 
                         if (proc.lua.doreturn) { break; } 
                     }
-                    
-                    showTerminal();
                 }
                 catch (IllegalStateException e) { 
                     showError("Illegal State", e.getMessage());
@@ -102,7 +99,34 @@ public class OpenTTY {
         System.exit(0);
     }
     
-    // GUI Methods
+    private void writeUserData(String user, String password) {
+        try {
+            // Write username to /home/OpenRMS for compatibility
+            if (!user.equals("")) {
+                write("/home/OpenRMS", user, 0, globals);
+                username = user;
+            }
+            
+            // Write credentials to ~/.opentty-keys
+            Properties props = new Properties();
+            File keyFile = new File(keysFile);
+            if (keyFile.exists()) {
+                props.load(new FileInputStream(keyFile));
+            }
+            if (!user.equals("")) props.setProperty("username", user);
+            if (!password.equals("")) props.setProperty("password", String.valueOf(password.hashCode()));
+            props.store(new FileOutputStream(keyFile), "OpenTTY Keys");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    private void logged() {
+        JOptionPane.showMessageDialog(null, "Login successful!\nReopen application to access console", 
+            "OpenTTY", JOptionPane.INFORMATION_MESSAGE);
+        destroyApp(true);
+    }
+
     private void showLoginScreen(boolean needUser, boolean needPass) {
         JPanel panel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
@@ -185,158 +209,6 @@ public class OpenTTY {
         } catch (Exception e) {
             showError("Login Error", e.getMessage());
         }
-    }
-    
-    private void writeUserData(String user, String password) {
-        try {
-            // Write username to /home/OpenRMS for compatibility
-            if (!user.equals("")) {
-                write("/home/OpenRMS", user, 0, globals);
-                username = user;
-            }
-            
-            // Write credentials to ~/.opentty-keys
-            Properties props = new Properties();
-            File keyFile = new File(keysFile);
-            if (keyFile.exists()) {
-                props.load(new FileInputStream(keyFile));
-            }
-            if (!user.equals("")) props.setProperty("username", user);
-            if (!password.equals("")) props.setProperty("password", String.valueOf(password.hashCode()));
-            props.store(new FileOutputStream(keyFile), "OpenTTY Keys");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-    
-    private void showTerminal() {
-        frame = new JFrame("OpenTTY Terminal");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(800, 600);
-        
-        stdout = new JTextArea();
-        stdout.setEditable(false);
-        stdout.setFont(new Font("Monospaced", Font.PLAIN, 12));
-        stdout.setBackground(Color.BLACK);
-        stdout.setForeground(Color.GREEN);
-        
-        scrollPane = new JScrollPane(stdout);
-        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-        frame.add(scrollPane, BorderLayout.CENTER);
-        
-        JPanel bottomPanel = new JPanel(new BorderLayout());
-        JLabel prompt = new JLabel("$ ");
-        prompt.setFont(new Font("Monospaced", Font.PLAIN, 12));
-        prompt.setForeground(Color.GREEN);
-        bottomPanel.add(prompt, BorderLayout.WEST);
-        
-        stdin = new JTextField();
-        stdin.setFont(new Font("Monospaced", Font.PLAIN, 12));
-        stdin.setBackground(Color.BLACK);
-        stdin.setForeground(Color.GREEN);
-        stdin.setCaretColor(Color.GREEN);
-        stdin.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                String cmd = stdin.getText();
-                stdin.setText("");
-                stdout.append(cmd + "\n");
-                processCommand(cmd);
-            }
-        });
-        bottomPanel.add(stdin, BorderLayout.CENTER);
-        
-        frame.add(bottomPanel, BorderLayout.SOUTH);
-        frame.setVisible(true);
-        
-        stdout.append("OpenTTY " + build + "\n");
-        stdout.append("Type 'help' for available commands\n");
-        stdout.append("$ ");
-    }
-    
-    private void processCommand(String cmd) {
-        try {
-            Hashtable<Object, Object> args = new Hashtable<>();
-            String[] parts = splitArgs(cmd);
-            if (parts.length > 0) {
-                for (int i = 0; i < parts.length; i++) {
-                    args.put(i, parts[i]);
-                }
-            }
-            
-            // Simple command processor
-            if (parts.length > 0) {
-                String command = parts[0];
-                if (command.equals("help")) {
-                    showHelp();
-                } else if (command.equals("echo")) {
-                    if (parts.length > 1) {
-                        stdout.append(parts[1] + "\n");
-                    }
-                } else if (command.equals("ls")) {
-                    String path = parts.length > 1 ? parts[1] : "/home/";
-                    listDirectory(path);
-                } else if (command.equals("pwd")) {
-                    stdout.append(globals.get("PWD") + "\n");
-                } else if (command.equals("cat")) {
-                    if (parts.length > 1) {
-                        catFile(parts[1]);
-                    }
-                } else if (command.equals("clear")) {
-                    stdout.setText("");
-                } else if (command.equals("exit") || command.equals("quit")) {
-                    destroyApp(true);
-                } else {
-                    stdout.append("Unknown command: " + command + "\n");
-                }
-            }
-            
-            stdout.append("$ ");
-        } catch (Exception e) {
-            stdout.append("Error: " + e.getMessage() + "\n");
-            stdout.append("$ ");
-        }
-    }
-    
-    private void showHelp() {
-        stdout.append("Available commands:\n");
-        stdout.append("  help   - Show this help\n");
-        stdout.append("  echo   - Echo text\n");
-        stdout.append("  ls     - List directory\n");
-        stdout.append("  pwd    - Print working directory\n");
-        stdout.append("  cat    - Show file content\n");
-        stdout.append("  clear  - Clear screen\n");
-        stdout.append("  exit   - Exit OpenTTY\n");
-    }
-    
-    private void listDirectory(String path) {
-        String fullPath = solvepath(path, globals);
-        File dir = new File(getRealPath(fullPath));
-        if (dir.exists() && dir.isDirectory()) {
-            stdout.append("Directory: " + fullPath + "\n");
-            File[] files = dir.listFiles();
-            if (files != null) {
-                for (File file : files) {
-                    stdout.append(file.getName() + (file.isDirectory() ? "/" : "") + "\n");
-                }
-            }
-        } else {
-            stdout.append("Directory not found: " + path + "\n");
-        }
-    }
-    
-    private void catFile(String path) {
-        String content = read(path, globals);
-        if (content != null && !content.equals("")) {
-            stdout.append(content + "\n");
-        } else {
-            stdout.append("File not found: " + path + "\n");
-        }
-    }
-    
-    private void logged() {
-        JOptionPane.showMessageDialog(null, "Login successful!\nReopen application to access console", 
-            "OpenTTY", JOptionPane.INFORMATION_MESSAGE);
-        destroyApp(true);
     }
     
     private void showError(String title, String message) {
@@ -576,9 +448,17 @@ public class OpenTTY {
     }
     
     public void print(String message, Object stdout, int id, Hashtable<String, Object> scope) { 
-        if (stdout == null) { }
+        if (stdout == null) { 
+            System.out.println(message);
+            return;
+        }
         else if (stdout instanceof JTextArea) { 
-            ((JTextArea) stdout).append(message + "\n"); 
+            JTextArea textArea = (JTextArea) stdout;
+            String current = textArea.getText();
+            // Adicionar a mensagem no final
+            textArea.append(message + "\n");
+            // Rolar para o final
+            textArea.setCaretPosition(textArea.getDocument().getLength());
         }
         else if (stdout instanceof StringBuffer) { 
             ((StringBuffer) stdout).append("\n").append(message); 
@@ -592,23 +472,34 @@ public class OpenTTY {
                 ((OutputStream) stdout).flush(); 
             } catch (Exception e) { } 
         }
+        else {
+            System.out.println(message);
+        }
     }
     
     // File System Helpers
     public String getRealPath(String virtualPath) {
+        // Remove a barra inicial para obter o caminho relativo
+        String relativePath = virtualPath.startsWith("/") ? virtualPath.substring(1) : virtualPath;
+        
+        // Se estiver vazio, retorna o rootDir
+        if (relativePath.isEmpty()) {
+            return rootDir;
+        }
+        
+        // Para /mnt/ - acesso ao sistema de arquivos real
         if (virtualPath.startsWith("/mnt/")) {
             return virtualPath.substring(5);
-        } else if (virtualPath.startsWith("/tmp/")) {
-            return System.getProperty("java.io.tmpdir") + File.separator + virtualPath.substring(5);
-        } else if (virtualPath.startsWith("/home/") || virtualPath.equals("/home") || virtualPath.equals("/")) {
-            // /home/ goes to rootDir/home/
-            String relativePath = virtualPath.substring(1); // Remove leading /
-            return rootDir + File.separator + relativePath;
-        } else {
-            // /bin/, /etc/, /lib/, /proc/, /dev/
-            String relativePath = virtualPath.substring(1); // Remove leading /
-            return rootDir + File.separator + relativePath;
         }
+        
+        // Para /tmp/ - usa o diretório temporário do sistema
+        if (virtualPath.startsWith("/tmp/")) {
+            return System.getProperty("java.io.tmpdir") + File.separator + relativePath.substring(4);
+        }
+        
+        // Todos os outros caminhos (/, /bin/, /etc/, /home/, /lib/, /proc/, /dev/)
+        // são relativos ao rootDir
+        return rootDir + File.separator + relativePath;
     }
     
     public String getVirtualPath(String realPath) {
@@ -683,20 +574,10 @@ public class OpenTTY {
     
     public String read(String filename, Hashtable<String, Object> scope) {
         try {
-            // Handle /home/OpenRMS specially - read from file
-            if (filename.equals("/home/OpenRMS")) {
-                File file = new File(homeDir + File.separator + "OpenRMS");
-                if (file.exists()) {
-                    BufferedReader reader = new BufferedReader(new FileReader(file));
-                    String content = reader.readLine();
-                    reader.close();
-                    return content != null ? content : "";
-                }
-                return "";
-            }
-            
+            System.out.println("Reading file: " + filename);
             InputStream is = getInputStream(filename, scope);
             if (is == null) { 
+                System.out.println("File not found: " + filename);
                 return ""; 
             }
             
@@ -709,8 +590,12 @@ public class OpenTTY {
             reader.close();
             is.close();
             
-            return env(sb.toString());
+            String content = sb.toString();
+            System.out.println("File content length: " + content.length());
+            return filename.startsWith("/home/") ? content : env(content);
         } catch (Exception e) { 
+            System.out.println("Error reading file: " + filename);
+            e.printStackTrace();
             return ""; 
         }
     }
@@ -1029,44 +914,6 @@ class Process {
                (lua != null ? "lua=" + lua + ", " : elf != null ? "elf=" + elf + ", " : "") + 
                (handler != null ? "handler=" + handler + ", " : "") + 
                "priority=" + priority + ", scope=" + scope + ", db=" + db + " }"; 
-    }
-}
-
-// Lua class stub
-class Lua {
-    public Hashtable<String, Object> globals = new Hashtable<>();
-    public Vector<Token> tokens = new Vector<>();
-    public boolean doreturn = false;
-    private OpenTTY midlet;
-    private int uid;
-    private String pid;
-    private Process process;
-    private Object stdout;
-    private Hashtable<String, Object> scope;
-    
-    public Lua(OpenTTY midlet, int uid, String pid, Process process, Object stdout, Hashtable<String, Object> scope) {
-        this.midlet = midlet;
-        this.uid = uid;
-        this.pid = pid;
-        this.process = process;
-        this.stdout = stdout;
-        this.scope = scope;
-    }
-    
-    public Token peek() {
-        return new Token(0, "");
-    }
-    
-    public Vector<Token> tokenize(String code) {
-        return new Vector<>();
-    }
-    
-    public Object getKernel() {
-        return new Object();
-    }
-    
-    public Object statement(Hashtable<String, Object> scope) {
-        return null;
     }
 }
 
