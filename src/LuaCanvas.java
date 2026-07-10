@@ -1,5 +1,13 @@
-// Adicione esta classe ao final do arquivo OpenTTY.java, antes do EOF
-
+import javax.microedition.lcdui.*;
+import javax.microedition.midlet.MIDlet;
+import javax.microedition.media.control.*;
+import javax.microedition.io.file.*;
+import javax.wireless.messaging.*;
+import javax.microedition.media.*;
+import javax.microedition.rms.*;
+import javax.microedition.io.*;
+import java.util.*;
+import java.io.*;
 // |
 // LuaCanvas - Canvas support for graphics library
 class LuaCanvas extends Canvas implements CommandListener {
