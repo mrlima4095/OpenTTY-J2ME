@@ -1,0 +1,32 @@
+#!/bin/lua
+
+if #arg > 1 then
+    local x, signal = 1, "15"
+
+    if string.sub(arg[1], 1, 1) == "-" then
+        signal = string.sub(arg[1], 2, #arg[1])
+        x = 2
+    elseif arg[1] == "KILL" then
+        signal = "9" x = 2
+    elseif arg[1] == "TERM" then
+        signal = "15" x = 2
+    end
+
+    for i = x, #arg - 1 do
+        local status = os.request("1", "sendsig", { pid = arg[i], signal = signal })
+
+        if status == 0 then
+        elseif status == 127 then
+            print("kill: (" .. arg[i] .. ") - No such process")
+        else
+            print("kill: (" .. arg[i] .. ") - Operation not permitted")
+        end
+
+        if status > 0 then
+            os.exit(status)
+        end
+    end
+else
+    print("kill: usage: kill [-s sigspec | -n signum | -sigspec] pid | jobspec ... or kill -l [sigspec]")
+    os.exit(2)
+end
