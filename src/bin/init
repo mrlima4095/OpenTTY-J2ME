@@ -2,7 +2,7 @@
 
 if arg[1] then
     if string.startswith(arg[1], "--serve=") then
-        program = string.sub(arg[1], string.len("--serve="))
+        local program = string.sub(arg[1], string.len("--serve="))
         if program == "" or not program then
             print("/bin/init: missing executable")
             os.exit(1)
