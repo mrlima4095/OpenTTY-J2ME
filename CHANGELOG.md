@@ -18,6 +18,7 @@ general
 - Added the **Add new line** button in Nano Editor
 - Config. file `OpenRMS` doesnt appear in file listings
 - New sh label
+- Allowed multiple terminals
 
 lua
 
