@@ -28,5 +28,5 @@ graphics.handler(xterm, {
         end
     end
 })
-graphics.db["xterm"] = xterm
+graphics.db[os.getpid() + "_xterm"] = xterm
 graphics.display(xterm)
