@@ -81,13 +81,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public void pauseApp() { }
     public void destroyApp(boolean unconditional) { notifyDestroyed(); }
     // |
-    private void logged() {
-        Alert alert = new Alert("OpenTTY", "Reopen MIDlet to access console", null, AlertType.INFO);
-        alert.setTimeout(Alert.FOREVER);
-        alert.addCommand(new Command("Exit", Command.EXIT, 1));
-        alert.setCommandListener(this);
-        display.setCurrent(alert);
-    }
+    private void logged() { Alert alert = new Alert("OpenTTY", "Reopen MIDlet to access console", null, AlertType.INFO); alert.setTimeout(Alert.FOREVER); alert.addCommand(new Command("Exit", Command.EXIT, 1)); alert.setCommandListener(this); display.setCurrent(alert); }
     // | (Graphical Handler)
     public void commandAction(Command c, Displayable d) {
         if (c.getLabel() == "Exit") { destroyApp(true); }
