@@ -7,6 +7,16 @@ os.setproc("name", "x11")
 os.setproc("version", version)
 
 if arg[1] == "screen" then
+    if arg[2] then
+        local file = io.open(os.join(arg[2]))
+        if file then
+            local conf = table.decode(io.read(file))
+
+        else
+            print("x11: screen: " .. arg[2] .. ": not found")
+    else
+        print("x11: screen: missing file")
+    end
 elseif arg[1] == "list" then
     if arg[2] then
         local file = io.open(os.join(arg[2]))
@@ -56,7 +66,28 @@ elseif arg[1] == "list" then
         print("x11: list: missing file")
     end
 elseif arg[1] == "quest" then
+    if arg[2] then
+        local file = io.open(os.join(arg[2]))
+        if file then
+            local conf = table.decode(io.read(file))
+
+        else
+            print("x11: quest: " .. arg[2] .. ": not found")
+        end
+    else
+        print("x11: quest: missing file")
+    end
 elseif arg[1] == "edit" then
+    if arg[2] then
+        local file = io.open(os.join(arg[2]))
+        if file then
+            local conf = table.decode(io.read(file))
+
+        else
+            print("x11: quest: " .. arg[2] .. ": not found")
+        end
+    else
+        print("x11: edit: missing file")
 elseif arg[1] == "version" then
     print("X Server " .. version)
 else
