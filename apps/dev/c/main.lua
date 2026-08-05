@@ -13,5 +13,4 @@ function C.run(ast, scope)
 end
 
 
-
 return C
