@@ -18,5 +18,7 @@ COPY docker/php.ini /usr/local/etc/php/conf.d/opentty.ini
 
 EXPOSE 80
 EXPOSE 31522
+EXPOSE 4096
+EXPOSE 8080
 
 CMD ["supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
