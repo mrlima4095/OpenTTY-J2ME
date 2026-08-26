@@ -2,7 +2,7 @@
 
 if arg[1] then
     if string.startswith(arg[1], "--serve=") then
-        program = string.sub(arg[1], string.len("--serve="))
+        local program = string.sub(arg[1], string.len("--serve="))
         if program == "" or not program then
             print("/bin/init: missing executable")
             os.exit(1)
@@ -16,18 +16,20 @@ end
 for k,v in pairs({ ["PATCH"] = "Deep Dream", ["VERSION"] = getAppProperty("MIDlet-Version"), ["RELEASE"] = "mod", ["SHELL"] = "/bin/sh" }) do os.setenv(k, v) end
 for k,v in pairs({ ["TYPE"] = "platform", ["CONFIG"] = "configuration", ["PROFILE"] = "profiles", ["LOCALE"] = "locale" }) do os.setenv(k, getAppProperty("/microedition." .. v)) end
 
-local scope, hostname = os.scope(), io.read("/etc/hostname")
 local xterm = graphics.new("screen", "OpenTTY " .. getAppProperty("MIDlet-Version"))
 local run = graphics.new("command", { label = "Run", type = "ok", priority = 1 })
 
+local scope, hostname = os.scope(), io.read("/etc/hostname")
+
 local function label() graphics.SetLabel(io.stdin, "[" .. scope["USER"] .. "@" .. hostname .. " " .. os.getcwd() .. "]" .. (os.getuid() == 0 and "#" or "$")) end
+
+label()
 
 io.mount(io.read("/etc/fstab"))
 print(string.env(io.read("/etc/motd")))
 
 os.su(java.midlet.username)
 pcall(io.popen, "/home/.initrc")
-label()
 
 graphics.append(xterm, io.stdout)
 graphics.append(xterm, io.stdin)
