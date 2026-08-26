@@ -414,8 +414,6 @@ class LuaCanvas extends Canvas implements CommandListener {
     // Game action constants
     public static final int UP = Canvas.UP;
     public static final int DOWN = Canvas.DOWN;
-    public static final int LEFT = Canvas.LEFT;
-    public static final int RIGHT = Canvas.RIGHT;
     public static final int FIRE = Canvas.FIRE;
     public static final int GAME_A = Canvas.GAME_A;
     public static final int GAME_B = Canvas.GAME_B;
@@ -425,8 +423,6 @@ class LuaCanvas extends Canvas implements CommandListener {
     // Anchor constants
     public static final int HCENTER = Graphics.HCENTER;
     public static final int VCENTER = Graphics.VCENTER;
-    public static final int LEFT = Graphics.LEFT;
-    public static final int RIGHT = Graphics.RIGHT;
     public static final int TOP = Graphics.TOP;
     public static final int BOTTOM = Graphics.BOTTOM;
     public static final int BASELINE = Graphics.BASELINE;

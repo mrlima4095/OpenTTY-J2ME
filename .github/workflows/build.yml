@@ -1,0 +1,79 @@
+name: Build OpenTTY J2ME
+
+on:
+  push:
+    paths:
+      - 'src/**'
+  pull_request:
+    paths:
+      - 'src/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 8
+
+      - name: Compile J2ME API stubs
+        run: |
+          mkdir -p build/stubs
+          find j2me-stubs -name '*.java' > /tmp/stub-sources.txt
+          javac -source 8 -target 8 \
+            -d build/stubs \
+            @/tmp/stub-sources.txt
+
+      - name: Compile OpenTTY sources
+        run: |
+          mkdir -p build/compiled
+          javac -source 8 -target 8 \
+            -cp build/stubs \
+            -d build/compiled \
+            src/OpenTTY.java src/Lua.java src/ELF.java src/LuaCanvas.java
+
+      - name: Create OpenTTY.jar
+        run: |
+          mkdir -p dist
+
+          # Copy compiled classes
+          cp -r build/compiled/* build/compiled-stubs/
+          rm -rf build/compiled-stubs/javax build/compiled-stubs/com build/compiled-stubs/mmpp build/compiled-stubs/org build/compiled-stubs/ru 2>/dev/null || true
+
+          # Only keep our 4 MIDlet class files
+          rm -rf build/jar-staging
+          mkdir -p build/jar-staging
+          cp build/compiled/OpenTTY.class build/compiled/OpenTTY\$*.class build/jar-staging/ 2>/dev/null || true
+          cp build/compiled/Lua.class build/compiled/Lua\$*.class build/jar-staging/ 2>/dev/null || true
+          cp build/compiled/ELF.class build/jar-staging/ 2>/dev/null || true
+          cp build/compiled/LuaCanvas.class build/jar-staging/ 2>/dev/null || true
+          cp build/compiled/Process.class build/jar-staging/ 2>/dev/null || true
+
+          # Copy resources
+          cp src/icon.png build/jar-staging/
+          cp -r src/bin build/jar-staging/bin
+          cp -r src/etc build/jar-staging/etc
+          cp -r src/lib build/jar-staging/lib
+
+          # Write manifest
+          printf 'Manifest-Version: 1.0\r\nMIDlet-1: OpenTTY,/icon.png,OpenTTY\r\nMIDlet-Name: OpenTTY\r\nMIDlet-Vendor: Mr Lima\r\nMicroEdition-Configuration: CLDC-1.0\r\nMicroEdition-Profile: MIDP-2.0\r\nMIDlet-Description: Terminal Emulator for J2ME\r\nMIDlet-Icon: /icon.png\r\nMIDlet-Info-URL: https://github.com/mrlima4095/OpenTTY-J2ME\r\n' > build/manifest.mf
+
+          cd build/jar-staging
+          jar cfm ../../dist/OpenTTY.jar ../manifest.mf .
+
+          # Create JAD
+          JAR_SIZE=$(stat -c%s ../../dist/OpenTTY.jar)
+          printf 'MIDlet-1: OpenTTY,/icon.png,OpenTTY\r\nMIDlet-Name: OpenTTY\r\nMIDlet-Vendor: Mr Lima\r\nMIDlet-Version: 1.18.1\r\nMicroEdition-Configuration: CLDC-1.0\r\nMicroEdition-Profile: MIDP-2.0\r\nMIDlet-Jar-URL: OpenTTY.jar\r\nMIDlet-Jar-Size: %d\r\nMIDlet-Description: Terminal Emulator for J2ME\r\nMIDlet-Icon: /icon.png\r\nMIDlet-Info-URL: https://github.com/mrlima4095/OpenTTY-J2ME\r\n' "$JAR_SIZE" > ../../dist/OpenTTY.jad
+
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenTTY-j2me
+          path: |
+            dist/OpenTTY.jar
+            dist/OpenTTY.jad

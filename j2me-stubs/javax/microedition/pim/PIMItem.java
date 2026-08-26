@@ -1,0 +1,33 @@
+package javax.microedition.pim;
+import java.util.Enumeration;
+public interface PIMItem {
+    int ATTR_NONE = 0;
+    int ATTR_SUPPRESSED = 1;
+    int[] getAttributes(int field);
+    void addBinary(int field, int attributes, byte[] value, int offset, int length);
+    void addDate(int field, int attributes, long value);
+    void addInt(int field, int attributes, int value);
+    void addString(int field, int attributes, String value);
+    void addStringArray(int field, int attributes, String[] value);
+    byte[] getBinary(int field);
+    int countValues(int field);
+    long getDate(int field, int index);
+    int getInt(int field, int index);
+    String getString(int field, int index);
+    String[] getStringArray(int field, int index);
+    boolean isBinary(int field);
+    boolean isDate(int field);
+    boolean isInt(int field);
+    boolean isString(int field);
+    boolean isStringArray(int field);
+    void removeArray(int field, int index);
+    void removeValue(int field, int index);
+    void commit() throws PIMException;
+    void delete();
+    String[] getCategories();
+    void addCategory(String category);
+    void removeCategory(String category);
+    int maxCategories();
+    int maxValues(int field);
+    PIMList getPIMList();
+}

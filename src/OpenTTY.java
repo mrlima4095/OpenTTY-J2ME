@@ -304,7 +304,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public int write(String filename, String data, int id, Hashtable scope) { return write(filename, data.getBytes(), id, scope); }
     public int write(String filename, byte[] data, int id, Hashtable scope) {
         if ((filename = solvepath(filename, scope)) == null || filename.length() == 0) { return 2; } 
-        else if (filename.startsWith("/mnt/")) { FileConnection fs = null; OutputStream out = null; try { fs = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (!fs.exists()) { fs.create(); } out = fs.openOutputStream(); out.write(data); out.flush(); } catch (Exception e) { return (e instanceof SecurityException) ? 13 : 1; } finally { out.close(); fs.close(); } } 
+        else if (filename.startsWith("/mnt/")) { FileConnection fs = null; OutputStream out = null; try { fs = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (!fs.exists()) { fs.create(); } out = fs.openOutputStream(); out.write(data); out.flush(); } catch (Exception e) { return (e instanceof SecurityException) ? 13 : 1; } finally { try { if (out != null) out.close(); } catch (Exception e) {} try { if (fs != null) fs.close(); } catch (Exception e) {} } } 
         else if (filename.startsWith("/home/")) { return writeRMS(filename.substring(6), data, 1); } 
         else if (filename.startsWith("/bin/") || filename.startsWith("/etc/") || filename.startsWith("/lib/")) {
             String base = filename.substring(1, 4); filename = filename.substring(5);

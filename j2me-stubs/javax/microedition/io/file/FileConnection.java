@@ -1,0 +1,35 @@
+package javax.microedition.io.file;
+import java.io.*;
+public interface FileConnection {
+    boolean isOpen();
+    java.io.InputStream openInputStream() throws IOException;
+    java.io.DataInputStream openDataInputStream() throws IOException;
+    java.io.OutputStream openOutputStream() throws IOException;
+    java.io.DataOutputStream openDataOutputStream() throws IOException;
+    long totalSize();
+    long availableSize();
+    long usedSize();
+    long directorySize(boolean includeSubDirs) throws IOException;
+    long fileSize() throws IOException;
+    boolean canRead();
+    boolean canWrite();
+    boolean isHidden();
+    void setReadable(boolean readable) throws IOException;
+    void setWritable(boolean writable) throws IOException;
+    void setHidden(boolean hidden) throws IOException;
+    java.util.Enumeration list() throws IOException;
+    java.util.Enumeration list(String filter, boolean includeHidden) throws IOException;
+    void create() throws IOException;
+    void mkdir() throws IOException;
+    boolean exists();
+    boolean isDirectory();
+    void delete() throws IOException;
+    void rename(String newName) throws IOException;
+    void truncate(long byteOffset) throws IOException;
+    void setFileConnection(String fileName) throws IOException;
+    String getName();
+    String getPath();
+    String getURL();
+    long lastModified();
+    void close();
+}
