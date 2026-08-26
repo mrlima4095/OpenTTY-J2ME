@@ -41,11 +41,7 @@ jobs:
         run: |
           mkdir -p dist
 
-          # Copy compiled classes
-          cp -r build/compiled/* build/compiled-stubs/
-          rm -rf build/compiled-stubs/javax build/compiled-stubs/com build/compiled-stubs/mmpp build/compiled-stubs/org build/compiled-stubs/ru 2>/dev/null || true
-
-          # Only keep our 4 MIDlet class files
+          # Only keep our MIDlet class files
           rm -rf build/jar-staging
           mkdir -p build/jar-staging
           cp build/compiled/OpenTTY.class build/compiled/OpenTTY\$*.class build/jar-staging/ 2>/dev/null || true
