@@ -7,3 +7,22 @@ OpenRMS
 java/*.class
 __pycache__/
 *.pyc
+
+# device root seeded when running the krnl port with the default --root (cwd)
+/bin/
+/etc/
+/home/
+/tmp/
+/mnt/
+/dev/
+/proc/
+
+# krnl/ package: keep only the ported source (bin/, *.py); the rest is a
+# seeded device root if the kernel is ever run from inside krnl/
+krnl/dev/
+krnl/etc/
+krnl/home/
+krnl/lib/
+krnl/mnt/
+krnl/proc/
+krnl/tmp/

@@ -24,7 +24,7 @@ Images are .lua files in /etc/docker/image/ or /lib/docker/.
 ]]
 
 local function find_image(name)
-    local paths = { "/etc/docker/image/", "/lib/docker/", "/home/" }
+    local paths = { "/home/" }
     for _, base in pairs(paths) do
         local file = io.open(base .. name)
         if file then

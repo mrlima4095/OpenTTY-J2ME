@@ -101,15 +101,21 @@ class Process:
 # ─── Runtime ──────────────────────────────────────────────────────────────────
 
 class LuaRuntime:
-    """The main Lua runtime. One instance per execution."""
+    """The main Lua runtime. One instance per execution.
+
+    Tokenizer state (tokens / token_index) is thread-local: java.run background
+    threads and the foreground interpreter share one runtime but must not
+    clobber each other's token stream mid-statement.
+    """
 
     def __init__(self, base_dir=None, username="user"):
         self.base_dir = base_dir or _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
         self.globals = {}
         self.require_cache = {}
         self.labels = {}
+        self._tstate = threading.local()
 
-        # Tokenizer state
+        # Tokenizer state (thread-local; see properties below)
         self.tokens = []
         self.token_index = 0
         self.last_code = ""
@@ -167,6 +173,28 @@ class LuaRuntime:
                             pass
 
     # ─── Path resolution ──────────────────────────────────────────────────
+
+    @property
+    def tokens(self):
+        st = self._tstate
+        if not hasattr(st, "tokens"):
+            st.tokens = []
+        return st.tokens
+
+    @tokens.setter
+    def tokens(self, value):
+        self._tstate.tokens = value
+
+    @property
+    def token_index(self):
+        st = self._tstate
+        if not hasattr(st, "token_index"):
+            st.token_index = 0
+        return st.token_index
+
+    @token_index.setter
+    def token_index(self, value):
+        self._tstate.token_index = value
 
     def solve_path(self, path, scope=None):
         if scope is None:
