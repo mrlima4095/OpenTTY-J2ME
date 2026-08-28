@@ -56,6 +56,20 @@ local function gen_id()
     return id
 end
 
+local function pad(s, width)
+    s = tostring(s or "")
+    if #s >= width then return string.sub(s, 1, width) end
+    local out = s
+    for i = 1, width - #s do out = out .. " " end
+    return out
+end
+
+local function sep(n)
+    local out = ""
+    for i = 1, n do out = out .. "-" end
+    return out
+end
+
 local server
 local function ensure_server()
     server = os.getpid("conteinerd")
@@ -83,13 +97,16 @@ if arg[1] == "run" then
         os.exit(127)
     end
 
-    local ok, image = pcall(load, "return " .. content)
-    if not ok or type(image) ~= "function" then
+    local ok, image = pcall(load, content)
+    if not ok then
         print("docker: " .. image_name .. ": invalid image format")
         os.exit(2)
     end
 
-    ok, image = pcall(image)
+    if type(image) == "function" then
+        ok, image = pcall(image)
+    end
+
     if not ok or type(image) ~= "table" then
         print("docker: " .. image_name .. ": failed to load image")
         os.exit(2)
@@ -138,10 +155,10 @@ elseif arg[1] == "ps" then
 
     if containers and type(containers) == "table" then
         local count = 0
-        print(string.format("%-10s %-20s %-10s %-15s", "ID", "NAME", "STATUS", "IMAGE"))
-        print(string.rep("-", 58))
+        print(pad("ID", 10) .. " " .. pad("NAME", 20) .. " " .. pad("STATUS", 10) .. " " .. pad("IMAGE", 15))
+        print(sep(58))
         for _, c in pairs(containers) do
-            print(string.format("%-10s %-20s %-10s %-15s", c.id, c.name, c.status, c.image))
+            print(pad(c.id, 10) .. " " .. pad(c.name, 20) .. " " .. pad(c.status, 10) .. " " .. pad(c.image, 15))
             count = count + 1
         end
         if count == 0 then
@@ -162,16 +179,16 @@ elseif arg[1] == "images" then
                 if string.endswith(name, ".lua") then
                     local content = find_image(string.sub(name, 1, -5))
                     if content then
-                        local ok, fn = pcall(load, "return " .. content)
+                        local ok, fn = pcall(load, content)
                         if ok and type(fn) == "function" then
                             ok, fn = pcall(fn)
-                            if ok and type(fn) == "table" then
-                                table.insert(images, {
-                                    name = fn["name"] or name,
-                                    version = fn["version"] or "unknown",
-                                    release = fn["release"] or "stable",
-                                })
-                            end
+                        end
+                        if ok and type(fn) == "table" then
+                            table.insert(images, {
+                                name = fn["name"] or name,
+                                version = fn["version"] or "unknown",
+                                release = fn["release"] or "stable",
+                            })
                         end
                     end
                 end
@@ -179,10 +196,10 @@ elseif arg[1] == "images" then
         end
     end
 
-    print(string.format("%-20s %-10s %-10s", "NAME", "VERSION", "RELEASE"))
-    print(string.rep("-", 44))
+    print(pad("NAME", 20) .. " " .. pad("VERSION", 10) .. " " .. pad("RELEASE", 10))
+    print(sep(44))
     for _, img in pairs(images) do
-        print(string.format("%-20s %-10s %-10s", img.name, img.version, img.release))
+        print(pad(img.name, 20) .. " " .. pad(img.version, 10) .. " " .. pad(img.release, 10))
     end
     if #images == 0 then
         print("No images found.")
@@ -279,7 +296,7 @@ elseif arg[1] == "logs" then
 elseif arg[1] == "help" or arg[1] == "--help" or arg[1] == nil then
     print(HELP)
 
-elseif arg[1] == "--daemon" then
+elseif arg[1] == "--deamon" or arg[1] == "--daemon" then
     os.setproc("name", "conteinerd")
     os.setproc(false)
 
