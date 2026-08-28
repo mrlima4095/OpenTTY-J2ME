@@ -12,6 +12,9 @@ public class Lua {
     private int id = 1000, tokenIndex, loopDepth = 0;
     public Hashtable globals = new Hashtable(), father, requireCache = new Hashtable(), labels = new Hashtable();
     public Vector tokens;
+    public String currentSource = "";
+    public Vector frameStack = new Vector();
+    public Vector thrownFrames = new Vector();
     // |
     public int status = 0;
     // | (LuaFunction)
@@ -84,6 +87,9 @@ public class Lua {
     public Hashtable run(String source, String code, Hashtable args) { 
         midlet.sys.put(PID, proc); globals.put("arg", args);
 
+        currentSource = source == null ? "" : source;
+        frameStack.removeAllElements();
+
         Hashtable ITEM = new Hashtable(); 
         
         try { 
@@ -91,12 +97,25 @@ public class Lua {
             
             while (peek().type != EOF) { Object res = statement(globals); if (doreturn) { if (res != null) { ITEM.put("object", res); } doreturn = false; break; } }
         } 
-        catch (Exception e) { midlet.print(midlet.getCatch(e), stdout, id, father); status = 1; } 
+        catch (Exception e) { midlet.print(getTraceback(e), stdout, id, father); status = 1; } 
         catch (Error e) { if (e.getMessage() != null) { midlet.print(e.getMessage(), stdout, id, father); } status = 1; }
 
         if (kill) { midlet.sys.remove(PID); }
         ITEM.put("status", status);
         return ITEM;
+    }
+    // |
+    public String getTraceback(Throwable e) {
+        StringBuffer sb = new StringBuffer(midlet.getCatch(e));
+        if (currentSource != null && currentSource.length() > 0) { sb.append("\nLua ").append(currentSource); }
+        if (thrownFrames.isEmpty()) { thrownFrames = frameStack; }
+        if (!thrownFrames.isEmpty()) {
+            sb.append("\nstack traceback:");
+            for (int i = thrownFrames.size() - 1; i >= 0; i--) {
+                sb.append("\n\tin function '").append((String) thrownFrames.elementAt(i)).append("'");
+            }
+        }
+        return sb.toString();
     }
     // |
     // Tokenizer
@@ -686,6 +705,7 @@ public class Lua {
             }
 
             LuaFunction func = new LuaFunction(params, bodyTokens, scope);
+            func.name = funcName;
 
             if (isTableAssignment) { ((Hashtable) targetTable).put(key, func); } 
             else { scope.put(funcName, func); }
@@ -735,6 +755,7 @@ public class Lua {
                 }
 
                 LuaFunction func = new LuaFunction(params, bodyTokens, scope);
+                func.name = funcName;
                 scope.put(funcName, func);
                 return null;
             } 
@@ -1163,6 +1184,7 @@ public class Lua {
         private Vector params, bodyTokens, argv;
         private Hashtable closureScope, cmds = null; 
         private int MOD = -1;
+        public String name = null;
         // | (Screen)
         private Object root = null;
         private String handler = "";
@@ -1205,18 +1227,29 @@ public class Lua {
             tokenIndex = 0;
 
             Object returnValue = null;
-            while (peek().type != EOF) {
-                Object result = statement(functionScope);
-                
-                if (doreturn) {
-                    returnValue = result;
-                    doreturn = false;
-                    break;
+            frameStack.addElement(name == null ? "[anonymous]" : name);
+            try {
+                while (peek().type != EOF) {
+                    Object result = statement(functionScope);
+                    
+                    if (doreturn) {
+                        returnValue = result;
+                        doreturn = false;
+                        break;
+                    }
                 }
             }
-
-            tokenIndex = originalTokenIndex;
-            tokens = originalTokens;
+            catch (Exception e) {
+                Vector snapshot = new Vector();
+                for (int f = 0; f < frameStack.size(); f++) { snapshot.addElement(frameStack.elementAt(f)); }
+                thrownFrames = snapshot;
+                throw e;
+            }
+            finally {
+                tokenIndex = originalTokenIndex;
+                tokens = originalTokens;
+                frameStack.setSize(frameStack.size() - 1);
+            }
 
             return returnValue;
         }
@@ -1265,7 +1298,7 @@ public class Lua {
                                 if (value instanceof Vector) { Vector v = (Vector) value; for (int i = 0; i < v.size(); i++) { result.addElement(v.elementAt(i)); } }
                                 else { result.addElement(value); }
                             }
-                            catch (Exception e) { result.addElement(FALSE); result.addElement(midlet.getCatch(e)); }
+                            catch (Exception e) { result.addElement(FALSE); result.addElement(getTraceback(e)); }
                         }
                         else { result.addElement(FALSE); result.addElement("attempt to call a " + type(args.elementAt(0)) + " value"); } 
 
@@ -1459,7 +1492,7 @@ public class Lua {
                             Object response = null;
 
                             try { response = ((Lua.LuaFunction) process.handler).call(arg); }
-                            catch (Exception e) { return midlet.getCatch(e); } 
+                            catch (Exception e) { return lua.getTraceback(e); } 
                             catch (Error e) { if (e.getMessage() != null) { midlet.print(e.getMessage(), stdout, id, father); } return new Double(lua.status); }
 
                             return response;
@@ -2569,6 +2602,8 @@ public class Lua {
                             if (arg == null || arg.equals("")) { return new Double(2); }
                             else {
                                 String program = toLuaString(arg), code = midlet.read(program, father);
+                                if (code == null || code.length() == 0) { return "service '" + program + "' not found"; }
+
                                 Process process = new Process(midlet, program, "/bin/init --serve=" + program, midlet.getUser(uid), uid, midlet.genpid(), stdout, father);
                                 process.lua.kill = false;
 
@@ -2581,7 +2616,7 @@ public class Lua {
                                     handler = resx.elementAt(0);
                                 }
 
-                                if (handler instanceof Lua.LuaFunction) { process.handler = handler; }
+                                if (handler instanceof Lua.LuaFunction) { process.handler = handler; ((Lua.LuaFunction) handler).name = program; }
                             }
                         }
 
@@ -2683,7 +2718,7 @@ public class Lua {
         private String getFieldValue(Hashtable table, String key, String fallback) { Object val = table.get(key); return val != null ? toLuaString(val) : fallback; }
         private Font genFont(String params) { if (params == null || params.length() == 0 || params.equals("default")) { return Font.getDefaultFont(); } int face = Font.FACE_SYSTEM, style = Font.STYLE_PLAIN, size = Font.SIZE_MEDIUM; String[] tokens = midlet.split(params, ' '); for (int i = 0; i < tokens.length; i++) { String token = tokens[i].toLowerCase(); if (token.equals("system")) { face = Font.FACE_SYSTEM; } else if (token.equals("monospace")) { face = Font.FACE_MONOSPACE; } else if (token.equals("proportional")) { face = Font.FACE_PROPORTIONAL; } else if (token.equals("bold")) { style |= Font.STYLE_BOLD; } else if (token.equals("italic")) { style |= Font.STYLE_ITALIC; } else if (token.equals("ul") || token.equals("underline") || token.equals("underlined")) { style |= Font.STYLE_UNDERLINED; } else if (token.equals("small")) { size = Font.SIZE_SMALL; } else if (token.equals("medium")) { size = Font.SIZE_MEDIUM; } else if (token.equals("large")) { size = Font.SIZE_LARGE; } } Font f = Font.getFont(face, style, size); return f == null ? Font.getDefaultFont() : f; }
 
-        public void run() { if (root instanceof LuaFunction) { Vector arg = new Vector(); try { ((LuaFunction) root).call(arg); } catch (Throwable e) { midlet.print(midlet.getCatch(e), stdout, id, father); } } }
+        public void run() { if (root instanceof LuaFunction) { Vector arg = new Vector(); try { ((LuaFunction) root).call(arg); } catch (Throwable e) { midlet.print(getTraceback(e), stdout, id, father); } } }
 
         public Double exec(Vector args) throws Exception {
             if (args.isEmpty()) { return (Double) gotbad(1, "execute", "string expected, got no value"); }
@@ -3099,10 +3134,10 @@ public class Lua {
                     ((LuaFunction) cmds.get(c)).call(args);
                 }
             }
-            catch (Exception e) { midlet.print(midlet.getCatch(e), stdout); midlet.sys.remove(PID); } 
+            catch (Exception e) { midlet.print(getTraceback(e), stdout); midlet.sys.remove(PID); } 
             catch (Error e) { midlet.sys.remove(PID); }
         }
-        public void commandAction(Command c, Item item) { try { if (root instanceof LuaFunction) { ((LuaFunction) root).call(new Vector()); } } catch (Exception e) { midlet.print(midlet.getCatch(e), stdout, id, father); midlet.sys.remove(PID); } catch (Error e) { midlet.sys.remove(PID); } }
+        public void commandAction(Command c, Item item) { try { if (root instanceof LuaFunction) { ((LuaFunction) root).call(new Vector()); } } catch (Exception e) { midlet.print(getTraceback(e), stdout, id, father); midlet.sys.remove(PID); } catch (Error e) { midlet.sys.remove(PID); } }
         public void itemStateChanged(Item item) {
             try {
                 if (root == LUA_NIL) { }
@@ -3118,7 +3153,7 @@ public class Lua {
 
                     ((LuaFunction) root).call(args); 
                 }
-            } catch (Exception e) { midlet.print(midlet.getCatch(e), stdout, id, father); midlet.sys.remove(PID); } catch (Error e) { midlet.sys.remove(PID); } 
+            } catch (Exception e) { midlet.print(getTraceback(e), stdout, id, father); midlet.sys.remove(PID); } catch (Error e) { midlet.sys.remove(PID); } 
         }
     }
 }

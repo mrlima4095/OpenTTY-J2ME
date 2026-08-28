@@ -52,6 +52,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     Process proc = new Process(this, "init", "/bin/init", "root", 0, "1", stdout, globals);
 
                     sys.put("1", proc); proc.lua.globals.put("arg", args); proc.handler = proc.lua.getKernel();
+                    proc.lua.currentSource = "/bin/init";
                     proc.lua.tokens = proc.lua.tokenize(read("/bin/init", globals)); 
 
                     while (proc.lua.peek().type != 0) { Object res = proc.lua.statement(globals); if (proc.lua.doreturn) { break; } }
@@ -185,7 +186,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return null;
     }
     // | (Trackers)
-    public String getpid(String name) { for (Enumeration KEYS = sys.keys(); KEYS.hasMoreElements();) { String PID = (String) KEYS.nextElement(); if (name.equals((String) ((Hashtable) sys.get(PID)).get("name"))) { return PID; } } return null; } 
+    public String getpid(String name) { for (Enumeration KEYS = sys.keys(); KEYS.hasMoreElements();) { String PID = (String) KEYS.nextElement(); Process process = (Process) sys.get(PID); if (process != null && process.name != null && name != null && name.equals(process.name)) { return PID; } } return null; } 
     // |
     // | -=-=-=-=-=-=-=-=-=-=-
     // | (Window-Based Interfaces)

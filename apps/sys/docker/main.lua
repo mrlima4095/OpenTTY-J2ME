@@ -70,6 +70,13 @@ local function sep(n)
     return out
 end
 
+local function request_error(result)
+    if type(result) == "string" then
+        print(result)
+        os.exit(1)
+    end
+end
+
 local server
 local function ensure_server()
     server = os.getpid("conteinerd")
@@ -121,6 +128,7 @@ if arg[1] == "run" then
         image = image,
         path = path,
     })
+    request_error(result)
 
     if result then
         os.request(daemon, "start", { id = id })
@@ -164,6 +172,8 @@ elseif arg[1] == "ps" then
         if count == 0 then
             print("No running containers.")
         end
+    elseif type(containers) == "string" then
+        print(containers)
     else
         print("No running containers.")
     end
@@ -213,6 +223,7 @@ elseif arg[1] == "stop" then
 
     local daemon = ensure_server()
     local result = os.request(daemon, "stop", { id = arg[2] })
+    request_error(result)
     if result then
         print("docker: container " .. arg[2] .. " stopped")
     else
@@ -228,6 +239,7 @@ elseif arg[1] == "kill" then
 
     local daemon = ensure_server()
     local result = os.request(daemon, "kill", { id = arg[2] })
+    request_error(result)
     if result then
         print("docker: container " .. arg[2] .. " killed")
     else
@@ -243,6 +255,7 @@ elseif arg[1] == "rm" then
 
     local daemon = ensure_server()
     local result = os.request(daemon, "remove", { id = arg[2] })
+    request_error(result)
     if result then
         print("docker: container " .. arg[2] .. " removed")
     else
