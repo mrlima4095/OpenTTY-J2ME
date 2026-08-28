@@ -367,12 +367,12 @@ public class Lua {
                 if (methodObj instanceof Hashtable) {
                     Hashtable table = (Hashtable) methodObj;
                     Object fn = unwrap(table.get(methodName));
-                    if (fn == null) { throw new Exception("method '" + methodName + "' not found " + ((methodObj == self && self instanceof Hashtable) ? "in table: " + varName : "for type: " + LuaFunction.type(self))); }
+                    if (fn == null) { throw new Exception("method '" + methodName + "' not found " + ((methodObj == self && self instanceof Hashtable) ? "in table: " + varName : "for type: " + Lua.type(self))); }
                     
                     return callMethod(self, varName, fn, methodName, scope);
                 }
 
-                throw new Exception("attempt to call method on unsupported type: " + LuaFunction.type(self));
+                throw new Exception("attempt to call method on unsupported type: " + Lua.type(self));
             }
             else {
                 if (peek().type == ASSIGN) {
@@ -536,7 +536,7 @@ public class Lua {
                         
                         if (tableObj instanceof Hashtable) {
                             Hashtable table = (Hashtable) tableObj;
-                            Vector list = LuaFunction.toVector(table);
+                            Vector list = Lua.toVector(table);
                             
                             for (int idx = currentIndex; idx < list.size(); idx++) {
                                 Object item = list.elementAt(idx);
@@ -981,7 +981,7 @@ public class Lua {
                     if (!(module instanceof Hashtable)) { throw new Exception("attempt to call method on non-table after literal"); }
 
                     Object func = unwrap(((Hashtable) module).get(method));
-                    if (func == null) { throw new Exception("method '" + method + "' not found for type: " + LuaFunction.type(base)); }
+                    if (func == null) { throw new Exception("method '" + method + "' not found for type: " + Lua.type(base)); }
 
                     base = callMethod(base, null, func, method, scope);
                 }
@@ -1023,7 +1023,7 @@ public class Lua {
                 if (module == self && self instanceof Hashtable) { func = unwrap(((Hashtable) self).get(methodName)); } 
                 else if (module instanceof Hashtable) { func = unwrap(((Hashtable) module).get(methodName)); }
             
-                if (func == null) { throw new Exception("method '" + methodName + "' not found for type: " + LuaFunction.type(self)); }
+                if (func == null) { throw new Exception("method '" + methodName + "' not found for type: " + Lua.type(self)); }
             
                 return callMethod(self, objectName, func, methodName, scope);
             }
@@ -1147,7 +1147,7 @@ public class Lua {
             if (mt instanceof Hashtable) { Object index = ((Hashtable) mt).get("__index"); if (index instanceof Hashtable || index instanceof LuaFunction) { return index; } }
         }
 
-        String type = LuaFunction.type(obj);
+        String type = Lua.type(obj);
         return type.equals("string") ? globals.get("string") : type.equals("table") ? globals.get("table") : type.equals("stream") ? globals.get("io") : type.equals("connection") || type.equals("server") ? globals.get("socket") : type.equals("screen") || type.equals("image") ? globals.get("graphics") : obj;
     }
     private Object callMethod(Object self, String varName, Object methodObj, String methodName, Hashtable scope) throws Exception {
@@ -1541,10 +1541,10 @@ public class Lua {
                         Process process = (Process) midlet.sys.get(toLuaString(args.elementAt(0)));
                         if (process.lua != null && process.handler != null) {
                             Lua lua = (Lua) process.lua;
-                            Vector arg = new Vector(); arg.addElement(toLuaString(args.elementAt(1))); arg.addElement(args.size() > 2 ? args.elementAt(2) : null); arg.addElement(father); arg.addElement(PID); arg.addElement(new Double(id));
+                            Vector reqArgs = new Vector(); reqArgs.addElement(toLuaString(args.elementAt(1))); reqArgs.addElement(args.size() > 2 ? args.elementAt(2) : null); reqArgs.addElement(father); reqArgs.addElement(PID); reqArgs.addElement(new Double(id));
                             Object response = null;
 
-                            try { response = ((Lua.LuaFunction) process.handler).call(arg); }
+                            try { response = ((Lua.LuaFunction) process.handler).call(reqArgs); }
                             catch (Exception e) { return lua.getTraceback(e); } 
                             catch (Error e) { if (e.getMessage() != null) { midlet.print(e.getMessage(), stdout, id, father); } return new Double(lua.status); }
 
@@ -2293,12 +2293,12 @@ public class Lua {
                 case ADDCMD:
                     if (args.size() < 2) { return gotbad(1, "addCommand", "wrong number of arguments"); }
                     else {
-                        Object target = args.elementAt(0), cmdObj = args.elementAt(1);
+                        Object dispObj = args.elementAt(0), cmdObj = args.elementAt(1);
                         
-                        if (!(target instanceof Displayable)) { return gotbad(1, "addCommand", "Displayable expected"); }
+                        if (!(dispObj instanceof Displayable)) { return gotbad(1, "addCommand", "Displayable expected"); }
                         if (!(cmdObj instanceof Command)) { return gotbad(1, "addCommand", "Command expected"); }
                         
-                        ((Displayable) target).addCommand((Command) cmdObj); break;
+                        ((Displayable) dispObj).addCommand((Command) cmdObj); break;
                     }
                 case HANDLER:
                     if (args.size() < 2) { return gotbad(1, "handler", "wrong number of arguments"); }
@@ -2556,7 +2556,7 @@ public class Lua {
                     }
                 // Kernel Core
                 case KERNEL:
-                    Object payload = args.elementAt(0), arg = args.elementAt(1), scope = args.elementAt(2), pid = args.elementAt(3);
+                    Object payload = args.elementAt(0), scope = args.elementAt(2), pid = args.elementAt(3); arg = args.elementAt(1);
                     int uid = ((Double) args.elementAt(4)).intValue();
 
                     if (payload == null || payload.equals("")) { return null; }
@@ -2565,10 +2565,10 @@ public class Lua {
                             if (arg == null || !(arg instanceof Hashtable)) { return new Double(2); }
                             else {
                                 Hashtable info = (Hashtable) arg;
-                                String pid = (String) info.get("pid"), signal = toLuaString(info.get("signal"));
+                                String sigPid = (String) info.get("pid"), signal = toLuaString(info.get("signal"));
 
-                                if (midlet.sys.containsKey(pid)) {
-                                    Process process = (Process) midlet.sys.get(pid);
+                                if (midlet.sys.containsKey(sigPid)) {
+                                    Process process = (Process) midlet.sys.get(sigPid);
 
                                     if (process.uid == uid || uid == 0) {
                                         if (!signal.equals("9") && process.sighandler != null) {
@@ -2600,10 +2600,10 @@ public class Lua {
                             if (arg == null || !(arg instanceof Hashtable)) { return new Double(2); }
                             else {
                                 Hashtable info = (Hashtable) arg;
-                                String pid = (String) info.get("pid");
+                                String nicePid = (String) info.get("pid");
                                 int priority = ((Double) info.get("priority")).intValue();
-                                if (midlet.sys.containsKey(pid)) {
-                                    Process process = (Process) midlet.sys.get(pid);
+                                if (midlet.sys.containsKey(nicePid)) {
+                                    Process process = (Process) midlet.sys.get(nicePid);
 
                                     if (process.uid == uid || uid == 0) {
                                         process.priority = Math.max(Process.MIN_PRIORITY, Math.min(Process.MAX_PRIORITY, priority));
@@ -2635,8 +2635,8 @@ public class Lua {
                             if (arg == null || arg.equals("")) {
                                 Hashtable result = new Hashtable();
                                 for (Enumeration procs = midlet.sys.keys(); procs.hasMoreElements();) {
-                                    String pid = (String) procs.nextElement();
-                                    Process p = (Process) midlet.sys.get(pid);
+                                    String npid = (String) procs.nextElement();
+                                    Process p = (Process) midlet.sys.get(npid);
                                     
                                     if (p.net.isEmpty()) { }
                                     else {

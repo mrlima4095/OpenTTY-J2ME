@@ -15,6 +15,7 @@ local mirror = {
     ["docker"] = { remote = "sys/docker/main.lua", here = "/bin/docker", description = "Conteiners on OpenTTY" },
     ["du"] = { remote = "file/du.lua", here = "/bin/du", description = "View files lenght" },
     ["expr"] = { remote = "file/expr.lua", here = "/bin/expr", description = "Evaluate expressions" },
+    ["explorer"] = { remote = "file/explorer.lua", here = "/bin/explorer", description = "File Explorer" },
     ["event"] = { remote = "sys/smile/event.lua", here = "/bin/event", description = "Event handler" },
     ["free"] = { remote = "sys/free.lua", here = "/bin/free", description = "Memory Informations" },
     ["forge"] = { remote = "dev/forge/main.lua", here = "/lib/forge", description = "Additional API for OpenTTY" },

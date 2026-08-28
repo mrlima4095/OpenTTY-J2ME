@@ -75,7 +75,7 @@ public class OpenTTY {
         frame.setLocationRelativeTo(null);
         stdout = new JTextArea();
         stdout.setEditable(false);
-        stdout.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        stdout.setFont(new java.awt.Font("Monospaced", java.awt.Font.PLAIN, 14));
         stdout.setBackground(Color.BLACK);
         stdout.setForeground(new Color(0, 255, 0));
         stdout.setCaretColor(new Color(0, 255, 0));
@@ -83,7 +83,7 @@ public class OpenTTY {
         scrollPane = new JScrollPane(stdout);
         frame.add(scrollPane, BorderLayout.CENTER);
         stdin = new JTextField();
-        stdin.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        stdin.setFont(new java.awt.Font("Monospaced", java.awt.Font.PLAIN, 14));
         stdin.setBackground(new Color(40, 40, 40));
         stdin.setForeground(new Color(0, 255, 0));
         stdin.setCaretColor(new Color(0, 255, 0));
