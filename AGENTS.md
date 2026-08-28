@@ -29,7 +29,7 @@ OpenTTY: a J2ME MIDlet (CLDC-1.0/MIDP-2.0) that is a Lua-scripted shell + ARM EL
 
 - `Dockerfile`: `php:8.3-fpm-alpine` + nginx + supervisor. Services started by `supervisord`: php-fpm, nginx, `python3 server.py` (TCP `:31522`, the OpenTTY mirror service), and `pproxy/app.py` (TCP `:4096` + Flask web on `:10141`).
 - nginx proxies `/cli` + `/api/` to a Flask upstream at `127.0.0.1:10141`; PHP via fastcgi `:9000`; several dirs served with `autoindex`. EXPOSE: `80, 31522, 4096, 10141`.
-- `pproxy` is a **git submodule** (requires recursive clone); the Dockerfile pip-installs from `pproxy/requirements.txt` plus `flask_cors requests`.
+- `pproxy` is a **git submodule**; the Dockerfile pip-installs from `pproxy/requirements.txt` plus `flask_cors requests`. Don't rely on the builder cloning submodules: the Dockerfile fell-back-clones `pproxy` from GitHub when `pproxy/app.py` is missing.
 
 ## Git workflow
 
