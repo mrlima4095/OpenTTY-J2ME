@@ -21,6 +21,9 @@ public class Lua {
     public String currentSource = "";
     public Vector frameStack = new Vector();
     public Vector thrownFrames = new Vector();
+    public String lastCode = "";
+    public Vector thrownTokens = null;
+    public int thrownTokenIndex = -1;
     // |
     public int status = 0;
     // | (LuaFunction)
@@ -39,7 +42,7 @@ public class Lua {
     public static final Boolean TRUE = Boolean.TRUE, FALSE = Boolean.FALSE;
     public static final Object LUA_NIL = new Object();
     // |
-    public static class Token { int type; Object value; Token(int type, Object value) { this.type = type; this.value = value; } public String toString() { return "Token(type=" + type + ", value=" + value + ")"; } }
+    public static class Token { int type; Object value; int offset; Token(int type, Object value) { this.type = type; this.value = value; this.offset = -1; } Token(int type, Object value, int offset) { this.type = type; this.value = value; this.offset = offset; } public String toString() { return "Token(type=" + type + ", value=" + value + ")"; } }
     // |
     // Main
     public Lua(OpenTTY midlet, int id, String pid, Process proc, Object stdout, Hashtable scope) {
@@ -94,7 +97,10 @@ public class Lua {
         midlet.sys.put(PID, proc); globals.put("arg", args);
 
         currentSource = source == null ? "" : source;
+        lastCode = code == null ? "" : code;
         frameStack.removeAllElements();
+        thrownFrames.removeAllElements();
+        thrownTokens = null; thrownTokenIndex = -1;
 
         Hashtable ITEM = new Hashtable(); 
         
@@ -103,7 +109,7 @@ public class Lua {
             
             while (peek().type != EOF) { Object res = statement(globals); if (doreturn) { if (res != null) { ITEM.put("object", res); } doreturn = false; break; } }
         } 
-        catch (Exception e) { midlet.print(getTraceback(e), stdout, id, father); status = 1; } 
+        catch (Exception e) { recordThrow(); midlet.print(getTraceback(e), stdout, id, father); status = 1; } 
         catch (Error e) { if (e.getMessage() != null) { midlet.print(e.getMessage(), stdout, id, father); } status = 1; }
 
         if (kill) { midlet.sys.remove(PID); }
@@ -111,9 +117,34 @@ public class Lua {
         return ITEM;
     }
     // |
+    public void recordThrow() { recordThrow(tokenIndex, tokens); }
+    public void recordThrow(int idx, Vector toks) { if (thrownTokenIndex != -1) { return; } thrownTokenIndex = idx; thrownTokens = toks; }
+    // |
     public String getTraceback(Throwable e) {
         StringBuffer sb = new StringBuffer(midlet.getCatch(e));
-        if (currentSource != null && currentSource.length() > 0) { sb.append("\nLua ").append(currentSource); }
+
+        int line = -1; String lineText = null; int col = -1; String near = "";
+        if (thrownTokenIndex >= 0 && thrownTokens != null && !thrownTokens.isEmpty()) {
+            int t = thrownTokenIndex < thrownTokens.size() ? thrownTokenIndex : thrownTokens.size() - 1;
+            Token tok = (Token) thrownTokens.elementAt(t);
+            if (tok.offset >= 0 && lastCode != null && tok.offset < lastCode.length()) {
+                line = 1;
+                for (int k = 0; k < tok.offset; k++) { if (lastCode.charAt(k) == '\n') { line++; } }
+                int ls = tok.offset;
+                while (ls > 0 && lastCode.charAt(ls - 1) != '\n') { ls--; }
+                int le = tok.offset;
+                while (le < lastCode.length() && lastCode.charAt(le) != '\n') { le++; }
+                lineText = lastCode.substring(ls, le);
+                col = tok.offset - ls;
+                near = tokenLexeme(tok);
+            }
+        }
+
+        if (currentSource != null && currentSource.length() > 0) {
+            sb.append("\nLua ").append(currentSource);
+            if (line > 0) { sb.append(':').append(line); }
+        }
+        sb.append(pointerBlock(lineText, col, near));
         if (thrownFrames.isEmpty()) { thrownFrames = frameStack; }
         if (!thrownFrames.isEmpty()) {
             sb.append("\nstack traceback:");
@@ -122,6 +153,25 @@ public class Lua {
             }
         }
         return sb.toString();
+    }
+    // |
+    public static String pointerBlock(String lineText, int col, String near) {
+        StringBuffer sb = new StringBuffer();
+        if (lineText == null || lineText.trim().length() == 0) { return sb.toString(); }
+        StringBuffer pad = new StringBuffer();
+        for (int k = 0; k < col && k < lineText.length(); k++) { pad.append(' '); }
+        sb.append("\n\t").append(lineText);
+        sb.append("\n\t").append(pad).append('^');
+        for (int k = col + 1; k < lineText.length(); k++) { sb.append('-'); }
+        if (near != null && near.length() > 0) { sb.append(" (near '").append(near).append("')"); }
+        return sb.toString();
+    }
+    // |
+    public static String tokenLexeme(Token tok) {
+        if (tok == null) { return ""; }
+        Object v = tok.value;
+        if (v instanceof Double) { double d = ((Double) v).doubleValue(); if (d == Math.floor(d) && !Double.isInfinite(d)) { return String.valueOf((long) d); } return String.valueOf(d); }
+        return v == null ? "" : String.valueOf(v);
     }
     // |
     // Tokenizer
@@ -135,6 +185,7 @@ public class Lua {
             if (i < code.length() && code.charAt(i) == '\n') { i++; }
         }
         while (i < code.length()) {
+            int start = i;
             char c = code.charAt(i);
     
             if (isWhitespace(c) || c == ';') { i++; }
@@ -146,12 +197,13 @@ public class Lua {
                     if (i + 1 < code.length()) i += 2;
                 } 
                 else { while (i < code.length() && code.charAt(i) != '\n') i++; }
+                continue;
             }
     
             else if (c == '.') {
-                if (i + 2 < code.length() && code.charAt(i + 1) == '.' && code.charAt(i + 2) == '.') { tokens.addElement(new Token(VARARG, "...")); i += 3; } 
-                else if (i + 1 < code.length() && code.charAt(i + 1) == '.') { tokens.addElement(new Token(CONCAT, "..")); i += 2; } 
-                else { tokens.addElement(new Token(DOT, ".")); i++; }
+                if (i + 2 < code.length() && code.charAt(i + 1) == '.' && code.charAt(i + 2) == '.') { tokens.addElement(new Token(VARARG, "...", start)); i += 3; } 
+                else if (i + 1 < code.length() && code.charAt(i + 1) == '.') { tokens.addElement(new Token(CONCAT, "..", start)); i += 2; } 
+                else { tokens.addElement(new Token(DOT, ".", start)); i++; }
             }
             else if (c == ':') {
                 if (i + 1 < code.length() && code.charAt(i + 1) == ':') {
@@ -160,9 +212,9 @@ public class Lua {
                     StringBuffer sb = new StringBuffer();
                     while (i < code.length() && (isLetterOrDigit(code.charAt(i)) || code.charAt(i) == '_')) { sb.append(code.charAt(i)); i++; }
                     
-                    if (i + 1 < code.length() && code.charAt(i) == ':' && code.charAt(i + 1) == ':') { i += 2; tokens.addElement(new Token(LABEL, sb.toString())); }
-                    else { i -= 2; tokens.addElement(new Token(COLON, ":")); i++; }
-                } else { tokens.addElement(new Token(COLON, ":")); i++; }
+                    if (i + 1 < code.length() && code.charAt(i) == ':' && code.charAt(i + 1) == ':') { i += 2; tokens.addElement(new Token(LABEL, sb.toString(), start)); }
+                    else { i -= 2; tokens.addElement(new Token(COLON, ":", start)); i++; }
+                } else { tokens.addElement(new Token(COLON, ":", start)); i++; }
             }
 
             else if (isDigit(c) || (c == '.' && i + 1 < code.length() && isDigit(code.charAt(i + 1)))) {
@@ -177,7 +229,7 @@ public class Lua {
                     sb.append(code.charAt(i));
                     i++;
                 }
-                try { double numValue = Double.parseDouble(sb.toString()); tokens.addElement(new Token(NUMBER, new Double(numValue))); } 
+                try { double numValue = Double.parseDouble(sb.toString()); tokens.addElement(new Token(NUMBER, new Double(numValue), start)); } 
                 catch (NumberFormatException e) { throw new RuntimeException("Invalid number format '" + sb.toString() + "'"); }
                 continue;
             }
@@ -196,40 +248,40 @@ public class Lua {
                     sb.append(code.charAt(i));
                     i++;
                 }
-                try { double numValue = Double.parseDouble(sb.toString()); tokens.addElement(new Token(NUMBER, new Double(numValue))); } 
+                try { double numValue = Double.parseDouble(sb.toString()); tokens.addElement(new Token(NUMBER, new Double(numValue), start)); } 
                 catch (NumberFormatException e) { throw new RuntimeException("Invalid number format '" + sb.toString() + "'"); }
             }
 
-            else if (c == '"' || c == '\'') { char quoteChar = c; StringBuffer sb = new StringBuffer(); i++; while (i < code.length() && code.charAt(i) != quoteChar) { sb.append(code.charAt(i)); i++; } if (i < code.length() && code.charAt(i) == quoteChar) { i++; } tokens.addElement(new Token(STRING, sb.toString())); }
-            else if (c == '[' && i + 1 < code.length() && code.charAt(i + 1) == '[') { i += 2; StringBuffer sb = new StringBuffer(); while (i + 1 < code.length() && !(code.charAt(i) == ']' && code.charAt(i + 1) == ']')) { sb.append(code.charAt(i)); i++; } if (i + 1 < code.length()) { i += 2; } tokens.addElement(new Token(STRING, sb.toString())); }
+            else if (c == '"' || c == '\'') { char quoteChar = c; StringBuffer sb = new StringBuffer(); i++; while (i < code.length() && code.charAt(i) != quoteChar) { sb.append(code.charAt(i)); i++; } if (i < code.length() && code.charAt(i) == quoteChar) { i++; } tokens.addElement(new Token(STRING, sb.toString(), start)); }
+            else if (c == '[' && i + 1 < code.length() && code.charAt(i + 1) == '[') { i += 2; StringBuffer sb = new StringBuffer(); while (i + 1 < code.length() && !(code.charAt(i) == ']' && code.charAt(i + 1) == ']')) { sb.append(code.charAt(i)); i++; } if (i + 1 < code.length()) { i += 2; } tokens.addElement(new Token(STRING, sb.toString(), start)); }
 
-            else if (isLetter(c)) { StringBuffer sb = new StringBuffer(); while (i < code.length() && isLetterOrDigit(code.charAt(i))) { sb.append(code.charAt(i)); i++; } String word = sb.toString(); tokens.addElement(new Token((word.equals("true") || word.equals("false")) ? BOOLEAN : word.equals("nil") ? NIL : word.equals("and") ? AND : word.equals("or") ? OR : word.equals("not") ? NOT : word.equals("if") ? IF : word.equals("then") ? THEN : word.equals("else") ? ELSE : word.equals("elseif") ? ELSEIF : word.equals("end") ? END : word.equals("while") ? WHILE : word.equals("do") ? DO : word.equals("return") ? RETURN : word.equals("function") ? FUNCTION : word.equals("local") ? LOCAL : word.equals("for") ? FOR : word.equals("in") ? IN : word.equals("break") ? BREAK : word.equals("repeat") ? REPEAT : word.equals("until") ? UNTIL : word.equals("goto") ? GOTO : IDENTIFIER, word)); }
+            else if (isLetter(c)) { StringBuffer sb = new StringBuffer(); while (i < code.length() && isLetterOrDigit(code.charAt(i))) { sb.append(code.charAt(i)); i++; } String word = sb.toString(); tokens.addElement(new Token((word.equals("true") || word.equals("false")) ? BOOLEAN : word.equals("nil") ? NIL : word.equals("and") ? AND : word.equals("or") ? OR : word.equals("not") ? NOT : word.equals("if") ? IF : word.equals("then") ? THEN : word.equals("else") ? ELSE : word.equals("elseif") ? ELSEIF : word.equals("end") ? END : word.equals("while") ? WHILE : word.equals("do") ? DO : word.equals("return") ? RETURN : word.equals("function") ? FUNCTION : word.equals("local") ? LOCAL : word.equals("for") ? FOR : word.equals("in") ? IN : word.equals("break") ? BREAK : word.equals("repeat") ? REPEAT : word.equals("until") ? UNTIL : word.equals("goto") ? GOTO : IDENTIFIER, word, start)); }
     
-            else if (c == '+') { tokens.addElement(new Token(PLUS, "+")); i++; }
-            else if (c == '-') { tokens.addElement(new Token(MINUS, "-")); i++; }
-            else if (c == '*') { tokens.addElement(new Token(MULTIPLY, "*")); i++; }
-            else if (c == '/') { tokens.addElement(new Token(DIVIDE, "/")); i++; }
-            else if (c == '%') { tokens.addElement(new Token(MODULO, "%")); i++; }
-            else if (c == '(') { tokens.addElement(new Token(LPAREN, "(")); i++; }
-            else if (c == ')') { tokens.addElement(new Token(RPAREN, ")")); i++; }
-            else if (c == ',') { tokens.addElement(new Token(COMMA, ",")); i++; }
-            else if (c == '^') { tokens.addElement(new Token(POWER, "^")); i++; }
-            else if (c == '#') { tokens.addElement(new Token(LENGTH, "#")); i++; }
+            else if (c == '+') { tokens.addElement(new Token(PLUS, "+", start)); i++; }
+            else if (c == '-') { tokens.addElement(new Token(MINUS, "-", start)); i++; }
+            else if (c == '*') { tokens.addElement(new Token(MULTIPLY, "*", start)); i++; }
+            else if (c == '/') { tokens.addElement(new Token(DIVIDE, "/", start)); i++; }
+            else if (c == '%') { tokens.addElement(new Token(MODULO, "%", start)); i++; }
+            else if (c == '(') { tokens.addElement(new Token(LPAREN, "(", start)); i++; }
+            else if (c == ')') { tokens.addElement(new Token(RPAREN, ")", start)); i++; }
+            else if (c == ',') { tokens.addElement(new Token(COMMA, ",", start)); i++; }
+            else if (c == '^') { tokens.addElement(new Token(POWER, "^", start)); i++; }
+            else if (c == '#') { tokens.addElement(new Token(LENGTH, "#", start)); i++; }
     
-            else if (c == '=') { if (i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new Token(EQ, "==")); i += 2; } else { tokens.addElement(new Token(ASSIGN, "=")); i++; } }
-            else if (c == '~') { if (i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new Token(NE, "~=")); i += 2; } else { throw new Exception("Unexpected character '~'"); } }
-            else if (c == '<') { if (i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new Token(LE, "<=")); i += 2; } else { tokens.addElement(new Token(LT, "<")); i++; } }
-            else if (c == '>') { if (i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new Token(GE, ">=")); i += 2; } else { tokens.addElement(new Token(GT, ">")); i++; } }
+            else if (c == '=') { if (i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new Token(EQ, "==", start)); i += 2; } else { tokens.addElement(new Token(ASSIGN, "=", start)); i++; } }
+            else if (c == '~') { if (i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new Token(NE, "~=", start)); i += 2; } else { throw new Exception("Unexpected character '~'"); } }
+            else if (c == '<') { if (i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new Token(LE, "<=", start)); i += 2; } else { tokens.addElement(new Token(LT, "<", start)); i++; } }
+            else if (c == '>') { if (i + 1 < code.length() && code.charAt(i + 1) == '=') { tokens.addElement(new Token(GE, ">=", start)); i += 2; } else { tokens.addElement(new Token(GT, ">", start)); i++; } }
 
-            else if (c == '{') { tokens.addElement(new Token(LBRACE, "{")); i++; }
-            else if (c == '}') { tokens.addElement(new Token(RBRACE, "}")); i++; }
-            else if (c == '[') { tokens.addElement(new Token(LBRACKET, "[")); i++; }
-            else if (c == ']') { tokens.addElement(new Token(RBRACKET, "]")); i++; }
+            else if (c == '{') { tokens.addElement(new Token(LBRACE, "{", start)); i++; }
+            else if (c == '}') { tokens.addElement(new Token(RBRACE, "}", start)); i++; }
+            else if (c == '[') { tokens.addElement(new Token(LBRACKET, "[", start)); i++; }
+            else if (c == ']') { tokens.addElement(new Token(RBRACKET, "]", start)); i++; }
 
             else { throw new Exception("Unexpected character '" + c + "'"); }
         }
 
-        tokens.addElement(new Token(EOF, "EOF"));
+        tokens.addElement(new Token(EOF, "EOF", i));
         if (midlet.useCache) { if (midlet.cacheLua.size() > 100) { midlet.cacheLua.clear(); } midlet.cacheLua.put(code, tokens); }
         return tokens;
     }
@@ -1243,7 +1295,8 @@ public class Lua {
             catch (Exception e) {
                 Vector snapshot = new Vector();
                 for (int f = 0; f < frameStack.size(); f++) { snapshot.addElement(frameStack.elementAt(f)); }
-                thrownFrames = snapshot;
+                if (thrownFrames.isEmpty()) { thrownFrames = snapshot; }
+                recordThrow(tokenIndex, tokens);
                 throw e;
             }
             finally {
@@ -1299,7 +1352,7 @@ public class Lua {
                                 if (value instanceof Vector) { Vector v = (Vector) value; for (int i = 0; i < v.size(); i++) { result.addElement(v.elementAt(i)); } }
                                 else { result.addElement(value); }
                             }
-                            catch (Exception e) { result.addElement(FALSE); result.addElement(getTraceback(e)); }
+                            catch (Exception e) { result.addElement(FALSE); result.addElement(getTraceback(e)); thrownFrames.removeAllElements(); thrownTokens = null; thrownTokenIndex = -1; }
                         }
                         else { result.addElement(FALSE); result.addElement("attempt to call a " + type(args.elementAt(0)) + " value"); } 
 
