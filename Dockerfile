@@ -19,7 +19,7 @@ RUN if [ ! -f /app/pproxy/app.py ]; then \
     fi
 
 RUN mkdir -p /run/nginx /var/log/supervisor /var/log/nginx \
-    && pip3 install --no-cache-dir -r /app/pproxy/requirements.txt flask_cors requests
+    && pip3 install --no-cache-dir --break-system-packages -r /app/pproxy/requirements.txt flask_cors requests
 
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/nginx.conf /etc/nginx/nginx.conf
