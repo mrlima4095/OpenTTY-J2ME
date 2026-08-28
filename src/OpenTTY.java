@@ -294,7 +294,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } else {
                 byte[] buffer = new byte[chunkSize];
                 int bytesRead = in.read(buffer, 0, chunkSize);
-                if (bytesRead == -1) { return null; }
+                if (bytesRead == -1) { return ""; }
 
                 return new String(buffer, 0, bytesRead, "UTF-8");
             }
