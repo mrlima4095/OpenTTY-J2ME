@@ -1543,9 +1543,11 @@ class OpenTTYKernel:
         except LuaExit as e:
             rt.status = e.status
         except LuaError as e:
+            rt._record_throw()
             print(rt._get_traceback(e), file=sys.stderr)
             rt.status = 1
         except Exception as e:
+            rt._record_throw()
             print(rt._get_traceback(e), file=sys.stderr)
             rt.status = 1
         finally:
@@ -1732,6 +1734,9 @@ class OpenTTYKernel:
             return self.runtime.shell_handler.call([command], self.runtime)
         except LuaExit as e:
             return e.status
+        except LuaError as e:
+            print(self.runtime._get_traceback(e), file=sys.stderr)
+            return 1
 
     def _su(self, body):
         """Match the terminal su (src/Lua.java): root needs the account
@@ -1783,8 +1788,10 @@ class OpenTTYKernel:
     def repl(self):
         """Interactive terminal: the replacement for the wiring of the MIDlet UI.
 
-        input() runs on a reader thread so tkinter events keep pumping while the
-        prompt waits for a line (windows stay alive at the prompt)."""
+        The prompt is printed by the main loop after each command is processed
+        (shell-like ordering), so a fresh "$" always appears right after the
+        command's output. input() runs on a reader thread — without a prompt —
+        so tkinter events keep pumping while the line is waiting."""
         import queue as _queue
         rt = self.runtime
         host = self.hostname
@@ -1798,18 +1805,35 @@ class OpenTTYKernel:
                 scope.get("USER", self.main_user), host, scope.get("PWD", "/home/"),
                 "#" if rt.uid == 0 else "$")
 
-        state = {"active": True, "prompt": scope_prompt()}
+        state = {"active": True}
 
         def reader():
+            # select()-based so the thread can observe state["active"] and exit
+            # even while blocked (a plain input() thread would hang interpreter
+            # shutdown: Python joins every live thread on _shutdown()).
+            import select as _select
+            fd = sys.stdin.fileno()
+            buf = b""
             while state["active"]:
+                r, _, _ = _select.select([fd], [], [], 0.1)
+                if not r:
+                    continue
                 try:
-                    line = input(state["prompt"])
-                except (EOFError, KeyboardInterrupt):
+                    chunk = _os.read(fd, 512)
+                except (OSError, ValueError):
                     q.put(_REPL_EOF)
                     return
-                q.put(line)
+                if not chunk:
+                    q.put(_REPL_EOF)
+                    return
+                buf += chunk
+                while b"\n" in buf:
+                    raw, buf = buf.split(b"\n", 1)
+                    q.put(raw.decode("utf-8", errors="replace"))
 
         threading.Thread(target=reader, daemon=True).start()
+        sys.stdout.write(scope_prompt())
+        sys.stdout.flush()
         try:
             while True:
                 rt.gui_pump()
@@ -1821,14 +1845,16 @@ class OpenTTYKernel:
                     print()
                     return
                 if not line.strip():
-                    state["prompt"] = scope_prompt()
+                    sys.stdout.write(scope_prompt())
+                    sys.stdout.flush()
                     continue
                 try:
                     parser.run(line)
                 except LuaExit:
                     return
                 finally:
-                    state["prompt"] = scope_prompt()
+                    sys.stdout.write(scope_prompt())
+                    sys.stdout.flush()
         finally:
             state["active"] = False
             rt.gui_pump()
@@ -1862,7 +1888,7 @@ class _ShellParser:
         except LuaExit as e:
             raise
         except LuaError as e:
-            print("Error: %s" % e, file=sys.stderr)
+            print(rt._get_traceback(e), file=sys.stderr)
             return 1
 
 

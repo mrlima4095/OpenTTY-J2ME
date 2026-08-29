@@ -694,10 +694,12 @@ class LuaRuntime:
         except LuaExit as e:
             self.status = e.status
         except LuaError as e:
+            self._record_throw()
             tb = self._get_traceback(e)
             print(tb, file=sys.stderr)
             self.status = 1
         except Exception as e:
+            self._record_throw()
             tb = self._get_traceback(e)
             print(tb, file=sys.stderr)
             self.status = 1
@@ -1963,8 +1965,9 @@ class LuaRuntime:
         col = -1
         near = ""
 
-        if 0 <= self.thrown_token_index < len(self.thrown_tokens):
-            tok = self.thrown_tokens[self.thrown_token_index]
+        if self.thrown_tokens and self.thrown_token_index >= 0:
+            t = min(self.thrown_token_index, len(self.thrown_tokens) - 1)
+            tok = self.thrown_tokens[t]
             if tok.offset >= 0 and self.last_code and tok.offset < len(self.last_code):
                 line = 1
                 for k in range(tok.offset):
@@ -2679,7 +2682,7 @@ class LuaRuntime:
                 try:
                     return proc.handler.call([payload, arg, self.scope, self.pid, float(self.uid)], self)
                 except Exception as e:
-                    return str(e)
+                    return self._get_traceback(e)
             elif not proc:
                 return "process not found"
             return "not a service"
@@ -2913,7 +2916,14 @@ class LuaRuntime:
             if args and isinstance(args[0], LuaFunction):
                 fn = args[0]
                 name = str(args[1]) if len(args) > 1 else "thread"
-                t = threading.Thread(target=lambda: fn.call([], self), name=name, daemon=True)
+
+                def _bg():
+                    try:
+                        fn.call([], self)
+                    except Exception as e:
+                        print(self._get_traceback(e), file=sys.stderr)
+
+                t = threading.Thread(target=_bg, name=name, daemon=True)
                 t.start()
             return None
         elif mod == 705:  # thread
