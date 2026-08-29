@@ -33,6 +33,11 @@ def _headless_env():
     return os.environ.get("OPEN_TTY_NOGUI", "").strip().lower() not in ("", "0", "off", "false", "no")
 
 
+def headless_forced():
+    """True when OPEN_TTY_NOGUI was set explicitly (tests / servers)."""
+    return _headless_env()
+
+
 _MISSING = object()  # sentinel for "no live widget state recorded"
 
 

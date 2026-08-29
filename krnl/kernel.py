@@ -207,6 +207,7 @@ class OpenTTYRuntime(LuaRuntime):
         super().__init__(base_dir=base_dir, username=username)
         self.next_pid = 1000
         self.uptime = int(time.time() * 1000)
+        self._gui_warned = False
 
         # java.midlet mirrors the J2ME runtime info the scripts rely on
         midlet = self.globals.get("java", {}).get("midlet", {})
@@ -258,6 +259,10 @@ class OpenTTYRuntime(LuaRuntime):
             scr = args[0]
             if not isinstance(scr, tkgui.Screen):
                 self._graphics_bad(1, "display", "screen expected, got " + self.lua_type(scr))
+            if not gui.rendering_enabled() and not tkgui.headless_forced() and not self._gui_warned:
+                self._gui_warned = True
+                print("graphics: no tkinter display — GUI windows disabled "
+                      "(install python3-tk and run in a graphical session)", file=sys.stderr)
             gui.current = scr
             gui.ensure_window(scr)
             return None
@@ -1799,7 +1804,6 @@ class OpenTTYKernel:
         pipe (no tty) readline is not active and input() just reads lines."""
         rt = self.runtime
         parser = _ShellParser(self)
-        print("OpenTTY Python %s — type 'exit' to quit" % OPEN_VERSION)
 
         readline = None
         history_path = _os.path.join(self.devroot, "home", ".opentty_history")
@@ -1884,7 +1888,7 @@ class OpenTTYKernel:
                 if name and name not in seen:
                     seen.add(name)
                     names.append(name)
-        builtins = ["exit", "cd", "pwd", "whoami", "su"]
+        builtins = ["exit", "cd", "pwd", "whoami", "su", "clear"]
         for b in builtins:
             if b not in seen:
                 seen.add(b)

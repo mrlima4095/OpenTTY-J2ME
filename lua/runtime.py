@@ -1708,6 +1708,21 @@ class LuaRuntime:
             import gc
             gc.collect()
             return 0
+        elif cmd == "clear":
+            # erase the console output item (J2ME: midlet.stdout.setText(""))
+            out = self.globals.get("io", {}).get("stdout")
+            if out is not None and hasattr(out, "text"):
+                try:
+                    out.text = ""
+                except Exception:
+                    pass
+            import sys as _sys
+            try:
+                _sys.stdout.write("\x1b[2J\x1b[H")
+                _sys.stdout.flush()
+            except Exception:
+                pass
+            return 0
         elif cmd == "cat":
             for a in args:
                 path = self.join_path(a)
