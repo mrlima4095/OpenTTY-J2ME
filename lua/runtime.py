@@ -347,7 +347,7 @@ class LuaRuntime:
         for name, const in [
             ("display", 600), ("new", 601), ("render", 602),
             ("append", 603), ("addCommand", 604), ("handler", 605),
-            ("GetCurrent", 606), ("SetTitle", 607), ("SetTicker", 608),
+            ("getCurrent", 606), ("SetTitle", 607), ("SetTicker", 608),
             ("vibrate", 609), ("SetLabel", 610), ("SetText", 611),
             ("GetLabel", 612), ("GetText", 613), ("clear", 614),
         ]:
