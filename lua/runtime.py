@@ -2104,7 +2104,12 @@ class LuaRuntime:
                     buf.append(self.to_lua_string(a))
                 if i < len(args) - 1:
                     buf.append("\t")
-            print("".join(buf))
+            text = "".join(buf)
+            print(text)
+            try:
+                self.onprint(text)
+            except Exception:
+                pass
             return None
 
         # ERROR (1)
@@ -2888,7 +2893,7 @@ class LuaRuntime:
         return None
 
     def _graphics_internals(self, mod, args):
-        # Stubs — no graphics on PC
+        # Stubs — no graphics on PC (the kernel runtime overrides this)
         if mod == 601:  # new
             return {}  # Return empty screen object
         elif mod == 606:  # GetCurrent
@@ -2897,6 +2902,10 @@ class LuaRuntime:
             return None
         elif mod == 613:  # GetText
             return ""
+        return None
+
+    def onprint(self, text):
+        """Hook called after print(); subclasses stream to a console item."""
         return None
 
     def _java_internals(self, mod, args):

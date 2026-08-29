@@ -81,14 +81,32 @@ def main(argv=None):
 
     # Whatever was started becomes the foreground program, like MIDP startApp.
     if args.exec_cmd is not None:
-        if args.exec_cmd.strip():
-            return int(float(kernel.os_execute(args.exec_cmd) or 0))
-        return int(status or 0)
+        try:
+            if args.exec_cmd.strip():
+                rc = int(float(kernel.os_execute(args.exec_cmd) or 0))
+            else:
+                rc = int(status or 0)
+            # keep graphics windows alive after -e until they are closed
+            kernel.runtime.gui_wait()
+            return rc
+        finally:
+            kernel.shutdown()
     if args.script is not None:
-        return int(float(kernel.run_script(args.script, args.script_args or ()) or 0))
+        try:
+            rc = int(float(kernel.run_script(args.script, args.script_args or ()) or 0))
+            kernel.runtime.gui_wait()
+            return rc
+        finally:
+            kernel.shutdown()
     if args.norepl:
-        return int(status or 0)
-    kernel.repl()
+        try:
+            return int(status or 0)
+        finally:
+            kernel.shutdown()
+    try:
+        kernel.repl()
+    finally:
+        kernel.shutdown()
     return int(getattr(kernel.runtime, "status", 0) or 0)
 
 

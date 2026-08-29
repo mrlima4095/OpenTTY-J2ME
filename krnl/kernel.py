@@ -26,15 +26,23 @@ import shutil
 import secrets
 import getpass
 import re
+import threading
 import urllib.request
 import urllib.error
 
 from lua.runtime import LuaRuntime, LuaFunction, Process, LuaError, LuaExit
 
+try:
+    from . import tkgui
+except ImportError:  # pragma: no cover - loaded as a plain script
+    from krnl import tkgui
+
 # ─── constants from src/ (error codes match libcore.errormsg) ────────────────
 
 OPEN_VERSION = "1.18.1"
 OPEN_BUILD = "2026-1.18.1-python"
+
+_REPL_EOF = object()  # repl() sentinel for the input reader thread
 
 # exit/return codes (shared with apps/sys/.../libcore.so)
 E_OK = 0
@@ -209,6 +217,312 @@ class OpenTTYRuntime(LuaRuntime):
         midlet["VERSION"] = self.attributes.get("VERSION", OPEN_VERSION)
         self.globals["_VERSION"] = "Lua J2ME"
 
+        # graphics.* → tkinter windows (J2ME LCDUI, src/Lua.java mods 600-614).
+        # io.stdout/io.stdin stop being plain strings: they become console
+        # items rendered in the window (src/OpenTTY.java StringItem/TextField).
+        gui = tkgui.backend()
+        gui.dispatch = self._gui_dispatch
+        graphics = self.globals.get("graphics")
+        if graphics is not None:
+            graphics["fire"] = tkgui.SELECT  # List.SELECT_COMMAND
+            if "db" not in graphics or not isinstance(graphics["db"], dict):
+                graphics["db"] = {}
+        io = self.globals.get("io")
+        if io is not None:
+            io["stdout"] = tkgui.Item(kind="display", label="Output")
+            io["stdin"] = tkgui.Item(kind="input", label="Command")
+
+    # ── graphics (mirrors src/Lua.java mods 600-614) ──────────────────────
+
+    def _graphics_bad(self, pos, name, expect):
+        raise LuaError("bad argument #%d to '%s' (%s)" % (pos, name, expect))
+
+    def _graphics_field(self, table, key, default):
+        value = table.get(key)
+        if value is None:
+            return default
+        if isinstance(value, (list, dict)):
+            return value
+        return str(value)
+
+    def _graphics_field_number(self, table, key, default):
+        value = table.get(key)
+        try:
+            return int(float(str(value)))
+        except (TypeError, ValueError):
+            return default
+
+    def _graphics_internals(self, mod, args):
+        gui = tkgui.backend()
+        if mod == 600:  # display(target [, next])
+            if not args:
+                return None
+            scr = args[0]
+            if not isinstance(scr, tkgui.Screen):
+                self._graphics_bad(1, "display", "screen expected, got " + self.lua_type(scr))
+            gui.current = scr
+            gui.ensure_window(scr)
+            return None
+        if mod == 601:  # new(type, title|table [, content])
+            if len(args) < 2:
+                self._graphics_bad(1, "graphics.new", "wrong number of arguments")
+            gtype = self.to_lua_string(args[0])
+            title = self.to_lua_string(args[1]) if args[1] is not None else None
+            content = args[2] if len(args) > 2 else None
+            if gtype == "alert":
+                scr = gui.new_screen("alert", title or "")
+                scr.text = self.to_lua_string(content) if content is not None else ""
+                return scr
+            if gtype == "edit":
+                scr = gui.new_screen("edit", title or "")
+                scr.text = self.to_lua_string(content) if content is not None else ""
+                return scr
+            if gtype == "list":
+                scr = gui.new_screen("list", title or "")
+                scr.mode = self.to_lua_string(content) if content is not None else "implicit"
+                return scr
+            if gtype == "screen":
+                return gui.new_screen("form", title or "")
+            if gtype == "command":
+                table = args[1]
+                if not isinstance(table, dict):
+                    self._graphics_bad(2, "new", "table expected, got %s" % self.lua_type(table))
+                label = self._graphics_field(table, "label", "Command")
+                cmd_type = self._graphics_field(table, "type", "screen")
+                priority = 1
+                p = table.get("priority")
+                if isinstance(p, float):
+                    priority = int(p)
+                elif isinstance(p, (int, float)):
+                    priority = int(p)
+                return tkgui.Command(label, cmd_type, priority)
+            if gtype == "buffer":
+                table = args[1]
+                if not isinstance(table, dict):
+                    self._graphics_bad(2, "new", "table expected, got %s" % self.lua_type(table))
+                item = tkgui.Item(kind="display")
+                item.label = self._graphics_field(table, "label", "")
+                item.text = self._graphics_field(table, "value", "")
+                return item
+            if gtype == "field":
+                table = args[1]
+                if not isinstance(table, dict):
+                    self._graphics_bad(2, "new", "table expected, got %s" % self.lua_type(table))
+                item = tkgui.Item(kind="input")
+                item.label = self._graphics_field(table, "label", "")
+                item.text = self._graphics_field(table, "value", "")
+                return item
+            self._graphics_bad(1, "new", "invalid type: " + gtype)
+            return None
+        if mod == 602:  # render(path)
+            if not args or args[0] is None:
+                self._graphics_bad(1, "render", "string expected, got no value")
+            return tkgui.Image(self.to_lua_string(args[0]))
+        if mod == 603:  # append(target, item [, img])
+            if len(args) < 2:
+                self._graphics_bad(1, "append", "wrong number of arguments")
+            scr = args[0]
+            if not isinstance(scr, tkgui.Screen):
+                self._graphics_bad(1, "append", "Form or List expected")
+            item = args[1]
+            if scr.kind == "list":
+                scr.append(self.to_lua_string(item))
+                return None
+            if scr.kind != "form":
+                self._graphics_bad(1, "append", "Form or List expected")
+            if isinstance(item, dict):
+                ftype = item.get("type")
+                if ftype is None or isinstance(ftype, (list, dict)):
+                    ftype = "text"
+                ftype = str(ftype)
+                if ftype == "image":
+                    img = item.get("img")
+                    spec = img if isinstance(img, tkgui.Image) else (self.to_lua_string(img) if img is not None else "")
+                    scr.append(("image", spec))
+                elif ftype == "text":
+                    scr.append(("text", self._graphics_field(item, "label", ""),
+                                self._graphics_field(item, "value", "")))
+                elif ftype == "item":
+                    root = item.get("root")
+                    scr.append(("itemrow", root, self._graphics_field(item, "label", "Item")))
+                elif ftype == "choice":
+                    options = item.get("options")
+                    option_list = []
+                    if isinstance(options, dict):
+                        for k, v in options.items():
+                            option_list.append(self.to_lua_string(v))
+                    scr.append(("choice", self._graphics_field(item, "label", ""),
+                                self._graphics_field(item, "mode", "exclusive"),
+                                option_list, item.get("root")))
+                elif ftype == "field":
+                    scr.append(("field", self._graphics_field(item, "label", ""),
+                                self._graphics_field(item, "value", ""),
+                                self._graphics_field(item, "mode", "")))
+                elif ftype == "spacer":
+                    scr.append(("spacer", self._graphics_field_number(item, "width", 1),
+                                self._graphics_field_number(item, "height", 10)))
+                elif ftype == "gauge":
+                    scr.append(("gauge", self._graphics_field(item, "label", ""),
+                                self._graphics_field_number(item, "maxValue", 100),
+                                self._graphics_field_number(item, "value", 0), item.get("root")))
+                else:
+                    scr.append(("text", "", self.to_lua_string(item)))
+            elif isinstance(item, tkgui.Item):
+                scr.append(("item", item))
+            else:
+                scr.append(("text", "", self.to_lua_string(item)))
+            return None
+        if mod == 604:  # addCommand(target, cmd)
+            if len(args) < 2:
+                self._graphics_bad(1, "addCommand", "wrong number of arguments")
+            scr = args[0]
+            if not isinstance(scr, tkgui.Screen):
+                self._graphics_bad(1, "addCommand", "Displayable expected")
+            if not isinstance(args[1], tkgui.Command):
+                self._graphics_bad(2, "addCommand", "Command expected")
+            scr.commands.append(args[1])
+            return None
+        if mod == 605:  # handler(target, table)
+            if len(args) < 2:
+                self._graphics_bad(1, "handler", "wrong number of arguments")
+            scr = args[0]
+            if not isinstance(scr, tkgui.Screen):
+                self._graphics_bad(1, "handler", "Displayable expected")
+            if not isinstance(args[1], dict):
+                self._graphics_bad(2, "handler", "Hashtable expected")
+            scr.handler = args[1]
+            return None
+        if mod == 606:  # GetCurrent()
+            cur = gui.current
+            return cur if cur is not None else None
+        if mod == 607:  # SetTitle(target, title)
+            if not args:
+                return None
+            scr = args[0]
+            if not isinstance(scr, tkgui.Screen):
+                self._graphics_bad(1, "SetTitle", "Displayable expected")
+            scr.title = self.to_lua_string(args[1]) if args[1] is not None else None
+            if scr.window is not None:
+                try:
+                    scr.window.title(scr.title or "OpenTTY")
+                except Exception:
+                    pass
+            return None
+        if mod == 608:  # SetTicker(target, text)
+            if not args:
+                return None
+            scr = args[0]
+            if not isinstance(scr, tkgui.Screen):
+                self._graphics_bad(1, "SetTicker", "Displayable expected")
+            scr.ticker = self.to_lua_string(args[1]) if args[1] is not None else ""
+            gui.pump()
+            return None
+        if mod == 609:  # vibrate(phan, duration) — like the real MIDlet, a no-op
+            return None
+        if mod == 610:  # SetLabel(item, label)
+            if not args:
+                return None
+            item = args[0]
+            if isinstance(item, tkgui.Screen):  # TextBox
+                return None
+            if not isinstance(item, tkgui.Item):
+                self._graphics_bad(1, "SetLabel", "Item expected")
+            item.label = self.to_lua_string(args[1]) if args[1] is not None else None
+            return None
+        if mod == 611:  # SetText(item, text)
+            if not args:
+                return None
+            obj = args[0]
+            if isinstance(obj, tkgui.Screen) and obj.kind == "edit":  # TextBox
+                obj.text = self.to_lua_string(args[1]) if args[1] is not None else ""
+                gui.pump()
+                return None
+            if not isinstance(obj, tkgui.Item):
+                self._graphics_bad(1, "SetText", "Item expected")
+            value = self.to_lua_string(args[1]) if len(args) > 1 else ""
+            if obj.kind == "input":
+                obj.text = value
+            else:
+                obj.text = value
+            gui.pump()
+            return None
+        if mod == 612:  # GetLabel(item)
+            if not args:
+                return None
+            item = args[0]
+            if isinstance(item, tkgui.Screen):
+                return item.title or ""
+            if not isinstance(item, tkgui.Item):
+                self._graphics_bad(1, "GetLabel", "Item expected")
+            return item.label
+        if mod == 613:  # GetText(item)
+            if not args:
+                return None
+            obj = args[0]
+            if isinstance(obj, tkgui.Screen) and obj.kind == "edit":
+                return obj.text or ""
+            if not isinstance(obj, tkgui.Item):
+                self._graphics_bad(1, "GetText", "Item expected")
+            return obj.text
+        if mod == 614:  # clear(target)
+            if not args:
+                self._graphics_bad(1, "clear", "screen expected, got no value")
+            scr = args[0]
+            if not isinstance(scr, tkgui.Screen) or scr.kind not in ("form", "list"):
+                self._graphics_bad(1, "clear", "screen expected, got %s" % self.lua_type(scr))
+            scr.clear()
+            gui.pump()
+            return None
+        return None
+
+    def lua_type(self, v):
+        t = super().lua_type(v)
+        if t == "userdata":
+            if isinstance(v, tkgui.Command):
+                return "button"
+            if isinstance(v, tkgui.Screen):
+                return "screen"
+            if isinstance(v, tkgui.Image):
+                return "image"
+            if isinstance(v, tkgui.Item):
+                return "stream"
+        return t
+
+    def onprint(self, text):
+        """print() also lands on the console item (io.stdout StringItem)."""
+        got = self.globals.get("io", {}).get("stdout")
+        if isinstance(got, tkgui.Item):
+            got.append_text(text)
+            tkgui.backend().pump()
+
+    def _gui_dispatch(self, screen, cmd, args, fn):
+        if fn is None or not hasattr(fn, "call"):
+            return  # mirrors Java commandAction's "instanceof LuaFunction" check
+        try:
+            fn.call(args, self)
+        except LuaExit:
+            tkgui.backend().close_all()
+        except LuaError as e:
+            print(self._get_traceback(e), file=sys.stderr)
+        except Exception as e:
+            print(self._get_traceback(e), file=sys.stderr)
+        finally:
+            tkgui.backend().pump()
+
+    def gui_pump(self):
+        tkgui.backend().pump()
+
+    def gui_wait(self):
+        """Block while any graphics window is open (pumping tk events)."""
+        gui = tkgui.backend()
+        if not gui.rendering_enabled():
+            return
+        if not gui.any_window():
+            return
+        while gui.any_window():
+            gui.pump()
+            time.sleep(0.01)
+
     # ── process table helpers ────────────────────────────────────────────
 
     def register_process(self, pid, proc):
@@ -300,6 +614,8 @@ class OpenTTYRuntime(LuaRuntime):
             return arg.read(cnt)
         if isinstance(arg, str):
             return self.kernel.read(arg, self.scope)
+        if isinstance(arg, tkgui.Item):
+            return arg.text or ""
         if isinstance(arg, bytes):
             if n is None:
                 return arg.decode("utf-8", "replace")
@@ -323,6 +639,11 @@ class OpenTTYRuntime(LuaRuntime):
 
         if isinstance(target, (LuaSocket, LuaStream)):
             return float(target.write_bytes(buf))
+        if isinstance(target, tkgui.Item):
+            data = buf if isinstance(buf, str) else (buf.decode("utf-8", "replace") if isinstance(buf, bytes) else str(buf))
+            target.append_text(data)
+            tkgui.backend().pump()
+            return float(len(data))
         if isinstance(target, str):
             data = buf if isinstance(buf, str) else (buf.decode("utf-8", "replace") if isinstance(buf, bytes) else str(buf))
             return float(self.kernel.write(target, data, self.uid, self.scope, append=append))
@@ -779,6 +1100,19 @@ class OpenTTYKernel:
                 abs_path = self._norm(root.rstrip("/") + "/" + plain)
         return abs_path
 
+    def _console_item(self, which):
+        io = getattr(self.runtime, "globals", {}).get("io", {})
+        item = io.get(which)
+        return item if isinstance(item, tkgui.Item) else None
+
+    def _console_text(self, which):
+        item = self._console_item(which)
+        if item is not None:
+            return item.text or ""
+        io = getattr(self.runtime, "globals", {}).get("io", {})
+        value = io.get(which)
+        return value if isinstance(value, str) else ""
+
     def _special(self, abs_path):
         if abs_path == "/dev" or abs_path.startswith("/dev/"):
             name = abs_path[5:].rstrip("/")
@@ -788,6 +1122,8 @@ class OpenTTYKernel:
                 return "\0"
             if name == "random":
                 return str(random.randint(0, 255))
+            if name in ("stdin", "stdout"):
+                return self._console_text(name)
             return ""
         if abs_path == "/proc" or abs_path.startswith("/proc/"):
             name = abs_path[6:].rstrip("/")
@@ -855,6 +1191,13 @@ class OpenTTYKernel:
         if abs_path.startswith("/dev/"):
             name = abs_path[5:].rstrip("/")
             if name == "null" or name == "zero":
+                return E_OK
+            if name in ("stdin", "stdout"):
+                item = self._console_item(name)
+                if item is not None:
+                    text = data.decode("utf-8", "replace") if isinstance(data, bytes) else str(data)
+                    item.append_text(text)
+                    tkgui.backend().pump()
                 return E_OK
             return E_ROSTORAGE
         if abs_path.startswith("/proc/"):
@@ -1434,33 +1777,64 @@ class OpenTTYKernel:
         finally:
             rt.pid, rt.scope = old_pid, old_scope
         rt.remove_process(pid)
+        rt.gui_pump()
         return rt.status
 
     def repl(self):
-        """Interactive terminal: the replacement for the wiring of the MIDlet UI."""
+        """Interactive terminal: the replacement for the wiring of the MIDlet UI.
+
+        input() runs on a reader thread so tkinter events keep pumping while the
+        prompt waits for a line (windows stay alive at the prompt)."""
+        import queue as _queue
         rt = self.runtime
         host = self.hostname
         parser = _ShellParser(self)
         print("OpenTTY Python %s — type 'exit' to quit" % OPEN_VERSION)
-        while True:
-            try:
-                scope = rt.scope
-                prompt = "[%s@%s %s]%s " % (
-                    scope.get("USER", self.main_user), host, scope.get("PWD", "/home/"),
-                    "#" if rt.uid == 0 else "$")
-                line = input(prompt)
-            except (EOFError, KeyboardInterrupt):
-                print()
-                return
-            if not line.strip():
-                continue
-            try:
-                status = parser.run(line)
-                if status is not None and isinstance(status, (int, float)) and status and status in (1, 2, 13, 127, 255):
-                    if rt.status and not str(status).startswith("0"):
-                        pass
-            except LuaExit as e:
-                return
+        q = _queue.Queue()
+
+        def scope_prompt():
+            scope = rt.scope
+            return "[%s@%s %s]%s " % (
+                scope.get("USER", self.main_user), host, scope.get("PWD", "/home/"),
+                "#" if rt.uid == 0 else "$")
+
+        state = {"active": True, "prompt": scope_prompt()}
+
+        def reader():
+            while state["active"]:
+                try:
+                    line = input(state["prompt"])
+                except (EOFError, KeyboardInterrupt):
+                    q.put(_REPL_EOF)
+                    return
+                q.put(line)
+
+        threading.Thread(target=reader, daemon=True).start()
+        try:
+            while True:
+                rt.gui_pump()
+                try:
+                    line = q.get(timeout=0.05)
+                except _queue.Empty:
+                    continue
+                if line is _REPL_EOF:
+                    print()
+                    return
+                if not line.strip():
+                    state["prompt"] = scope_prompt()
+                    continue
+                try:
+                    parser.run(line)
+                except LuaExit:
+                    return
+                finally:
+                    state["prompt"] = scope_prompt()
+        finally:
+            state["active"] = False
+            rt.gui_pump()
+
+    def shutdown(self):
+        tkgui.backend().close_all()
 
 
 class _ShellParser:
