@@ -22,8 +22,12 @@ public class Lua {
     public Vector frameStack = new Vector();
     public Vector thrownFrames = new Vector();
     public String lastCode = "";
+    public Vector lineOffsets = new Vector();
     public Vector thrownTokens = null;
     public int thrownTokenIndex = -1;
+    public String thrownSource = "";
+    public String thrownCode = "";
+    public Vector thrownLineOffsets = null;
     // |
     public int status = 0;
     // | (LuaFunction)
@@ -43,6 +47,8 @@ public class Lua {
     public static final Object LUA_NIL = new Object();
     // |
     public static class Token { int type; Object value; int offset; Token(int type, Object value) { this.type = type; this.value = value; this.offset = -1; } Token(int type, Object value, int offset) { this.type = type; this.value = value; this.offset = offset; } public String toString() { return "Token(type=" + type + ", value=" + value + ")"; } }
+    // |
+    public static class Frame { public String name; public String source; public int line; Frame(String n, String s, int l) { name = n; source = s; line = l; } }
     // |
     // Main
     public Lua(OpenTTY midlet, int id, String pid, Process proc, Object stdout, Hashtable scope) {
@@ -98,9 +104,9 @@ public class Lua {
 
         currentSource = source == null ? "" : source;
         lastCode = code == null ? "" : code;
+        lineOffsets = computeLineOffsets(lastCode);
         frameStack.removeAllElements();
-        thrownFrames.removeAllElements();
-        thrownTokens = null; thrownTokenIndex = -1;
+        clearThrown();
 
         Hashtable ITEM = new Hashtable(); 
         
@@ -110,7 +116,7 @@ public class Lua {
             while (peek().type != EOF) { Object res = statement(globals); if (doreturn) { if (res != null) { ITEM.put("object", res); } doreturn = false; break; } }
         } 
         catch (Exception e) { recordThrow(); midlet.print(getTraceback(e), stdout, id, father); status = 1; } 
-        catch (Error e) { if (e.getMessage() != null) { midlet.print(e.getMessage(), stdout, id, father); } status = 1; }
+        catch (Error e) { midlet.print(midlet.getCatch(e), stdout, id, father); status = 1; }
 
         if (kill) { midlet.sys.remove(PID); }
         ITEM.put("status", status);
@@ -118,40 +124,85 @@ public class Lua {
     }
     // |
     public void recordThrow() { recordThrow(tokenIndex, tokens); }
-    public void recordThrow(int idx, Vector toks) { if (thrownTokenIndex != -1) { return; } thrownTokenIndex = idx; thrownTokens = toks; }
+    public void recordThrow(int idx, Vector toks) {
+        if (thrownTokenIndex != -1) { return; }
+        thrownTokenIndex = idx; thrownTokens = toks;
+        thrownSource = currentSource;
+        thrownCode = lastCode;
+        thrownLineOffsets = lineOffsets;
+    }
+    // |
+    public void clearThrown() {
+        thrownFrames.removeAllElements();
+        thrownTokens = null; thrownTokenIndex = -1;
+        thrownSource = ""; thrownCode = ""; thrownLineOffsets = null;
+    }
+    // |
+    public static Vector computeLineOffsets(String code) {
+        Vector v = new Vector();
+        if (code == null) { return v; }
+        v.addElement(new Integer(-1));
+        for (int k = 0; k < code.length(); k++) { if (code.charAt(k) == '\n') { v.addElement(new Integer(k + 1)); } }
+        return v;
+    }
+    // | (1-based line for a character offset, using cached \n offsets [binary search])
+    public static int lineFromOffsets(Vector offs, int offset) {
+        if (offs == null || offs.isEmpty()) { return -1; }
+        int lo = 0, hi = offs.size() - 1, best = 0;
+        while (lo <= hi) {
+            int mid = (lo + hi) >> 1;
+            int v = ((Integer) offs.elementAt(mid)).intValue();
+            if (v <= offset) { best = mid; lo = mid + 1; } else { hi = mid - 1; }
+        }
+        return best + 1;
+    }
+    // | (1-based line for a char offset, linear scan fallback)
+    public static int lineFromOffset(String code, int offset) {
+        if (code == null || offset < 0 || offset > code.length()) { return -1; }
+        int line = 1;
+        for (int k = 0; k < offset; k++) { if (code.charAt(k) == '\n') { line++; } }
+        return line;
+    }
     // |
     public String getTraceback(Throwable e) {
         StringBuffer sb = new StringBuffer(midlet.getCatch(e));
+
+        String src = thrownSource != null ? thrownSource : currentSource;
+        String code = thrownCode != null ? thrownCode : lastCode;
+        Vector offs = thrownLineOffsets != null ? thrownLineOffsets : lineOffsets;
 
         int line = -1; String lineText = null; int col = -1; String near = "";
         if (thrownTokenIndex >= 0 && thrownTokens != null && !thrownTokens.isEmpty()) {
             int t = thrownTokenIndex < thrownTokens.size() ? thrownTokenIndex : thrownTokens.size() - 1;
             Token tok = (Token) thrownTokens.elementAt(t);
-            if (tok.offset >= 0 && lastCode != null && tok.offset < lastCode.length()) {
-                line = 1;
-                for (int k = 0; k < tok.offset; k++) { if (lastCode.charAt(k) == '\n') { line++; } }
+            if (tok.offset >= 0 && code != null && tok.offset < code.length()) {
+                line = lineFromOffsets(offs, tok.offset);
                 int ls = tok.offset;
-                while (ls > 0 && lastCode.charAt(ls - 1) != '\n') { ls--; }
+                while (ls > 0 && code.charAt(ls - 1) != '\n') { ls--; }
                 int le = tok.offset;
-                while (le < lastCode.length() && lastCode.charAt(le) != '\n') { le++; }
-                lineText = lastCode.substring(ls, le);
+                while (le < code.length() && code.charAt(le) != '\n') { le++; }
+                lineText = code.substring(ls, le);
                 col = tok.offset - ls;
                 near = tokenLexeme(tok);
             }
         }
 
-        if (currentSource != null && currentSource.length() > 0) {
-            sb.append("\nLua ").append(currentSource);
+        if (src != null && src.length() > 0) {
+            sb.append("\nLua ").append(src);
             if (line > 0) { sb.append(':').append(line); }
         }
         sb.append(pointerBlock(lineText, col, near));
-        if (thrownFrames.isEmpty()) { thrownFrames = frameStack; }
+        if (thrownFrames.isEmpty()) { for (int f = 0; f < frameStack.size(); f++) { thrownFrames.addElement(frameStack.elementAt(f)); } }
         if (!thrownFrames.isEmpty()) {
             sb.append("\nstack traceback:");
             for (int i = thrownFrames.size() - 1; i >= 0; i--) {
-                sb.append("\n\tin function '").append((String) thrownFrames.elementAt(i)).append("'");
+                Frame f = (Frame) thrownFrames.elementAt(i);
+                sb.append("\n\t").append(f.source != null && f.source.length() > 0 ? f.source : "?");
+                if (f.line > 0) { sb.append(':').append(f.line); }
+                sb.append(": in function '").append(f.name == null ? "[anonymous]" : f.name).append("'");
             }
         }
+        clearThrown();
         return sb.toString();
     }
     // |
@@ -159,7 +210,13 @@ public class Lua {
         StringBuffer sb = new StringBuffer();
         if (lineText == null || lineText.trim().length() == 0) { return sb.toString(); }
         StringBuffer pad = new StringBuffer();
-        for (int k = 0; k < col && k < lineText.length(); k++) { pad.append(' '); }
+        int disp = 0;
+        for (int k = 0; k < lineText.length(); k++) {
+            if (k >= col) { break; }
+            char c = lineText.charAt(k);
+            if (c == '\t') { disp += 8 - (disp % 8); } else { disp++; }
+        }
+        for (int k = 0; k < disp; k++) { pad.append(' '); }
         sb.append("\n\t").append(lineText);
         sb.append("\n\t").append(pad).append('^');
         for (int k = col + 1; k < lineText.length(); k++) { sb.append('-'); }
@@ -725,6 +782,7 @@ public class Lua {
         }
 
         else if (current.type == FUNCTION) {
+            int funcOffset = current.offset;
             consume(FUNCTION);
             String funcName = (String) consume(IDENTIFIER).value;
 
@@ -764,6 +822,10 @@ public class Lua {
 
             LuaFunction func = new LuaFunction(params, bodyTokens, scope);
             func.name = funcName;
+            func.defSource = currentSource;
+            func.defCode = lastCode;
+            func.defLineOffsets = lineOffsets;
+            func.defLine = lineFromOffset(lastCode, funcOffset);
 
             if (isTableAssignment) { ((Hashtable) targetTable).put(key, func); } 
             else { scope.put(funcName, func); }
@@ -774,6 +836,7 @@ public class Lua {
             consume(LOCAL);
 
             if (peek().type == FUNCTION) {
+                int funcOffset = peek().offset;
                 consume(FUNCTION);
                 String funcName = (String) consume(IDENTIFIER).value;
 
@@ -814,6 +877,10 @@ public class Lua {
 
                 LuaFunction func = new LuaFunction(params, bodyTokens, scope);
                 func.name = funcName;
+                func.defSource = currentSource;
+                func.defCode = lastCode;
+                func.defLineOffsets = lineOffsets;
+                func.defLine = lineFromOffset(lastCode, funcOffset);
                 scope.put(funcName, func);
                 return null;
             } 
@@ -1038,6 +1105,7 @@ public class Lua {
             return value;
         }
         else if (current.type == FUNCTION) {
+            int funcOffset = current.offset;
             consume(FUNCTION);
 
             consume(LPAREN);
@@ -1079,7 +1147,12 @@ public class Lua {
                 }
             }
 
-            return new LuaFunction(params, bodyTokens, scope);
+            LuaFunction func = new LuaFunction(params, bodyTokens, scope);
+            func.defSource = currentSource;
+            func.defCode = lastCode;
+            func.defLineOffsets = lineOffsets;
+            func.defLine = lineFromOffset(lastCode, funcOffset);
+            return func;
         }
         else if (current.type == VARARG) { consume(VARARG); Object varargs = scope.get("..."); if (varargs == null) { return new Hashtable(); } return varargs; }
         else if (current.type == LBRACE) { 
@@ -1238,6 +1311,10 @@ public class Lua {
         private Hashtable closureScope, cmds = null; 
         private int MOD = -1;
         public String name = null;
+        public String defSource = null;
+        public String defCode = null;
+        public Vector defLineOffsets = null;
+        public int defLine = -1;
         // | (Screen)
         private Object root = null;
         private String handler = "";
@@ -1276,11 +1353,18 @@ public class Lua {
             int originalTokenIndex = tokenIndex;
             Vector originalTokens = tokens;
 
+            String savedSource = currentSource;
+            String savedCode = lastCode;
+            Vector savedOffsets = lineOffsets;
+            if (defSource != null) { currentSource = defSource; }
+            if (defCode != null) { lastCode = defCode; }
+            if (defLineOffsets != null) { lineOffsets = defLineOffsets; }
+
             tokens = bodyTokens;
             tokenIndex = 0;
 
             Object returnValue = null;
-            frameStack.addElement(name == null ? "[anonymous]" : name);
+            frameStack.addElement(new Frame(name == null ? "[anonymous]" : name, currentSource, defLine));
             try {
                 while (peek().type != EOF) {
                     Object result = statement(functionScope);
@@ -1302,6 +1386,9 @@ public class Lua {
             finally {
                 tokenIndex = originalTokenIndex;
                 tokens = originalTokens;
+                currentSource = savedSource;
+                lastCode = savedCode;
+                lineOffsets = savedOffsets;
                 frameStack.setSize(frameStack.size() - 1);
             }
 
@@ -1352,7 +1439,7 @@ public class Lua {
                                 if (value instanceof Vector) { Vector v = (Vector) value; for (int i = 0; i < v.size(); i++) { result.addElement(v.elementAt(i)); } }
                                 else { result.addElement(value); }
                             }
-                            catch (Exception e) { result.addElement(FALSE); result.addElement(getTraceback(e)); thrownFrames.removeAllElements(); thrownTokens = null; thrownTokenIndex = -1; }
+                            catch (Exception e) { result.addElement(FALSE); result.addElement(getTraceback(e)); clearThrown(); }
                         }
                         else { result.addElement(FALSE); result.addElement("attempt to call a " + type(args.elementAt(0)) + " value"); } 
 
@@ -1369,7 +1456,7 @@ public class Lua {
                         String code = midlet.getcontent(name, father);
                         if (code.equals("")) { if ((code = midlet.getcontent("/lib/" + name + ".lua", father)).equals("")) { if ((code = midlet.getcontent("/lib/" + name + ".so", father)).equals("")) { throw new Exception("module '" + code + "' not found"); } } } 
 
-                        Object obj = exec(code, null);
+                        Object obj = exec(code, null, name);
                         requireCache.put(name, (obj == null) ? LUA_NIL : obj);
                         return obj;
                     } 
@@ -1547,7 +1634,7 @@ public class Lua {
 
                             try { response = ((Lua.LuaFunction) process.handler).call(arg); }
                             catch (Exception e) { return lua.getTraceback(e); } 
-                            catch (Error e) { if (e.getMessage() != null) { midlet.print(e.getMessage(), stdout, id, father); } return new Double(lua.status); }
+                            catch (Error e) { midlet.print(midlet.getCatch(e), stdout, id, father); return new Double(lua.status); }
 
                             return response;
                         } 
@@ -2706,7 +2793,26 @@ public class Lua {
             return null;
         }
         // |
-        private Object exec(String code, Hashtable scope) throws Exception { int savedIndex = tokenIndex; Vector savedTokens = tokens; Object ret = null; try { tokens = tokenize(code); tokenIndex = 0; Hashtable modScope = scope == null ? new Hashtable() : scope; for (Enumeration e = globals.keys(); e.hasMoreElements();) { String k = (String) e.nextElement(); modScope.put(k, unwrap(globals.get(k))); } while (peek().type != EOF) { Object res = statement(modScope); if (doreturn) { ret = res; doreturn = false; break; } } } finally { tokenIndex = savedIndex; tokens = savedTokens; } return ret; }
+        private Object exec(String code, Hashtable scope) throws Exception { return exec(code, scope, "[string]"); }
+        private Object exec(String code, Hashtable scope, String srcName) throws Exception {
+            int savedIndex = tokenIndex; Vector savedTokens = tokens;
+            String savedSource = currentSource; String savedCode = lastCode; Vector savedOffsets = lineOffsets;
+            currentSource = srcName == null ? "[string]" : srcName;
+            lastCode = code;
+            lineOffsets = computeLineOffsets(code);
+            Object ret = null;
+            try {
+                tokens = tokenize(code); tokenIndex = 0;
+                Hashtable modScope = scope == null ? new Hashtable() : scope;
+                for (Enumeration e = globals.keys(); e.hasMoreElements();) { String k = (String) e.nextElement(); modScope.put(k, unwrap(globals.get(k))); }
+                while (peek().type != EOF) { Object res = statement(modScope); if (doreturn) { ret = res; doreturn = false; break; } }
+            }
+            finally {
+                tokenIndex = savedIndex; tokens = savedTokens;
+                currentSource = savedSource; lastCode = savedCode; lineOffsets = savedOffsets;
+            }
+            return ret;
+        }
         public static String type(Object item) { return item == null || item == LUA_NIL ? "nil" : item instanceof String ? "string" : item instanceof Double ? "number" : item instanceof Boolean ? "boolean" : item instanceof LuaFunction ? "function" : item instanceof Hashtable ? "table" : item instanceof InputStream || item instanceof OutputStream || item instanceof StringBuffer || item instanceof StringItem ? "stream" : item instanceof SocketConnection || item instanceof StreamConnection ? "connection" : item instanceof ServerSocketConnection ? "server" : item instanceof Displayable || item instanceof Canvas ? "screen" : item instanceof Image ? "image" : item instanceof Command ? "button" : item instanceof Player ? "audio" : "userdata"; }
         private Object gotbad(int pos, String name, String expect) throws Exception { throw new RuntimeException("bad argument #" + pos + " to '" + name + "' (" + expect + ")"); }
         private Object gotbad(String name, String field, String expected) throws Exception { throw new RuntimeException(name + " -> field '" + field + "' (" + expected + ")"); }
@@ -3204,9 +3310,9 @@ public class Lua {
                 }
             }
             catch (Exception e) { midlet.print(getTraceback(e), stdout); midlet.sys.remove(PID); } 
-            catch (Error e) { midlet.sys.remove(PID); }
+            catch (Error e) { midlet.print(midlet.getCatch(e), stdout); midlet.sys.remove(PID); }
         }
-        public void commandAction(Command c, Item item) { try { if (root instanceof LuaFunction) { ((LuaFunction) root).call(new Vector()); } } catch (Exception e) { midlet.print(getTraceback(e), stdout, id, father); midlet.sys.remove(PID); } catch (Error e) { midlet.sys.remove(PID); } }
+        public void commandAction(Command c, Item item) { try { if (root instanceof LuaFunction) { ((LuaFunction) root).call(new Vector()); } } catch (Exception e) { midlet.print(getTraceback(e), stdout, id, father); midlet.sys.remove(PID); } catch (Error e) { midlet.print(midlet.getCatch(e), stdout, id, father); midlet.sys.remove(PID); } }
         public void itemStateChanged(Item item) {
             try {
                 if (root == LUA_NIL) { }
@@ -3222,7 +3328,7 @@ public class Lua {
 
                     ((LuaFunction) root).call(args); 
                 }
-            } catch (Exception e) { midlet.print(getTraceback(e), stdout, id, father); midlet.sys.remove(PID); } catch (Error e) { midlet.sys.remove(PID); } 
+            } catch (Exception e) { midlet.print(getTraceback(e), stdout, id, father); midlet.sys.remove(PID); } catch (Error e) { midlet.print(midlet.getCatch(e), stdout, id, father); midlet.sys.remove(PID); } 
         }
     }
 }
