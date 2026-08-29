@@ -42,8 +42,6 @@ except ImportError:  # pragma: no cover - loaded as a plain script
 OPEN_VERSION = "1.18.1"
 OPEN_BUILD = "2026-1.18.1-python"
 
-_REPL_EOF = object()  # repl() sentinel for the input reader thread
-
 # exit/return codes (shared with apps/sys/.../libcore.so)
 E_OK = 0
 E_BADPARAMS = 2
@@ -1785,79 +1783,147 @@ class OpenTTYKernel:
         rt.gui_pump()
         return rt.status
 
+    def scope_prompt(self):
+        scope = self.runtime.scope
+        return "[%s@%s %s]%s " % (
+            scope.get("USER", self.main_user), self.hostname,
+            scope.get("PWD", "/home/"), "#" if self.runtime.uid == 0 else "$")
+
     def repl(self):
         """Interactive terminal: the replacement for the wiring of the MIDlet UI.
 
-        The prompt is printed by the main loop after each command is processed
-        (shell-like ordering), so a fresh "$" always appears right after the
-        command's output. input() runs on a reader thread — without a prompt —
-        so tkinter events keep pumping while the line is waiting."""
-        import queue as _queue
+        Readline provides line editing: Up/Down arrows walk the command
+        history and Tab auto-completes commands and paths. The prompt is
+        printed by input() after the previous command's output (shell-order),
+        so a fresh "$" is always visible once processing returns. On a plain
+        pipe (no tty) readline is not active and input() just reads lines."""
         rt = self.runtime
-        host = self.hostname
         parser = _ShellParser(self)
         print("OpenTTY Python %s — type 'exit' to quit" % OPEN_VERSION)
-        q = _queue.Queue()
 
-        def scope_prompt():
-            scope = rt.scope
-            return "[%s@%s %s]%s " % (
-                scope.get("USER", self.main_user), host, scope.get("PWD", "/home/"),
-                "#" if rt.uid == 0 else "$")
+        readline = None
+        history_path = _os.path.join(self.devroot, "home", ".opentty_history")
+        completer = self._repl_completer()
+        try:
+            import readline as _rl
+            readline = _rl
+            _rl.parse_and_bind("tab: complete")
+            if completer is not None:
+                _rl.set_completer(completer)
+                _rl.set_completer_delims(" \t\n\"'`;|&()<>")
+            try:
+                _rl.read_history_file(history_path)
+            except OSError:
+                pass
+        except ImportError:
+            pass
 
-        state = {"active": True}
-
-        def reader():
-            # select()-based so the thread can observe state["active"] and exit
-            # even while blocked (a plain input() thread would hang interpreter
-            # shutdown: Python joins every live thread on _shutdown()).
-            import select as _select
-            fd = sys.stdin.fileno()
-            buf = b""
-            while state["active"]:
-                r, _, _ = _select.select([fd], [], [], 0.1)
-                if not r:
-                    continue
-                try:
-                    chunk = _os.read(fd, 512)
-                except (OSError, ValueError):
-                    q.put(_REPL_EOF)
-                    return
-                if not chunk:
-                    q.put(_REPL_EOF)
-                    return
-                buf += chunk
-                while b"\n" in buf:
-                    raw, buf = buf.split(b"\n", 1)
-                    q.put(raw.decode("utf-8", errors="replace"))
-
-        threading.Thread(target=reader, daemon=True).start()
-        sys.stdout.write(scope_prompt())
-        sys.stdout.flush()
         try:
             while True:
                 rt.gui_pump()
                 try:
-                    line = q.get(timeout=0.05)
-                except _queue.Empty:
-                    continue
-                if line is _REPL_EOF:
+                    line = input(self.scope_prompt())
+                except EOFError:
                     print()
                     return
-                if not line.strip():
-                    sys.stdout.write(scope_prompt())
-                    sys.stdout.flush()
+                except KeyboardInterrupt:
+                    print()
                     continue
+                if not line.strip():
+                    continue
+                rt.gui_pump()
                 try:
                     parser.run(line)
+                except KeyboardInterrupt:
+                    continue
                 except LuaExit:
                     return
-                finally:
-                    sys.stdout.write(scope_prompt())
-                    sys.stdout.flush()
         finally:
-            state["active"] = False
+            if readline is not None:
+                try:
+                    readline.write_history_file(history_path)
+                except OSError:
+                    pass
             rt.gui_pump()
+
+    def _repl_completer(self):
+        """Tab completion: first word -> commands, later words -> file paths."""
+        if not _os.path.isdir(_os.path.join(self.devroot, "home")):
+            return None
+        rt = self.runtime
+
+        def complete(_text, state):
+            try:
+                import readline as _rl
+                word = _rl.get_line_buffer()[_rl.get_begidx():_rl.get_endidx()]
+                before = _rl.get_line_buffer()[:_rl.get_begidx()]
+                if before.strip() == "":
+                    names = self._command_names()
+                else:
+                    names = self._path_completions(word)
+            except Exception:
+                names = []
+            return names[state] if state < len(names) else None
+
+        return complete
+
+    def _command_names(self):
+        """Candidate command names for completion of the first word."""
+        rt = self.runtime
+        seen = set()
+        names = []
+        real = _os.path.join(self.devroot, "bin")
+        if _os.path.isdir(real):
+            for ent in sorted(_os.listdir(real)):
+                if not ent.startswith(".") and ent not in seen:
+                    seen.add(ent)
+                    names.append(ent)
+        for key in sorted(getattr(self, "apps_index", {})):
+            if key.startswith("/bin/"):
+                name = key[len("/bin/"):]
+                if name and name not in seen:
+                    seen.add(name)
+                    names.append(name)
+        builtins = ["exit", "cd", "pwd", "whoami", "su"]
+        for b in builtins:
+            if b not in seen:
+                seen.add(b)
+                names.append(b)
+        aliases = rt.globals.get("ALIAS")
+        if isinstance(aliases, dict):
+            for a in aliases:
+                if a not in seen:
+                    seen.add(a)
+                    names.append(a)
+        return names
+
+    def _path_completions(self, word):
+        """Complete a file path: returns finished words ready to insert."""
+        scope = self.runtime.scope
+        if "/" in word:
+            idx = word.rfind("/")
+            base_part = word[:idx + 1]  # includes the trailing '/', e.g. '/', '/tmp/', 'ho/'
+            prefix = word[idx + 1:]
+            if base_part.startswith("/"):
+                root = base_part
+            else:
+                root = scope.get("PWD", "/home/").rstrip("/") + "/" + base_part
+        else:
+            base_part = ""
+            prefix = word
+            root = scope.get("PWD", "/home/")
+        entries = self.list_dir(root, scope)
+        if not entries:
+            return []
+        results = []
+        for _, ent in sorted(entries.items()):
+            if not isinstance(ent, str) or not ent.startswith(prefix):
+                continue
+            if base_part == "":
+                results.append(ent)
+            else:
+                results.append(base_part + ent)
+        return results
 
     def shutdown(self):
         tkgui.backend().close_all()
