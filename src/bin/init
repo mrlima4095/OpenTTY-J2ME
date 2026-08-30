@@ -23,13 +23,14 @@ local scope, hostname = os.scope(), io.read("/etc/hostname")
 
 local function label() graphics.SetLabel(io.stdin, "[" .. scope["USER"] .. "@" .. hostname .. " " .. os.getcwd() .. "]" .. (os.getuid() == 0 and "#" or "$")) end
 
-label()
 
 io.mount(io.read("/etc/fstab"))
 print(string.env(io.read("/etc/motd")))
 
 os.su(java.midlet.username)
 pcall(io.popen, "/home/.initrc")
+
+label()
 
 graphics.append(xterm, io.stdout)
 graphics.append(xterm, io.stdin)
