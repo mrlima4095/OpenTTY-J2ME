@@ -501,13 +501,12 @@ class LuaRuntime:
             if c == ':':
                 if i + 1 < n and code[i + 1] == ':':
                     i += 2
-                    sb = []
+                    name_start = i
                     while i < n and (is_letter_or_digit(code[i]) or code[i] == '_'):
-                        sb.append(code[i])
                         i += 1
                     if i + 1 < n and code[i] == ':' and code[i + 1] == ':':
                         i += 2
-                        tokens.append(Token(LABEL, ''.join(sb), start))
+                        tokens.append(Token(LABEL, code[name_start:i - 2], start))
                     else:
                         i -= 2
                         tokens.append(Token(COLON, ":", start))
@@ -519,7 +518,6 @@ class LuaRuntime:
 
             # Numbers
             if is_digit(c) or (c == '.' and i + 1 < n and is_digit(code[i + 1])):
-                sb = []
                 has_dot = False
                 while i < n and (is_digit(code[i]) or code[i] == '.'):
                     if code[i] == '.':
@@ -528,16 +526,13 @@ class LuaRuntime:
                         if i + 1 < n and code[i + 1] == '.':
                             break
                         has_dot = True
-                    sb.append(code[i])
                     i += 1
-                num_str = ''.join(sb)
-                tokens.append(Token(NUMBER, float(num_str), start))
+                tokens.append(Token(NUMBER, float(code[start:i]), start))
                 continue
 
             # Negative numbers
             if c == '-' and i + 1 < n and (is_digit(code[i + 1]) or (code[i + 1] == '.' and i + 2 < n and is_digit(code[i + 2]))):
                 i += 1
-                sb = ['-']
                 has_dot = False
                 while i < n and (is_digit(code[i]) or code[i] == '.'):
                     if code[i] == '.':
@@ -546,43 +541,38 @@ class LuaRuntime:
                         if i + 1 < n and code[i + 1] == '.':
                             break
                         has_dot = True
-                    sb.append(code[i])
                     i += 1
-                num_str = ''.join(sb)
-                tokens.append(Token(NUMBER, float(num_str), start))
+                tokens.append(Token(NUMBER, float(code[start:i]), start))
                 continue
 
             # Strings
             if c in ('"', "'"):
                 quote = c
                 i += 1
-                sb = []
+                str_start = i
                 while i < n and code[i] != quote:
-                    sb.append(code[i])
                     i += 1
+                tokens.append(Token(STRING, code[str_start:i], start))
                 if i < n:
                     i += 1
-                tokens.append(Token(STRING, ''.join(sb), start))
                 continue
 
             if c == '[' and i + 1 < n and code[i + 1] == '[':
                 i += 2
-                sb = []
+                str_start = i
                 while i + 1 < n and not (code[i] == ']' and code[i + 1] == ']'):
-                    sb.append(code[i])
                     i += 1
+                tokens.append(Token(STRING, code[str_start:i], start))
                 if i + 1 < n:
                     i += 2
-                tokens.append(Token(STRING, ''.join(sb), start))
                 continue
 
             # Identifiers / keywords
             if is_letter(c):
-                sb = []
+                word_start = i
                 while i < n and is_letter_or_digit(code[i]):
-                    sb.append(code[i])
                     i += 1
-                word = ''.join(sb)
+                word = code[word_start:i]
                 keywords = {
                     "true": BOOLEAN, "false": BOOLEAN, "nil": NIL_T,
                     "and": AND, "or": OR, "not": NOT,
@@ -1276,11 +1266,13 @@ class LuaRuntime:
 
     def _concatenation(self, scope):
         left = self._arithmetic(scope)
+        if self.peek().type != CONCAT:
+            return left
+        parts = [self.to_lua_string(left)]
         while self.peek().type == CONCAT:
             self.consume(CONCAT)
-            right = self._arithmetic(scope)
-            left = self.to_lua_string(left) + self.to_lua_string(right)
-        return left
+            parts.append(self.to_lua_string(self._arithmetic(scope)))
+        return ''.join(parts)
 
     def _arithmetic(self, scope):
         left = self._term(scope)
@@ -1844,6 +1836,7 @@ class LuaRuntime:
                     proc = Process(pid, f"lua {path}", self.uid)
                     self.register_process(pid, proc)
                     result = self.run(path, content, self._make_arg_table(path, args_str))
+                    self._gui_foreground_wait()
                     self.remove_process(pid)
                     return result
                 else:
@@ -1864,6 +1857,7 @@ class LuaRuntime:
                 arg_table = self._make_arg_table(path, args_str)
                 result = self.run(path, content, arg_table)
                 self.pid = saved_pid
+                self._gui_foreground_wait()
                 self.remove_process(pid)
                 return result
             else:
@@ -2044,14 +2038,7 @@ class LuaRuntime:
     # ─── Call user function ───────────────────────────────────────────────
 
     def call_user_function(self, func, args):
-        func_scope = {}
-        # Copy closure scope
-        for k, v in func.closure_scope.items():
-            func_scope[k] = v
-        # Copy globals not already in scope
-        for k, v in self.globals.items():
-            if k not in func_scope:
-                func_scope[k] = v
+        func_scope = ChainScope(func.closure_scope, self.globals)
 
         # Set params
         params = func.params
@@ -2926,6 +2913,12 @@ class LuaRuntime:
         """Hook called after print(); subclasses stream to a console item."""
         return None
 
+    def _gui_foreground_wait(self):
+        """Foreground GUI processes stay alive while their windows are open
+        (J2ME kill=false after graphics.display). The kernel runtime overrides
+        this to block and pump tk events until the windows close."""
+        return False
+
     def _java_internals(self, mod, args):
         if mod == 704:  # run (threading)
             if args and isinstance(args[0], LuaFunction):
@@ -2989,6 +2982,32 @@ class _MissingSentinel:
 
 _MISSING = _MissingSentinel()
 LUAL_NIL_SENTINEL = _MissingSentinel()  # distinct from None
+
+
+class ChainScope(dict):
+    """dict whose get() falls back to a parent chain then globals.
+
+    Mirrors Lua.java's ScopeTable: writes stay local, reads chain up.
+    """
+
+    def __init__(self, parent=None, globals_scope=None):
+        super().__init__()
+        self.parent = parent
+        self.globals_scope = globals_scope
+
+    def get(self, key, default=None):
+        val = dict.get(self, key, _MISSING)
+        if val is not _MISSING:
+            return val
+        if self.parent is not None:
+            val = self.parent.get(key, _MISSING)
+            if val is not _MISSING:
+                return val
+        if self.globals_scope is not None:
+            val = self.globals_scope.get(key, _MISSING)
+            if val is not _MISSING:
+                return val
+        return default
 
 
 def _math_is_inf(v):

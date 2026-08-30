@@ -119,6 +119,7 @@ class Screen:
         self._values = {}  # id(row) -> live field value
         self.dirty = False
         self.alive = False
+        self._next = None  # screen to return to after an alert is dismissed
 
     def append(self, item):
         self.entries.append(item)

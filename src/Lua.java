@@ -45,10 +45,27 @@ public class Lua {
     public static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15, GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41, POWER = 42, BREAK = 43, LENGTH = 44, VARARG = 45, REPEAT = 46, UNTIL = 47, COLON = 48, LABEL = 49, GOTO = 50;
     public static final Boolean TRUE = Boolean.TRUE, FALSE = Boolean.FALSE;
     public static final Object LUA_NIL = new Object();
+    // | (Cached Double for small integers — avoids per-iteration boxing of counters/indices)
+    private static final int NUM_MIN = -128, NUM_MAX = 1023;
+    private static final Double[] SMALL_NUMBERS = new Double[NUM_MAX - NUM_MIN + 1];
+    static { for (int i = NUM_MIN; i <= NUM_MAX; i++) { SMALL_NUMBERS[i - NUM_MIN] = new Double(i); } }
+    private static Double luaNumber(double d) { if (d == Math.floor(d) && d >= NUM_MIN && d <= NUM_MAX) { return SMALL_NUMBERS[(int) d - NUM_MIN]; } return new Double(d); }
     // |
     public static class Token { int type; Object value; int offset; Token(int type, Object value) { this.type = type; this.value = value; this.offset = -1; } Token(int type, Object value, int offset) { this.type = type; this.value = value; this.offset = offset; } public String toString() { return "Token(type=" + type + ", value=" + value + ")"; } }
     // |
     public static class Frame { public String name; public String source; public int line; Frame(String n, String s, int l) { name = n; source = s; line = l; } }
+    // | (Chained scope: avoids copying closure/globals into a fresh table per call)
+    public static class ScopeTable extends Hashtable {
+        Hashtable parent, globals;
+        ScopeTable(Hashtable parent, Hashtable globals) { this.parent = parent; this.globals = globals; }
+        public synchronized Object get(Object key) {
+            Object v = super.get(key);
+            if (v != null) { return v; }
+            if (parent != null) { v = parent.get(key); if (v != null) { return v; } }
+            if (globals != null) { v = globals.get(key); if (v != null) { return v; } }
+            return null;
+        }
+    }
     // |
     // Main
     public Lua(OpenTTY midlet, int id, String pid, Process proc, Object stdout, Hashtable scope) {
@@ -265,17 +282,15 @@ public class Lua {
             else if (c == ':') {
                 if (i + 1 < code.length() && code.charAt(i + 1) == ':') {
                     i += 2;
+                    int nameStart = i;
+                    while (i < code.length() && (isLetterOrDigit(code.charAt(i)) || code.charAt(i) == '_')) { i++; }
                     
-                    StringBuffer sb = new StringBuffer();
-                    while (i < code.length() && (isLetterOrDigit(code.charAt(i)) || code.charAt(i) == '_')) { sb.append(code.charAt(i)); i++; }
-                    
-                    if (i + 1 < code.length() && code.charAt(i) == ':' && code.charAt(i + 1) == ':') { i += 2; tokens.addElement(new Token(LABEL, sb.toString(), start)); }
+                    if (i + 1 < code.length() && code.charAt(i) == ':' && code.charAt(i + 1) == ':') { i += 2; tokens.addElement(new Token(LABEL, code.substring(nameStart, i - 2), start)); }
                     else { i -= 2; tokens.addElement(new Token(COLON, ":", start)); i++; }
                 } else { tokens.addElement(new Token(COLON, ":", start)); i++; }
             }
 
             else if (isDigit(c) || (c == '.' && i + 1 < code.length() && isDigit(code.charAt(i + 1)))) {
-                StringBuffer sb = new StringBuffer();
                 boolean hasDecimal = false;
                 while (i < code.length() && (isDigit(code.charAt(i)) || code.charAt(i) == '.')) {
                     if (code.charAt(i) == '.') {
@@ -283,17 +298,14 @@ public class Lua {
                         if (i + 1 < code.length() && code.charAt(i + 1) == '.') { break; }
                         hasDecimal = true;
                     }
-                    sb.append(code.charAt(i));
                     i++;
                 }
-                try { double numValue = Double.parseDouble(sb.toString()); tokens.addElement(new Token(NUMBER, new Double(numValue), start)); } 
-                catch (NumberFormatException e) { throw new RuntimeException("Invalid number format '" + sb.toString() + "'"); }
+                try { double numValue = Double.parseDouble(code.substring(start, i)); tokens.addElement(new Token(NUMBER, luaNumber(numValue), start)); } 
+                catch (NumberFormatException e) { throw new RuntimeException("Invalid number format '" + code.substring(start, i) + "'"); }
                 continue;
             }
             else if (c == '-' && i + 1 < code.length() && (isDigit(code.charAt(i + 1)) || (code.charAt(i + 1) == '.' && i + 2 < code.length() && isDigit(code.charAt(i + 2))))) {
                 i++; 
-                StringBuffer sb = new StringBuffer();
-                sb.append('-'); 
                 
                 boolean hasDecimal = false;
                 while (i < code.length() && (isDigit(code.charAt(i)) || code.charAt(i) == '.')) {
@@ -302,17 +314,16 @@ public class Lua {
                         if (i + 1 < code.length() && code.charAt(i + 1) == '.') { break; }
                         hasDecimal = true;
                     }
-                    sb.append(code.charAt(i));
                     i++;
                 }
-                try { double numValue = Double.parseDouble(sb.toString()); tokens.addElement(new Token(NUMBER, new Double(numValue), start)); } 
-                catch (NumberFormatException e) { throw new RuntimeException("Invalid number format '" + sb.toString() + "'"); }
+                try { double numValue = Double.parseDouble(code.substring(start, i)); tokens.addElement(new Token(NUMBER, luaNumber(numValue), start)); } 
+                catch (NumberFormatException e) { throw new RuntimeException("Invalid number format '" + code.substring(start, i) + "'"); }
             }
 
-            else if (c == '"' || c == '\'') { char quoteChar = c; StringBuffer sb = new StringBuffer(); i++; while (i < code.length() && code.charAt(i) != quoteChar) { sb.append(code.charAt(i)); i++; } if (i < code.length() && code.charAt(i) == quoteChar) { i++; } tokens.addElement(new Token(STRING, sb.toString(), start)); }
-            else if (c == '[' && i + 1 < code.length() && code.charAt(i + 1) == '[') { i += 2; StringBuffer sb = new StringBuffer(); while (i + 1 < code.length() && !(code.charAt(i) == ']' && code.charAt(i + 1) == ']')) { sb.append(code.charAt(i)); i++; } if (i + 1 < code.length()) { i += 2; } tokens.addElement(new Token(STRING, sb.toString(), start)); }
+            else if (c == '"' || c == '\'') { char quoteChar = c; i++; int strStart = i; while (i < code.length() && code.charAt(i) != quoteChar) { i++; } tokens.addElement(new Token(STRING, code.substring(strStart, i), start)); if (i < code.length() && code.charAt(i) == quoteChar) { i++; } }
+            else if (c == '[' && i + 1 < code.length() && code.charAt(i + 1) == '[') { i += 2; int strStart = i; while (i + 1 < code.length() && !(code.charAt(i) == ']' && code.charAt(i + 1) == ']')) { i++; } tokens.addElement(new Token(STRING, code.substring(strStart, i), start)); if (i + 1 < code.length()) { i += 2; } }
 
-            else if (isLetter(c)) { StringBuffer sb = new StringBuffer(); while (i < code.length() && isLetterOrDigit(code.charAt(i))) { sb.append(code.charAt(i)); i++; } String word = sb.toString(); tokens.addElement(new Token((word.equals("true") || word.equals("false")) ? BOOLEAN : word.equals("nil") ? NIL : word.equals("and") ? AND : word.equals("or") ? OR : word.equals("not") ? NOT : word.equals("if") ? IF : word.equals("then") ? THEN : word.equals("else") ? ELSE : word.equals("elseif") ? ELSEIF : word.equals("end") ? END : word.equals("while") ? WHILE : word.equals("do") ? DO : word.equals("return") ? RETURN : word.equals("function") ? FUNCTION : word.equals("local") ? LOCAL : word.equals("for") ? FOR : word.equals("in") ? IN : word.equals("break") ? BREAK : word.equals("repeat") ? REPEAT : word.equals("until") ? UNTIL : word.equals("goto") ? GOTO : IDENTIFIER, word, start)); }
+            else if (isLetter(c)) { int wordStart = i; while (i < code.length() && isLetterOrDigit(code.charAt(i))) { i++; } String word = code.substring(wordStart, i); tokens.addElement(new Token((word.equals("true") || word.equals("false")) ? BOOLEAN : word.equals("nil") ? NIL : word.equals("and") ? AND : word.equals("or") ? OR : word.equals("not") ? NOT : word.equals("if") ? IF : word.equals("then") ? THEN : word.equals("else") ? ELSE : word.equals("elseif") ? ELSEIF : word.equals("end") ? END : word.equals("while") ? WHILE : word.equals("do") ? DO : word.equals("return") ? RETURN : word.equals("function") ? FUNCTION : word.equals("local") ? LOCAL : word.equals("for") ? FOR : word.equals("in") ? IN : word.equals("break") ? BREAK : word.equals("repeat") ? REPEAT : word.equals("until") ? UNTIL : word.equals("goto") ? GOTO : IDENTIFIER, word, start)); }
     
             else if (c == '+') { tokens.addElement(new Token(PLUS, "+", start)); i++; }
             else if (c == '-') { tokens.addElement(new Token(MINUS, "-", start)); i++; }
@@ -545,7 +556,7 @@ public class Lua {
                     while ((stepVal > 0 && iVal <= stopVal) || (stepVal < 0 && iVal >= stopVal)) {
                         if (breakLoop) { breakLoop = false; break; }
 
-                        scope.put(name, new Double(iVal));
+                        scope.put(name, luaNumber(iVal));
 
                         int originalTokenIndex = tokenIndex;
                         Vector originalTokens = tokens;
@@ -604,11 +615,11 @@ public class Lua {
                             for (int idx = currentIndex; idx < list.size(); idx++) {
                                 Object item = list.elementAt(idx);
                                 
-                                if (names.size() >= 1) scope.put((String) names.elementAt(0), new Double(idx + 1));
+                                if (names.size() >= 1) scope.put((String) names.elementAt(0), luaNumber(idx + 1));
                                 if (names.size() >= 2) scope.put((String) names.elementAt(1), item == null ? LUA_NIL : item);
 
                                 // Atualiza o índice no iterador
-                                iterator.put("__index", new Double(idx + 1));
+                                iterator.put("__index", luaNumber(idx + 1));
 
                                 int originalTokenIndex = tokenIndex;
                                 Vector originalTokens = tokens;
@@ -668,7 +679,7 @@ public class Lua {
                                 if (pair.size() > 0) k = pair.elementAt(0);
                                 if (pair.size() > 1) v = pair.elementAt(1);
                             } else {
-                                k = new Double(idx + 1);
+                                k = luaNumber(idx + 1);
                                 v = item;
                             }
                             if (names.size() >= 1) scope.put((String) names.elementAt(0), (k == null ? LUA_NIL : k));
@@ -966,11 +977,11 @@ public class Lua {
     private Object expression(Hashtable scope) throws Exception { return logicalOr(scope); }
     private Object logicalOr(Hashtable scope) throws Exception { Object left = logicalAnd(scope); while (peek().type == OR) { consume(OR); Object right = logicalAnd(scope); left = isTruthy(left) ? left : right; } return left; }
     private Object logicalAnd(Hashtable scope) throws Exception { Object left = comparison(scope); while (peek().type == AND) { consume(AND); Object right = comparison(scope); left = isTruthy(left) ? right : left; } return left; }
-    private Object comparison(Hashtable scope) throws Exception { Object left = concatenation(scope); while (peek().type == EQ || peek().type == NE || peek().type == LT || peek().type == GT || peek().type == LE || peek().type == GE) { Token op = consume(); Object right = concatenation(scope); if (op.type == EQ) { left = new Boolean((left == null && right == null) || (left != null && left.equals(right))); } else if (op.type == NE) { left = new Boolean(!((left == null && right == null) || (left != null && left.equals(right)))); } else if (op.type == LT) { left = new Boolean(((Double) left).doubleValue() < ((Double) right).doubleValue()); } else if (op.type == GT) { left = new Boolean(((Double) left).doubleValue() > ((Double) right).doubleValue()); } else if (op.type == LE) { left = new Boolean(((Double) left).doubleValue() <= ((Double) right).doubleValue()); } else if (op.type == GE) { left = new Boolean(((Double) left).doubleValue() >= ((Double) right).doubleValue()); } } return left; }
+    private Object comparison(Hashtable scope) throws Exception { Object left = concatenation(scope); while (peek().type == EQ || peek().type == NE || peek().type == LT || peek().type == GT || peek().type == LE || peek().type == GE) { Token op = consume(); Object right = concatenation(scope); if (op.type == EQ) { left = ((left == null && right == null) || (left != null && left.equals(right))) ? TRUE : FALSE; } else if (op.type == NE) { left = !((left == null && right == null) || (left != null && left.equals(right))) ? TRUE : FALSE; } else if (op.type == LT) { left = ((Double) left).doubleValue() < ((Double) right).doubleValue() ? TRUE : FALSE; } else if (op.type == GT) { left = ((Double) left).doubleValue() > ((Double) right).doubleValue() ? TRUE : FALSE; } else if (op.type == LE) { left = ((Double) left).doubleValue() <= ((Double) right).doubleValue() ? TRUE : FALSE; } else if (op.type == GE) { left = ((Double) left).doubleValue() >= ((Double) right).doubleValue() ? TRUE : FALSE; } } return left; }
     // |
     // Strings
     private String toLuaString(Object obj) { if (obj == null || obj == LUA_NIL) { return "nil"; } if (obj instanceof Boolean) { return ((Boolean)obj).booleanValue() ? "true" : "false"; } if (obj instanceof Double) { double d = ((Double)obj).doubleValue(); if (d == (long)d) return String.valueOf((long)d); return String.valueOf(d); } return midlet.escape(obj.toString()); }
-    private Object concatenation(Hashtable scope) throws Exception { Object left = arithmetic(scope); while (peek().type == CONCAT) { consume(CONCAT); Object right = arithmetic(scope); left = toLuaString(left) + toLuaString(right); } return left; }
+    private Object concatenation(Hashtable scope) throws Exception { Object left = arithmetic(scope); if (peek().type == CONCAT) { StringBuffer sb = new StringBuffer(toLuaString(left)); while (peek().type == CONCAT) { consume(CONCAT); Object right = arithmetic(scope); sb.append(toLuaString(right)); } left = sb.toString(); } return left; }
     // |
     // Arithmetic
     private Object arithmetic(Hashtable scope) throws Exception {
@@ -1034,7 +1045,7 @@ public class Lua {
 
             if (current.type == STRING) { base = consume(STRING).value; } 
             else if (current.type == NUMBER) { base = consume(NUMBER).value; } 
-            else if (current.type == BOOLEAN) { consume(BOOLEAN); base = new Boolean(current.value.equals("true")); } 
+            else if (current.type == BOOLEAN) { consume(BOOLEAN); base = current.value.equals("true") ? TRUE : FALSE; } 
             else if (current.type == NIL) { consume(NIL); base = null; }
 
             while (peek().type == DOT || peek().type == COLON) {
@@ -1064,7 +1075,7 @@ public class Lua {
         }
         else if (current.type == NOT) { consume(NOT); return new Boolean(!isTruthy(factor(scope))); } 
         else if (current.type == LPAREN) { consume(LPAREN); Object value = expression(scope); consume(RPAREN); return value; } 
-        else if (current.type == LENGTH) { consume(LENGTH); Object val = factor(scope); if (val == null || val instanceof Boolean) { throw new RuntimeException("attempt to get length of a " + (val == null ? "nil" : "boolean") + " value"); } else if (val instanceof String) { return new Double(((String) val).length()); } else if (val instanceof Hashtable) { return new Double(((Hashtable) val).size()); } else if (val instanceof Vector) { return new Double(((Vector) val).size()); } else if (val instanceof InputStream) { return new Double(((InputStream) val).available()); } else { return new Double(0); } }
+        else if (current.type == LENGTH) { consume(LENGTH); Object val = factor(scope); if (val == null || val instanceof Boolean) { throw new RuntimeException("attempt to get length of a " + (val == null ? "nil" : "boolean") + " value"); } else if (val instanceof String) { return luaNumber(((String) val).length()); } else if (val instanceof Hashtable) { return luaNumber(((Hashtable) val).size()); } else if (val instanceof Vector) { return luaNumber(((Vector) val).size()); } else if (val instanceof InputStream) { return luaNumber(((InputStream) val).available()); } else { return luaNumber(0); } }
         else if (current.type == IDENTIFIER) {
             String name = (String) consume(IDENTIFIER).value;
             Object value = unwrap(scope.get(name));
@@ -1175,7 +1186,7 @@ public class Lua {
                     consume(ASSIGN);
                     value = expression(scope);
                 } 
-                else { value = expression(scope); key = new Double(index++); }
+                else { value = expression(scope); key = luaNumber(index++); }
 
                 table.put(key, value == null ? LUA_NIL : value);
 
@@ -1331,9 +1342,8 @@ public class Lua {
         public Object call(Vector args) throws Exception {
             if (MOD != -1) { return internals(args); }
 
-            Hashtable functionScope = new Hashtable();
-            for (Enumeration e = closureScope.keys(); e.hasMoreElements();) { String key = (String) e.nextElement(); functionScope.put(key, unwrap(closureScope.get(key))); }
-            for (Enumeration e = globals.keys(); e.hasMoreElements();) { String key = (String) e.nextElement(); if (!functionScope.containsKey(key)) { functionScope.put(key, unwrap(globals.get(key))); } }
+            // Chained scope: locals live here; closure + globals resolve on miss (no per-call copy).
+            Hashtable functionScope = new ScopeTable(closureScope, globals);
 
             int paramCount = params.size();
             boolean hasVararg = paramCount > 0 && params.elementAt(paramCount - 1).equals("...");
@@ -1346,7 +1356,7 @@ public class Lua {
             if (hasVararg) {
                 Hashtable varargValues = new Hashtable();
                 int index = 1;
-                for (int i = fixedParamCount; i < args.size(); i++) { Object obj = args.elementAt(i); varargValues.put(new Double(index++), obj == null ? LUA_NIL : obj); }
+                for (int i = fixedParamCount; i < args.size(); i++) { Object obj = args.elementAt(i); varargValues.put(luaNumber(index++), obj == null ? LUA_NIL : obj); }
                 functionScope.put("...", varargValues);
             }
 
@@ -1500,14 +1510,14 @@ public class Lua {
                         return new Double(0);
                     }
                 case TOSTRING: return toLuaString(args.isEmpty() ? gotbad(1, "tostring", "value expected") : args.elementAt(0));
-                case TONUMBER: return args.isEmpty() ? gotbad(1, "tonumber", "value expected") : new Double(Double.valueOf(toLuaString(args.elementAt(0))));
+                case TONUMBER: return args.isEmpty() ? gotbad(1, "tonumber", "value expected") : luaNumber(Double.parseDouble(toLuaString(args.elementAt(0))));
                 case SELECT:
                     if (args.isEmpty() || args.elementAt(0) == null) { return gotbad(1, "select", "number expected, got no value"); } 
                     else {
                         String idx = toLuaString(args.elementAt(0));
                         if (idx.equals("#")) {
-                            if (args.size() > 1 && args.elementAt(1) instanceof Hashtable) { return new Double(((Hashtable) args.elementAt(1)).size()); } 
-                            else { return new Double(args.size() - 1); }
+                            if (args.size() > 1 && args.elementAt(1) instanceof Hashtable) { return luaNumber(((Hashtable) args.elementAt(1)).size()); } 
+                            else { return luaNumber(args.size() - 1); }
                         } else {
                             if (args.size() == 1) { return null; }
 
@@ -2448,7 +2458,7 @@ public class Lua {
                             }
                             int pos = text.indexOf(pattern, startIdx);
                             if (pos == -1) { return null; } 
-                            else if (MOD == FIND) { return new Double(pos + 1); } 
+                            else if (MOD == FIND) { return luaNumber(pos + 1); } 
                             else if (MOD == MATCH) { return text.substring(pos, pos + pattern.length()); }
                         }
                     }
@@ -2492,10 +2502,10 @@ public class Lua {
                         if (end > len) { end = len; } 
                         if (start > end || start > len) { return null; }
                         
-                        if (end - start + 1 == 1) { return new Double((double) s.charAt(start - 1)); } 
+                        if (end - start + 1 == 1) { return luaNumber(s.charAt(start - 1)); } 
                         else {
                             Hashtable result = new Hashtable();
-                            for (int i = start; i <= end; i++) { result.put(new Double(i), new Double((double) s.charAt(i - 1))); }
+                            for (int i = start; i <= end; i++) { result.put(luaNumber(i), luaNumber(s.charAt(i - 1))); }
 
                             return result;
                         }

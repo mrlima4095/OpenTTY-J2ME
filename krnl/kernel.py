@@ -251,6 +251,38 @@ class OpenTTYRuntime(LuaRuntime):
         except (TypeError, ValueError):
             return default
 
+    def _graphics_show(self, scr, next_scr=None):
+        """Show scr, closing the previously displayed screen (J2ME
+        Display.setCurrent): one active screen at a time. For an alert with a
+        'next' screen (display(alert, next)) the alert opens on top and the
+        next screen returns after the alert is dismissed."""
+        gui = tkgui.backend()
+        cur = gui.current
+        if cur is not None and cur is not scr and (cur.window is not None or cur.alive):
+            if scr.kind == "alert" and next_scr is not None:
+                scr._next = next_scr  # alert over 'next'; advance on dismissal
+            else:
+                cur.close()
+        gui.current = scr
+        gui.ensure_window(scr)
+
+    def _gui_foreground_wait(self):
+        """Keep the just-launched foreground process alive while it owns GUI
+        windows: block and pump tk events until the windows close (or the app
+        os.exit()s, which _gui_dispatch handles by closing them). Ctrl-C closes
+        the windows and bails out."""
+        gui = tkgui.backend()
+        if not gui.rendering_enabled() or not gui.any_window():
+            return False
+        try:
+            while gui.any_window():
+                gui.pump()
+                time.sleep(0.01)
+        except KeyboardInterrupt:
+            gui.close_all()
+            raise
+        return True
+
     def _graphics_internals(self, mod, args):
         gui = tkgui.backend()
         if mod == 600:  # display(target [, next])
@@ -263,8 +295,8 @@ class OpenTTYRuntime(LuaRuntime):
                 self._gui_warned = True
                 print("graphics: no tkinter display — GUI windows disabled "
                       "(install python3-tk and run in a graphical session)", file=sys.stderr)
-            gui.current = scr
-            gui.ensure_window(scr)
+            nxt = args[1] if len(args) > 1 else None
+            self._graphics_show(scr, nxt if isinstance(nxt, tkgui.Screen) else None)
             return None
         if mod == 601:  # new(type, title|table [, content])
             if len(args) < 2:
@@ -499,18 +531,22 @@ class OpenTTYRuntime(LuaRuntime):
             tkgui.backend().pump()
 
     def _gui_dispatch(self, screen, cmd, args, fn):
-        if fn is None or not hasattr(fn, "call"):
-            return  # mirrors Java commandAction's "instanceof LuaFunction" check
-        try:
-            fn.call(args, self)
-        except LuaExit:
-            tkgui.backend().close_all()
-        except LuaError as e:
-            print(self._get_traceback(e), file=sys.stderr)
-        except Exception as e:
-            print(self._get_traceback(e), file=sys.stderr)
-        finally:
-            tkgui.backend().pump()
+        exited = False
+        if fn is not None and hasattr(fn, "call"):
+            try:
+                fn.call(args, self)
+            except LuaExit:
+                exited = True
+                tkgui.backend().close_all()
+            except LuaError as e:
+                print(self._get_traceback(e), file=sys.stderr)
+            except Exception as e:
+                print(self._get_traceback(e), file=sys.stderr)
+        nxt = getattr(screen, "_next", None) if screen is not None else None
+        if nxt is not None and not exited:
+            # alert dismissed -> return to the 'next' screen (J2ME setCurrent)
+            self._graphics_show(nxt)
+        tkgui.backend().pump()
 
     def gui_pump(self):
         tkgui.backend().pump()
