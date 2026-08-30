@@ -13,7 +13,7 @@ graphics.addCommand(screen, ok)
 
 graphics.handler(screen, {
     [back] = function()
-        graphics.display(prev)
+        if prev ~= nil then graphics.display(prev) end
         os.exit(0)
     end,
     [ok] = function(value)

@@ -105,6 +105,9 @@ def main(argv=None):
             kernel.shutdown()
     try:
         kernel.repl()
+    except KeyboardInterrupt:
+        print()
+        return 130
     finally:
         kernel.shutdown()
     return int(getattr(kernel.runtime, "status", 0) or 0)

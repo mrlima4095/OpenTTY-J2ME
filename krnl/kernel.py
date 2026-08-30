@@ -1805,6 +1805,14 @@ class OpenTTYKernel:
         rt = self.runtime
         parser = _ShellParser(self)
 
+        def newline():
+            # a Ctrl-C can land while we print the post-EOF/post-^C newline;
+            # swallow it so shutdown stays clean.
+            try:
+                print()
+            except (KeyboardInterrupt, OSError, ValueError):
+                pass
+
         readline = None
         history_path = _os.path.join(self.devroot, "home", ".opentty_history")
         completer = self._repl_completer()
@@ -1828,10 +1836,10 @@ class OpenTTYKernel:
                 try:
                     line = input(self.scope_prompt())
                 except EOFError:
-                    print()
+                    newline()
                     return
                 except KeyboardInterrupt:
-                    print()
+                    newline()
                     continue
                 if not line.strip():
                     continue
@@ -1839,6 +1847,7 @@ class OpenTTYKernel:
                 try:
                     parser.run(line)
                 except KeyboardInterrupt:
+                    newline()
                     continue
                 except LuaExit:
                     return
