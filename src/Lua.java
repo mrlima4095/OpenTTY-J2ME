@@ -2777,7 +2777,7 @@ public class Lua {
                                 else if (arg.equals("/bin/")) { midlet.writeRMS("OpenRMS", new byte[0], 3); }
                                 else if (arg.equals("/etc/")) { midlet.writeRMS("OpenRMS", new byte[0], 5); }
                                 else if (arg.equals("/lib/")) { midlet.writeRMS("OpenRMS", new byte[0], 4); }
-                                else { int rmi = midlet.vfsDirIndex(arg); if (rmi != -1 && rmi >= 6) { midlet.writeRMS("OpenRMS", new byte[0], rmi); } else { return new Double(5); } }
+                                else { String r = toLuaString(arg); int rmi = midlet.vfsDirIndex(r); if (rmi != -1 && rmi >= 6) { midlet.writeRMS("OpenRMS", new byte[0], rmi); } else { return new Double(5); } }
                             } else { return new Double(13); }
                         }
                         else if (payload.equals("useradd")) {
