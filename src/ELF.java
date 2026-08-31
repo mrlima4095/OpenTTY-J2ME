@@ -1817,8 +1817,8 @@ public class ELF {
                 for (Enumeration files = CONN.list(); files.hasMoreElements();) { fileList.addElement((String) files.nextElement()); }
                 CONN.close();
             }
-            else if (pwd.equals("/bin/") || pwd.equals("/etc/") || pwd.equals("/lib/")) {
-                String content = midlet.loadRMS("OpenRMS", pwd.equals("/bin/") ? 3 : pwd.equals("/etc/") ? 5 : 4);
+            else if (midlet.vfsDirIndex(pwd) != -1) {
+                String content = midlet.loadRMS("OpenRMS", midlet.vfsDirIndex(pwd));
                 int i = 0;
 
                 while (true) {

@@ -2777,6 +2777,7 @@ public class Lua {
                                 else if (arg.equals("/bin/")) { midlet.writeRMS("OpenRMS", new byte[0], 3); }
                                 else if (arg.equals("/etc/")) { midlet.writeRMS("OpenRMS", new byte[0], 5); }
                                 else if (arg.equals("/lib/")) { midlet.writeRMS("OpenRMS", new byte[0], 4); }
+                                else { int rmi = midlet.vfsDirIndex(arg); if (rmi != -1 && rmi >= 6) { midlet.writeRMS("OpenRMS", new byte[0], rmi); } else { return new Double(5); } }
                             } else { return new Double(13); }
                         }
                         else if (payload.equals("useradd")) {
@@ -3136,8 +3137,8 @@ public class Lua {
                 for (Enumeration files = CONN.list(); files.hasMoreElements();) { list.put(new Double(index), (String) files.nextElement()); index++; } 
                 CONN.close(); 
             } 
-            else if (pwd.equals("/bin/") || pwd.equals("/etc/") || pwd.equals("/lib/")) {
-                String content = midlet.loadRMS("OpenRMS", pwd.equals("/bin/") ? 3 : pwd.equals("/etc/") ? 5 : 4);
+            else if (midlet.vfsDirIndex(pwd) != -1) {
+                String content = midlet.loadRMS("OpenRMS", midlet.vfsDirIndex(pwd));
                 int i = 0;
 
                 while (true) {

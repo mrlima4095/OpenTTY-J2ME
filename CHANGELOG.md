@@ -3,6 +3,21 @@ Copyright (C) 2026 - Mr. Lima
 
 ---
 
+## Build 2026-1.18.1-03x28
+
+filesystem / vfs
+
+- Subdirectories inside `/bin/`, `/etc/`, `/lib/` are now supported as RMS mounts
+- Each subdir (e.g. `/bin/tools/`) maps to its own page (index) of the `OpenRMS` store via a stable path hash (indices >= 6), keeping the every-store-in-OpenRMS model (no new RecordStores cluttering `/home/`)
+- Read, write and delete now resolve nested paths at any depth (`/bin/tools/sub/file.lua`)
+- Directory listing (`io.dirs` and ELF `getdents`) works for any `/bin|etc|lib/...` folder
+- Writing into a subdir auto-registers it in the VFS (`cd` + `ls` detect it)
+- `rms` handler can clear subdir stores (`rm -r /bin/tools`)
+- Declare subdirs in `/etc/fstab` under their parent line using a trailing `/` (e.g. `tools/`)
+- Refactored `addFile` to operate on a store index instead of a base string
+
+---
+
 bug fixes
 
 - fixed a bug in id, it can't retrieve id from root and another system virtual users

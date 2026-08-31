@@ -22,7 +22,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Object shell;
     // |
     public Hashtable attributes = new Hashtable(), fs = new Hashtable(), sys = new Hashtable(), tmp = new Hashtable(), cache = new Hashtable(), cacheLua = new Hashtable(), graphics = new Hashtable(), servers = new Hashtable(), globals = new Hashtable(), userID = new Hashtable();
-    public String username = read("/home/OpenRMS", globals), build = "2026-1.18.1-03x27";
+    public String username = read("/home/OpenRMS", globals), build = "2026-1.18.1-03x28";
     // |
     // Graphics
     public Display display = Display.getDisplay(this);
@@ -224,32 +224,19 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 filename = "/dev/" + filename;
             }
-            else if (filename.startsWith("/bin/")) {
-                filename = filename.substring(5);
-                if (useCache && cache.containsKey("/bin/" + filename)) { return new ByteArrayInputStream((byte[]) cache.get("/bin/" + filename)); }
+            else if (filename.startsWith("/bin/") || filename.startsWith("/etc/") || filename.startsWith("/lib/")) {
+                String full = filename;
+                int slash = filename.lastIndexOf('/');
+                String dir = slash < 0 ? filename : filename.substring(0, slash + 1);
+                String name = slash < 0 ? filename : filename.substring(slash + 1);
+                int idx = vfsDirIndex(dir);
+                if (idx != -1) {
+                    if (useCache && cache.containsKey(full)) { return new ByteArrayInputStream((byte[]) cache.get(full)); }
 
-                byte[] content = read(filename, loadRMS("OpenRMS", 3));
-                if (content != null) { if (useCache) { cache.put("/bin/" + filename, content); } return new ByteArrayInputStream(content); }
-
-                filename = "/bin/" + filename;
-            }
-            else if (filename.startsWith("/etc/")) {
-                filename = filename.substring(5);
-                if (useCache && cache.containsKey("/etc/" + filename)) { return new ByteArrayInputStream((byte[]) cache.get("/etc/" + filename)); }
-
-                byte[] content = read(filename, loadRMS("OpenRMS", 5));
-                if (content != null) { if (useCache) { cache.put("/etc/" + filename, content); } return new ByteArrayInputStream(content); }
-
-                filename = "/etc/" + filename;
-            }
-            else if (filename.startsWith("/lib/")) {
-                filename = filename.substring(5);
-                if (useCache && cache.containsKey("/lib/" + filename)) { return new ByteArrayInputStream((byte[]) cache.get("/lib/" + filename)); }
-
-                byte[] content = read(filename, loadRMS("OpenRMS", 4));
-                if (content != null) { if (useCache) { cache.put("/lib/" + filename, content); } return new ByteArrayInputStream(content); }
-
-                filename = "/lib/" + filename;
+                    byte[] content = read(name, loadRMS("OpenRMS", idx));
+                    if (content != null) { if (useCache) { cache.put(full, content); } return new ByteArrayInputStream(content); }
+                }
+                filename = full;
             }
             else if (filename.startsWith("/proc/")) {
                 filename = filename.substring(6);
@@ -308,23 +295,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (filename.startsWith("/mnt/")) { FileConnection fs = null; OutputStream out = null; try { fs = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (!fs.exists()) { fs.create(); } out = fs.openOutputStream(); out.write(data); out.flush(); } catch (Exception e) { return (e instanceof SecurityException) ? 13 : 1; } finally { out.close(); fs.close(); } } 
         else if (filename.startsWith("/home/")) { return writeRMS(filename.substring(6), data, 1); } 
         else if (filename.startsWith("/bin/") || filename.startsWith("/etc/") || filename.startsWith("/lib/")) {
-            String base = filename.substring(1, 4); filename = filename.substring(5);
+            String full = filename;
+            int slash = filename.lastIndexOf('/');
+            String dir = slash < 0 ? filename : filename.substring(0, slash + 1);
+            String name = slash < 0 ? filename : filename.substring(slash + 1);
+            int index = vfsDirIndex(dir);
 
-            if (filename.equals("")) { return 2; } 
+            if (name.equals("") || index == -1) { return 2; } 
             else if (id != 0) { return 13; }
-            else { if (useCache) { cache.put("/" + base + "/" + filename, data); } return addFile(filename, new String(data), loadRMS("OpenRMS", base.equals("bin") ? 3 : base.equals("etc") ? 5 : 4), base); }
-        }
-        else if (filename.startsWith("/bin/") || filename.startsWith("/etc/") || filename.startsWith("/lib/")) {
-            String base = filename.substring(1, 4); filename = filename.substring(5);
-
-            if (filename.equals("")) { return 2; } 
-            else if (id != 0) { return 13; }
-            else { 
-                if (useCache) { cache.put("/" + base + "/" + filename, data); } 
-
-                int index = base.equals("bin") ? 3 : base.equals("etc") ? 5 : 4;
-                String archive = loadRMS("OpenRMS", index);
-                return addFile(filename, data, archive, base);
+            else {
+                if (index >= 6) { registerVfsDir(dir); }
+                if (useCache) { cache.put(full, data); } return addFile(name, data, loadRMS("OpenRMS", index), index);
             }
         }
         else if (filename.startsWith("/dev/")) { if ((filename = filename.substring(5)).equals("")) { return 2; } else if (filename.equals("null")) { } else if (filename.equals("stdin")) { stdin.setString(new String(data)); } else if (filename.equals("stdout")) { stdout.setText(new String(data)); } else { return 5; } }
@@ -358,15 +339,19 @@ public class OpenTTY extends MIDlet implements CommandListener {
             catch (Exception e) { return e instanceof SecurityException ? 13 : 1; } 
         }
         else if (filename.startsWith("/bin/") || filename.startsWith("/etc/") || filename.startsWith("/lib/")) {
-            String base = filename.substring(1, 4), name = filename.substring(5);
+            String full = filename;
+            int slash = filename.lastIndexOf('/');
+            String dir = slash < 0 ? filename : filename.substring(0, slash + 1);
+            String name = slash < 0 ? filename : filename.substring(slash + 1);
             if (name.equals("")) { return 2; }
             if (id != 0) { return 13; }
 
-            int index = base.equals("bin") ? 3 : base.equals("etc") ? 5 : 4;
+            int index = vfsDirIndex(dir);
+            if (index == -1) { return 5; }
             String content = loadRMS("OpenRMS", index);
             if (content.indexOf("[\1BEGIN:" + name + "\1]") == -1) { return 5; }
 
-            if (useCache) { cache.remove("/" + base + "/" + name); }
+            if (useCache) { cache.remove(full); }
             return writeRMS("OpenRMS", delFile(name, content).getBytes(), index);
         }
         else if (filename.startsWith("/tmp/")) {
@@ -378,6 +363,36 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (filename.startsWith("/")) { return 5; }
         
         return 0; 
+    }
+    // | (VFS Store Index)
+    private static final int VFS_HASH_MOD = 97, VFS_RESERVED = 6;
+    public int vfsDirIndex(String dir) {
+        while (dir.length() > 1 && dir.endsWith("/")) { dir = dir.substring(0, dir.length() - 1); }
+        if (dir.equals("/bin")) { return 3; }
+        else if (dir.equals("/etc")) { return 5; }
+        else if (dir.equals("/lib")) { return 4; }
+        else if (dir.equals("/dev") || dir.equals("/proc") || dir.equals("/tmp") || dir.equals("/home") || dir.equals("/mnt")) { return -1; }
+        else if (dir.startsWith("/bin/") || dir.startsWith("/etc/") || dir.startsWith("/lib/")) {
+            int h = dir.hashCode();
+            if (h < 0) { h = -h; }
+            return VFS_RESERVED + (h % VFS_HASH_MOD);
+        }
+        return -1;
+    }
+    public void registerVfsDir(String dir) {
+        if (dir == null || !dir.startsWith("/") || !dir.endsWith("/")) { return; }
+        if (!fs.containsKey(dir)) { Vector self = new Vector(); self.addElement(".."); fs.put(dir, self); }
+
+        int base = dir.lastIndexOf('/', dir.length() - 2);
+        if (base <= 0) { return; }
+
+        String parent = dir.substring(0, base + 1);
+        Vector struct = (Vector) fs.get(parent);
+        if (struct == null) { registerVfsDir(parent); struct = (Vector) fs.get(parent); }
+        if (struct != null) {
+            String entry = dir.substring(base + 1, dir.length() - 1) + "/";
+            if (!struct.contains(entry)) { struct.addElement(entry); }
+        }
     }
     // | (Normalize Path)
     public String joinpath(String file, Hashtable scope) {
@@ -432,8 +447,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (path.startsWith("/")) { return root.endsWith("/") ? (root.length() > 1 ? root + path.substring(1) : root) : root + path; } return path;
     }
     // | (Archive Structures)
-    public int addFile(String filename, String content, String archive, String base) { return addFile(filename, content.getBytes(), archive, base); }
-    public int addFile(String filename, byte[] data, String archive, String base) { return writeRMS("OpenRMS", (delFile(filename, archive) + ("[\1BEGIN:" + filename + "\1]\n" + (isPureText(data) ? new String(data) : "[B64]" + encodeBase64(data)) + "\n[\1END\1]\n")).getBytes(), base.equals("bin") ? 3 : base.equals("etc") ? 5 : 4); }
+    public int addFile(String filename, String content, String archive, int index) { return addFile(filename, content.getBytes(), archive, index); }
+    public int addFile(String filename, byte[] data, String archive, int index) { return writeRMS("OpenRMS", (delFile(filename, archive) + ("[\1BEGIN:" + filename + "\1]\n" + (isPureText(data) ? new String(data) : "[B64]" + encodeBase64(data)) + "\n[\1END\1]\n")).getBytes(), index); }
 
     public String delFile(String filename, String content) {
         String startTag = "[\1BEGIN:" + filename + "\1]";
