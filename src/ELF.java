@@ -1817,6 +1817,20 @@ public class ELF {
                 for (Enumeration files = CONN.list(); files.hasMoreElements();) { fileList.addElement((String) files.nextElement()); }
                 CONN.close();
             }
+            else if (pwd.startsWith("/proc/")) {
+                String rest = pwd.substring(6);
+                int cuid = midlet.getCallerUid(scope);
+                if (rest.equals("")) {
+                    String[] pf = midlet.procFiles();
+                    for (int i2 = 0; i2 < pf.length; i2++) { fileList.addElement(pf[i2]); }
+                    Vector pe = midlet.procEntries(cuid);
+                    for (int i2 = 0; i2 < pe.size(); i2++) { fileList.addElement(pe.elementAt(i2)); }
+                } else {
+                    String pd = rest.endsWith("/") ? rest.substring(0, rest.length() - 1) : rest;
+                    Vector pe = midlet.procDirEntries(pd, cuid);
+                    for (int i2 = 0; i2 < pe.size(); i2++) { fileList.addElement(pe.elementAt(i2)); }
+                }
+            }
             else if (midlet.vfsDirIndex(pwd) != -1) {
                 String content = midlet.loadRMS("OpenRMS", midlet.vfsDirIndex(pwd));
                 int i = 0;

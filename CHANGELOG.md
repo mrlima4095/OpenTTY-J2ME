@@ -20,6 +20,9 @@ filesystem / vfs
 - `/root/` is declared in `/etc/fstab` root line, `su`, `chdir` and directory listing all enforce the root-home rule
 - Fixed `rm` in `/bin|etc|lib/` subdirs: it no longer errors with exit code 5 (read-only) — `deleteFile` now removes a registered VFS subdirectory (clears its OpenRMS store and drops it from the `fs` table), and `rm` accepts `-r`/`-rf`/`-fr`
 - Entering `/root/` without permission now returns exit code 13 and the shell prints `cd: <dir>: permission denied`
+- Default shell home is now `/home/` for every user (including root after `su`); `/root/` remains as a protected directory but login/boot does not jump to it
+- `/proc/` virtual filesystem: `cpuinfo`, `meminfo`, `uptime`, `version` plus per-process dirs `/proc/<pid>/` with `cmdline`, `comm`, `stat`, `status`; regular users only see/read their own processes (root sees all), enforced in file reads, directory listing and `cd`
+- VFS subdirs under `/bin/`, `/etc/`, `/lib/` now persist across restarts into `/etc/vfs.conf` (written on mkdir, removed on delete/`rms`, restored on mount) so created folders survive closing the MIDlet
 
 runtime / exit
 
@@ -31,6 +34,7 @@ shell / commands
 
 - New `mkdir` command (`/bin/mkdir`) to create directories, including VFS subdirectories under `/bin/`, `/etc/`, `/lib/`
 - `os.mkdir` now creates VFS subdirectory mounts (via `registerVfsDir`) in addition to `/mnt/`
+- `mkdir` under `/bin/`, `/etc/`, `/lib/`, `/root/` is now root-only (exit 13 for regular users), consistent with write/delete rules
 
 ---
 

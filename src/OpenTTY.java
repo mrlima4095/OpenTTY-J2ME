@@ -47,7 +47,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } else {
                 try {
                     Hashtable args = new Hashtable(); args.put(new Double(0), "/bin/init");
-                    globals.put("PWD", "/root/"); globals.put("USER", "root"); globals.put("ROOT", "/"); globals.put("ALIAS", new Hashtable()); userID.put(username, 1000);
+                    globals.put("PWD", "/home/"); globals.put("USER", "root"); globals.put("ROOT", "/"); globals.put("ALIAS", new Hashtable()); userID.put(username, 1000);
 
                     Process proc = new Process(this, "init", "/bin/init", "root", 0, "1", stdout, globals);
 
@@ -240,11 +240,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 filename = full;
             }
             else if (filename.startsWith("/proc/")) {
-                filename = filename.substring(6);
-                String content = filename.equals("uptime") ? "" + ((System.currentTimeMillis() - uptime) / 1000) : null;
+                String content = readProc(filename, getCallerUid(scope));
                 if (content != null) { return new ByteArrayInputStream(content.getBytes("UTF-8")); }
-
-                filename = "/proc/" + filename;
+                filename = "/proc/" + filename.substring(6);
             }
 
             InputStream is = getClass().getResourceAsStream(filename);
@@ -354,6 +352,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 fs.remove(subdir);
                 Vector struct = (Vector) fs.get(dir);
                 if (struct != null) { struct.removeElement(name + "/"); }
+                unpersistVfsMount(subdir);
                 if (useCache) { cache.remove(full); }
                 return 0;
             }
@@ -393,6 +392,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return -1;
     }
     public void registerVfsDir(String dir) {
+        mountVfsDir(dir);
+        if (dir != null && dir.startsWith("/") && dir.endsWith("/") && dir.lastIndexOf('/', dir.length() - 2) > 0) { persistVfsMount(dir); }
+    }
+    public void mountVfsDir(String dir) {
         if (dir == null || !dir.startsWith("/") || !dir.endsWith("/")) { return; }
         if (!fs.containsKey(dir)) { Vector self = new Vector(); self.addElement(".."); fs.put(dir, self); }
 
@@ -401,13 +404,96 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         String parent = dir.substring(0, base + 1);
         Vector struct = (Vector) fs.get(parent);
-        if (struct == null) { registerVfsDir(parent); struct = (Vector) fs.get(parent); }
+        if (struct == null) { mountVfsDir(parent); struct = (Vector) fs.get(parent); }
         if (struct != null) {
             String entry = dir.substring(base + 1, dir.length() - 1) + "/";
             if (!struct.contains(entry)) { struct.addElement(entry); }
         }
     }
+    public void persistVfsMount(String dir) {
+        try {
+            String mount = dir.trim();
+            String cfg = read("/etc/vfs.conf", globals);
+            if (cfg.indexOf(mount) == -1) { write("/etc/vfs.conf", cfg.length() == 0 ? mount : cfg + "\n" + mount, 0, globals); }
+        } catch (Exception e) { }
+    }
+    public void unpersistVfsMount(String dir) {
+        try {
+            String mount = dir.trim();
+            String cfg = read("/etc/vfs.conf", globals);
+            if (cfg.indexOf(mount) != -1) {
+                String out = replace(cfg, "\n" + mount, "");
+                out = replace(out, mount, "");
+                write("/etc/vfs.conf", out, 0, globals);
+            }
+        } catch (Exception e) { }
+    }
+    public void restoreVfsMounts() {
+        try {
+            String cfg = read("/etc/vfs.conf", globals);
+            if (cfg == null || cfg.length() == 0) { return; }
+            String[] lines = split(cfg, '\n');
+            for (int i = 0; i < lines.length; i++) {
+                String d = lines[i].trim();
+                if (d.length() == 0) { continue; }
+                if (!d.endsWith("/")) { d = d + "/"; }
+                mountVfsDir(d);
+            }
+        } catch (Exception e) { }
+    }
     public boolean isRootCaller(Hashtable scope) { try { return scope != null && scope.containsKey("USER") && getUserID((String) scope.get("USER")) == 0; } catch (Exception e) { return false; } }
+    public int getCallerUid(Hashtable scope) { try { if (scope != null && scope.containsKey("USER")) { int u = getUserID((String) scope.get("USER")); if (u != -1) { return u; } } } catch (Exception e) { } return 1000; }
+    // | (/proc virtual filesystem)
+    public String[] procFiles() { return new String[] { "cpuinfo", "meminfo", "uptime", "version" }; }
+    public Vector procEntries(int uid) {
+        Vector out = new Vector();
+        for (Enumeration keys = sys.keys(); keys.hasMoreElements();) {
+            String pid = (String) keys.nextElement();
+            Process p = (Process) sys.get(pid);
+            if (p == null) { continue; }
+            if (uid == 0 || p.uid == uid) { out.addElement(pid + "/"); }
+        }
+        return out;
+    }
+    public Vector procDirEntries(String pidStr, int uid) {
+        Vector out = new Vector();
+        Process p = (Process) sys.get(pidStr);
+        if (p == null || (uid != 0 && p.uid != uid)) { return out; }
+        out.addElement("cmdline"); out.addElement("comm"); out.addElement("stat"); out.addElement("status");
+        return out;
+    }
+    public String readProc(String path, int uid) {
+        if (path == null || !path.startsWith("/proc/")) { return null; }
+        String rest = path.substring(6);
+        if (rest.length() == 0) { return null; }
+        String[] parts = split(rest, '/');
+        if (parts.length == 0) { return null; }
+
+        String top = parts[0];
+        if (parts.length == 1) {
+            if (top.equals("uptime")) { return "" + ((System.currentTimeMillis() - uptime) / 1000); }
+            else if (top.equals("version")) { return "OpenTTY " + build + " (J2ME Lua)"; }
+            else if (top.equals("meminfo")) {
+                return "MemTotal:      " + (runtime.maxMemory() / 1024) + " kB\nMemFree:       " + (runtime.freeMemory() / 1024) + " kB\nMemAvailable:  " + (runtime.freeMemory() / 1024) + " kB";
+            }
+            else if (top.equals("cpuinfo")) { return "processor\t: 0\nmodel name\t: J2ME Virtual CPU\nvendor_id\t: OpenTTY\n"; }
+            return null;
+        }
+
+        String pidStr = top, file = parts[1];
+        Process p = (Process) sys.get(pidStr);
+        if (p == null) { return null; }
+        if (uid != 0 && p.uid != uid) { return null; }
+
+        long s = (System.currentTimeMillis() - p.startTime) / 1000;
+        if (file.equals("status")) {
+            return "Name:\t" + p.name + "\nState:\tR (running)\nPid:\t" + p.pid + "\nPPid:\t" + (p.pid.equals("1") ? "0" : "1") + "\nUid:\t" + p.uid + "\nGid:\t" + p.uid + "\nUtime:\t" + s + "\nStime:\t0\nPriority:\t" + p.priority + "\nNice:\t" + (p.priority - 10) + "\nThreads:\t1\nOwner:\t" + p.owner;
+        }
+        else if (file.equals("cmdline")) { return (p.cmd != null && p.cmd.length() > 0 ? p.cmd : p.name) + "\0"; }
+        else if (file.equals("comm")) { return p.name != null ? p.name : ""; }
+        else if (file.equals("stat")) { return p.pid + " (" + (p.name != null ? p.name : "") + ") R " + (p.pid.equals("1") ? "0" : "1") + " " + p.uid + " " + p.uid + " 0 0 0 0 " + s + " 0 0 " + s + " 0 0 20"; }
+        return null;
+    }
     // | (Normalize Path)
     public String joinpath(String file, Hashtable scope) {
         String pwd = scope.containsKey("PWD") ? (String) scope.get("PWD") : "/";

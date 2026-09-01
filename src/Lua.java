@@ -1659,10 +1659,10 @@ public class Lua {
                     if (args.isEmpty()) { return gotbad(1, "su", "username and password expected"); } 
                     else {
                         String user = toLuaString(args.elementAt(0)), query = args.size() > 1 ? toLuaString(args.elementAt(1)) : null;
-                        if (user.equals(midlet.username)) { id = 1000; father.put("USER", user); father.put("PWD", "/home/" + user + "/"); proc.uid = 1000; return new Double(0); }
-                        else if (midlet.userID.containsKey(user)) { id = midlet.getUserID(user); father.put("USER", user); father.put("PWD", "/home/" + user + "/"); proc.uid = id; return new Double(0); }
+                        if (user.equals(midlet.username)) { id = 1000; father.put("USER", user); father.put("PWD", "/home/"); proc.uid = 1000; return new Double(0); }
+                        else if (midlet.userID.containsKey(user)) { id = midlet.getUserID(user); father.put("USER", user); father.put("PWD", "/home/"); proc.uid = id; return new Double(0); }
                         else if (query == null) { return gotbad(2, "su", "string expected, got nil"); }
-                        else if (user.equals("root") && midlet.passwd(query)) { id = 0; father.put("USER", "root"); father.put("PWD", "/root/"); proc.uid = 0; return new Double(0); }
+                        else if (user.equals("root") && midlet.passwd(query)) { id = 0; father.put("USER", "root"); father.put("PWD", "/home/"); proc.uid = 0; return new Double(0); }
                         else { return new Double(13); }
                     }
                 case REMOVE: return args.isEmpty() ? (Double) gotbad(1, "remove", "string expected, got no value") : new Double(midlet.deleteFile(toLuaString(args.elementAt(0)), id, father));
@@ -1703,7 +1703,9 @@ public class Lua {
                             catch (Exception e) { return e instanceof SecurityException ? 13 : 1; }
                             finally { if (fc != null) { try { fc.close(); } catch (Exception e) { } } }
                         } else if (midlet.vfsDirIndex(dir) != -1) {
-                            if (dir.startsWith("/root/") && id != 0) { return new Double(13); }
+                            if (dir.startsWith("/bin/") || dir.startsWith("/etc/") || dir.startsWith("/lib/") || dir.startsWith("/root/")) {
+                                if (id != 0) { return new Double(13); }
+                            }
                             if (midlet.fs.containsKey(dir)) { return new Double(128); }
                             midlet.registerVfsDir(dir);
                             return new Double(0);
@@ -1816,6 +1818,7 @@ public class Lua {
                                 midlet.fs.put(base, content);
                             } 
                         }
+                        midlet.restoreVfsMounts();
                         break;
                     }
                 case GEN: return new StringBuffer();
@@ -2786,7 +2789,7 @@ public class Lua {
                                 else if (arg.equals("/bin/")) { midlet.writeRMS("OpenRMS", new byte[0], 3); }
                                 else if (arg.equals("/etc/")) { midlet.writeRMS("OpenRMS", new byte[0], 5); }
                                 else if (arg.equals("/lib/")) { midlet.writeRMS("OpenRMS", new byte[0], 4); }
-                                else { String r = toLuaString(arg); int rmi = midlet.vfsDirIndex(r); if (rmi != -1 && rmi >= 6) { midlet.writeRMS("OpenRMS", new byte[0], rmi); if (midlet.fs.containsKey(r.endsWith("/") ? r : r + "/")) { String sd = r.endsWith("/") ? r : r + "/"; int base = sd.lastIndexOf('/', sd.length() - 2); String parent = sd.substring(0, base + 1); String entry = sd.substring(base + 1, sd.length() - 1) + "/"; Vector struct = (Vector) midlet.fs.get(parent); if (struct != null) { struct.removeElement(entry); } midlet.fs.remove(sd); } } else { return new Double(5); } }
+                                else { String r = toLuaString(arg); int rmi = midlet.vfsDirIndex(r); if (rmi != -1 && rmi >= 6) { midlet.writeRMS("OpenRMS", new byte[0], rmi); if (midlet.fs.containsKey(r.endsWith("/") ? r : r + "/")) { String sd = r.endsWith("/") ? r : r + "/"; int base = sd.lastIndexOf('/', sd.length() - 2); String parent = sd.substring(0, base + 1); String entry = sd.substring(base + 1, sd.length() - 1) + "/"; Vector struct = (Vector) midlet.fs.get(parent); if (struct != null) { struct.removeElement(entry); } midlet.fs.remove(sd); midlet.unpersistVfsMount(sd); } } else { return new Double(5); } }
                             } else { return new Double(13); }
                         }
                         else if (payload.equals("useradd")) {
@@ -2991,14 +2994,14 @@ public class Lua {
                 }
                 else if (mainCommand.equals("su")) {
                     if (args.length >= 2) {
-                        if (args[0].equals("root") && midlet.passwd(args[1])) { id = 0; father.put("USER", "root"); father.put("PWD", "/root/"); }
+                        if (args[0].equals("root") && midlet.passwd(args[1])) { id = 0; father.put("USER", "root"); father.put("PWD", "/home/"); }
                         else { midlet.print("Permission denied!", output, id, father); status = 13; }
                     } 
                     else if (args.length == 1) {
                         if (midlet.userID.containsKey(args[0])) {
                             id = midlet.getUserID(args[0]);
                             father.put("USER", args[0]);
-                            father.put("PWD", "/home/" + args[0] + "/");
+                            father.put("PWD", "/home/");
                         } else {
                             midlet.print("Permission denied!", output, id, father);
                             status = 13;
@@ -3008,7 +3011,7 @@ public class Lua {
                         if (id != 1000) {
                             id = 1000;
                             father.put("USER", midlet.username);
-                            father.put("PWD", "/home/" + midlet.username + "/");
+                            father.put("PWD", "/home/");
                         } else {
                             midlet.print("su: usage: su [username] [passwd]", output, id, father);
                         }
@@ -3150,6 +3153,19 @@ public class Lua {
                 for (Enumeration files = CONN.list(); files.hasMoreElements();) { list.put(new Double(index), (String) files.nextElement()); index++; } 
                 CONN.close(); 
             } 
+            else if (pwd.startsWith("/proc/")) {
+                String rest = pwd.substring(6);
+                if (rest.equals("")) {
+                    String[] pf = midlet.procFiles();
+                    for (int j = 0; j < pf.length; j++) { list.put(new Double(index), pf[j]); index++; }
+                    Vector pe = midlet.procEntries(id);
+                    for (int j = 0; j < pe.size(); j++) { list.put(new Double(index), pe.elementAt(j)); index++; }
+                } else {
+                    String pd = rest.endsWith("/") ? rest.substring(0, rest.length() - 1) : rest;
+                    Vector pe = midlet.procDirEntries(pd, id);
+                    for (int j = 0; j < pe.size(); j++) { list.put(new Double(index), pe.elementAt(j)); index++; }
+                }
+            }
             else if (midlet.vfsDirIndex(pwd) != -1) {
                 String content = midlet.loadRMS("OpenRMS", midlet.vfsDirIndex(pwd));
                 int i = 0;
@@ -3289,6 +3305,18 @@ public class Lua {
 
                 if (target.equals("/root/") || target.startsWith("/root/")) {
                     if (id != 0) { return new Double(13); }
+                }
+
+                if (target.equals("/proc/") || target.startsWith("/proc/")) {
+                    String rest = target.substring(6);
+                    if (rest.equals("") || rest.equals("/")) { father.put("PWD", "/proc/"); return new Double(0); }
+                    String pd = rest.endsWith("/") ? rest.substring(0, rest.length() - 1) : rest;
+                    if (pd.indexOf('/') != -1) { return new Double(127); }
+                    Process pp = (Process) midlet.sys.get(pd);
+                    if (pp == null) { return new Double(127); }
+                    if (id != 0 && pp.uid != id) { return new Double(13); }
+                    father.put("PWD", target.endsWith("/") ? target : target + "/");
+                    return new Double(0);
                 }
 
                 if (midlet.fs.containsKey(target)) { father.put("PWD", target); return new Double(0); }
