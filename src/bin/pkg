@@ -17,6 +17,8 @@ local mirror = {
     ["expr"] = { remote = "file/expr.lua", here = "/bin/expr", description = "Evaluate expressions" },
     ["explorer"] = { remote = "file/explorer.lua", here = "/bin/explorer", description = "File Explorer" },
     ["event"] = { remote = "sys/smile/event.lua", here = "/bin/event", description = "Event handler" },
+    ["exec"] = { remote = "sys/execute/exec.lua", here = "/bin/exec", description = "Legacy exec: run commands chained with &" },
+    ["execute"] = { remote = "sys/execute/main.lua", here = "/bin/execute", description = "Legacy execute: run commands chained with ;" },
     ["free"] = { remote = "sys/free.lua", here = "/bin/free", description = "Memory Informations" },
     ["forge"] = { remote = "dev/forge/main.lua", here = "/lib/forge", description = "Additional API for OpenTTY" },
     ["find"] = { remote = "file/find.lua", here = "/bin/find", description = "Search a pattern value in a file" },
