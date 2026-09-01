@@ -33,6 +33,7 @@ OpenTTY: a J2ME MIDlet (CLDC-1.0/MIDP-2.0) that is a Lua-scripted shell + ARM EL
 
 ## Git workflow
 
-- `origin` is HTTPS with no stored credentials here; push auth works via SSH:
-  `git push ssh://git@github.com/mrlima4095/OpenTTY-J2ME.git main`
+- `origin` is SSH-over-443 with no stored credentials here:
+  `git push ssh://git@ssh.github.com:443/mrlima4095/OpenTTY-J2ME.git main`
+  (port 22 is blocked from this host; plain `git push` works since `origin` already points at the 443 URL.)
 - User preference: commit and push completed work (via the SSH URL above) without waiting to be asked.
