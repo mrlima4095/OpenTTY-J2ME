@@ -1,8 +1,8 @@
 #!/bin/lua
 
-local version = "1.5.1"
+local version = "1.6.0"
 
-local server = os.getenv("REPO") or "socket://opentty.fun:31522"
+local server = os.getenv("REPO") or "http://opentty.xyz"
 local mirror = {
     --["appmenu"] = { remote = "sys/appmenu/main.lua", here = "/bin/init", description = "Application Menu" },
     ["armitage"] = { remote = "net/armitage", here = "/bin/armitage", depends = { "ifconfig" }, description = "OpenTTY Network Tools" },
@@ -50,23 +50,28 @@ local mirror = {
     ["viewer"] = { remote = "file/img.lua", here = "/bin/imgview", description = "View Images" },
     ["webproxy"] = { remote = "net/proxy.lua", here = "/bin/shprxy", description = "Access OpenTTY on WebProxy" },
     ["wget"] = { remote = "net/wget", here = "/bin/wget", description = "Download files from Network" },
-    ["xterm"] = { remote = "xterm.lua", here = "/bin/xterm", description = "MIDlet Terminal" },
+    ["xterm"] = { remote = "sys/x11/xterm.lua", here = "/bin/xterm", description = "MIDlet Terminal" },
     ["x11"] = { remote = "sys/x11/main.lua", here = "/bin/x11", description = "X Server Client" },
     ["watch"] = { remote = "sys/watch.lua", here = "", description = "Watch a program" },
 
     --[""] = { remote = "", here = "", depends = {}, description = "" }
 }
 
-local function connect(payload)
-    local ok, conn, i, o = pcall(socket.connect, server)
+local function fetch(remote)
+    local ok, content, status = pcall(socket.http.get, server .. "/" .. remote)
 
-    if ok then
-        io.write(payload, o)
-        local content = io.read(i, 4096)
-
-        pcall(io.close, conn, i, o)
-
+    if ok and status == 200 then
         return content
+    else
+        return nil
+    end
+end
+
+local function fetch_file(remote, here)
+    local ok, input, status = pcall(socket.http.rget, server .. "/" .. remote)
+
+    if ok and status == 200 then
+        return io.copy(input, here)
     else
         return nil
     end
@@ -86,10 +91,9 @@ local function install(pkg, verbose)
         end
     end
 
-    local content = connect("get apps/" .. info.remote)
-    if content then
-        local status = io.write(content, info.here)
+    local status = fetch_file(info.remote, info.here)
 
+    if status ~= nil then
         if verbose then
             if status == 0 then
                 print(":: Installed " .. info.here)
@@ -111,9 +115,9 @@ local function download(pkg, output)
     local info = mirror[pkg]
 
     if info then
-        local content = connect("get apps/" .. info.remote)
-        if content then
-            io.write(content, os.join(output))
+        local status = fetch_file(info.remote, os.join(output))
+        if status == 0 then
+            print(":: Downloaded " .. info.remote .. " to " .. output)
         else
             print("download failed")
         end
@@ -244,9 +248,9 @@ elseif arg[1] == "remove" then
         print("pkg: usage: pkg remove [package]")
     end
 elseif arg[1] == "update" then
-    local response = connect("fetch")
+    local response = fetch("res/latest")
     if response then
-        print(":: " .. response)
+        print(":: OpenTTY latest version: " .. response)
     else
         print(":: Connection error")
         os.exit(101)
