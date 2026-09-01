@@ -1,162 +1,126 @@
-# 📁 OpenTTY File System
+# OpenTTY File System
 
-The OpenTTY file system is a **virtual file system** that provides a unified interface to access different types of storage resources within the J2ME environment. It combines **RMS storage**, **device file systems**, **virtual directories**, and **temporary storage** into a single hierarchical structure.
+OpenTTY's **virtual file system** provides a unified, hierarchical interface over
+several storage backends: **RMS RecordStores** (`/home/`, `/bin/`, `/etc/`,
+`/lib/`), the **device file system** (`/mnt/`, JSR-75), **virtual files**
+(`/proc/`, `/dev/`), and **in-memory storage** (`/tmp/`).
 
-## 🗂️ File System Structure
-
-### 📍 Root Directories
+## Layout
 
 ```
 /
-├── /home/          # 📝 RMS Record Stores (User Files)
-├── /tmp/           # 🗑️ Temporary In-Memory Storage
-├── /mnt/           # 💾 Device File System (JSR-75)
-├── /bin/           # ⚡ Executable Scripts & Applications
-├── /lib/           # 📚 Library Packages
-├── /dev/           # 🔧 Special Devices
-└── /res/           # 📦 Resource Files (JAR Resources)
+├── /home/   # RMS RecordStores — user files (persistent)
+├── /root/   # Protected home of the root user (RMS)
+├── /tmp/    # Temporary in-memory storage (volatile)
+├── /mnt/    # Real device file system (JSR-75)
+├── /bin/    # Executables & scripts (packaged in RMS)
+├── /etc/    # Configuration files (RMS)
+├── /lib/    # Lua libraries & modules (RMS)
+├── /dev/    # Virtual devices
+└── /proc/   # Virtual process / system-info files
 ```
 
-## 🔧 Directory Details
+## Directory Details
 
-### 🏠 `/home/` - User Storage
-- **Storage**: RMS Record Stores
-- **Permissions**: Read/Write for current user
-- **Features**:
-  - Persistent storage across sessions
-  - File management via RecordStore API
-  - User-specific data storage
+### `/home/` — User storage
 
-### 🗑️ `/tmp/` - Temporary Storage
-- **Storage**: In-memory Hashtable
-- **Permissions**: Read/Write
-- **Features**:
-  - Volatile storage (lost on exit)
-  - Fast access for temporary files
-  - Session-specific data
+- **Backend**: RMS RecordStores
+- **Permissions**: read/write for the current user
+- Persistent across sessions; user-specific data.
 
-### 💾 `/mnt/` - Device File System
-- **Storage**: JSR-75 FileConnection API
-- **Permissions**: Device-dependent
-- **Features**:
-  - Access to device file system
-  - Directory listing and file operations
-  - Cross-platform file access
+### `/root/` — Root home
 
-### ⚡ `/bin/` - Executables
-- **Storage**: Packaged scripts in RMS
-- **Permissions**: Read-only (root can modify)
-- **Features**:
-  - Shell commands and scripts
-  - Auto-execution via classpath
-  - System utilities
+- **Backend**: RMS (OpenRMS index 6)
+- **Permissions**: root-only (UID 0). Regular users cannot read, write, or enter it.
 
-### 📚 `/lib/` - Libraries
-- **Storage**: Packaged libraries in RMS
-- **Permissions**: Read-only (root can modify)
-- **Features**:
-  - Shared packages and modules
-  - Function libraries
-  - Extension packages
+### `/tmp/` — Temporary storage
 
-### 🔧 `/dev/` - Special Devices
-- **Virtual Devices**:
-  - `stdin` - Command input field
-  - `stdout` - Output display
-  - `null` - Empty device
-  - `random` - Random number generator
-  - `zero` - Zero byte source
-  - `tty` - Terminal source
+- **Backend**: in-memory table
+- **Permissions**: read/write for all users
+- Volatile — lost when the MIDlet exits.
 
+### `/mnt/` — Device file system
 
-## 🛠️ File Operations
+- **Backend**: JSR-75 `FileConnection` API
+- **Permissions**: device-dependent
+- Access to the real device's files and directories.
 
-### 📋 Listing Files
+### `/bin/`, `/etc/`, `/lib/` — System directories
+
+- **Backend**: packaged scripts stored in RMS
+- **Permissions**: read-only for regular users; writable by root
+- VFS **subdirectories** (e.g. `/bin/tools/`) are supported at any depth; each
+  maps to its own page of the `OpenRMS` store via a stable path hash, and they
+  persist across restarts into `/etc/vfs.conf`.
+
+### `/dev/` — Virtual devices
+
+- `stdin` — command input
+- `stdout` — output display
+- `null` — null device
+- `random` — random bytes
+- `zero` — zero bytes
+- `tty` — terminal source
+
+### `/proc/` — Virtual process files
+
+- `cpuinfo`, `meminfo`, `uptime`, `version`
+- per-process dirs `/proc/<pid>/` containing `cmdline`, `comm`, `stat`, `status`
+- Regular users only see their own processes; root sees all.
+
+## File Operations
+
 ```bash
-ls /home/          # List user files
-ls /mnt/           # List device roots
-ls                 # View files in folder 
+ls /home/                 # List user files
+ls /mnt/                  # List device roots
+
+cat /home/notes.txt       # Read an RMS file
+cat /tmp/buffer           # Read a temporary file
+
+echo "hi" > /home/f.txt   # Write to a file
+touch /tmp/tempfile       # Create a temporary file
+
+mkdir /home/projects      # Create a directory
+rm /home/oldfile.txt      # Delete a file
+rm -r /bin/tools          # Remove a VFS subdirectory (root)
 ```
 
-### 📄 Reading Files
-```bash
-cat /home/notes.txt     # Read RMS file
-cat /mnt/root/file.txt  # Read device file
-cat /tmp/buffer         # Read temporary file
-```
+## Permissions Model
 
-### ✏️ Writing Files
-```bash
-sed s/pattern/new/ file         # Edit file content
-echo "hi" > /home/file.txt      # Write "hi" in file
-touch /tmp/tempfile             # Create temporary file
-```
+| Area | Regular user | Root (UID 0) |
+|------|--------------|--------------|
+| `/home/` | own files read/write | all |
+| `/tmp/` | read/write | all |
+| `/mnt/` | device-dependent | device-dependent |
+| `/bin/`, `/etc/`, `/lib/` | read-only | read/write (+subdirs) |
+| `/root/` | denied | read/write |
+| `/proc/` | own processes only | all |
 
-### 🗑️ Deleting Files
-```bash
-rm /home/oldfile.txt    # Delete RMS record
-rm /mnt/file.txt       # Delete device file
-rm /tmp/tempfile       # Remove temporary file
-```
+## Special Features
 
-## 🔐 Permissions Model
+- **VFS subdirectories**: `/bin|etc|lib/...` folders persist into `/etc/vfs.conf`
+- **Mount system**: create virtual directories via configuration
+- **Path resolution**: automatic path completion
+- **Storage management**: multiple physical files in a single RecordStore; memory
+  managed through garbage collection
 
-### 👤 User Types
-- **Root** (id=0): Full system access
-- **Regular User** (id=1000): Limited access
+## Usage Examples
 
-### 🔒 Permission Rules
-- `/home/`: User can read/write their own files
-- `/tmp/`: User can read/write all files
-- `/mnt/`: Device-dependent permissions
-- `/bin/`, `/lib/`: Read-only for users, writable by root
-- System files: Read-only for all users
-
-## 🎮 Special Features
-
-### 📁 Virtual Directories
-- **Mount System**: Create virtual directories via configuration
-- **Path Resolution**: Automatic path completion
-- **Directory Stack**: `pushd`/`popd` for navigation
-
-### 🔄 File Types & Detection
-- **Automatic MIME type detection**
-- **File extension mapping**
-- **Binary vs Text classification**
-
-### 💽 Storage Management
-- **RMS Compression**: Multiple files in single RecordStore
-- **Memory Management**: Automatic garbage collection
-- **Storage Quotas**: Configurable limits
-
-## 🚀 Usage Examples
-
-### 🔍 Basic Navigation
 ```bash
 pwd                    # Show current directory
 cd /home/              # Change to home directory
 ls -a                  # List all files (including hidden)
+
+cp /home/source.txt /tmp/copy.txt   # Copy files
+rmsfix swap /bin/ /home/backup/     # Backup system files
 ```
 
-### 📊 File Information
-```bash
-file /home/document.txt    # Get file type information
-wc /home/script.sh         # Count lines, words, characters
-du /mnt/file.txt          # Get file size
-```
+## Limitations
 
-### 🔄 Advanced Operations
-```bash
-cp /home/source.txt /tmp/copy.txt    # Copy files
-mount /home/filesystem.conf          # Mount virtual directories
-rmsfix swap /bin/ /home/backup/      # Backup system files
-```
+- J2ME device capabilities constrain the filesystem
+- RMS storage size limits apply
+- Large files are limited by available memory
+- Device security may restrict some operations
 
-## ⚠️ Limitations
-
-- **J2ME Constraints**: Limited by device capabilities
-- **Storage Size**: RMS storage limitations apply
-- **File Size**: Memory constraints for large files
-- **Permissions**: Device security restrictions
-
-The OpenTTY file system provides a **Unix-like experience** within J2ME constraints, enabling powerful file management capabilities on mobile devices!
+> `io.dirs(path)` returns entries only for `/tmp/`, `/mnt/<sub>`, and exactly
+> `/bin/`, `/etc/`, `/lib/`, `/home/`. Any other path yields an empty table.

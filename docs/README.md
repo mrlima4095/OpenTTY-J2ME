@@ -1,274 +1,296 @@
-# 🖥️ OpenTTY ‐ Mobile Terminal Emulator for J2ME  
+# OpenTTY — User & Developer Guide
 
-**OpenTTY** is a complete virtual terminal environment developed for Java mobile devices (J2ME/MIDP). It implements a miniature operating system with virtual filesystem, Lua interpreter, process management, graphical interface, and network APIs — all running within a single MIDlet.
+**OpenTTY** is a complete virtual terminal environment for Java ME (J2ME/MIDP)
+devices. It implements a miniature operating system — virtual filesystem, Lua
+interpreter, process management, graphical interface, and network APIs — inside a
+single MIDlet.
 
----
-
-## 🚀 **Overview**
-
-OpenTTY transforms your J2ME device into a portable development and automation environment, featuring:
-
-- 📂 **Virtual filesystem** with directories `/bin`, `/etc`, `/home`, `/tmp`, `/mnt`
-- 🐧 **Lua 5.x interpreter** with standard libraries (os, io, string, table, math)
-- 🖥️ **Interactive terminal** with command and script support
-- 🎨 **Graphics API** for interface creation (Alert, Form, List, TextBox)
-- 🌐 **Network APIs** (HTTP, TCP sockets)
-- 🔧 **Process management** with PID and permissions
-- 🔊 **Audio playback** via MMAPI
+This guide covers usage, the Lua API, the graphical interface, networking,
+installing programs, and troubleshooting.
 
 ---
 
-## 📁 **Filesystem Structure**
+## Table of Contents
+
+- [Overview](#overview)
+- [Getting Started](#getting-started)
+- [File System](#file-system)
+- [Lua Language](#lua-language)
+- [System API](#system-api)
+- [Graphical Interface](#graphical-interface)
+- [Network Communication](#network-communication)
+- [Security and Permissions](#security-and-permissions)
+- [Installing Programs](#installing-programs)
+- [Debugging and Troubleshooting](#debugging-and-troubleshooting)
+- [System Integration](#system-integration)
+- [Compatibility and Limitations](#compatibility-and-limitations)
+
+---
+
+## Overview
+
+OpenTTY turns a J2ME device into a portable development and automation
+environment, featuring:
+
+- a **virtual filesystem** with `/bin`, `/etc`, `/home`, `/tmp`, `/mnt`, `/dev`, `/proc`
+- a **Lua 5.x interpreter** with adapted standard libraries (`os`, `io`, `string`, `table`, ...)
+- an **interactive terminal** with command and script execution
+- a **graphics API** for building user interfaces (Alert, Form, List, TextBox)
+- **network APIs** (HTTP, TCP sockets)
+- **process management** with PIDs and permissions
+- an **ARM 32-bit ELF emulator** (in development)
+
+---
+
+## Getting Started
+
+### First Startup
+
+On first launch you'll be asked to create a **username** (cannot be `root`) and a
+**password** (stored as a hash). Credentials are saved in the `OpenRMS`
+RecordStore. After restart, OpenTTY auto-logs in that user.
+
+### Terminal Interface
+
+After login you have access to:
+
+- a command line for executing programs,
+- built-in utilities for creating/editing files (`nano`),
+- Unix-style file navigation (`ls`, `cd`, `cat`, `mkdir`, `rm`, ...).
+
+### Running Programs
+
+Programs can be:
+
+- **Lua scripts** — interpreted by the Lua runtime,
+- **ELF binaries** — executed by the ARM emulator,
+- **shell scripts** — implemented in Java.
+
+---
+
+## File System
+
+See the dedicated [File System guide](FILESYS.md) for a complete reference.
 
 ```
 /
-├── bin/      # System applications and commands
-├── etc/      # Configuration files
-├── home/     # User data (RecordStore)
-├── lib/      # Lua libraries and modules
-├── tmp/      # Temporary files
-├── mnt/      # Device's real filesystem
-├── dev/      # Virtual devices
-│   ├── stdin
-│   ├── stdout
-│   ├── null
-│   └── random
-└── proc/     # System information
+├── bin/   # System applications and commands
+├── dev/   # Virtual devices (stdin, stdout, null, random, zero, tty)
+├── etc/   # Configuration files (fstab, hostname, motd, os-release)
+├── home/  # User data (RMS RecordStores)
+├── lib/   # Lua libraries and modules
+├── mnt/   # Real device file system (JSR-75)
+├── proc/  # Virtual process/sysinfo files
+├── root/  # Root user's protected home
+└── tmp/   # Temporary in-memory storage
 ```
 
 ---
 
-## 🎮 **Getting Started**
+## Lua Language
 
-### 1. **First Startup**
-On first launch, you'll be prompted to create:
-- 👤 **Username** (cannot be `root`)
-- 🔒 **Password** (stored as hash)
-
-### 2. **Terminal Interface**
-After login, you have access to:
-- **Command line** for executing programs
-- **Built-in editor** for creating/editing files
-- **File navigation** with Unix-style commands
-
-### 3. **Running Programs**
-Programs can be:
-- **Lua scripts** – Interpreted by Lua runtime
-- **ELF binaries** – Compiled executables
-- **Shell script** – Implemented in Java
-
----
-
-## 📚 **Lua Language in OpenTTY**
-
-### **Available Libraries**
+### Available Libraries
 
 | Library | Main Functions |
 |---------|----------------|
-| `os` | `execute`, `getenv`, `setenv`, `clock`, `exit`, `date` |
-| `io` | `read`, `write`, `open`, `close`, `popen`, `dirs` |
-| `string` | `sub`, `find`, `match`, `upper`, `lower`, `byte`, `char` |
-| `table` | `insert`, `remove`, `sort`, `concat`, `pack`, `unpack` |
-| `math` | `random` |
-| `socket` | `connect`, `server`, `accept`, `http.get`, `http.post` |
-| `graphics` | `display`, `new`, `append`, `handler`, `vibrate` |
+| `os` | `execute`, `getenv`, `setenv`, `exit`, `date`, `getuid`, `su`, `setproc`, `getproc`, `request`, `mkdir`, `remove` |
+| `io` | `read`, `write`, `open`, `close`, `popen`, `dirs`, `copy`, `mount` |
+| `string` | `sub`, `find`, `match`, `upper`, `lower`, `byte`, `char`, `split`, `hash`, `startswith`, `endswith` |
+| `table` | `insert`, `remove`, `sort`, `concat`, `pack`, `unpack`, `decode` |
+| `socket` | `connect`, `server`, `accept`, `http.get`, `http.post`, `peer`, `device` |
+| `graphics` | `display`, `new`, `append`, `addCommand`, `handler`, `render`, `vibrate` |
+| `base64` | `encode`, `decode` |
+| `push` | `register`, `unregister`, `list`, `pending`, `setAlarm`, `getAlarm` |
 | `audio` | `load`, `play`, `pause`, `volume`, `duration` |
 
-### **Lua Script Example**
+> **Important:** this Lua implementation has a **reduced `string` library**. It
+> does **not** provide `string.format`, `string.rep`, `string.gsub`, or
+> `string.gmatch`. Use the native `string.startswith`/`string.endswith` instead
+> of shadowing them.
+
+See the [Lua reference](lua/README.md) for the full function list and examples.
+
+### Example
+
 ```lua
--- Hello World in OpenTTY
 print("Welcome to OpenTTY!")
 
--- List files in current directory
 local files = io.dirs(".")
 for i = 1, #files do
     print(i .. ": " .. files[i])
 end
-
--- Create a graphical interface
-local previous = graphics.getCurrent()
-local screen = graphics.new("form", "My App")
-local back = graphics.new("command", { label = "Back", type = "back priority = 1 })
-graphics.append(screen, {type="text", label="Name:", value=""})
-graphics.addCommand(screen)
-graphics.handler(screen, { [back] = function() graphics.display(previous) end })
-graphics.display(screen)
 ```
 
 ---
 
-## 🔧 **System API**
+## System API
 
-### **Kernel Commands**
+### Kernel / Process
+
 ```lua
--- Access kernel functions
-local kernel = java.midlet.uptime()
-print("Uptime: " .. kernel .. " ms")
+print("Uptime ms:", java.midlet.uptime())
 
--- Process management
-os.execute("ps")  -- List processes
-os.exit(0)        -- Terminate current process
+os.execute("ps")  -- list processes
+os.exit(0)        -- terminate current process
 ```
 
-### **Filesystem Operations**
-```lua
--- Read file
-local machine_name = io.read("/etc/hostname")
+### Filesystem Operations
 
--- Write file
+```lua
+local hostname = io.read("/etc/hostname")
 io.write("Hello", "/tmp/test.txt")
 
--- List directory
 local listing = io.dirs("/bin")
 ```
 
 ---
 
-## 🎨 **Creating Graphical Interfaces**
+## Graphical Interface
 
-### **Available Components**
-- `alert` – Dialog box
-- `form` – Form with fields
-- `list` – Selectable list
-- `textbox` – Text editor
-- `command` – Action buttons
+### Available Components
 
-### **Interface Example**
+- `alert` — dialog box
+- `form` — form with fields
+- `list` — selectable list (implicit/exclusive modes)
+- `textbox` — text editor
+- `screen` / `buffer` — terminal-style screens
+- `command` — action buttons
+- `image`, `gauge`, `choice` — additional field types
+
+### Example
+
 ```lua
 local form = graphics.new("form", "Registration")
-graphics.append(form, {
-    type = "field",
-    label = "Name:",
-    length = 50
-})
+
+graphics.append(form, { type = "field", label = "Name:", length = 50 })
 graphics.append(form, {
     type = "choice",
     label = "Options:",
-    options = {"Option 1", "Option 2", "Option 3"}
+    options = { "Option 1", "Option 2", "Option 3" }
 })
 
--- Add button
-local cmd = graphics.new("command", {label="Save", type="ok"})
-graphics.addCommand(form, cmd)
+local save = graphics.new("command", { label = "Save", type = "ok" })
+graphics.addCommand(form, save)
 
--- Define actions
-graphics.handler(form, {
-    [cmd] = function(args)
-        print("Data saved!")
-    end
-})
+graphics.handler(form, { [save] = function()
+    print("Data saved!")
+end })
 
 graphics.display(form)
 ```
 
 ---
 
-## 🌐 **Network Communication**
+## Network Communication
 
-### **HTTP Client**
+### HTTP Client
+
 ```lua
--- GET request
 local response, code = socket.http.get("http://api.example.com/data")
-print("Code: " .. code)
-print("Response: " .. response)
+print("Code:", code)
+print("Response:", response)
 
--- POST request
 local result = socket.http.post(
     "http://api.example.com/post",
     "data=value",
-    {["Content-Type"] = "application/x-www-form-urlencoded"}
+    { ["Content-Type"] = "application/x-www-form-urlencoded" }
 )
 ```
 
-### **TCP Sockets**
+### TCP Sockets
+
 ```lua
--- TCP client
+-- Client
 local conn, input, output = socket.connect("example.com:80")
 io.write("GET / HTTP/1.0\r\n\r\n", output)
 local response = io.read(input)
 io.close(conn, input, output)
 
--- TCP server
+-- Server
 local server = socket.server(8080)
 print("Server listening on port 8080...")
 ```
 
 ---
 
-## 🔐 **Security and Permissions**
+## Security and Permissions
 
-### **Access Levels**
-- **Root (UID 0)** – Full system access
-- **User (UID 1000)** – Restricted to own files
-- **Guest** – Read-only access to public areas
+- **Root (UID 0)** — full system access
+- **User (UID 1000+)** — restricted to their own files and processes
+- **Guest** — read-only access to public areas
 
-### **Privileged Commands**
 ```bash
-# Become root (asks for password)
-su [password]
-# Or use sudo to run a specified program as root
-sudo []
+su [password]    # become root (asks for password)
+sudo <cmd>       # run a command as root
+pkg install <p>  # installing packages requires root
 ```
 
----
-
-## 📦 **Installing Programs**
-
-### **Installation Methods**
-1. **Via File** – Copy `.lua` files to `/bin/`
-2. **Via RMS** – Use internal storage system
-3. **Via Network** – Download from HTTP server
+See the [User System guide](USERS.md) for details.
 
 ---
 
-## 🐛 **Debugging and Troubleshooting**
+## Installing Programs
 
-### **Debug Mode**
+Programs can be installed in several ways:
+
+1. **Via package manager** — `pkg install <name>` / `pkg install *`
+2. **Via file** — copy `.lua` files to `/bin/`
+3. **Via network** — download from an HTTP server with `wget`/`curl`
+
+---
+
+## Debugging and Troubleshooting
+
+### Debug Mode
+
 ```lua
--- Enable detailed logs
 os.request(1, "debug", true)
 ```
 
-### **Common Error Codes**
+### Common Error Codes
+
 | Code | Meaning |
 |------|---------|
 | 0 | Success |
 | 1 | General error |
 | 2 | Invalid argument |
-| 5 | Operation not permitted |
+| 5 | Read-only storage / operation not permitted |
 | 13 | Permission denied |
-| 101 | Network error |
-| 127 | File not found |
+| 101 | Network / connection error |
+| 127 | File or command not found |
+| 255 | Command failure (`false`) |
+
+> When the runtime raises a Java exception it carries no message; OpenTTY
+> appends a Lua-side traceback pointing at the offending source line.
 
 ---
 
-## 🔄 **System Integration**
+## System Integration
 
-### **Accessing Device Resources**
 ```lua
--- Vibrate
-graphics.vibrate(500)
+graphics.vibrate(500)          -- vibrate the device
 
--- Get system properties
-local vm = java.getName()
-print("Java VM: " .. vm)
+local vm = java.getName()      -- JVM name
+print("Java VM:", vm)
 
--- Open external URLs
-os.open("http://opentty.fun")
+os.open("http://opentty.fun")  -- open external URL
 ```
 
 ---
 
-## 📊 **Limitations and Compatibility**
+## Compatibility and Limitations
 
-### **Supported Devices**
-- ✅ Java phones (J2ME MIDP 2.0)
-- ✅ Emulators (Wireless Toolkit, MicroEmulator)
-- ⚠️ Tablets and PDAs (depends on Java implementation)
-- ❌ Android/iOS (native)
+### Supported Devices
 
-### **Known Limitations**
-- Limited memory (1-4MB heap typical)
-- No access to specific hardware (camera, GPS)
+- Java phones (J2ME MIDP-2.0 / CLDC-1.0)
+- Emulators (Wireless Toolkit, MicroEmulator, J2ME Loader)
+- Tablets and PDAs (depending on the Java implementation)
+- Not native Android/iOS
+
+### Known Limitations
+
+- Limited heap (typically 1–4 MB)
+- No direct access to specific hardware (camera, GPS)
 - Network subject to carrier restrictions
+- No encryption for network traffic
 - Performance varies by device

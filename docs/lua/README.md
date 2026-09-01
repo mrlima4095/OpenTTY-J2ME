@@ -1,255 +1,258 @@
-# 🌙 Lua J2ME ‐ Documentation
+# Lua for J2ME — Reference
 
-This is a complete implementation of the Lua language for the J2ME (Java Micro Edition) platform, designed to work on mobile devices with limited resources. The implementation includes a parser, interpreter, and various standard libraries adapted for the J2ME environment.
+This is a full implementation of the **Lua language for J2ME (CLDC)**, designed
+to run on memory-limited mobile devices. It includes a parser, an interpreter,
+and standard libraries adapted for the J2ME environment.
 
-## ✨ Key Features
+## Highlights
 
-- **Complete Language**: Supports most Lua language concepts
-- **J2ME Optimized**: Adapted for memory-limited mobile devices
-- **Native Libraries**: Includes adapted versions of standard Lua libraries
-- **Graphical Interface**: Integration with J2ME UI (Display, Form, List, etc.)
-- **Networking**: HTTP, TCP/IP socket support
-- **File System**: File system access via RMS
+- **Complete language**: functions, tables, loops, and protected error handling
+  (`pcall`, `xpcall`-style tracebacks)
+- **J2ME optimized**: tuned for low-heap devices
+- **Native libraries**: adapted versions of `os`, `io`, `string`, `table`, ...
+- **Graphics**: full integration with J2ME UI (Form, List, Alert, TextBox)
+- **Networking**: HTTP and TCP/IP sockets
+- **File system**: access via RMS / virtual filesystem
 
-## 📊 Comparison Table: Original Lua vs Lua J2ME
+## Comparison: Original Lua vs Lua J2ME
 
-| Feature | Original Lua 🐧 | Lua J2ME 📱 |
-|---------|------------------|--------------|
-| **Platform** | Cross-platform | J2ME only |
-| **Memory** | No restrictions | Limited (mobile devices) |
-| **Libraries** | Complete | Adapted/Reduced |
-| **UI** | Terminal/Console | J2ME Display (Form, List, Alert) |
-| **Networking** | Full socket support | Basic HTTP, Socket |
-| **File System** | Complete | RMS (Record Management System) |
-| **Threading** | Full support | Limited by J2ME |
-| **Garbage Collection** | Advanced | Basic (System.gc()) |
+| Feature | Original Lua | Lua J2ME |
+|---------|--------------|----------|
+| Platform | Cross-platform | J2ME only |
+| Memory | No restrictions | Limited (1–4 MB heap typical) |
+| Libraries | Complete | Adapted / reduced |
+| UI | Terminal / console | J2ME Display (Form, List, Alert) |
+| Networking | Full socket support | Basic HTTP + socket |
+| File system | Complete | Virtual FS / RMS |
+| Threading | Full support | Limited by J2ME |
+| Garbage collection | Advanced | Basic |
 
-## 🛠️ Native Functions Implemented
+---
 
-### 🌍 Global Functions
-
-| Function | Description |
-|----------|-------------|
-| `print(...)` | Output text to console |
-| `error(msg)` | Throws error with message |
-| `pcall(f, ...)` | Protected function call |
-| `require(mod)` | Loads Lua modules |
-| `load(string)` | Loads Lua code |
-| `pairs(t)` | Iterates over tables |
-| `ipairs(t)` | Advanced iterates over tables |
-| `collectgarbage(opt)` | Controls garbage collection |
-| `tostring(v)` | Converts to string |
-| `tonumber(v)` | Converts to number |
-| `select(index, ...)` | Selects arguments |
-| `type(v)` | Returns value type |
-| `getAppProperty(key)` | Gets application properties |
-
-### 💻 OS Library
+## Global Functions
 
 | Function | Description |
 |----------|-------------|
-| `os.execute(cmd)` | Executes system commands |
-| `os.getenv(var)` | Gets environment variables |
-| `os.clock()` | Program execution time |
-| `os.setlocale(loc)` | Sets locale |
-| `os.exit(code)` | Terminates execution |
-| `os.date()` | Current date/time |
-| `os.getpid()` | Process ID |
-| `os.setproc(attr, val)` | Sets process properties |
-| `os.getproc(pid, field)` | Gets process information |
-| `os.getcwd()` | Current directory |
-| `os.chdir(path)` | Change current directory |
-| `os.request(pid, payload, args)` | Make a request to a Service |
-| `os.getuid(procname)` | Get PID of a process by name|
-| `os.open(uri)` | Request Device API to perform a request to URI |
-| `os.scope(...)` | Change or get scope |
-| `os.su(user, password)` | Change current user |
-| `os.remove(file)` | Remove files and directories |
-| `os.join(file)` | Get absolute path of a file |
-| `os.mkdir(dir)` | Create directories |
+| `print(...)` | Output text to stdout |
+| `error(msg)` | Throw an error with a message |
+| `pcall(f, ...)` | Call a function in protected mode |
+| `require(mod)` | Load a Lua module |
+| `load(string)` | Load and compile Lua code |
+| `pairs(t)` | Iterate over table key/value pairs |
+| `ipairs(t)` | Iterate over an array part |
+| `collectgarbage(opt)` | Control garbage collection |
+| `tostring(v)` | Convert a value to string |
+| `tonumber(v[, base])` | Convert a value to number |
+| `select(index, ...)` | Select arguments |
+| `type(v)` | Return the value's type |
+| `getAppProperty(key)` | Get an application property |
 
-### 📁 IO Library
+## `os` Library
 
 | Function | Description |
 |----------|-------------|
-| `io.read([source])` | Reads from file/stream |
-| `io.write(data, [target])` | Writes to file/stream |
-| `io.close(stream)` | Closes stream |
-| `io.open(file)` | Opens file |
-| `io.popen(program, args, sudo, stdout, scope)` | Run program |
-| `io.dirs(path)` | Get contents of directory |
-| `io.setstdout(file)` | Change program stdout |
-| `io.mount(strcut)` | Mount a file system struct |
+| `os.execute(cmd)` | Execute a system command |
+| `os.request(pid, payload, args)` | Send a request to a service (kernel) |
+| `os.getenv(var)` / `os.setenv(var, val)` | Get / set environment variables |
+| `os.exit(code)` | Terminate the current process |
+| `os.date()` / `os.clock()` | Current date / elapsed time |
+| `os.getpid()` | Current process ID |
+| `os.setproc(attr, val)` | Set process properties (e.g. `name`) |
+| `os.getproc(pid, field)` | Get process information |
+| `os.getuid([procname])` | Get a user ID or a PID by process name |
+| `os.getcwd()` / `os.chdir(path)` | Get / change working directory |
+| `os.open(uri)` | Ask the device to open a URI |
+| `os.scope(...)` | Get or change scope |
+| `os.su(user, password)` | Switch the current user |
+| `os.remove(file)` | Remove a file or directory |
+| `os.join(file)` | Get the absolute path of a file |
+| `os.mkdir(dir)` | Create a directory |
+
+## `io` Library
+
+| Function | Description |
+|----------|-------------|
+| `io.read([source])` | Read from a file, stream, or `-1` to EOF |
+| `io.write(data, [target])` | Write to a file / stream |
+| `io.close(stream)` | Close a stream |
+| `io.open(file)` | Open a file |
+| `io.popen(program, args, sudo, stdout, scope)` | Run a program |
+| `io.dirs(path)` | List the contents of a directory |
+| `io.setstdout(file)` | Redirect the program's stdout |
+| `io.mount(struct)` | Mount a filesystem structure |
 | `io.copy(stream, file)` | Copy a stream to a file |
 
+> `io.dirs(path)` returns entries only for `/tmp/`, `/mnt/<sub>`, and exactly
+> `/bin/`, `/etc/`, `/lib/`, `/home/`. Any other path yields an empty table.
 
-### 🔤 String Library
+## `string` Library
+
+> **Reduced library.** The following functions are **not** available:
+> `format`, `rep`, `gsub`, `gmatch`. Use the native `startswith` / `endswith`
+> instead of reimplementing them.
 
 | Function | Description |
 |----------|-------------|
-| `string.upper(s)` | Converts to uppercase |
-| `string.lower(s)` | Converts to lowercase |
+| `string.upper(s)` / `string.lower(s)` | Case conversion |
 | `string.len(s)` | String length |
-| `string.find(s, pattern)` | Finds pattern in string |
-| `string.match(s, pattern)` | Matches pattern in string |
-| `string.reverse(s)` | Reverses string |
+| `string.find(s, pattern)` | Find a pattern |
+| `string.match(s, pattern)` | Match a pattern |
+| `string.reverse(s)` | Reverse a string |
 | `string.sub(s, i, j)` | Substring |
 | `string.hash(s)` | Hash code |
-| `string.byte(s, i, j)` | Converts to bytes |
-| `string.char(...)` | Converts bytes to string |
-| `string.trim(s)` | Trims extra spaces |
-| `string.uuid()` | Generates UUID |
-| `string.split(s, char)` | Splits string |
-| `string.getCommand(s)` | Get first part of a string |
-| `string.getArgument(s)` | Get argument part of string |
-| `string.env(s)` | Decodes string with environment keys |
+| `string.byte(s[, i[, j]])` | Convert to byte values |
+| `string.char(...)` | Convert byte values to a string |
+| `string.trim(s)` | Trim surrounding whitespace |
+| `string.uuid()` | Generate a UUID |
+| `string.split(s, char)` | Split a string |
+| `string.getCommand(s)` | Get the first token of a string |
+| `string.getArgument(s)` | Get the argument part of a string |
+| `string.env(s)` | Expand environment keys in a string |
+| `string.getpattern(s)` | Get a pattern |
+| `string.startswith(s, pattern)` | Prefix check |
+| `string.endswith(s, pattern)` | Suffix check |
 
-
-### 🗂️ Table Library
-
-| Function | Description |
-|----------|-------------|
-| `table.insert(t, [pos], value)` | Inserts element into table |
-| `table.concat(t, [sep], [i], [j])` | Concatenates elements |
-| `table.remove(t, [pos])` | Removes element |
-| `table.sort(t)` | Sorts table |
-| `table.move(t, f, t, len)` | Moves elements |
-| `table.unpack(t, [i], [j])` | Unpacks table |
-| `table.pack(...)` | Packs arguments |
-| `table.decode(str)` | Decodes string to table |
-
-### 🎨 Graphics Library
+## `table` Library
 
 | Function | Description |
 |----------|-------------|
-| `graphics.display(screen)` | Set current screen |
-| `graphics.new(type, title, ...)` | Create new screen object |
-| `graphics.SetTitle(screen, title)` | Change screen title |
-| `graphics.SetTicker(screen, ticker)` | Change screen ticker |
-| `graphics.SetLabel(field, text)` | Change field label |
-| `graphics.GetLabel(field)` | Get field label |
-| `graphics.GetText(field)` | Get field text |
-| `graphics.getCurrent()` | Get current screen |
-| `graphics.render(file)` | Render Image from file |
-| `graphics.append(screen, field)` | Appends file in screen |
-| `graphics.clear(screen)` | Clear screens fields |
-| `graphics.addCommand(screen, command)` | Add commands in screen |
-| `graphics.handler(screen, {})` | Set screen buttons handler |
+| `table.insert(t, [pos], value)` | Insert an element |
+| `table.concat(t, [sep], [i], [j])` | Concatenate elements |
+| `table.remove(t, [pos])` | Remove an element |
+| `table.sort(t)` | Sort a table |
+| `table.move(t, f, t, len)` | Move elements |
+| `table.unpack(t, [i], [j])` | Unpack a table |
+| `table.pack(...)` | Pack arguments |
+| `table.decode(str)` | Decode a string to a table |
+
+## `graphics` Library
+
+| Function | Description |
+|----------|-------------|
+| `graphics.display(screen)` | Set the current screen |
+| `graphics.new(type, title, ...)` | Create a screen object |
+| `graphics.SetTitle(screen, title)` | Change the screen title |
+| `graphics.SetTicker(screen, ticker)` | Set a screen ticker |
+| `graphics.SetLabel(field, text)` / `graphics.GetLabel(field)` | Field label |
+| `graphics.GetText(field)` / `graphics.SetText(field, text)` | Field text |
+| `graphics.getCurrent()` | Get the current screen |
+| `graphics.render(file)` | Render an image from a file |
+| `graphics.append(screen, field)` | Append a field to a screen |
+| `graphics.clear(screen)` | Clear a screen's fields |
+| `graphics.addCommand(screen, command)` | Add a command/button |
+| `graphics.handler(screen, {})` | Set screen button handlers |
+| `graphics.vibrate(ms)` | Vibrate the device |
 | `graphics.db` | Screens database |
 
-
-### 🌐 Socket Library
+## `socket` Library
 
 | Function | Description |
 |----------|-------------|
-| `socket.connect(url)` | TCP connection |
+| `socket.connect(url)` | Open a TCP connection |
 | `socket.peer(conn)` | Peer address |
 | `socket.device(conn)` | Local address |
-| `socket.server(port)` | Socket server |
-| `socket.accept(server)` | Accepts connection |
-| `socket.http.get(url, headers)` | HTTP GET request |
-| `socket.http.post(url, data, headers)` | HTTP POST request |
+| `socket.server(port)` | Create a socket server |
+| `socket.accept(server)` | Accept a connection |
+| `socket.http.get(url, headers)` | HTTP GET |
+| `socket.http.post(url, data, headers)` | HTTP POST |
+| `socket.http.rget(url, headers)` | HTTP GET returning a stream |
 
-### ☕ Java Library
+## `java` Library
 
 | Function | Description |
 |----------|-------------|
-| `java.class(name)` | Checks if class exists |
+| `java.class(name)` | Check whether a class exists |
 | `java.getName()` | JVM name |
-| `java.run(function, name)` | Run function in another thread (Background) |
-| `java.getName()` | JVM name |
-| `java.delete(table, field)` | Delete a field from table in Java |
-| `java.midlet.username` | Default user name |
-| `java.midlet.cache` | Cached files in MIDlet |
-| `java.midlet.build` | MIDlet Build Code |
+| `java.run(function, name)` | Run a function on another thread |
+| `java.delete(table, field)` | Delete a table field in Java |
+| `java.midlet.username` | Default username |
+| `java.midlet.cache` | Files cached in the MIDlet |
+| `java.midlet.build` | MIDlet build code |
 | `java.midlet.uptime` | MIDlet uptime |
 
-### PushRegistry
+## `base64` Library
 
 | Function | Description |
 |----------|-------------|
-| `push.register(connection, filter, midlet, sender)` | Register Connection |
-| `push.unregister(connection)` | Unregister Connection |
-| `push.list(filter)` | List connections by filter or `*` for all |
-| `push.pending()` | Check if has conncetions active |
-| `push.setAlarm(midletClass, time)` | Set an alarm to MIDlet |
+| `base64.encode(s)` | Encode a string |
+| `base64.decode(s)` | Decode a string |
+
+## `push` Library (PushRegistry)
+
+| Function | Description |
+|----------|-------------|
+| `push.register(conn, filter, midlet, sender)` | Register a connection |
+| `push.unregister(conn)` | Unregister a connection |
+| `push.list(filter)` | List connections (`*` for all) |
+| `push.pending()` | Check for active connections |
+| `push.setAlarm(midletClass, time)` | Set a MIDlet alarm |
 | `push.getAlarm(midletClass)` | View an alarm |
 
+---
 
-## 📝 Usage Example
+## Examples
+
+Runnable examples are in the [`examples/`](examples/) directory:
+
+- `http_get.lua` — performing an HTTP GET
+- `read_file.lua` — reading a file
+- `write_file.lua` — writing a file
+- `graphics_screen.lua` — building a screen
+- `graphics_list.lua` — building a list
+
+### Hello World
 
 ```lua
--- Hello World
 print("Hello Lua J2ME World!")
 
--- Table manipulation
 local t = { 1, 2, 3, name = "Lua" }
 table.insert(t, 4)
 print(table.concat(t, ", "))
-
--- Graphical interface
-local form = graphics.new("form", "My App")
-graphics.append(form, "Welcome to Lua J2ME")
-
-local cmd = graphics.new("command", { label = "Save", type = "ok" })
-graphics.addCommand(form, cmd)
-
-graphics.handler(form, {
-    [cmd] = function()
-        print("button pressed")
-    end
-})
-
-graphics.display(form)
 ```
 
-### 🎨 Basic Graphics Example
+### Basic Graphics
+
 ```lua
--- Simple alert
 graphics.display(graphics.new("alert", "Welcome", "Hello Lua J2ME!"))
 
--- Form with multiple components
 local form = graphics.new("form", "My Form")
-graphics.append(form, { type = "text", value = "Welcome to my app!", layout = "default" })
+graphics.append(form, { type = "text", value = "Welcome!", layout = "default" })
 graphics.append(form, { type = "image", img = "/icon.png" })
 graphics.append(form, { type = "field", label = "Username:", value = "" })
-graphics.append(form, { type = "choice", label = "Options:", mode = "exclusive", options = { "Option 1", "Option 2", "Option 3"} })
-graphics.append(form, { type = "gauge", label = "Progress:", interactive = false, max = 100, value = 50 })
 
 local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
-local submit = graphics.new("command", { label = "Submit", type = "ok", priority = 1 })
+local ok = graphics.new("command", { label = "OK", type = "ok", priority = 1 })
 graphics.addCommand(form, back)
-graphics.addCommand(form, submit)
+graphics.addCommand(form, ok)
 
 graphics.display(form)
 ```
 
-### 📋 List Example
+### List
+
 ```lua
 local list = graphics.new("form", "Main Menu", "implicit")
-graphics.append(list, "Settings")
-graphics.append(list, "Games")
-graphics.append(list, "Tools")
-graphics.append(list, "Exit")
+for _, item in ipairs({ "Settings", "Games", "Tools", "Exit" }) do
+    graphics.append(list, item)
+end
 
 local select = graphics.new("command", { label = "Select", type = "ok", priority = 1 })
 graphics.addCommand(list, select)
 graphics.handler(list, {
-    [select] = function (option) 
-        print("Selected: " .. option)
+    [select] = function(option)
+        print("Selected:", option)
     end
 })
 
 graphics.display(list)
 ```
 
-## ⚠️ Limitations
+---
 
-- **Performance**: Slower than native Lua due to JVM
-- **Memory**: Severe memory constraints
-- **Libraries**: Reduced functionality compared to full Lua
-- **Platform**: Limited to J2ME ecosystem
+## Limitations
 
-## 🎯 Conclusion
-
-Lua J2ME is an impressive implementation that brings the power of Lua language to older mobile devices with J2ME. Although it has limitations compared to the original implementation, it offers a robust solution for scripting in resource-limited environments.
+- **Performance**: slower than native Lua because of the JVM.
+- **Memory**: severe constraints on small heaps.
+- **Libraries**: reduced functionality compared to full Lua (notably the
+  `string` library).
+- **Platform**: restricted to the J2ME ecosystem.

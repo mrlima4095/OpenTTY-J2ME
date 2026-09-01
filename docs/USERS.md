@@ -1,112 +1,106 @@
-# 👥 User System Documentation - OpenTTY
+# OpenTTY User System
 
-OpenTTY implements a multi-user system with different permission levels and security features. The system manages users through a combination of MIDlet RecordStore persistence and runtime user tables.
+OpenTTY implements a multi-user model with different permission levels, managed
+through a combination of MIDlet RecordStore persistence and runtime user tables.
 
-## 🔐 User Types
+## User Types
 
-### **👑 Root User**
-- **User ID**: `0`
+### Root User (`UID 0`)
+
 - **Username**: `root`
-- **Permissions**: Full system access
-- **Special Characteristics**:
-  - Can modify system files (`/bin/`, `/etc/`, `/lib/`)
-  - Can kill any process
-  - Can change passwords for any user
-  - Can manage user accounts
-  - Cannot be deleted
+- **Permissions**: full system access
+- Can modify system files (`/bin/`, `/etc/`, `/lib/`) and create VFS subdirectories
+- Can kill any process and manage all users
+- Can change any user's password
+- **Cannot be deleted**
 
-### **👤 Standard Users**
-- **User ID**: `1000+`
-- **Default User**: First created user gets ID `1000`
-- **Permissions**: Limited access based on ownership
-- **Characteristics**:
-  - Can only modify their own files in `/home/`
-  - Can only kill their own processes
-  - Cannot modify system directories
+### Standard Users (`UID 1000+`)
 
-## 📊 User Management Commands
+- The first created user gets `UID 1000`; later users get higher IDs
+- Can only modify their own files in `/home/`
+- Can only kill their own processes
+- Cannot modify system directories (exit code `13` / permission denied)
 
-### **User-related Functions in Lua**
+## User Management
 
-#### `os.getuid()`
-Returns the current user's ID.
+### Lua Functions
+
+#### `os.getuid(...)`
+
+Returns the current user's ID — `0` for root, `1000+` for regular users.
+
 ```lua
-uid = os.getuid([username])  -- Returns Double: 0 for root, 1000+ for users
+uid = os.getuid()
+print("User ID:", uid)
 ```
 
 #### `os.su(username, password)`
-Switch user context.
+
+Switch the current user context.
+
 ```lua
-status = os.su("root", "password123")  -- Returns 0 on success, 13 on failure
+status = os.su("root", "password123")  -- 0 on success, 13 on failure
 ```
 
-#### `java.midlet.uptime()`
-Get system uptime (available to all users).
+#### Kernel-level management (root only)
+
 ```lua
-uptime = java.midlet.uptime()  -- Returns milliseconds since system start
+os.request(1, "useradd", "newuser")                     -- add a user
+os.request(1, "userdel", "username")                    -- delete a user
+os.request(1, "passwd", { old = "old", new = "new" })   -- change password
 ```
 
-#### **Kernel-level User Management** (Root only)
-```lua
-os.request(1, "useradd", "newuser")  -- Add new user
-os.request(1, "userdel", "username") -- Delete user
-os.request(1, "passwd", { old = "oldpass", new = "newpass"}) -- Change password
+### First Login
+
+1. On first boot OpenTTY checks whether credentials exist.
+2. If not, it prompts for a username and password.
+3. Credentials are stored (hashed) in the `OpenRMS` RecordStore.
+4. Subsequent boots auto-log in the created user (`UID 1000`).
+
+### Shell
+
+```bash
+whoami              # current username
+id                  # current user ID
+su                  # become root (asks for password)
+sudo <cmd>          # run a command as root
+useradd <name>      # add a user (root)
+userdel <name>      # delete a user (root)
+passwd              # change password
+pkg install <p>     # requires root
 ```
 
-## 🔄 User Switching
+## Security Notes
 
-### **Login Process**
-1. System checks if credentials exist on first boot
-2. If not, prompts for username/password creation
-3. Credentials stored in `OpenRMS` RecordStore
-4. Subsequent boots auto-login the created user (`id: 1000`)
+- Only root can modify system directories or create VFS subdirectories under
+  `/bin/`, `/etc/`, `/lib/`, `/root/`.
+- Password changes require the current password (or root privileges).
+- Deleting a user requires root privileges.
+- `/root/` is inaccessible to regular users: entering it returns exit code `13`
+  and the shell prints `cd: <dir>: permission denied`.
 
-### **SU Command Flow**
-```lua
--- User tries to become root
-if os.su("root", password) == 0 then
-    print("Now root!")
-else
-    print("Permission denied")
-end
-```
+### Recovery Options
 
-## ⚠️ Security Notes
+1. **Factory reset** — clears user data via the Recovery menu.
+2. **Password reset** — root can reset any password via the kernel.
+3. **User recreation** — delete the `OpenRMS` store to trigger first-time setup.
 
-### **Restrictions**
-- Only root can modify system binaries/configurations, if it's native filesystem
-- Password changes require current password (or root privileges)
-- User deletion requires root privileges
-
-### **Recovery Options**
-1. **Factory Reset**: Clears all user data via Recovery menu
-2. **Password Reset**: Root can reset any password via kernel
-3. **User Recreation**: Delete `OpenRMS` to trigger first-time setup
-
-## 📝 Example User Session
+## Example Session
 
 ```lua
 -- Check current user
-uid = os.getuid()
-print("User ID:", uid)
+print("User ID:", os.getuid())
 
--- Try privileged operation (fails if not root)
-status = os.remove("/bin/systemfile")
+-- Try a privileged operation
+local status = os.remove("/bin/systemfile")
 if status == 13 then
-    print("Permission denied - need root")
+    print("Permission denied — need root")
 end
 
 -- Switch to root
 if os.su("root", "admin123") == 0 then
     print("Elevated to root privileges")
-    -- Now can perform system operations
 else
     print("Invalid credentials")
-end
-
--- List all processes (shows owners)
-procs = os.getproc()
-for pid, name in pairs(procs) do
-    print(pid, name)
 end
 ```

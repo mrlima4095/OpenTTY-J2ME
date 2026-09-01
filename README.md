@@ -1,140 +1,91 @@
-# 🖥️ OpenTTY
+# OpenTTY — Terminal Environment & ARM ELF Emulator for J2ME
 
-![License](https://img.shields.io/badge/License-MIT-blue.svg) ![GitHub top language](https://img.shields.io/github/languages/top/mrlima4095/OpenTTY-J2ME) ![GitHub release (latest by date)](https://img.shields.io/github/v/release/mrlima4095/OpenTTY-J2ME)
+![License](https://img.shields.io/badge/License-MIT-blue.svg)
+![GitHub top language](https://img.shields.io/github/languages/top/mrlima4095/OpenTTY-J2ME)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/mrlima4095/OpenTTY-J2ME)
+![Platform](https://img.shields.io/badge/Platform-J2ME%20MIDP--2.0-lightgrey.svg)
 
+**OpenTTY** is a complete, miniature operating-system environment that runs on
+Java ME (J2ME) mobile devices. It ships as a single MIDlet and bundles:
 
-**OpenTTY** — a lightweight, MIDlet-based terminal / shell environment inspired by classic Unix tools, written in Java for J2ME devices.  
-It exposes a SandBox with Lua interpreter and an ARM 32 ELF emulator (in development), enabling scripting and native binary execution in constrained mobile environments.
+- a **POSIX-like shell** with a virtual filesystem and process management,
+- a **Lua 5.x interpreter** tailored for low-memory devices,
+- an **ARM 32-bit ELF emulator** (in development),
+- **graphics**, **network**, and **audio** APIs.
 
----
-
-## 🌟 Key Features
-
-### 🐚 **Integrated Shell**
-- Lua 5.x interpreter with support for functions, tables, loops, and error handling
-- Virtual Unix-like filesystem structure (`/bin`, `/etc`, `/home`, `/lib`, `/mnt`, `/tmp`)
-- Support for pipes, redirection, and command execution
-- Multi-process environment with PID control
-
-### 🏗️ **ARM ELF Emulator**
-- 32-bit ARM executable (ELF) emulator
-- Linux ARM syscall implementation (EABI)
-- 1MB virtual memory with segment management
-- Support for basic ARM instructions and syscalls
-
-### 📂 **File System**
-- Hierarchical Unix-style system
-- Persistent storage support via RecordStore
-- Real device filesystem mounting (`/mnt/`)
-- Caching system for better performance
-
-### 🎨 **Graphical Interface**
-- Integrated LCDUI display
-- Forms, alerts, lists, and input fields
-- Custom font and layout support
-- Event and command system
-
-### 🔌 **Network and Connectivity**
-- TCP/IP socket support
-- HTTP/HTTPS client
-- Network connections management
-- Inter-process communication
+All of it runs inside a constrained CLDC-1.0 / MIDP-2.0 environment, turning
+legacy handsets into a portable scripting platform.
 
 ---
 
-## 🗂️ Directory Structure
+## Table of Contents
 
-```
-/
-├── 📁 bin/            # Executables and scripts
-│   ├── 📄 cp          # Copy files
-│   ├── 📄 curl        # HTTP client
-│   ├── 📄 init        # Initialization script
-│   ├── 📄 kill        # Kill processes
-│   ├── 📄 lua         # Lua interpreter
-│   ├── 📄 nano        # Text editor
-│   ├── 📄 rm          # Remove files
-│   ├── 📄 sh          # Basic shell
-│   ├── 📄 touch       # Create files
-│   └── 📄 yang        # Package manager
-├── 📁 dev/            # Devices
-│   ├── 📄 null        # Null device
-│   ├── 📄 random      # Random number generator
-│   ├── 📄 stdin       # Standard input
-│   ├── 📄 stdout      # Standard output
-│   └── 📄 zero        # Zero device
-├── 📁 etc/            # Configuration
-│   ├── 📄 fstab       # Filesystem table
-│   ├── 📄 hostname    # Host name
-│   ├── 📄 motd        # Initial message
-│   └── 📄 os-release  # Release information
-├── 📁 home/           # User files
-├── 📁 lib/            # Libraries
-│   └── 📄 libcore.so  # System core library
-├── 📁 mnt/            # Mount points
-└── 📁 tmp/            # Temporary files
-└── 📁 proc/           # Process files
-```
+- [Features](#features)
+- [Quick Start](#quick-start)
+- [File System](#file-system)
+- [Shell Commands](#shell-commands)
+- [Lua API](#lua-api)
+- [ARM ELF Emulator](#arm-elf-emulator)
+- [Package Manager (`yang` / `pkg`)](#package-manager)
+- [Security](#security)
+- [Building & Installation](#building--installation)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [License](#license)
 
 ---
 
-## 🚀 Quick Start
+## Features
 
-### 1. **First Execution**
-- On first run, credential creation will be requested
-- Set up username and password
-- Restart MIDlet after configuration
+### Shell & Runtime
 
-### 2. **Commands**
-# 📋 OpenTTY Shell Commands Table
+- Lua 5.x interpreter with functions, tables, loops, and protected error handling
+- Virtual Unix-like filesystem (`/bin`, `/etc`, `/home`, `/lib`, `/mnt`, `/tmp`, `/dev`, `/proc`, `/root`)
+- Pipes, redirection, environment variables, and command execution
+- Multi-process environment with PID control and permissions
 
-| Category | Command | Description | Usage Example | Status Codes |
-|----------|---------|-------------|---------------|--------------|
-| **Process Management** | `ps` | List running processes | `ps` | Always 0 |
-| | `bg` | Run command in background | `bg sleep 5` | Command exit code |
-| | `exec` | Execute multiple commands | `exec ls pwd whoami "echo gg"` | Last command exit code |
-| **Permissions & Users** | `su` | Switch user (to root or other) | `su` or `su root password` | 0=Success, 13=Permission denied |
-| | `whoami` | Show current username | `whoami` | Always 0 |
-| | `logname` | Show login name | `logname` | Always 0 |
-| | `id` | Show user ID | `id` | Always 0 |
-| **Session Control** | `exit` | Exit/close the MIDlet | `exit` | Terminates session |
-| **Shell Management** | `alias` | Create/view shell aliases | `alias ll='ls -l'` or `alias` | 127=Alias not found |
-| | `unalias` | Remove shell aliases | `unalias ll` | 127=Alias not found |
-| | `env` | Set/view environment variables | `env PATH=/bin` or `env` | 127=Var not found |
-| | `set` | Same as `env` | `set` | 127=Var not found |
-| | `export` | Same as `env` | `export` | 127=Var not found |
-| | `unset` | Remove environment variables | `unset PATH` | Always 0 |
-| **Shell Utilities** | `eval` | Evaluate shell command string | `eval "echo hello"` | Command exit code |
-| | `echo` | Print text to stdout | `echo "Hello World"` | Always 0 |
-| | `date` | Show current date/time | `date` | Always 0 |
-| | `clear` | Clear the screen | `clear` | Always 0 |
-| | `builtin` | Execute builtin ignoring aliases | `builtin ls` | Command exit code |
-| | `command` | Same as `builtin` | `command ls` | Command exit code |
-| | `source` | Execute commands from file | `source script.sh` | Last command exit code |
-| **File System** | `pwd` | Print working directory | `pwd` | Always 0 |
-| | `cd` | Change directory | `cd /home/` | 0=Success, 127=Not found, 20=Not a directory |
-| | `cat` | Display file contents | `cat /etc/motd` | 127=File not found |
-| | `ls` | List directory contents | `ls` or `ls /home/` | Always 0 |
-| | `open` | Open file/connection | `open http://example.com` | 127=Not found, 1=Error |
-| **System Info** | `uptime` | Show system uptime | `uptime` | Always 0 |
-| **Window/Graphics** | `xterm` | Switch to default terminal screen | `xterm` | Always 0 |
-| | `warn` | Display alert dialog | `warn "Title" "Message"` | Always 0 |
-| | `title` | Change window title | `title "My Terminal"` | Always 0 |
-| | `buff` | Set stdin buffer text | `buff "command to run"` | Always 0 |
-| **System Control** | `gc` | Run garbage collector | `gc` | Always 0 |
-| **Placeholders** | `true` | Always succeeds (no-op) | `true` | Always 0 |
-| | `false` | Always fails | `false` | Always 255 |
-| **Comment** | `#` | Comment (ignored) | `# This is a comment` | Always 0 |
-| **Special** | `.` | Execute program (current dir) | `. program` | Program exit code |
-| **Redirection** | `>` | Redirect output to file | `echo hello > file.txt` | Command exit code |
+### ARM ELF Emulator
 
-### 3. **Lua Script Examples**
+- 32-bit ARM ELF executable loading
+- Linux ARM (EABI) syscall emulation
+- 1 MB virtual memory with segment management
+- Basic ARM instruction emulation
+
+### File System
+
+- Hierarchical Unix-style layout with `/proc` virtual files
+- Persistent storage via RecordStore (RMS)
+- Real device file-system mounting (`/mnt/`, JSR-75)
+- VFS subdirectories under `/bin`, `/etc`, `/lib` that persist across restarts
+
+### Graphical Interface
+
+- LCDUI-based forms, alerts, lists, text boxes, and command handlers
+- Custom fonts, layouts, and screen management from Lua
+
+### Network
+
+- TCP/IP client and server sockets
+- HTTP/HTTPS client (`socket.http`)
+- Inter-process communication via `os.request`
+
+---
+
+## Quick Start
+
+### First Run
+
+1. Install `OpenTTY.jar` on a J2ME-capable device (or run it in an emulator).
+2. On first launch you will be asked to create a **username** and **password**.
+3. Restart the MIDlet. Subsequent boots auto-log in the created user.
+
+### Hello World
+
 ```lua
--- Hello World
 print("Hello OpenTTY!")
 
--- File manipulation
-local file = io.write("content", "/tmp/test.txt")
+-- Write to a file
+local status = io.write("content", "/tmp/test.txt")
 
 -- HTTP request
 local response, code = socket.http.get("http://example.com")
@@ -144,182 +95,175 @@ print("Response:", response)
 
 ---
 
-## 🛠️ Lua API
+## File System
 
-### 📦 **Available Modules**
-
-| Module | Description | Main Functions |
-|--------|-----------|-------------------|
-| `os` | System operations | `execute`, `getenv`, `setenv`, `exit`, `date` |
-| `io` | Input/Output | `read`, `write`, `open`, `close`, `dirs` |
-| `string` | String manipulation | `upper`, `lower`, `sub`, `find`, `match` |
-| `table` | Table manipulation | `insert`, `remove`, `concat`, `sort` |
-| `socket` | Network and sockets | `connect`, `http.get`, `http.post` |
-| `graphics` | Graphical interface | `display`, `new`, `append`, `handler` |
-| `java` | Java integration | `class`, `getName`, `run`, `thread` |
-| `base64` | Base64 API | `encode`, `decode` |
-| `push` | PushRegistry | `register`, `unregister`, `list`, `pending`, `setAlarm`, `getAlarm` |
-
----
-
-## ⚙️ ARM ELF Emulator
-
-### 🎯 **Features**
-- ✅ 32-bit ARM ELF executable loading
-- ✅ Basic ARM instruction emulation
-- ✅ Linux ARM syscalls (EABI)
-- ✅ Memory management (1MB)
-- ✅ File descriptors and I/O
-- ✅ Registers and CPSR flags
-
-### 🔌 **Supported Syscalls**
-- `exit`, `fork`, `read`, `write`
-- `open`, `close`, `creat`
-- `time`, `gettimeofday`, `kill`
-- `getpid`, `getppid`, `getuid`
-- `brk`, `getcwd`, `chdir`
-
----
-
-## 📡 Network and Communication
-
-### 🌐 **Supported Protocols**
-- **HTTP/HTTPS**: GET, POST, custom headers
-- **TCP Sockets**: Client and server
-- **Socket Streams**: Asynchronous read/write
-
-### 🔗 **Connection Example**
-```lua
--- HTTP client
-local response, code = socket.http.get("http://api.example.com/data")
-
--- TCP Socket
-local conn, input, output = socket.connect("example.com:80")
-io.write("GET / HTTP/1.0\r\n\r\n", output)
-local response = io.read(input, 4096)
-io.close(conn, output, input)
+```
+/
+├── bin/      # System executables and scripts
+├── dev/      # Virtual devices (stdin, stdout, null, random, zero, tty)
+├── etc/      # Configuration (fstab, hostname, motd, os-release, vfs.conf)
+├── home/     # User files (RMS RecordStores)
+├── lib/      # Lua libraries and modules (libcore.so)
+├── mnt/      # Real device file system (JSR-75)
+├── proc/     # Virtual process/sysinfo files (cpuinfo, meminfo, uptime, <pid>/...)
+├── root/     # Root user's protected home
+└── tmp/      # Temporary in-memory storage
 ```
 
+See [File System documentation](docs/FILESYS.md) for details.
+
 ---
 
-## 🎨 Graphical Interface
+## Shell Commands
 
-### 🖼️ **Available Components**
-- `Form`: Forms with multiple items
-- `Alert`: Dialog boxes
-- `List`: Selectable lists
-- `TextBox`: Text input fields
-- `StringItem`: Formatted text items
-- `Image`: Image display
+Some of the built-in commands available in the shell:
 
-### 🎮 **UI Example**
+| Category | Command | Description |
+|----------|---------|-------------|
+| Process | `ps`, `bg`, `exec`, `kill` | Manage running processes |
+| Users | `su`, `whoami`, `logname`, `id` | Switch and inspect users |
+| Session | `exit` | Close the MIDlet / terminal |
+| Shell | `alias`, `env`/`set`/`export`, `unset`, `eval`, `source`, `builtin` | Manage the shell |
+| Files | `pwd`, `cd`, `cat`, `ls`, `touch`, `cp`, `rm`, `mkdir`, `nano` | File operations |
+| Network | `curl`, `wget`, `nc`, `ping`, `ifconfig` | Network utilities |
+| System | `uptime`, `free`, `uname`, `htop`, `gc`, `warn`, `title` | Inspect and control |
+| Utilities | `echo`, `date`, `clear`, `true`, `false` | Basic utilities |
+| Package | `yang` / `pkg` | Package manager |
+
+Install additional tools from the app store with `pkg install <name>`
+(e.g. `pkg install nano`, `pkg install htop`).
+
+---
+
+## Lua API
+
+### Modules
+
+| Module | Purpose | Selected functions |
+|--------|---------|--------------------|
+| `os` | System operations | `execute`, `getenv`, `setenv`, `exit`, `date`, `getuid`, `su`, `request`, `setproc`, `getproc`, `mkdir`, `remove` |
+| `io` | Input / output | `read`, `write`, `open`, `close`, `dirs`, `popen`, `copy`, `mount` |
+| `string` | String manipulation | `upper`, `lower`, `sub`, `find`, `match`, `reverse`, `byte`, `char`, `split`, `hash`, `startswith` |
+| `table` | Table manipulation | `insert`, `remove`, `concat`, `sort`, `pack`, `unpack`, `decode` |
+| `socket` | Networking | `connect`, `server`, `accept`, `http.get`, `http.post`, `peer`, `device` |
+| `graphics` | User interface | `display`, `new`, `append`, `addCommand`, `handler`, `render`, `vibrate` |
+| `java` | Java integration | `class`, `getName`, `run`, `delete`, `midlet.*` |
+| `base64` | Base64 encoding | `encode`, `decode` |
+| `push` | PushRegistry | `register`, `unregister`, `list`, `pending`, `setAlarm`, `getAlarm` |
+| `audio` | Audio (MMAPI) | `load`, `play`, `pause`, `volume`, `duration` |
+
+> **Note on `string`:** this implementation does **not** provide `string.format`,
+> `string.rep`, `string.gsub`, or `string.gmatch`. Use the native
+> `string.startswith` / `string.endswith` rather than reimplementing them.
+
+### UI Example
+
 ```lua
--- Create form
-local form = graphics.new("screen", "My App")
+local form = graphics.new("form", "My App")
 
--- Add components
-graphics.append(form, {
-    type = "text",
-    label = "Name:",
-    value = "Enter your name"
-})
+graphics.append(form, { type = "field", label = "Name:", value = "" })
+graphics.append(form, { type = "choice", label = "Options:",
+                        options = { "A", "B", "C" } })
 
-graphics.append(form, {
-    type = "field",
-    label = "Password:",
-    mode = "password"
-})
+local save = graphics.new("command", { label = "Save", type = "ok" })
+graphics.addCommand(form, save)
 
--- Display
+graphics.handler(form, { [save] = function() print("Saved!") end })
 graphics.display(form)
 ```
 
 ---
 
-## 🔒 Security and Permissions
+## ARM ELF Emulator
 
-### 👤 **User System**
-- Root user (UID 0) with full privileges
-- Normal users (UID 1000+) with restrictions
-- File and process access control
-- Password authentication system
+### Features
 
-### 🛡️ **Protections**
-- Process sandboxing
-- Syscall validation
-- Filesystem access control
-- Resource limits per process
+- 32-bit ARM ELF executable loading
+- Basic ARM instruction emulation
+- Linux ARM syscalls (EABI)
+- 1 MB virtual memory with segment management
+- File descriptors and I/O
+- Registers and CPSR flags
 
----
+### Supported Syscalls (partial)
 
-## ⚡ Performance
-
-### 🚀 **Optimizations**
-- Lua token caching for frequent scripts
-- Shared memory between processes
-- Efficient J2ME resource management
-- Configurable garbage collection
-
-### 📊 **Monitoring**
-```lua
--- Memory status
-local free = collectgarbage("free")     -- Free memory (KB)
-local total = collectgarbage("total")   -- Total memory (KB)
-local used = collectgarbage("count")    -- Used memory (KB)
-
--- System information
-print("Uptime:", java.midlet.uptime())
-print("Build:", java.midlet.build)
-```
+`exit`, `fork`, `read`, `write`, `open`, `close`, `creat`, `time`,
+`gettimeofday`, `kill`, `getpid`, `getppid`, `getuid`, `brk`, `getcwd`,
+`chdir`, `nice`, plus `fstat`/`stat` and network syscalls (`bind`, `listen`,
+`accept`, `recvfrom`, `sendto`, ...) under active development.
 
 ---
 
-## 🔄 Updates and Maintenance
+## Package Manager
 
-### 📦 **Package System**
+`yang` (also invoked as `pkg`) installs apps from the on-device app store:
+
 ```bash
-# Update mirrors
-yang update
-
-# Change to root
-su [password]
-
-# Install package
-yang install package
-
-# Remove package
-yang remove package
-
-# List installed packages
-yang list
+pkg list                  # List available packages
+pkg install nano          # Install a package (requires root)
+pkg install *             # Install everything
+pkg remove nano           # Remove a package
+pkg update                # Check for updates
+pkg download nano n.txt   # Download a package without installing
+pkg info nano             # Show package information
 ```
 
-## 📚 Additional Resources
-
-### 🎓 **Learn More**
-- [Lua 5.1 Documentation](https://www.lua.org/manual/5.1/)
-- [ELF Specification](https://refspecs.linuxfoundation.org/elf/elf.pdf)
-- [ARM Architecture Reference](https://developer.arm.com/documentation/ddi0406/latest/)
+Packages include `nano`, `htop`, `curl`, `wget`, `nc`, `ping`, `find`,
+`grep`, `sed`, `viewer`, `x11`, `docker`, and many more.
 
 ---
 
-## 🛠️ Build & Installation
+## Security
 
-For detailed build instructions and installation guide, check out our complete documentation:
+- **Restricted execution environment** — OpenTTY is a trusted terminal for
+  old devices, not a hardened remote-access tool.
+- **Password storage** — credentials are hashed and stored in an inaccessible
+  file.
+- **No encryption** — network traffic is not encrypted; use secure networks or a
+  VPN.
+- **Multi-user model** — root (UID 0) has full access; regular users (UID 1000+)
+  are restricted to their own files and processes.
 
-📖 **[Build Documentation Wiki](https://github.com/mrlima4095/OpenTTY-J2ME/wiki/%F0%9F%9A%80-Build-Documentation)**
-
-*Quick overview:*
-- Built using [J2ME SDK Mobile](http://opentty.fun/dl/SDK.jar)
-- Compiles to `OpenTTY.jar` and `OpenTTY.jad` files
-- Direct installation on Java ME compatible devices
-- Supports various mobile platforms with J2ME runtime
+Read the full [Security policy](SECURITY.md) and [User system docs](docs/USERS.md).
 
 ---
 
-## 🤝 Contributing & Collaborators
+## Building & Installation
 
-OpenTTY is actively developed by the community.
-If you want to contribute, open issues or pull requests on GitHub.
+Detailed instructions are in [docs/BUILD.md](docs/BUILD.md).
+
+Quick overview:
+
+- Build on-device using the J2ME SDK (`http://opentty.fun/dl/SDK.jar`)
+- Compiles to `OpenTTY.jar` + `OpenTTY.jad`
+- Install directly on Java ME (MIDP-2.0 / CLDC-1.0) devices
+- Version: **1.18.1**
+
+---
+
+## Documentation
+
+Comprehensive docs live in [`docs/`](docs/):
+
+- [Overview & usage](docs/README.md)
+- [File system](docs/FILESYS.md)
+- [User system](docs/USERS.md)
+- [Lua reference & examples](docs/lua/README.md)
+- [Building from source](docs/BUILD.md)
+
+Also see the [changelog](CHANGELOG.md) and [roadmap](ROADMAP.md).
+
+---
+
+## Contributing
+
+OpenTTY is developed by the community. See [CONTRIBUTING.md](CONTRIBUTING.md)
+for guidelines on reporting bugs and submitting pull requests.
 
 **Author:** Mr. Lima
+
+---
+
+## License
+
+[MIT](LICENSE)
