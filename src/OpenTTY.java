@@ -347,6 +347,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (name.equals("")) { return 2; }
             if (id != 0) { return 13; }
 
+            String subdir = dir + name + "/";
+            if (fs.containsKey(subdir)) {
+                int sidx = vfsDirIndex(subdir);
+                if (sidx != -1) { writeRMS("OpenRMS", new byte[0], sidx); }
+                fs.remove(subdir);
+                Vector struct = (Vector) fs.get(dir);
+                if (struct != null) { struct.removeElement(name + "/"); }
+                if (useCache) { cache.remove(full); }
+                return 0;
+            }
+
             int index = vfsDirIndex(dir);
             if (index == -1) { return 5; }
             String content = loadRMS("OpenRMS", index);

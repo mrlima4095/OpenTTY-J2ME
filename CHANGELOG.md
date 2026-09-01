@@ -18,6 +18,8 @@ filesystem / vfs
 - Root's home is now `/root/` (OpenRMS index 6, same top-level style as `/bin`→3, `/lib`→4, `/etc`→5); regular users cannot read, write or enter it, and `rms` stays root-only
 - VFS hash subdirectories now use indices `>= 9` (`VFS_RESERVED` moved from 6 to 9), leaving indices 7 and 8 free for future top-level mounts without remapping
 - `/root/` is declared in `/etc/fstab` root line, `su`, `chdir` and directory listing all enforce the root-home rule
+- Fixed `rm` in `/bin|etc|lib/` subdirs: it no longer errors with exit code 5 (read-only) — `deleteFile` now removes a registered VFS subdirectory (clears its OpenRMS store and drops it from the `fs` table), and `rm` accepts `-r`/`-rf`/`-fr`
+- Entering `/root/` without permission now returns exit code 13 and the shell prints `cd: <dir>: permission denied`
 
 runtime / exit
 

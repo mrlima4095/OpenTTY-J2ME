@@ -2786,7 +2786,7 @@ public class Lua {
                                 else if (arg.equals("/bin/")) { midlet.writeRMS("OpenRMS", new byte[0], 3); }
                                 else if (arg.equals("/etc/")) { midlet.writeRMS("OpenRMS", new byte[0], 5); }
                                 else if (arg.equals("/lib/")) { midlet.writeRMS("OpenRMS", new byte[0], 4); }
-                                else { String r = toLuaString(arg); int rmi = midlet.vfsDirIndex(r); if (rmi != -1 && rmi >= 6) { midlet.writeRMS("OpenRMS", new byte[0], rmi); } else { return new Double(5); } }
+                                else { String r = toLuaString(arg); int rmi = midlet.vfsDirIndex(r); if (rmi != -1 && rmi >= 6) { midlet.writeRMS("OpenRMS", new byte[0], rmi); if (midlet.fs.containsKey(r.endsWith("/") ? r : r + "/")) { String sd = r.endsWith("/") ? r : r + "/"; int base = sd.lastIndexOf('/', sd.length() - 2); String parent = sd.substring(0, base + 1); String entry = sd.substring(base + 1, sd.length() - 1) + "/"; Vector struct = (Vector) midlet.fs.get(parent); if (struct != null) { struct.removeElement(entry); } midlet.fs.remove(sd); } } else { return new Double(5); } }
                             } else { return new Double(13); }
                         }
                         else if (payload.equals("useradd")) {
@@ -3123,6 +3123,7 @@ public class Lua {
 
                     if (status == 127) { midlet.print("cd: " + args[0] + ": not found", output, id, father); }
                     else if (status == 20) { midlet.print("cd: " + args[0] + ": found", output, id, father); }
+                    else if (status == 13) { midlet.print("cd: " + args[0] + ": permission denied", output, id, father); }
                 }
                 else if (mainCommand.equals("builtin") || mainCommand.equals("command")) { Vector payload = new Vector(); payload.addElement(argument); payload.addElement(true); payload.addElement(FALSE); return exec(payload); }
                 else if (mainCommand.equals("false")) { status = 255; }
