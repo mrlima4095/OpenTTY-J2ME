@@ -2924,6 +2924,40 @@ public class Lua {
                 int status = 0; InputStream in; boolean builtin = args.size() > 1 ? ((Boolean) args.elementAt(1)).booleanValue() : false;
 
                 String command = midlet.env(toLuaString(args.elementAt(0)));
+
+                Vector chain = splitAmpersands(command);
+                if (chain.size() > 1) {
+                    int chainStatus = 0;
+                    for (int i = 0; i < chain.size(); i++) {
+                        String seg = ((String) chain.elementAt(i)).trim();
+                        if (seg.length() == 0) { continue; }
+                        Vector payload = new Vector();
+                        payload.addElement(seg);
+                        if (builtin) { payload.addElement(TRUE); }
+                        chainStatus = exec(payload).intValue();
+                        if (chainStatus != 0) { break; }
+                    }
+                    return new Double(chainStatus);
+                }
+                int amp = lastAmpersandIndex(command);
+                if (amp != -1) {
+                    final String bg = command.substring(0, amp).trim();
+                    final boolean fbuiltin = builtin;
+                    if (bg.length() > 0) {
+                        new Thread(new Runnable() {
+                            public void run() {
+                                try {
+                                    Vector payload = new Vector();
+                                    payload.addElement(bg);
+                                    if (fbuiltin) { payload.addElement(TRUE); }
+                                    exec(payload);
+                                } catch (Exception e) { }
+                            }
+                        }).start();
+                    }
+                    return new Double(0);
+                }
+
                 String mainCommand = midlet.getCommand(command), argument = midlet.getArgument(command);
                 String[] args = midlet.splitArgs(argument);
 
@@ -3134,6 +3168,46 @@ public class Lua {
                 
                 return new Double(status);
             }
+        }
+        public Vector splitAmpersands(String input) {
+            Vector segments = new Vector();
+            if (input == null) { segments.addElement(""); return segments; }
+            StringBuffer current = new StringBuffer();
+            char quote = 0; boolean escaped = false;
+            for (int i = 0; i < input.length(); i++) {
+                char c = input.charAt(i);
+                if (escaped) { current.append(c); escaped = false; continue; }
+                if (quote == 0 && c == '\\') { current.append(c); escaped = true; continue; }
+                if (quote == 0 && (c == '"' || c == '\'')) { current.append(c); quote = c; continue; }
+                if (quote != 0 && c == quote) { current.append(c); quote = 0; continue; }
+                if (quote == 0 && c == '&' && i + 1 < input.length() && input.charAt(i + 1) == '&') {
+                    segments.addElement(current.toString());
+                    current.setLength(0);
+                    i++;
+                    continue;
+                }
+                current.append(c);
+            }
+            segments.addElement(current.toString());
+            return segments;
+        }
+        public int lastAmpersandIndex(String input) {
+            if (input == null) { return -1; }
+            char quote = 0; boolean escaped = false; int last = -1;
+            for (int i = 0; i < input.length(); i++) {
+                char c = input.charAt(i);
+                if (escaped) { escaped = false; continue; }
+                if (quote == 0 && c == '\\') { escaped = true; continue; }
+                if (quote == 0 && (c == '"' || c == '\'')) { quote = c; continue; }
+                if (quote != 0 && c == quote) { quote = 0; continue; }
+                if (quote == 0 && c == '&') { last = i; }
+            }
+            if (last == -1) { return -1; }
+            for (int i = last + 1; i < input.length(); i++) {
+                char c = input.charAt(i);
+                if (c != ' ' && c != '\t') { return -1; }
+            }
+            return last;
         }
         public Hashtable dirs(Vector args) throws Exception {
             String pwd = args.isEmpty() ? (String) father.get("PWD") : toLuaString(args.elementAt(0));
