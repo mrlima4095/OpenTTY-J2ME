@@ -3,6 +3,21 @@ Copyright (C) 2026 - Mr. Lima
 
 ---
 
+## Build 2026-1.18.1-03x29
+
+runtime / exit
+
+- `os.exit()` no longer prints `java.lang.Error` on the terminal when it kills a process
+- Process death via `os.exit` (any exit code), status abort and `Process killed` is now silent
+- Real Lua errors and resource errors (`java.lang.Error`) are still reported
+
+shell / commands
+
+- New `mkdir` command (`/bin/mkdir`) to create directories, including VFS subdirectories under `/bin/`, `/etc/`, `/lib/`
+- `os.mkdir` now creates VFS subdirectory mounts (via `registerVfsDir`) in addition to `/mnt/`
+
+---
+
 ## Build 2026-1.18.1-03x28
 
 filesystem / vfs

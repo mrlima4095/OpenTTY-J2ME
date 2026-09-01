@@ -30,6 +30,7 @@ public class Lua {
     public Vector thrownLineOffsets = null;
     // |
     public int status = 0;
+    public boolean silent = false;
     // | (LuaFunction)
     public static final int PRINT = 0, ERROR = 1, PCALL = 2, REQUIRE = 3, LOADS = 4, PAIRS = 5, GC = 6, TOSTRING = 7, TONUMBER = 8, SELECT = 9, TYPE = 10, GETPROPERTY = 11, SETMETATABLE = 12, GETMETATABLE = 13, IPAIRS = 14, RANDOM = 15;
     public static final int UPPER = 100, LOWER = 101, LEN = 102, FIND = 103, MATCH = 104, REVERSE = 105, SUB = 106, HASH = 107, BYTE = 108, CHAR = 109, TRIM = 110, SPLIT = 111, UUID = 112, GETCMD = 113, GETARGS = 114, ENV = 115, BASE64_ENCODE = 116, BASE64_DECODE = 117, GETPATTERN = 118, STARTSWITH = 119, ENDSWITH = 120;
@@ -124,6 +125,7 @@ public class Lua {
         lineOffsets = computeLineOffsets(lastCode);
         frameStack.removeAllElements();
         clearThrown();
+        silent = false;
 
         Hashtable ITEM = new Hashtable(); 
         
@@ -133,7 +135,7 @@ public class Lua {
             while (peek().type != EOF) { Object res = statement(globals); if (doreturn) { if (res != null) { ITEM.put("object", res); } doreturn = false; break; } }
         } 
         catch (Exception e) { recordThrow(); midlet.print(getTraceback(e), stdout, id, father); status = 1; } 
-        catch (Error e) { midlet.print(midlet.getCatch(e), stdout, id, father); status = 1; }
+        catch (Error e) { if (!silent) { midlet.print(midlet.getCatch(e), stdout, id, father); status = 1; } }
 
         if (kill) { midlet.sys.remove(PID); }
         ITEM.put("status", status);
@@ -362,8 +364,8 @@ public class Lua {
     public Object statement(Hashtable scope) throws Exception {
         Token current = peek();
 
-        if (status != 0) { midlet.sys.remove(PID); throw new Error(); }
-        if (midlet.sys.containsKey(PID)) { } else { throw new Error("Process killed"); } 
+        if (status != 0) { silent = true; midlet.sys.remove(PID); throw new Error(); }
+        if (midlet.sys.containsKey(PID)) { } else { silent = true; throw new Error("Process killed"); } 
 
         if (current.type == IDENTIFIER) {
             int la = 0;
@@ -1688,6 +1690,8 @@ public class Lua {
                     if (args.isEmpty()) { }
                     else {
                         String dir = toLuaString(args.elementAt(0));
+                        dir = (String) midlet.joinpath(dir, father);
+                        if (dir.length() > 1 && !dir.endsWith("/")) { dir = dir + "/"; }
 
                         if (!dir.equals("/mnt/") && dir.startsWith("/mnt/")) {
                             FileConnection fc = null;
@@ -1698,6 +1702,10 @@ public class Lua {
                             }
                             catch (Exception e) { return e instanceof SecurityException ? 13 : 1; }
                             finally { if (fc != null) { try { fc.close(); } catch (Exception e) { } } }
+                        } else if (midlet.vfsDirIndex(dir) != -1) {
+                            if (midlet.fs.containsKey(dir)) { return new Double(128); }
+                            midlet.registerVfsDir(dir);
+                            return new Double(0);
                         } else { return new Double(5); }
                     }
                 // Package [io]
@@ -2904,7 +2912,7 @@ public class Lua {
         private String getFieldValue(Hashtable table, String key, String fallback) { Object val = table.get(key); return val != null ? toLuaString(val) : fallback; }
         private Font genFont(String params) { if (params == null || params.length() == 0 || params.equals("default")) { return Font.getDefaultFont(); } int face = Font.FACE_SYSTEM, style = Font.STYLE_PLAIN, size = Font.SIZE_MEDIUM; String[] tokens = midlet.split(params, ' '); for (int i = 0; i < tokens.length; i++) { String token = tokens[i].toLowerCase(); if (token.equals("system")) { face = Font.FACE_SYSTEM; } else if (token.equals("monospace")) { face = Font.FACE_MONOSPACE; } else if (token.equals("proportional")) { face = Font.FACE_PROPORTIONAL; } else if (token.equals("bold")) { style |= Font.STYLE_BOLD; } else if (token.equals("italic")) { style |= Font.STYLE_ITALIC; } else if (token.equals("ul") || token.equals("underline") || token.equals("underlined")) { style |= Font.STYLE_UNDERLINED; } else if (token.equals("small")) { size = Font.SIZE_SMALL; } else if (token.equals("medium")) { size = Font.SIZE_MEDIUM; } else if (token.equals("large")) { size = Font.SIZE_LARGE; } } Font f = Font.getFont(face, style, size); return f == null ? Font.getDefaultFont() : f; }
 
-        public void run() { if (root instanceof LuaFunction) { Vector arg = new Vector(); try { ((LuaFunction) root).call(arg); } catch (Throwable e) { midlet.print(getTraceback(e), stdout, id, father); } } }
+        public void run() { if (root instanceof LuaFunction) { Vector arg = new Vector(); try { ((LuaFunction) root).call(arg); } catch (Throwable e) { if (!silent) { midlet.print(getTraceback(e), stdout, id, father); } } } }
 
         public Double exec(Vector args) throws Exception {
             if (args.isEmpty()) { return (Double) gotbad(1, "execute", "string expected, got no value"); }
@@ -3288,7 +3296,7 @@ public class Lua {
             }
         }
 
-        public void exit(Vector args) { if (PID.equals("1")) { midlet.destroyApp(true); } midlet.sys.remove(PID); if (args.isEmpty()) { throw new Error(); } else { status = getNumber(toLuaString(args.elementAt(0)), 1); } }
+        public void exit(Vector args) { silent = true; if (PID.equals("1")) { midlet.destroyApp(true); } midlet.sys.remove(PID); if (args.isEmpty()) { throw new Error(); } else { status = getNumber(toLuaString(args.elementAt(0)), 1); } }
 
         public void commandAction(Command c, Displayable d) {
             try {
@@ -3321,9 +3329,9 @@ public class Lua {
                 }
             }
             catch (Exception e) { midlet.print(getTraceback(e), stdout); midlet.sys.remove(PID); } 
-            catch (Error e) { midlet.print(midlet.getCatch(e), stdout); midlet.sys.remove(PID); }
+            catch (Error e) { if (!silent) { midlet.print(midlet.getCatch(e), stdout); } midlet.sys.remove(PID); }
         }
-        public void commandAction(Command c, Item item) { try { if (root instanceof LuaFunction) { ((LuaFunction) root).call(new Vector()); } } catch (Exception e) { midlet.print(getTraceback(e), stdout, id, father); midlet.sys.remove(PID); } catch (Error e) { midlet.print(midlet.getCatch(e), stdout, id, father); midlet.sys.remove(PID); } }
+        public void commandAction(Command c, Item item) { try { if (root instanceof LuaFunction) { ((LuaFunction) root).call(new Vector()); } } catch (Exception e) { midlet.print(getTraceback(e), stdout, id, father); midlet.sys.remove(PID); } catch (Error e) { if (!silent) { midlet.print(midlet.getCatch(e), stdout, id, father); } midlet.sys.remove(PID); } }
         public void itemStateChanged(Item item) {
             try {
                 if (root == LUA_NIL) { }
@@ -3339,7 +3347,7 @@ public class Lua {
 
                     ((LuaFunction) root).call(args); 
                 }
-            } catch (Exception e) { midlet.print(getTraceback(e), stdout, id, father); midlet.sys.remove(PID); } catch (Error e) { midlet.print(midlet.getCatch(e), stdout, id, father); midlet.sys.remove(PID); } 
+            } catch (Exception e) { midlet.print(getTraceback(e), stdout, id, father); midlet.sys.remove(PID); } catch (Error e) { if (!silent) { midlet.print(midlet.getCatch(e), stdout, id, father); } midlet.sys.remove(PID); } 
         }
     }
 }
