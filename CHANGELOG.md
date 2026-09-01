@@ -3,21 +3,6 @@ Copyright (C) 2026 - Mr. Lima
 
 ---
 
-## Build 2026-1.18.1-03x29
-
-runtime / exit
-
-- `os.exit()` no longer prints `java.lang.Error` on the terminal when it kills a process
-- Process death via `os.exit` (any exit code), status abort and `Process killed` is now silent
-- Real Lua errors and resource errors (`java.lang.Error`) are still reported
-
-shell / commands
-
-- New `mkdir` command (`/bin/mkdir`) to create directories, including VFS subdirectories under `/bin/`, `/etc/`, `/lib/`
-- `os.mkdir` now creates VFS subdirectory mounts (via `registerVfsDir`) in addition to `/mnt/`
-
----
-
 ## Build 2026-1.18.1-03x28
 
 filesystem / vfs
@@ -30,6 +15,20 @@ filesystem / vfs
 - `rms` handler can clear subdir stores (`rm -r /bin/tools`)
 - Declare subdirs in `/etc/fstab` under their parent line using a trailing `/` (e.g. `tools/`)
 - Refactored `addFile` to operate on a store index instead of a base string
+- Root's home is now `/root/` (OpenRMS index 6, same top-level style as `/bin`→3, `/lib`→4, `/etc`→5); regular users cannot read, write or enter it, and `rms` stays root-only
+- VFS hash subdirectories now use indices `>= 9` (`VFS_RESERVED` moved from 6 to 9), leaving indices 7 and 8 free for future top-level mounts without remapping
+- `/root/` is declared in `/etc/fstab` root line, `su`, `chdir` and directory listing all enforce the root-home rule
+
+runtime / exit
+
+- `os.exit()` no longer prints `java.lang.Error` on the terminal when it kills a process
+- Process death via `os.exit` (any exit code), status abort and `Process killed` is now silent
+- Real Lua errors and resource errors are still reported
+
+shell / commands
+
+- New `mkdir` command (`/bin/mkdir`) to create directories, including VFS subdirectories under `/bin/`, `/etc/`, `/lib/`
+- `os.mkdir` now creates VFS subdirectory mounts (via `registerVfsDir`) in addition to `/mnt/`
 
 ---
 

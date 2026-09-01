@@ -22,7 +22,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Object shell;
     // |
     public Hashtable attributes = new Hashtable(), fs = new Hashtable(), sys = new Hashtable(), tmp = new Hashtable(), cache = new Hashtable(), cacheLua = new Hashtable(), graphics = new Hashtable(), servers = new Hashtable(), globals = new Hashtable(), userID = new Hashtable();
-    public String username = read("/home/OpenRMS", globals), build = "2026-1.18.1-03x29";
+    public String username = read("/home/OpenRMS", globals), build = "2026-1.18.1-03x28";
     // |
     // Graphics
     public Display display = Display.getDisplay(this);
@@ -47,7 +47,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } else {
                 try {
                     Hashtable args = new Hashtable(); args.put(new Double(0), "/bin/init");
-                    globals.put("PWD", "/home/"); globals.put("USER", "root"); globals.put("ROOT", "/"); globals.put("ALIAS", new Hashtable()); userID.put(username, 1000);
+                    globals.put("PWD", "/root/"); globals.put("USER", "root"); globals.put("ROOT", "/"); globals.put("ALIAS", new Hashtable()); userID.put(username, 1000);
 
                     Process proc = new Process(this, "init", "/bin/init", "root", 0, "1", stdout, globals);
 
@@ -224,7 +224,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
                 filename = "/dev/" + filename;
             }
-            else if (filename.startsWith("/bin/") || filename.startsWith("/etc/") || filename.startsWith("/lib/")) {
+            else if (filename.startsWith("/bin/") || filename.startsWith("/etc/") || filename.startsWith("/lib/") || filename.startsWith("/root/")) {
+                if (filename.startsWith("/root/") && !isRootCaller(scope)) { return null; }
                 String full = filename;
                 int slash = filename.lastIndexOf('/');
                 String dir = slash < 0 ? filename : filename.substring(0, slash + 1);
@@ -294,7 +295,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if ((filename = solvepath(filename, scope)) == null || filename.length() == 0) { return 2; } 
         else if (filename.startsWith("/mnt/")) { FileConnection fs = null; OutputStream out = null; try { fs = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (!fs.exists()) { fs.create(); } out = fs.openOutputStream(); out.write(data); out.flush(); } catch (Exception e) { return (e instanceof SecurityException) ? 13 : 1; } finally { out.close(); fs.close(); } } 
         else if (filename.startsWith("/home/")) { return writeRMS(filename.substring(6), data, 1); } 
-        else if (filename.startsWith("/bin/") || filename.startsWith("/etc/") || filename.startsWith("/lib/")) {
+        else if (filename.startsWith("/bin/") || filename.startsWith("/etc/") || filename.startsWith("/lib/") || filename.startsWith("/root/")) {
             String full = filename;
             int slash = filename.lastIndexOf('/');
             String dir = slash < 0 ? filename : filename.substring(0, slash + 1);
@@ -338,7 +339,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             } 
             catch (Exception e) { return e instanceof SecurityException ? 13 : 1; } 
         }
-        else if (filename.startsWith("/bin/") || filename.startsWith("/etc/") || filename.startsWith("/lib/")) {
+        else if (filename.startsWith("/bin/") || filename.startsWith("/etc/") || filename.startsWith("/lib/") || filename.startsWith("/root/")) {
             String full = filename;
             int slash = filename.lastIndexOf('/');
             String dir = slash < 0 ? filename : filename.substring(0, slash + 1);
@@ -365,14 +366,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return 0; 
     }
     // | (VFS Store Index)
-    private static final int VFS_HASH_MOD = 97, VFS_RESERVED = 6;
+    private static final int VFS_HASH_MOD = 97, VFS_RESERVED = 9;
     public int vfsDirIndex(String dir) {
         while (dir.length() > 1 && dir.endsWith("/")) { dir = dir.substring(0, dir.length() - 1); }
         if (dir.equals("/bin")) { return 3; }
-        else if (dir.equals("/etc")) { return 5; }
         else if (dir.equals("/lib")) { return 4; }
+        else if (dir.equals("/etc")) { return 5; }
+        else if (dir.equals("/root")) { return 6; }
         else if (dir.equals("/dev") || dir.equals("/proc") || dir.equals("/tmp") || dir.equals("/home") || dir.equals("/mnt")) { return -1; }
-        else if (dir.startsWith("/bin/") || dir.startsWith("/etc/") || dir.startsWith("/lib/")) {
+        else if (dir.startsWith("/bin/") || dir.startsWith("/lib/") || dir.startsWith("/etc/") || dir.startsWith("/root/")) {
             int h = dir.hashCode();
             if (h < 0) { h = -h; }
             return VFS_RESERVED + (h % VFS_HASH_MOD);
@@ -394,6 +396,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (!struct.contains(entry)) { struct.addElement(entry); }
         }
     }
+    public boolean isRootCaller(Hashtable scope) { try { return scope != null && scope.containsKey("USER") && getUserID((String) scope.get("USER")) == 0; } catch (Exception e) { return false; } }
     // | (Normalize Path)
     public String joinpath(String file, Hashtable scope) {
         String pwd = scope.containsKey("PWD") ? (String) scope.get("PWD") : "/";
