@@ -474,7 +474,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (top.equals("uptime")) { return "" + ((System.currentTimeMillis() - uptime) / 1000); }
             else if (top.equals("version")) { return "OpenTTY " + build + " (J2ME Lua)"; }
             else if (top.equals("meminfo")) {
-                return "MemTotal:      " + (runtime.maxMemory() / 1024) + " kB\nMemFree:       " + (runtime.freeMemory() / 1024) + " kB\nMemAvailable:  " + (runtime.freeMemory() / 1024) + " kB";
+                return "MemTotal:      " + (runtime.totalMemory() / 1024) + " kB\nMemFree:       " + (runtime.freeMemory() / 1024) + " kB\nMemAvailable:  " + (runtime.freeMemory() / 1024) + " kB";
             }
             else if (top.equals("cpuinfo")) { return "processor\t: 0\nmodel name\t: J2ME Virtual CPU\nvendor_id\t: OpenTTY\n"; }
             return null;
