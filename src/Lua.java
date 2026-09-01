@@ -2933,7 +2933,7 @@ public class Lua {
                         output = toLuaString(midlet.joinpath(args[i + 1], father));
                         
                         Vector sanitize = new Vector(); StringBuffer buffer = new StringBuffer();
-                        for (int j = 0; j < i - 1; j++) { sanitize.addElement(args[j]); buffer.append(args[j]); }
+                        for (int j = 0; j < i; j++) { sanitize.addElement(args[j]); if (j > 0) buffer.append(' '); buffer.append(args[j]); }
 
                         String[] args = new String[sanitize.size()];
                         sanitize.copyInto(args); argument = buffer.toString();
