@@ -1,6 +1,6 @@
 #!/bin/lua
 
-local version = "1.0"
+local version = "0.7"
 local release_date = "2026-09-01"
 
 os.setproc("name", "x11")
@@ -322,9 +322,9 @@ elseif what == "canvas" then
 elseif what == "version" then
     print("X Server " .. version)
 elseif what == "title" then
-    if arg[2] then graphics.SetTitle(graphics.getCurrent(), arg[2]) end
+    graphics.SetTitle(graphics.getCurrent(), arg[2])
 elseif what == "tick" then
-    if arg[2] then graphics.SetTicker(graphics.getCurrent(), arg[2]) end
+    graphics.SetTicker(graphics.getCurrent(), arg[2])
 elseif what == "term" then
     xterm()
 elseif what == "stop" then
@@ -332,6 +332,8 @@ elseif what == "stop" then
     xterm()
 elseif what == "gauge" then
     gauge(arg[2])
-else
+elseif what == nil then
     banner()
+else
+    print(arg[0] .. ": " .. what .. ": not found")
 end
