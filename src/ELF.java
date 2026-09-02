@@ -59,6 +59,15 @@ public class ELF {
     // Constantes para socket
     private static final int SOCK_STREAM = 1, SOCK_DGRAM = 2, AF_INET = 2, IPPROTO_TCP = 6, IPPROTO_UDP = 17;
 
+    // Soluções de socket (level para setsockopt/getsockopt)
+    private static final int SOL_SOCKET = 1, SOL_IP = 0;
+
+    // Opções de socket
+    private static final int TCP_NODELAY = 1, SO_REUSEADDR = 2, SO_TYPE = 3, SO_ERROR = 4, SO_DONTROUTE = 5, SO_BROADCAST = 6, SO_SNDBUF = 7, SO_RCVBUF = 8, SO_KEEPALIVE = 9, SO_OOBINLINE = 10, SO_LINGER = 13;
+
+    // Erros de rede adicionais
+    private static final int ENOTSOCK = 88, ENOPROTOOPT = 92, EADDRINUSE = 98, EADDRNOTAVAIL = 99, EISCONN = 106;
+
     // Constantes para sinal
     private static final int SIG_ERR = -1, SIG_DFL = 0, SIG_IGN = 1, SIGINT = 2, SIGKILL = 9, SIGSEGV = 11, SIGPIPE = 13, SIGTERM = 15, SIGCHLD = 17, SIGCONT = 18, SIGSTOP = 19, NSIG = 32;
 
@@ -1476,6 +1485,7 @@ public class ELF {
             Hashtable socketInfo = (Hashtable) socketDescriptors.get(key);
             if (socketInfo.containsKey("connection")) { try { ((StreamConnection) socketInfo.get("connection")).close(); } catch (Exception e) { } }
             if (socketInfo.containsKey("server")) { try { ((StreamConnectionNotifier) socketInfo.get("server")).close(); } catch (Exception e) { } }
+            if (socketInfo.containsKey("datagram")) { try { ((DatagramConnection) socketInfo.get("datagram")).close(); } catch (Exception e) { } }
         }
 
         fileDescriptors.clear(); socketDescriptors.clear(); allocatedBlocks.clear(); instructionCache.clear(); jmpBufs.clear();
@@ -2274,6 +2284,8 @@ public class ELF {
             socketInfo.put("protocol", new Integer(protocol));
             socketInfo.put("server", server);
             socketInfo.put("connected", Boolean.FALSE);
+            socketInfo.put("error", new Integer(0));
+            socketInfo.put("options", new Hashtable());
             
             socketDescriptors.put(new Integer(fd), socketInfo);
             fileDescriptors.put(new Integer(fd), null); // Placeholder
@@ -2315,7 +2327,7 @@ public class ELF {
             }
             
             registers[REG_R0] = 0;
-        } catch (Exception e) { registers[REG_R0] = -111; }
+        } catch (Exception e) { socketInfo.put("error", new Integer(111)); registers[REG_R0] = -111; }
     }
     // | (Read and Write)
     private void handleSend() {
@@ -2338,20 +2350,6 @@ public class ELF {
             
             registers[REG_R0] = len;
         } catch (Exception e) { registers[REG_R0] = -32; }
-    }
-    private void handleSendto() {
-        // Parâmetros 1-6 (R0-R3 + stack)
-        int fd = registers[REG_R0];
-        int buf = registers[REG_R1];
-        int len = registers[REG_R2];
-        int flags = registers[REG_R3];
-        
-        // Parâmetros 5-6 na stack
-        int dest_addr = getSyscallParam(4);
-        int addrlen = getSyscallParam(5);
-        
-        // Implementação simplificada - usa send normal
-        handleSend();
     }
     private void handleRecv() {
         int fd = registers[REG_R0], buf = registers[REG_R1], len = registers[REG_R2], flags = registers[REG_R3];
@@ -2383,8 +2381,54 @@ public class ELF {
             registers[REG_R0] = bytesRead;
         } catch (Exception e) { registers[REG_R0] = -104; }
     }
+    private void handleSendto() {
+        // sendto(fd, buf, len, flags, dest_addr, addrlen)
+        int fd = registers[REG_R0];
+        int buf = registers[REG_R1];
+        int len = registers[REG_R2];
+        int flags = registers[REG_R3];
+        
+        // Parâmetros 5-6 na stack
+        int dest_addr = getSyscallParam(4);
+        int addrlen = getSyscallParam(5);
+        
+        Integer fdKey = new Integer(fd);
+        
+        if (!socketDescriptors.containsKey(fdKey)) { registers[REG_R0] = -ENOTSOCK; return; }
+        
+        Hashtable socketInfo = (Hashtable) socketDescriptors.get(fdKey);
+        int type = ((Integer) socketInfo.get("type")).intValue();
+        
+        if (type == SOCK_STREAM && !((Boolean) socketInfo.get("connected")).booleanValue()) { registers[REG_R0] = -107; return; }
+        
+        byte[] data = new byte[len];
+        for (int i = 0; i < len && buf + i < memory.length; i++) { data[i] = memory[buf + i]; }
+        
+        try {
+            if (type == SOCK_DGRAM) {
+                // Socket datagrama: enviar datagrama para o destino informado
+                if (dest_addr == 0 || dest_addr + 16 > memory.length) { registers[REG_R0] = -14; return; }
+                String[] target = readSockAddr(dest_addr);
+                if (target == null) { registers[REG_R0] = -97; return; }
+                
+                DatagramConnection dc = (DatagramConnection) getOrCreateDatagram(socketInfo, 0);
+                if (dc == null) { registers[REG_R0] = -1; return; }
+                
+                Datagram dg = dc.newDatagram(data, len, "datagram://" + target[0] + ":" + target[1]);
+                dc.send(dg);
+                registers[REG_R0] = dg.getLength();
+            } else {
+                // Socket conectado (TCP): ignora o destino e envia direto
+                OutputStream os = (OutputStream) socketInfo.get("outputStream");
+                if (os == null) { registers[REG_R0] = -ENOTSOCK; return; }
+                
+                os.write(data); os.flush();
+                registers[REG_R0] = len;
+            }
+        } catch (Exception e) { registers[REG_R0] = -32; }
+    }
     private void handleRecvfrom() {
-        // Parâmetros 1-6 (R0-R3 + stack)
+        // recvfrom(fd, buf, len, flags, src_addr, addrlen)
         int fd = registers[REG_R0];
         int buf = registers[REG_R1];
         int len = registers[REG_R2];
@@ -2394,12 +2438,64 @@ public class ELF {
         int src_addr = getSyscallParam(4);
         int addrlen = getSyscallParam(5);
         
-        // Implementação simplificada - usa recv normal
-        handleRecv();
+        Integer fdKey = new Integer(fd);
+        
+        if (!socketDescriptors.containsKey(fdKey)) { registers[REG_R0] = -ENOTSOCK; return; }
+        
+        Hashtable socketInfo = (Hashtable) socketDescriptors.get(fdKey);
+        int type = ((Integer) socketInfo.get("type")).intValue();
+        
+        if (type == SOCK_STREAM && !((Boolean) socketInfo.get("connected")).booleanValue()) { registers[REG_R0] = -107; return; }
+        
+        try {
+            if (type == SOCK_DGRAM) {
+                DatagramConnection dc = (DatagramConnection) socketInfo.get("datagram");
+                if (dc == null) { registers[REG_R0] = -ENOTSOCK; return; }
+                
+                Datagram dg = dc.newDatagram(len);
+                dc.receive(dg);
+                
+                byte[] data = dg.getData();
+                int n = Math.min(dg.getLength(), len);
+                for (int i = 0; i < n && buf + i < memory.length; i++) { memory[buf + i] = data[i]; }
+                
+                if (src_addr != 0) {
+                    String[] peer = parseDatagramAddress(dg.getAddress());
+                    if (peer != null) { writeSockAddr(memory, src_addr, peer[0], Integer.parseInt(peer[1])); }
+                    if (addrlen != 0) { writeIntLE(memory, addrlen, 16); }
+                }
+                
+                registers[REG_R0] = n;
+            } else {
+                // Socket conectado (TCP): recebe no buffer e reporta o peer
+                InputStream is = (InputStream) fileDescriptors.get(fdKey);
+                if (is == null) { registers[REG_R0] = -ENOTSOCK; return; }
+                
+                int bytesRead = 0;
+                for (int i = 0; i < len && buf + i < memory.length; i++) {
+                    int b = is.read();
+                    if (b == -1) {
+                        if (bytesRead == 0) { registers[REG_R0] = 0; }
+                        else { registers[REG_R0] = bytesRead; }
+                        return;
+                    }
+                    memory[buf + i] = (byte) b;
+                    bytesRead++;
+                }
+                
+                if (src_addr != 0) {
+                    String[] peer = getSocketPeer(fdKey);
+                    if (peer != null) { writeSockAddr(memory, src_addr, peer[0], Integer.parseInt(peer[1])); }
+                    if (addrlen != 0) { writeIntLE(memory, addrlen, 16); }
+                }
+                
+                registers[REG_R0] = bytesRead;
+            }
+        } catch (Exception e) { registers[REG_R0] = -104; }
     }
     // | (Socket Params)
     private void handleSetsockopt() {
-        // Parâmetros 1-5 (R0-R3 + stack)
+        // setsockopt(fd, level, optname, optval, optlen)
         int fd = registers[REG_R0];
         int level = registers[REG_R1];
         int optname = registers[REG_R2];
@@ -2408,11 +2504,22 @@ public class ELF {
         // Parâmetro 5 na stack
         int optlen = getSyscallParam(4);
         
-        // Implementação simplificada
+        Integer fdKey = new Integer(fd);
+        
+        if (!socketDescriptors.containsKey(fdKey)) { registers[REG_R0] = -ENOTSOCK; return; }
+        
+        if (!storeSocketOption(fdKey, level, optname)) { registers[REG_R0] = -ENOPROTOOPT; return; }
+        
+        Hashtable socketInfo = (Hashtable) socketDescriptors.get(fdKey);
+        Hashtable options = (Hashtable) socketInfo.get("options");
+        if (options == null) { options = new Hashtable(); socketInfo.put("options", options); }
+        int value = (optval != 0 && optval + 3 < memory.length) ? readIntLE(memory, optval) : 0;
+        options.put(new Integer(level * 1000 + optname), new Integer(value));
+        
         registers[REG_R0] = 0;
     }
     private void handleGetsockopt() {
-        // Parâmetros 1-5 (R0-R3 + stack)
+        // getsockopt(fd, level, optname, optval, optlen)
         int fd = registers[REG_R0];
         int level = registers[REG_R1];
         int optname = registers[REG_R2];
@@ -2421,17 +2528,230 @@ public class ELF {
         // Parâmetro 5 na stack
         int optlen = getSyscallParam(4);
         
-        // Implementação simplificada
+        Integer fdKey = new Integer(fd);
+        
+        if (!socketDescriptors.containsKey(fdKey)) { registers[REG_R0] = -ENOTSOCK; return; }
+        
+        Hashtable socketInfo = (Hashtable) socketDescriptors.get(fdKey);
+        
+        int value = 0;
+        if (level == SOL_SOCKET && optname == SO_TYPE) {
+            value = ((Integer) socketInfo.get("type")).intValue();
+        } else if (level == SOL_SOCKET && optname == SO_ERROR) {
+            Object err = socketInfo.get("error");
+            value = (err == null) ? 0 : ((Integer) err).intValue();
+            socketInfo.put("error", new Integer(0));
+        } else if (!storeSocketOption(fdKey, level, optname)) { registers[REG_R0] = -ENOPROTOOPT; return; }
+        else {
+            Hashtable options = (Hashtable) socketInfo.get("options");
+            Object stored = (options == null) ? null : options.get(new Integer(level * 1000 + optname));
+            if (stored != null) { value = ((Integer) stored).intValue(); }
+            else {
+                switch (level) {
+                    case SOL_SOCKET:
+                        if (optname == SO_RCVBUF) { value = 65536; }
+                        else if (optname == SO_SNDBUF) { value = 65536; }
+                        break;
+                }
+            }
+        }
+        
+        if (optval != 0 && optval + 3 < memory.length) { writeIntLE(memory, optval, value); }
+        if (optlen != 0 && optlen + 3 < memory.length) { writeIntLE(memory, optlen, 4); }
+        
         registers[REG_R0] = 0;
     }
+    private boolean storeSocketOption(Integer fdKey, int level, int optname) {
+        switch (level) {
+            case SOL_SOCKET:
+                switch (optname) {
+                    case SO_REUSEADDR:
+                    case SO_KEEPALIVE:
+                    case SO_OOBINLINE:
+                    case SO_BROADCAST:
+                    case SO_DONTROUTE:
+                    case SO_LINGER:
+                    case SO_SNDBUF:
+                    case SO_RCVBUF:
+                        return true;
+                    default:
+                        return false;
+                }
+            case SOL_IP:
+                return false;
+            case IPPROTO_TCP:
+                return optname == TCP_NODELAY;
+            case IPPROTO_UDP:
+                return false;
+            default:
+                return false;
+        }
+    }
     // |
-    private void handleBind() { registers[REG_R0] = -1; } // Não implementado
-    private void handleListen() { registers[REG_R0] = -1; } // Não implementado
-    private void handleAccept() { registers[REG_R0] = -1; } // Não implementado
-    private void handleShutdown() { registers[REG_R0] = -1; } // Não implementado
-    private void handleNanosleep() { registers[REG_R0] = -1; } // Não implementado
+    private void handleBind() {
+        // bind(fd, addr, addrlen)
+        int fd = registers[REG_R0];
+        int sockaddrPtr = registers[REG_R1];
+        int addrlen = registers[REG_R2];
+        
+        Integer fdKey = new Integer(fd);
+        
+        if (!socketDescriptors.containsKey(fdKey)) { registers[REG_R0] = -ENOTSOCK; return; }
+        
+        if (sockaddrPtr == 0 || sockaddrPtr + 16 > memory.length) { registers[REG_R0] = -14; return; }
+        
+        String[] local = readSockAddr(sockaddrPtr);
+        if (local == null) { registers[REG_R0] = -97; return; }
+        int port = Integer.parseInt(local[1]);
+        
+        Hashtable socketInfo = (Hashtable) socketDescriptors.get(fdKey);
+        int type = ((Integer) socketInfo.get("type")).intValue();
+        
+        try {
+            // Fechar placeholder criado pelo socket()
+            Object oldServer = socketInfo.get("server");
+            if (oldServer != null) { try { ((StreamConnectionNotifier) oldServer).close(); } catch (Exception e) { } socketInfo.remove("server"); }
+            Object oldDatagram = socketInfo.get("datagram");
+            if (oldDatagram != null) { try { ((DatagramConnection) oldDatagram).close(); } catch (Exception e) { } socketInfo.remove("datagram"); }
+            
+            if (type == SOCK_STREAM) {
+                StreamConnectionNotifier server = (StreamConnectionNotifier) Connector.open("socket://:" + port);
+                socketInfo.put("server", server);
+            } else {
+                DatagramConnection dc = (DatagramConnection) Connector.open("datagram://:" + port);
+                socketInfo.put("datagram", dc);
+            }
+            
+            socketInfo.put("bound", Boolean.TRUE);
+            socketInfo.put("localPort", new Integer(port));
+            socketInfo.put("localIp", local[0]);
+            socketInfo.put("error", new Integer(0));
+            
+            registers[REG_R0] = 0;
+        } catch (Exception e) { registers[REG_R0] = -EADDRINUSE; }
+    }
+    private void handleListen() {
+        // listen(fd, backlog)
+        int fd = registers[REG_R0];
+        int backlog = registers[REG_R1];
+        
+        Integer fdKey = new Integer(fd);
+        
+        if (!socketDescriptors.containsKey(fdKey)) { registers[REG_R0] = -ENOTSOCK; return; }
+        
+        Hashtable socketInfo = (Hashtable) socketDescriptors.get(fdKey);
+        int type = ((Integer) socketInfo.get("type")).intValue();
+        if (type != SOCK_STREAM) { registers[REG_R0] = -22; return; }
+        
+        try {
+            // "listen" sem bind: vincula porta efêmera (como no Linux)
+            StreamConnectionNotifier server = (StreamConnectionNotifier) socketInfo.get("server");
+            if (server == null) {
+                server = (StreamConnectionNotifier) Connector.open("socket://:0");
+                socketInfo.put("server", server);
+            }
+            socketInfo.put("listening", Boolean.TRUE);
+            registers[REG_R0] = 0;
+        } catch (Exception e) { registers[REG_R0] = -1; }
+    }
+    private void handleAccept() {
+        // accept(fd, addr, addrlen, flags)
+        int fd = registers[REG_R0];
+        int addrPtr = registers[REG_R1];
+        int addrlenPtr = registers[REG_R2];
+        
+        Integer fdKey = new Integer(fd);
+        
+        if (!socketDescriptors.containsKey(fdKey)) { registers[REG_R0] = -ENOTSOCK; return; }
+        
+        Hashtable socketInfo = (Hashtable) socketDescriptors.get(fdKey);
+        int type = ((Integer) socketInfo.get("type")).intValue();
+        if (type != SOCK_STREAM) { registers[REG_R0] = -22; return; }
+        
+        StreamConnectionNotifier server = (StreamConnectionNotifier) socketInfo.get("server");
+        if (server == null) { registers[REG_R0] = -22; return; }
+        
+        try {
+            SocketConnection conn = (SocketConnection) server.acceptAndOpen();
+            
+            int newFd = nextFd++;
+            Integer newKey = new Integer(newFd);
+            
+            Hashtable accepted = new Hashtable();
+            accepted.put("type", new Integer(SOCK_STREAM));
+            accepted.put("protocol", new Integer(IPPROTO_TCP));
+            accepted.put("connection", conn);
+            accepted.put("connected", Boolean.TRUE);
+            accepted.put("error", new Integer(0));
+            accepted.put("options", new Hashtable());
+            
+            InputStream is = conn.openInputStream();
+            OutputStream os = conn.openOutputStream();
+            accepted.put("outputStream", os);
+            
+            socketDescriptors.put(newKey, accepted);
+            fileDescriptors.put(newKey, is);
+            
+            if (addrPtr != 0) {
+                String peerIp = conn.getAddress();
+                int peerPort = conn.getPort();
+                if (peerIp != null) { writeSockAddr(memory, addrPtr, peerIp, peerPort); }
+                if (addrlenPtr != 0 && addrlenPtr + 3 < memory.length) { writeIntLE(memory, addrlenPtr, 16); }
+            }
+            
+            registers[REG_R0] = newFd;
+        } catch (Exception e) { registers[REG_R0] = -1; }
+    }
+    private void handleShutdown() { registers[REG_R0] = 0; }
+    private void handleNanosleep() { registers[REG_R0] = 0; }
     private void handleGetsockname() { registers[REG_R0] = -1; } // Não implementado
     private void handleGetpeername() { registers[REG_R0] = -1; } // Não implementado
+
+    // Métodos auxiliares para estruturas sockaddr_in
+    private String[] readSockAddr(int ptr) {
+        if (ptr == 0 || ptr + 16 > memory.length) { return null; }
+        if (readShortLE(memory, ptr) != AF_INET) { return null; }
+        int port = readShortLE(memory, ptr + 2) & 0xFFFF;
+        String ip = (memory[ptr + 4] & 0xFF) + "." + (memory[ptr + 5] & 0xFF) + "." + (memory[ptr + 6] & 0xFF) + "." + (memory[ptr + 7] & 0xFF);
+        return new String[] { ip, String.valueOf(port) };
+    }
+    private void writeSockAddr(byte[] mem, int addr, String ip, int port) {
+        if (addr >= 0 && addr + 16 <= mem.length) {
+            int family = AF_INET;
+            writeShortLE(mem, addr, (short) family);
+            writeShortLE(mem, addr + 2, (short) port);
+            String[] parts = midlet.split(ip, '.');
+            for (int i = 0; i < 4; i++) {
+                if (i < parts.length) { try { mem[addr + 4 + i] = (byte) Integer.parseInt(parts[i].trim()); } catch (Exception e) { mem[addr + 4 + i] = 0; } }
+                else { mem[addr + 4 + i] = 0; }
+            }
+            for (int i = 8; i < 16; i++) { mem[addr + i] = 0; }
+        }
+    }
+    private String[] getSocketPeer(Integer fdKey) {
+        Hashtable info = (Hashtable) socketDescriptors.get(fdKey);
+        if (info == null) { return null; }
+        Object conn = info.get("connection");
+        if (!(conn instanceof SocketConnection)) { return null; }
+        try { return new String[] { ((SocketConnection) conn).getAddress(), String.valueOf(((SocketConnection) conn).getPort()) }; }
+        catch (Exception e) { return null; }
+    }
+    private Object getOrCreateDatagram(Hashtable info, int port) {
+        DatagramConnection dc = (DatagramConnection) info.get("datagram");
+        if (dc == null) {
+            try { dc = (DatagramConnection) Connector.open("datagram://:" + port); info.put("datagram", dc); }
+            catch (Exception e) { return null; }
+        }
+        return dc;
+    }
+    private String[] parseDatagramAddress(String addr) {
+        if (addr == null) { return null; }
+        String a = addr;
+        if (a.startsWith("datagram://")) { a = a.substring("datagram://".length()); }
+        int colon = a.lastIndexOf(':');
+        if (colon == -1) { return null; }
+        return new String[] { a.substring(0, colon), a.substring(colon + 1) };
+    }
 
     private void handleFutex() {
         // Parâmetros 1-4 em R0-R3
