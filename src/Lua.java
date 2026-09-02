@@ -2207,7 +2207,7 @@ public class Lua {
                     }
                 // Package [socket.http]
                 case HTTP_GET: case HTTP_POST: return (args.isEmpty() || args.elementAt(0) == null ? gotbad(1, MOD == HTTP_GET ? "get" : "post", "string expected, got no value") : http(MOD == HTTP_GET ? "GET" : "POST", toLuaString(args.elementAt(0)), args.size() > 1 ? toLuaString(args.elementAt(1)) : "", args.size() > 2 ? args.elementAt(2) : null, false));
-                case HTTP_RGET: case HTTP_RPOST: return (args.isEmpty() || args.elementAt(0) == null ? gotbad(1, MOD == HTTP_GET ? "get" : "post", "string expected, got no value") : http(MOD == HTTP_GET ? "GET" : "POST", toLuaString(args.elementAt(0)), args.size() > 1 ? toLuaString(args.elementAt(1)) : "", args.size() > 2 ? args.elementAt(2) : null, true));
+                case HTTP_RGET: case HTTP_RPOST: return (args.isEmpty() || args.elementAt(0) == null ? gotbad(1, MOD == HTTP_RGET ? "rget" : "rpost", "string expected, got no value") : http((MOD == HTTP_GET || MOD == HTTP_RGET) ? "GET" : "POST", toLuaString(args.elementAt(0)), args.size() > 1 ? toLuaString(args.elementAt(1)) : "", args.size() > 2 ? args.elementAt(2) : null, true));
                 // Package [push]
                 case PUSH_REGISTER:
                     if (args.size() < 3) { return gotbad(1, "register", "insufficient arguments"); }
