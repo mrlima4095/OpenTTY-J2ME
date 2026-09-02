@@ -3028,13 +3028,14 @@ public class Lua {
                 }
                 else if (mainCommand.equals("su")) {
                     if (args.length >= 2) {
-                        if (args[0].equals("root") && midlet.passwd(args[1])) { id = 0; father.put("USER", "root"); }
+                        if (args[0].equals("root") && midlet.passwd(args[1])) { id = 0; father.put("USER", "root"); father.put("PWD", "/home/"); }
                         else { midlet.print("Permission denied!", output, id, father); status = 13; }
                     } 
                     else if (args.length == 1) {
                         if (midlet.userID.containsKey(args[0])) {
                             id = midlet.getUserID(args[0]);
                             father.put("USER", args[0]);
+                            father.put("PWD", "/home/");
                         } else {
                             midlet.print("Permission denied!", output, id, father);
                             status = 13;
@@ -3044,6 +3045,7 @@ public class Lua {
                         if (id != 1000) {
                             id = 1000;
                             father.put("USER", midlet.username);
+                            father.put("PWD", "/home/");
                         } else {
                             midlet.print("su: usage: su [username] [passwd]", output, id, father);
                         }
