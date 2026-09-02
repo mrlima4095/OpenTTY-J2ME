@@ -2717,7 +2717,8 @@ public class ELF {
     }
     private void writeSockAddr(byte[] mem, int addr, String ip, int port) {
         if (addr >= 0 && addr + 16 <= mem.length) {
-            writeShortLE(mem, addr, (short) AF_INET);
+            int family = AF_INET;
+            writeShortLE(mem, addr, (short) family);
             writeShortLE(mem, addr + 2, (short) port);
             String[] parts = midlet.split(ip, '.');
             for (int i = 0; i < 4; i++) {
