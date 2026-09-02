@@ -72,10 +72,10 @@ local function fetch(remote)
 end
 
 local function fetch_file(remote, here)
-    local ok, input, status = pcall(socket.http.get, server .. "/apps/" .. remote)
+    local ok, input, status = pcall(socket.http.rget, server .. "/apps/" .. remote)
 
     if ok and status == 200 then
-        return io.write(input, here)
+        return io.copy(input, here)
     else
         return nil
     end
