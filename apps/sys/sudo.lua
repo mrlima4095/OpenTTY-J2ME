@@ -21,11 +21,19 @@ if arg[1] then
             graphics.display(previous)
 
             if status == 0 then
-                status = os.execute(arg[1])
+                local i = 1
+                local cmd = ""
+
+                while i < #arg - 1 do
+                    cmd = cmd .. arg[i + 1] .. " "
+                    i = i + 1
+                end
+                
+                local cmd_status = os.execute(arg[1])
 
                 os.su(username)
 
-                os.exit(status)
+                os.exit(cmd_status)
             else
                 print("Permission denied!")
                 os.exit(13)
