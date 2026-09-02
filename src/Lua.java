@@ -2942,14 +2942,16 @@ public class Lua {
                 int amp = lastAmpersandIndex(command);
                 if (amp != -1) {
                     final String bg = command.substring(0, amp).trim();
-                    final boolean fbuiltin = builtin;
+                    // capture a String sentinel, not a boolean: the SDK preverify
+                    // crashes on synthetic anon classes that capture a 'boolean' (Z)
+                    final String fmark = builtin ? "builtin" : "";
                     if (bg.length() > 0) {
                         new Thread(new Runnable() {
                             public void run() {
                                 try {
                                     Vector payload = new Vector();
                                     payload.addElement(bg);
-                                    if (fbuiltin) { payload.addElement(TRUE); }
+                                    if (fmark.equals("builtin")) { payload.addElement(TRUE); }
                                     exec(payload);
                                 } catch (Exception e) { }
                             }
