@@ -2918,6 +2918,23 @@ public class Lua {
 
         public void run() { if (root instanceof LuaFunction) { Vector arg = new Vector(); try { ((LuaFunction) root).call(arg); } catch (Throwable e) { if (!silent) { midlet.print(getTraceback(e), stdout, id, father); } } } }
 
+        // named (non-anonymous) background runner: the SDK preverifier and the
+        // on-device VM choke on the synthetic anon class that a trailing `&`
+        // used to compile into (Lua$LuaFunction$1 -> NoClassDefFoundError)
+        private class BGRunner implements Runnable {
+            private final String cmd;
+            private final String mark;
+            BGRunner(String cmd, String mark) { this.cmd = cmd; this.mark = mark; }
+            public void run() {
+                try {
+                    Vector payload = new Vector();
+                    payload.addElement(cmd);
+                    if (mark.equals("builtin")) { payload.addElement(TRUE); }
+                    exec(payload);
+                } catch (Exception e) { }
+            }
+        }
+
         public Double exec(Vector args) throws Exception {
             if (args.isEmpty()) { return (Double) gotbad(1, "execute", "string expected, got no value"); }
             else {
@@ -2942,20 +2959,8 @@ public class Lua {
                 int amp = lastAmpersandIndex(command);
                 if (amp != -1) {
                     final String bg = command.substring(0, amp).trim();
-                    // capture a String sentinel, not a boolean: the SDK preverify
-                    // crashes on synthetic anon classes that capture a 'boolean' (Z)
-                    final String fmark = builtin ? "builtin" : "";
                     if (bg.length() > 0) {
-                        new Thread(new Runnable() {
-                            public void run() {
-                                try {
-                                    Vector payload = new Vector();
-                                    payload.addElement(bg);
-                                    if (fmark.equals("builtin")) { payload.addElement(TRUE); }
-                                    exec(payload);
-                                } catch (Exception e) { }
-                            }
-                        }).start();
+                        new Thread(new BGRunner(bg, builtin ? "builtin" : "")).start();
                     }
                     return new Double(0);
                 }
