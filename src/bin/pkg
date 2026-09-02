@@ -2,7 +2,7 @@
 
 local version = "1.6.0"
 
-local server = os.getenv("REPO") or "http://opentty.xyz"
+local server = os.getenv("REPO") or "http://opentty.fun"
 local mirror = {
     --["appmenu"] = { remote = "sys/appmenu/main.lua", here = "/bin/init", description = "Application Menu" },
     ["armitage"] = { remote = "net/armitage", here = "/bin/armitage", depends = { "ifconfig" }, description = "OpenTTY Network Tools" },
@@ -62,7 +62,7 @@ local mirror = {
 }
 
 local function fetch(remote)
-    local ok, content, status = pcall(socket.http.get, server .. "/" .. remote)
+    local ok, content, status = pcall(socket.http.get, server .. "/apps/" .. remote)
 
     if ok and status == 200 then
         return content
@@ -72,10 +72,10 @@ local function fetch(remote)
 end
 
 local function fetch_file(remote, here)
-    local ok, input, status = pcall(socket.http.rget, server .. "/" .. remote)
+    local ok, input, status = pcall(socket.http.get, server .. "/apps/" .. remote)
 
     if ok and status == 200 then
-        return io.copy(input, here)
+        return io.write(input, here)
     else
         return nil
     end
