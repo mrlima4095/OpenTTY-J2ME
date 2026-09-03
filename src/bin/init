@@ -17,7 +17,6 @@ for k,v in pairs({ ["PATCH"] = "Deep Dream", ["VERSION"] = getAppProperty("MIDle
 for k,v in pairs({ ["TYPE"] = "platform", ["CONFIG"] = "configuration", ["PROFILE"] = "profiles", ["LOCALE"] = "locale" }) do os.setenv(k, getAppProperty("/microedition." .. v)) end
 
 io.mount(io.read("/etc/fstab"))
-print(string.env(io.read("/etc/motd")))
 
 os.su(java.midlet.username)
 pcall(io.popen, "/home/.initrc")
