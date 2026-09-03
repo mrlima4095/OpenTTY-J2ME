@@ -22,4 +22,4 @@ print(string.env(io.read("/etc/motd")))
 os.su(java.midlet.username)
 pcall(io.popen, "/home/.initrc")
 
-os.execute("/bin/xterm")
+os.execute("xterm")
