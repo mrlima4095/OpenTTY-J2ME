@@ -5,116 +5,116 @@ Copyright (C) 2026 - Mr. Lima
 
 ## HEAD (unreleased) — work since tag 1.18
 
-Novidades implementadas entre a tag `1.18` e o commit mais recente (`HEAD`). (Build atual ainda rotulado `2026-1.18.1-03x28`.)
+Highlights implemented between the `1.18` tag and the latest commit (`HEAD`). (Current build is still labeled `2026-1.18.1-03x28`.)
 
 ### multi-tasking / process management
 
-- `Process` agora tem seu próprio `Displayable screen` (registrado via `os.setproc("screen", ...)`) e **removidos os globais `midlet.stdout`/`midlet.stdin`** — cada processo tem seu próprio buffer de saída (per-process `StringBuffer`) e seu próprio `TextField` de entrada
-- Novo rastreamento de sockets **por processo** (`Process.net`) substituindo o global `midlet.network`
-- Novo **Task Manager** `graphics.taskmngr()` (List `"Running"` com `List.IMPLICIT`), enumerando todos os processos como `"title/name [pid]"`:
-  - **Back**: se não houver mais processos, chama `destroyApp` (fecha o MIDlet); senão volta pra tela anterior
-  - **Interrupt (SIGTERM)**: envia sinal 15 pro `sighandler` do processo selecionado e o remove da lista
-  - **SELECT**: troca `display.setCurrent()` pra tela do processo (switching de processos)
-- `os.setproc("title", ...)` define o título mostrado no Task Manager (`title [pid]` em vez de `name [pid]`)
-- Escopo do processo clonado por `cloneScope()` em `os.popen`/`serve`, de modo que `su`/`cd` em um terminal não afetam os outros
-- **`/bin/xterm`** (novo): o terminal emulador foi extraído do `init` — cria seu próprio stdout/stdin/tela, prompt `[USER@HOST PWD] #/$`, comando "Run" e botão "Switch to..." (task manager); exibe o `/etc/motd` ao abrir
-- **`/bin/init`** simplificado: só monta fstab, configura env, `os.su`, roda `/home/.initrc` e chama `os.execute("xterm")`; também aceita `--serve=<program>` para spawnar daemons
-- `graphics.display()` zera `kill` ao exibir uma `Displayable`, mantendo o runtime vivo com tela em foreground
+- `Process` now has its own `Displayable screen` (registered via `os.setproc("screen", ...)`) and the global `midlet.stdout`/`midlet.stdin` were **removed** — each process has its own output buffer (per-process `StringBuffer`) and its own input `TextField`
+- New **per-process** socket tracking (`Process.net`) replaces the global `midlet.network`
+- New **Task Manager** `graphics.taskmngr()` (a `List` `"Running"` using `List.IMPLICIT`), listing every process as `"title/name [pid]"`:
+  - **Back**: if no processes remain, calls `destroyApp` (closes the MIDlet); otherwise returns to the previous screen
+  - **Interrupt (SIGTERM)**: sends signal 15 to the selected process's `sighandler` and removes it from the list
+  - **SELECT**: switches `display.setCurrent()` to the process's screen (process switching)
+- `os.setproc("title", ...)` sets the title shown in the Task Manager (`title [pid]` instead of `name [pid]`)
+- Process scope is cloned by `cloneScope()` in `os.popen`/`serve`, so `su`/`cd` in one terminal no longer affect the others
+- **`/bin/xterm`** (new): the terminal emulator was extracted from `init` — it creates its own stdout/stdin/screen, `[USER@HOST PWD] #/$` prompt, "Run" command and "Switch to..." button (task manager); shows `/etc/motd` on open
+- **`/bin/init`** simplified: it only mounts fstab, configures env, `os.su`, runs `/home/.initrc` and calls `os.execute("xterm")`; it also accepts `--serve=<program>` to spawn daemons
+- `graphics.display()` clears `kill` when showing a `Displayable`, keeping the runtime alive with a foreground screen
 
-### elf / rede
+### elf / network
 
-- **API de sockets completa** restaurada no emulador ELF:
-  - `bind`: abre `StreamConnectionNotifier`/`DatagramConnection` na porta informada, retorna `-EADDRINUSE` em conflito
-  - `listen`: marca socket como listening, com fallback de porta efêmera
-  - `accept`: `acceptAndOpen`, novo fd com streams + peer `sockaddr_in` devolvido ao chamador
-  - `sendto`/`recvfrom`: DGRAM via `DatagramConnection`, TCP via streams, com writeback do peer
-  - `shutdown` e `nanosleep` restaurados (no-op de sucesso)
-- **Socket options**: `setsockopt`/`getsockopt` com tabela de opções (`SO_REUSEADDR`, `SO_KEEPALIVE`, `SO_OOBINLINE`, `SO_BROADCAST`, `SO_DONTROUTE`, `SO_LINGER`, `SO_SNDBUF`, `SO_RCVBUF`, `TCP_NODELAY`); `SO_ERROR` e `SO_TYPE`; `-ENOPROTOOPT` p/ opções não suportadas
-- Novas constantes: `SOL_SOCKET`, `SOL_IP`, `TCP_NODELAY`, `SO_*`; novos erros `ENOTSOCK`, `ENOPROTOOPT`, `EADDRINUSE`, `EADDRNOTAVAIL`, `EISCONN`
-- Corrigido `writeSockAddr` (evita cast para `short` que quebrava o codegen do SDK)
-- `connect` falho seta `socketInfo["error"] = 111`
-- ELF `listdir` agora enxerga `/proc/` virtual (entradas de pid, `cpuinfo`, `meminfo`, `uptime`, `version`) via `midlet.procEntries()`
-- Cleanup em shutdown também fecha conexões `datagram`
+- **Full socket API** restored in the ELF emulator:
+  - `bind`: opens `StreamConnectionNotifier`/`DatagramConnection` on the given port, returns `-EADDRINUSE` on conflict
+  - `listen`: marks the socket as listening, with ephemeral-port fallback
+  - `accept`: `acceptAndOpen`, new fd with streams + peer `sockaddr_in` returned to the caller
+  - `sendto`/`recvfrom`: DGRAM via `DatagramConnection`, TCP via streams, with peer writeback
+  - `shutdown` and `nanosleep` restored (success no-ops)
+- **Socket options**: `setsockopt`/`getsockopt` with an options table (`SO_REUSEADDR`, `SO_KEEPALIVE`, `SO_OOBINLINE`, `SO_BROADCAST`, `SO_DONTROUTE`, `SO_LINGER`, `SO_SNDBUF`, `SO_RCVBUF`, `TCP_NODELAY`); `SO_ERROR` and `SO_TYPE`; `-ENOPROTOOPT` for unsupported options
+- New constants: `SOL_SOCKET`, `SOL_IP`, `TCP_NODELAY`, `SO_*`; new errors `ENOTSOCK`, `ENOPROTOOPT`, `EADDRINUSE`, `EADDRNOTAVAIL`, `EISCONN`
+- Fixed `writeSockAddr` (avoids the cast to `short` that broke SDK codegen)
+- A failed `connect` sets `socketInfo["error"] = 111`
+- ELF `listdir` now sees the virtual `/proc/` (pid entries, `cpuinfo`, `meminfo`, `uptime`, `version`) via `midlet.procEntries()`
+- Shutdown cleanup also closes `datagram` connections
 
 ### filesystem / vfs / proc
 
-- `/proc/` virtual: `uptime`, `version`, `meminfo` (agora usando `Runtime.totalMemory`, pois CLDC não tem `maxMemory`), `cpuinfo` e diretórios `/proc/<pid>/` com `status`, `cmdline`, `comm`, `stat`; usuários comuns só veem os próprios processos (root vê todos)
-- `/root/` (índice 6 do `OpenRMS`) — diretório protegido, só root lê/escreve/entra; `rms` segue root-only
-- Subdiretórios VFS sob `/bin/`, `/etc/`, `/lib/` com hashing estável (índices `>= 9`, `VFS_HASH_MOD=97`) e persistência em `/etc/vfs.conf` (restaurados no mount)
-- `fstab` atualizado: inclui `root/` no mount raiz, e `mkdir`, `pkg`, `xterm` em `/bin/`
+- Virtual `/proc/`: `uptime`, `version`, `meminfo` (now using `Runtime.totalMemory`, since CLDC has no `maxMemory`), `cpuinfo` and `/proc/<pid>/` dirs with `status`, `cmdline`, `comm`, `stat`; regular users only see their own processes (root sees all)
+- `/root/` (`OpenRMS` index 6) — protected directory, only root can read/write/enter; `rms` stays root-only
+- VFS subdirectories under `/bin/`, `/etc/`, `/lib/` with stable hashing (indices `>= 9`, `VFS_HASH_MOD=97`) and persistence in `/etc/vfs.conf` (restored on mount)
+- `fstab` updated: adds `root/` to the root mount, and `mkdir`, `pkg`, `xterm` to `/bin/`
 
 ### shell / commands
 
-- **`/bin/sh`** reduzido de 284 → 32 linhas: os builtins agora são tratados pelo kernel/`os.execute`; preserva `-c`, execução de arquivo e modo interativo
-- **`/bin/pkg`** (reescrito, v1.6.0): usa `socket.http.get`/`rget` em vez de TCP cru; servidor `http://opentty.fun` (override `REPO`); comandos `install`, `remove`, `update`, `list`, `info`, `download`, `run`; mirror com 50+ pacotes
-- **`/bin/yang`** enxuto: wrapper que repassa os args para `pkg`
-- **`/bin/mkdir`** (novo): cria diretórios VFS; root-only sob `/bin`, `/etc`, `/lib`, `/root`
-- **`/bin/lua`** agora executa arquivos diretamente (`lua <file>`)
-- **`/bin/cp`** suporta modo de um argumento (`cp file` copia para `file-copy`)
-- **`/bin/rm`** aceita `-r`/`-rf`/`-fr` e múltiplos arquivos
-- **`/bin/nano`**: botão "Add new line" (p/ J2EMU) e "Switch to..." (task manager)
-- **`/bin/curl`**: corrigido o parsing de URL (`sub(1,5)` para `"http:"`)
+- **`/bin/sh`** cut from 284 → 32 lines: builtins are now handled by the kernel/`os.execute`; preserves `-c`, file execution and interactive mode
+- **`/bin/pkg`** (rewritten, v1.6.0): uses `socket.http.get`/`rget` instead of raw TCP; server `http://opentty.fun` (`REPO` override); commands `install`, `remove`, `update`, `list`, `info`, `download`, `run`; mirror with 50+ packages
+- **`/bin/yang`** slimmed to a wrapper that forwards args to `pkg`
+- **`/bin/mkdir`** (new): creates VFS directories; root-only under `/bin`, `/etc`, `/lib`, `/root`
+- **`/bin/lua`** now runs files directly (`lua <file>`)
+- **`/bin/cp`** supports a single-argument mode (`cp file` copies to `file-copy`)
+- **`/bin/rm`** accepts `-r`/`-rf`/`-fr` and multiple files
+- **`/bin/nano`**: "Add new line" button (for J2EMU) and "Switch to..." (task manager)
+- **`/bin/curl`**: fixed URL parsing (`sub(1,5)` for `"http:"`)
 
-### novos apps /bin
+### new /bin apps
 
-- **`xterm`** — terminal emulador (ver multi-tasking)
-- **`irc`** (`apps/net/irc.lua`) — cliente IRC com modo CLI (`connect`/`send`) e GUI, join/part/nick/PRIVMSG, PING/PONG, MOTD
-- **`play`** (`apps/file/play.lua`) — player de áudio (play/stop/pause/resume/status/volume/list) acionando o daemon `audio-codec`; modo GUI
-- **`tree`** (`apps/file/tree.lua`) — visualizador de árvore de diretórios (`-d`, `-L N`, `-a`, contagem)
-- **`nginx`** (`apps/net/nginx/main.lua`) — servidor HTTP estilo nginx: config `/etc/nginx/nginx.conf`, `mime.types`, `sites-enabled/`, serve estáticos, `proxy_pass`, alias por location, logs de acesso/erro
-- **`dns`** (`apps/net/dns/main.lua`) — daemon de DNS: lê `/etc/hosts` e zonas `/etc/dns/*.zone`, responde A/AAAA/MX/CNAME, estatísticas, `lookup`/`add`/`remove`/`reload`/`list`
-- **`head`, `tail`, `netstat`** — implementados (head/tail imprimem as N primeiras/últimas linhas; netstat testa conectividade via HTTP GET)
+- **`xterm`** — terminal emulator (see multi-tasking)
+- **`irc`** (`apps/net/irc.lua`) — IRC client with CLI (`connect`/`send`) and GUI modes, join/part/nick/PRIVMSG, PING/PONG, MOTD
+- **`play`** (`apps/file/play.lua`) — audio player (play/stop/pause/resume/status/volume/list) driving the `audio-codec` daemon; GUI mode
+- **`tree`** (`apps/file/tree.lua`) — directory tree viewer (`-d`, `-L N`, `-a`, counts)
+- **`nginx`** (`apps/net/nginx/main.lua`) — nginx-style HTTP server: config `/etc/nginx/nginx.conf`, `mime.types`, `sites-enabled/`, static serving, `proxy_pass`, per-location alias, access/error logging
+- **`dns`** (`apps/net/dns/main.lua`) — DNS server daemon: reads `/etc/hosts` and `/etc/dns/*.zone` zones, answers A/AAAA/MX/CNAME, stats, `lookup`/`add`/`remove`/`reload`/`list`
+- **`head`, `tail`, `netstat`** — implemented (head/tail print the first/last N lines; netstat tests connectivity via HTTP GET)
 
-### apps atualizados
+### updated apps
 
-- **`jdb`** (`apps/sys/benchmark/main.lua`, +388 linhas) — ponte de debug estilo adb: `ps`, `getproc`, `dumpsys`, `logcat`, `users`, `crash`, `stack`, `meminfo`, `shell`, `connect` (cliente TCP/UDP); modo servidor na porta 5555
-- **`sudo`** — lê todos os args (`arg[1]` é o comando, o restante é repassado)
-- **`docker`** — gerenciamento expandido de containers, imagens e scripts de init
-- **`httpd`** (`res/lua/modules/httpd.lua`) — nova função `httpd.static(root_dir)` para servir arquivos estáticos com detecção de MIME
+- **`jdb`** (`apps/sys/benchmark/main.lua`, +388 lines) — adb-style debug bridge: `ps`, `getproc`, `dumpsys`, `logcat`, `users`, `crash`, `stack`, `meminfo`, `shell`, `connect` (TCP/UDP client); server mode on port 5555
+- **`sudo`** — now reads all args (`arg[1]` is the command, the rest are forwarded)
+- **`docker`** — expanded container management, images and init scripts
+- **`httpd`** (`res/lua/modules/httpd.lua`) — new `httpd.static(root_dir)` function to serve static files with MIME detection
 
 ### lua runtime
 
-- **otimizações de performance**:
-  - `SMALL_NUMBERS[-128..1023]` — `Double`s pequenos em cache para loops/índices
-  - `ScopeTable` (scope encadeado) em vez de clonar a tabela de globais a cada chamada de função
-  - concatenação via `StringBuffer`; `Boolean` `TRUE/FALSE` estáticos; caching do tokenizador por fonte; early-returns em `getpattern`/`replace`/`escape`
-- **erros / traceback**: novo `getTraceback(Throwable)` gera stack trace de `Frame` (nome, fonte, linha), `pointerBlock()` com `^---` e `(near '<token>')`, injetado em `run()`, `pcall`, handlers de `os.request`, threads de fundo e callbacks de UI
-- **funções novas**: `string.startswith`, `string.endswith`, `table.pack`, `graphics.taskmngr`; `os.setproc` com atributos `"screen"`, `"title"`, `"stdout"`
-- `os.scope()` sem args retorna o escopo atual; com tabela, troca o escopo (`father`)
-- `os.execute` refatorado: suporte a `>`, `&&`, e `&` (background via classe nomeada `BGRunner` para evitar `NoClassDefFoundError` do preverifier)
+- **performance optimizations**:
+  - `SMALL_NUMBERS[-128..1023]` — cached small `Double`s for loops/indices
+  - `ScopeTable` (chained scope) instead of cloning the globals table on every function call
+  - `StringBuffer` concatenation; static `Boolean` `TRUE/FALSE`; per-source tokenizer caching; early-returns in `getpattern`/`replace`/`escape`
+- **errors / traceback**: new `getTraceback(Throwable)` emits a `Frame` stack trace (name, source, line), `pointerBlock()` with `^---` and `(near '<token>')`, injected into `run()`, `pcall`, `os.request` handlers, background threads and UI callbacks
+- **new functions**: `string.startswith`, `string.endswith`, `table.pack`, `graphics.taskmngr`; `os.setproc` with `"screen"`, `"title"`, `"stdout"` attributes
+- `os.scope()` with no args returns the current scope; with a table, swaps the scope (`father`)
+- `os.execute` refactored: support for `>`, `&&`, and `&` (background via the named class `BGRunner` to avoid the preverifier `NoClassDefFoundError`)
 
 ### bug fixes
 
-- `IMPLICT` → `IMPLICIT` no construtor de `List`
-- `init` usa nome de comando puro para `exec` resolver `/bin/` corretamente
-- `socket.http.rget` enviava POST em vez de GET (405 em downloads de pacote) — corrigido para GET
-- `/proc/meminfo` usa `Runtime.totalMemory` em vez de `maxMemory`
-- redirecionamento `>` não descartava mais os args antes do operador
-- `rm` em subdiretórios VFS (exit 0 correto, `-r`)
-- `os.mkdir`/`os.exit` silencioso; correção de cast em `deleteFile`; OOM handler com uso de memória
-- `pkg`/`fetch_file` com prefixo `/apps/` no URL
-- `_G` como global padrão em vez de `_ENV`
+- `IMPLICT` → `IMPLICIT` in the `List` constructor
+- `init` uses the bare command name so `exec` resolves `/bin/` correctly
+- `socket.http.rget` was sending POST instead of GET (405 on package downloads) — now GET
+- `/proc/meminfo` uses `Runtime.totalMemory` instead of `maxMemory`
+- `>` redirection no longer dropped arguments before the operator
+- `rm` on VFS subdirectories (correct exit 0, `-r`)
+- silent `os.mkdir`/`os.exit`; cast fix in `deleteFile`; OOM handler with memory usage
+- `pkg`/`fetch_file` with the `/apps/` URL prefix
+- `_G` as the default global instead of `_ENV`
 
 ### build / toolchain
 
-- **`build-elf.sh`** (novo) — monta `.s`/`.c` em ELF32 ARM para o emulador (opções `-o`, `-T`, `-lib`, `-entry`, `-keep`; validação via Python)
-- Novos ELFs de teste: `netsock`, `netudp`, `whoami`, `cat` em `res/apps/dist/`
-- `res/lib/lib32.s` expandido (+602 linhas); novos fontes `netsock.s`, `netudp.s`, `server.s`, `whoami.s`
-- Removida a árvore `j2me-lib/` (stubs Android)
+- **`build-elf.sh`** (new) — assembles `.s`/`.c` into ARM ELF32 for the emulator (options `-o`, `-T`, `-lib`, `-entry`, `-keep`; Python validation)
+- New test ELFs: `netsock`, `netudp`, `whoami`, `cat` in `res/apps/dist/`
+- `res/lib/lib32.s` expanded (+602 lines); new sources `netsock.s`, `netudp.s`, `server.s`, `whoami.s`
+- Removed the `j2me-lib/` tree (Android stubs)
 
-### deployment / infra
+### deployment / infrastructure
 
-- **`Dockerfile`** (novo): PHP 8.3 FPM Alpine + nginx + supervisord; serviços php-fpm, nginx, mirror Python (`:31522`), pproxy (`:4096` + Flask web `:10141`)
-- `docker/`: `nginx.conf`, `php.ini`, `supervisord.conf`; submodule `pproxy` em `.gitmodules`
-- `krnl/`: kernel Python desktop reimplementando o runtime (`kernel.py`, `main.py`, `tkgui.py`, `lua/`)
-- `index.php` expandido
+- **`Dockerfile`** (new): PHP 8.3 FPM Alpine + nginx + supervisord; services php-fpm, nginx, Python mirror (`:31522`), pproxy (`:4096` + Flask web `:10141`)
+- `docker/`: `nginx.conf`, `php.ini`, `supervisord.conf`; `pproxy` submodule in `.gitmodules`
+- `krnl/`: desktop Python kernel reimplementing the runtime (`kernel.py`, `main.py`, `tkgui.py`, `lua/`)
+- `index.php` expanded
 
-### documentação / config
+### documentation / config
 
-- `AGENTS.md`; novos `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md`, `SECURITY.md`
-- `docs/BUILD.md`, `docs/FILESYS.md`, `docs/USERS.md`, `docs/lua/README.md` expandidos; 5 exemplos novos em `docs/lua/examples/`
-- Proxy/HOME_URL: `opentty.xyz` → `opentty.fun`; `RELEASE` muda de `"stable"` para `"mod"`
-- `res/template.ini` novo
+- `AGENTS.md`; new `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md`, `SECURITY.md`
+- `docs/BUILD.md`, `docs/FILESYS.md`, `docs/USERS.md`, `docs/lua/README.md` expanded; 5 new examples in `docs/lua/examples/`
+- Proxy/HOME_URL: `opentty.xyz` → `opentty.fun`; `RELEASE` changed from `"stable"` to `"mod"`
+- New `res/template.ini`
 
 ---
 
@@ -159,21 +159,21 @@ bug fixes
 
 general
 
-- Added Kernel request `netsh` to get openned objects
+- Added Kernel request `netsh` to get opened objects
 - New syscall added `nice` to change process priority
 - New log manager `sys/smile/logs.lua`, install with `yang install log`
 - Limited Lua cached tokens to 100 files
 - Native Shell `os.execute(cmd)` still wrote in Java
 - SheBang `#!/bin/sh` on `. [file]` run file with shell
 - Added the **Add new line** button in Nano Editor
-- Config. file `OpenRMS` doesnt appear in file listings
+- Config. file `OpenRMS` doesn't appear in file listings
 - New sh label
 - Allowed multiple terminals
 
 lua
 
 - Added functions `string.startswith(s, pattern)` and `string.endswith(s, pattern)`
-- Read a file or stream with chunck size `-1` will read until end of file/ connection end
+- Read a file or stream with chunk size `-1` will read until end of file/ connection end
 - fixed `tonumber` invalid or missing value message
 
 elf
