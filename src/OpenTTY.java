@@ -27,7 +27,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // Graphics
     public Display display = Display.getDisplay(this);
     public Displayable previous = null;
-    public List taskMngr = new List("Running", List.IMPLICT);
+    public List taskMngr = new List("Running", List.IMPLICIT);
     private Vector taskMngrPids = new Vector();
     // |
     // MIDlet Loader
@@ -87,7 +87,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // | (Graphical Handler)
     public void showTaskManager() {
         previous = display.getCurrent();
-        taskMngr = new List("Running", List.IMPLICT);
+        taskMngr = new List("Running", List.IMPLICIT);
         taskMngrPids = new Vector();
         for (Enumeration keys = sys.keys(); keys.hasMoreElements();) {
             String pid = (String) keys.nextElement();
