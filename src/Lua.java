@@ -38,7 +38,7 @@ public class Lua {
     public static final int EXEC = 300, GETENV = 301, SETENV = 302, CLOCK = 303, SETLOC = 304, EXIT = 305, DATE = 306, GETPID = 307, SETPROC = 308, GETPROC = 309, GETCWD = 310, GETUID = 311, CHDIR = 312, REQUEST = 313, START = 314, STOP = 315, PREQ = 316, SU = 318, REMOVE = 319, SCOPE = 320, JOIN = 321, MKDIR = 322;
     public static final int READ = 400, WRITE = 401, CLOSE = 402, OPEN = 403, POPEN = 404, DIRS = 405, SETOUT = 406, MOUNT = 407, GEN = 408, COPY = 409;
     public static final int HTTP_GET = 500, HTTP_POST = 501, CONNECT = 502, PEER = 503, DEVICE = 504, SERVER = 505, ACCEPT = 506, HTTP_RGET = 507, HTTP_RPOST = 508;
-    public static final int DISPLAY = 600, NEW = 601, RENDER = 602, APPEND = 603, ADDCMD = 604, HANDLER = 605, GETCURRENT = 606, TITLE = 607, TICKER = 608, VIBRATE = 609, SETLABEL = 610, SETTEXT = 611, GETLABEL = 612, GETTEXT = 613, CLEAR_SCREEN = 614;
+    public static final int DISPLAY = 600, NEW = 601, RENDER = 602, APPEND = 603, ADDCMD = 604, HANDLER = 605, GETCURRENT = 606, TITLE = 607, TICKER = 608, VIBRATE = 609, SETLABEL = 610, SETTEXT = 611, GETLABEL = 612, GETTEXT = 613, CLEAR_SCREEN = 614, TASKMNGR = 615;
     public static final int CLASS = 700, NAME = 701, DELETE = 702, UPTIME = 703, RUN = 704, THREAD = 705, SLEEP = 706, KERNEL = 1000;
     public static final int AUDIO_LOAD = 800, AUDIO_PLAY = 801, AUDIO_PAUSE = 802, AUDIO_VOLUME = 803, AUDIO_DURATION = 804, AUDIO_TIME = 805;
     public static final int PUSH_REGISTER = 900, PUSH_UNREGISTER = 901, PUSH_LIST = 902, PUSH_PENDING = 903, PUSH_SET_ALARM = 904;
@@ -79,7 +79,7 @@ public class Lua {
         for (int i = 0; i < funcs.length; i++) { os.put(funcs[i], new LuaFunction(loaders[i])); } os.put("execute", midlet.shell instanceof LuaFunction ? midlet.shell : new LuaFunction(EXEC)); globals.put("os", os);
 
         funcs = new String[] { "read", "write", "close", "open", "popen", "dirs", "setstdout", "mount", "new", "copy" }; loaders = new int[] { READ, WRITE, CLOSE, OPEN, POPEN, DIRS, SETOUT, MOUNT, GEN, COPY };
-        for (int i = 0; i < funcs.length; i++) { io.put(funcs[i], new LuaFunction(loaders[i])); } io.put("stdout", stdout); io.put("stdin", midlet.stdin); globals.put("io", io);
+        for (int i = 0; i < funcs.length; i++) { io.put(funcs[i], new LuaFunction(loaders[i])); } io.put("stdout", stdout); globals.put("io", io);
 
         funcs = new String[] { "insert", "concat", "remove", "sort", "move", "unpack", "pack", "decode" }; loaders = new int[] { TB_INSERT, TB_CONCAT, TB_REMOVE, TB_SORT, TB_MOVE, TB_UNPACK, TB_PACK, TB_DECODE };
         for (int i = 0; i < funcs.length; i++) { table.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("table", table);
@@ -102,7 +102,8 @@ public class Lua {
         funcs = new String[] { "register", "unregister", "list", "pending", "setAlarm" }; loaders = new int[] { PUSH_REGISTER, PUSH_UNREGISTER, PUSH_LIST, PUSH_PENDING, PUSH_SET_ALARM };
         for (int i = 0; i< funcs.length; i++) { push.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("push", push);
 
-        funcs = new String[] { "display", "new", "render", "append", "addCommand", "handler", "getCurrent", "SetTitle", "SetTicker", "vibrate", "SetLabel", "SetText", "GetLabel", "GetText", "clear" }; loaders = new int[] { DISPLAY, NEW, RENDER, APPEND, ADDCMD, HANDLER, GETCURRENT, TITLE, TICKER, VIBRATE, SETLABEL, SETTEXT, GETLABEL, GETTEXT, CLEAR_SCREEN };
+        funcs = new String[] { "display", "new", "render", "append", "addCommand", "handler", "getCurrent", "SetTitle", "SetTicker", "vibrate", "SetLabel", "SetText", "GetLabel", "GetText", "clear", "taskmngr" }; 
+        loaders = new int[] { DISPLAY, NEW, RENDER, APPEND, ADDCMD, HANDLER, GETCURRENT, TITLE, TICKER, VIBRATE, SETLABEL, SETTEXT, GETLABEL, GETTEXT, CLEAR_SCREEN, TASKMNGR };
         for (int i = 0; i < funcs.length; i++) { graphics.put(funcs[i], new LuaFunction(loaders[i])); } graphics.put("db", midlet.graphics); graphics.put("fire", List.SELECT_COMMAND); globals.put("graphics", graphics);
 
         funcs = new String[] { "upper", "lower", "len", "find", "match", "reverse", "sub", "hash", "byte", "char", "trim", "uuid", "split", "getCommand", "getArgument", "env", "getpattern", "startswith", "endswith" }; loaders = new int[] { UPPER, LOWER, LEN, FIND, MATCH, REVERSE, SUB, HASH, BYTE, CHAR, TRIM, UUID, SPLIT, GETCMD, GETARGS, ENV, GETPATTERN, STARTSWITH, ENDSWITH };
@@ -1631,6 +1632,8 @@ public class Lua {
                         else if (attribute.equals("handler")) { if (value instanceof LuaFunction) { proc.handler = value; kill = false; } else { return gotbad(1, "setproc", "function expected"); } }
                         else if (attribute.equals("cmd")) { if (value != null) { proc.cmd = toLuaString(value); } else { return gotbad(1, "setproc", "string expected"); } }
                         else if (attribute.equals("sighandler")) { if (value instanceof LuaFunction) { proc.sighandler = value; } else { return gotbad(1, "setproc", "function expected"); } }
+                        else if (attribute.equals("screen")) { if (value instanceof Displayable) { proc.displayableScreen = (Displayable) value; } else { return gotbad(1, "setproc", "Displayable expected"); } }
+                        else if (attribute.equals("stdout")) { if (value != null) { proc.stdout = value; stdout = value; } }
                         else { if (value == null) { proc.db.remove(attribute); } else { proc.db.put(attribute, value); } }
                     } 
                 case GETCWD: return father.get("PWD");
@@ -1720,7 +1723,16 @@ public class Lua {
                         if (arg instanceof InputStream) { return midlet.read((InputStream) arg, args.size() > 1 && args.elementAt(1) instanceof Double ? ((Double) args.elementAt(1)).intValue() : 1024, false); }
                         else if (arg instanceof StringBuffer) { ((StringBuffer) arg).toString(); }
                         else if (arg instanceof OutputStream) { return gotbad(1, "read", "input stream expected, got output"); } 
-                        else { return midlet.getcontent(toLuaString(arg), father); } 
+                        else {
+                            String path = toLuaString(arg);
+                            if (path.equals("/dev/stdout")) {
+                                if (stdout instanceof StringItem) return ((StringItem) stdout).getText();
+                                else if (stdout instanceof StringBuffer) return ((StringBuffer) stdout).toString();
+                                return "";
+                            }
+                            if (path.equals("/dev/stdin")) return "";
+                            return midlet.getcontent(path, father);
+                        }
                     }
                 case WRITE:
                     if (args.isEmpty()) { break; }
@@ -1764,6 +1776,17 @@ public class Lua {
                         }
                         else {
                             String content = toLuaString(buffer), filename = target != null ? toLuaString(target) : "/dev/stdout";
+                            if (filename.equals("/dev/stdout")) {
+                                if (stdout instanceof StringItem) {
+                                    String cur = ((StringItem) stdout).getText();
+                                    ((StringItem) stdout).setText(mode ? (cur == null || cur.length() == 0 ? content : cur + "\n" + content) : content);
+                                } else if (stdout instanceof StringBuffer) {
+                                    if (mode) { ((StringBuffer) stdout).append("\n").append(content); }
+                                    else { ((StringBuffer) stdout).setLength(0); ((StringBuffer) stdout).append(content); }
+                                }
+                                return new Double(0);
+                            }
+                            if (filename.equals("/dev/stdin")) return new Double(0);
                             return new Double(midlet.write(filename, mode ? midlet.getcontent(filename, father) + content : content, id, father));
                         }
                     }
@@ -2446,6 +2469,7 @@ public class Lua {
                         else { return gotbad(1, "clear", "screen expected, got" + type(args.elementAt(0))); }
                         break;
                     }
+                case TASKMNGR: midlet.showTaskManager(); break;
                 // Package [string]
                 case LOWER: case UPPER: if (args.isEmpty()) { return gotbad(1, MOD == LOWER ? "lower" : "upper", "string expected, got no value"); } else { String text = toLuaString(args.elementAt(0)); return MOD == LOWER ? text.toLowerCase() : text.toUpperCase(); }
                 case FIND: case MATCH: case LEN:
@@ -3117,7 +3141,7 @@ public class Lua {
                         }
                     }
                 }
-                else if (mainCommand.equals("clear")) { midlet.stdout.setText(""); }
+                else if (mainCommand.equals("clear")) { if (stdout instanceof StringItem) { ((StringItem) stdout).setText(""); } else if (stdout instanceof StringBuffer) { ((StringBuffer) stdout).setLength(0); } }
                 else if (mainCommand.equals("env") || mainCommand.equals("export") || mainCommand.equals("set")) {
                     if (args.length == 0) {
                         for (Enumeration keys = midlet.attributes.keys(); keys.hasMoreElements();) {

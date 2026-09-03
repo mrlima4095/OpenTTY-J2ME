@@ -26,8 +26,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // Graphics
     public Display display = Display.getDisplay(this);
-    public StringItem stdout = new StringItem("", "");
-    public TextField stdin = new TextField("Command", "", 256, TextField.ANY);
+    public Displayable previous = null;
+    public List taskMngr = new List("Running", List.IMPLICT);
+    private Vector taskMngrPids = new Vector();
     // |
     // MIDlet Loader
     // | (Triggers)
@@ -49,7 +50,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     Hashtable args = new Hashtable(); args.put(new Double(0), "/bin/init");
                     globals.put("PWD", "/home/"); globals.put("USER", "root"); globals.put("ROOT", "/"); globals.put("ALIAS", new Hashtable()); userID.put(username, 1000);
 
-                    Process proc = new Process(this, "init", "/bin/init", "root", 0, "1", stdout, globals);
+                    Process proc = new Process(this, "init", "/bin/init", "root", 0, "1", new StringBuffer(), globals);
 
                     sys.put("1", proc); proc.lua.globals.put("arg", args); proc.handler = proc.lua.getKernel();
                     proc.lua.currentSource = "/bin/init";
@@ -84,8 +85,49 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     private void logged() { Alert alert = new Alert("OpenTTY", "Reopen MIDlet to access console", null, AlertType.INFO); alert.setTimeout(Alert.FOREVER); alert.addCommand(new Command("Exit", Command.EXIT, 1)); alert.setCommandListener(this); display.setCurrent(alert); }
     // | (Graphical Handler)
+    public void showTaskManager() {
+        previous = display.getCurrent();
+        taskMngr = new List("Running", List.IMPLICT);
+        taskMngrPids = new Vector();
+        for (Enumeration keys = sys.keys(); keys.hasMoreElements();) {
+            String pid = (String) keys.nextElement();
+            Process p = (Process) sys.get(pid);
+            if (p != null && p.displayableScreen != null) {
+                taskMngr.append(p.name + " [" + pid + "]", null);
+                taskMngrPids.addElement(pid);
+            }
+        }
+        taskMngr.addCommand(new Command("Back", Command.BACK, 1));
+        taskMngr.addCommand(new Command("Interrupt", Command.STOP, 2));
+        taskMngr.setSelectCommand(List.SELECT_COMMAND);
+        taskMngr.setCommandListener(this);
+        display.setCurrent(taskMngr);
+    }
     public void commandAction(Command c, Displayable d) {
         if (c.getLabel() == "Exit") { destroyApp(true); }
+        else if (d == taskMngr) {
+            if (c.getLabel() == "Back") { if (previous != null) display.setCurrent(previous); }
+            else if (c.getLabel() == "Interrupt") {
+                int sel = taskMngr.getSelectedIndex();
+                if (sel >= 0 && sel < taskMngrPids.size()) {
+                    String pid = (String) taskMngrPids.elementAt(sel);
+                    Process p = (Process) sys.get(pid);
+                    if (p != null) {
+                        if (p.sighandler != null) { try { Vector sa = new Vector(); sa.addElement("15"); ((Lua.LuaFunction) p.sighandler).call(sa); } catch (Throwable e) { } }
+                        sys.remove(pid);
+                        showTaskManager();
+                    }
+                }
+            }
+            else if (c == List.SELECT_COMMAND) {
+                int sel = taskMngr.getSelectedIndex();
+                if (sel >= 0 && sel < taskMngrPids.size()) {
+                    String pid = (String) taskMngrPids.elementAt(sel);
+                    Process p = (Process) sys.get(pid);
+                    if (p != null && p.displayableScreen != null) { display.setCurrent(p.displayableScreen); }
+                }
+            }
+        }
         else {
             int size = ((Form) d).size();
             if (size == 2) {
@@ -219,7 +261,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else {
             if (filename.startsWith("/dev/")) {
                 filename = filename.substring(5);
-                String content = filename.equals("random") ? String.valueOf(random.nextInt(256)) : filename.equals("stdin") ? stdin.getString() : filename.equals("stdout") ? stdout.getText() : filename.equals("null") ? "\r" : filename.equals("zero") ? "\0" : null;
+                String content = filename.equals("random") ? String.valueOf(random.nextInt(256)) : filename.equals("stdin") ? "" : filename.equals("stdout") ? "" : filename.equals("null") ? "\r" : filename.equals("zero") ? "\0" : null;
                 if (content != null) { return new ByteArrayInputStream(content.getBytes("UTF-8")); }
 
                 filename = "/dev/" + filename;
@@ -307,7 +349,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (useCache) { cache.put(full, data); } return addFile(name, data, loadRMS("OpenRMS", index), index);
             }
         }
-        else if (filename.startsWith("/dev/")) { if ((filename = filename.substring(5)).equals("")) { return 2; } else if (filename.equals("null")) { } else if (filename.equals("stdin")) { stdin.setString(new String(data)); } else if (filename.equals("stdout")) { stdout.setText(new String(data)); } else { return 5; } }
+        else if (filename.startsWith("/dev/")) { if ((filename = filename.substring(5)).equals("")) { return 2; } else if (filename.equals("null")) { } else { return 5; } }
         else if (filename.startsWith("/tmp/")) { if ((filename = filename.substring(5)).equals("")) { return 2; } else { tmp.put(filename, data); } }
         else if (filename.startsWith("/")) { return 5; }
         
@@ -677,6 +719,7 @@ class Process {
   
     public Object stdout, stderr;
     public Object handler = null, sighandler = null;
+    public Displayable displayableScreen = null;
     public Lua lua = null;
     public ELF elf = null;
 

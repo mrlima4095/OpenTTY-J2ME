@@ -1,0 +1,42 @@
+#!/bin/lua
+
+local xtermForm = graphics.new("screen", "OpenTTY " .. getAppProperty("MIDlet-Version"))
+local run = graphics.new("command", { label = "Run", type = "ok", priority = 1 })
+local switchCmd = graphics.new("command", { label = "Switch to...", type = "screen", priority = 2 })
+
+local myStdout = graphics.new("buffer", { label = "", value = "", style = "monospace" })
+local myStdin = graphics.new("field", { label = "Command", value = "", length = 256, mode = "" })
+
+os.setproc("stdout", myStdout)
+os.setproc("screen", xtermForm)
+
+io.stdout = myStdout
+io.stdin = myStdin
+
+local scope, hostname = os.scope(), io.read("/etc/hostname")
+
+local function label() graphics.SetLabel(myStdin, "[" .. scope["USER"] .. "@" .. hostname .. " " .. os.getcwd() .. "] " .. (os.getuid() == 0 and "#" or "$")) end
+
+label()
+
+graphics.append(xtermForm, myStdout)
+graphics.append(xtermForm, myStdin)
+graphics.addCommand(xtermForm, run)
+graphics.addCommand(xtermForm, switchCmd)
+graphics.handler(xtermForm, {
+    [run] = function(command)
+        if command ~= "" then
+            graphics.SetText(myStdin, "")
+            local ok, msg = pcall(os.execute, command)
+            if not ok then
+                print(tostring(msg))
+            end
+            label()
+        end
+    end,
+    [switchCmd] = function(command)
+        graphics.taskmngr()
+    end
+})
+graphics.db["xterm"] = xtermForm
+graphics.display(xtermForm)

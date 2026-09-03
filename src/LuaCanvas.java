@@ -261,7 +261,7 @@ class LuaCanvas extends Canvas implements CommandListener {
                 args.addElement(new Double(g.getClipHeight()));
                 callback.call(args);
             } catch (Exception e) {
-                midlet.print(midlet.getCatch(e), midlet.stdout);
+                midlet.print(midlet.getCatch(e), null);
             }
         }
     }
@@ -276,7 +276,7 @@ class LuaCanvas extends Canvas implements CommandListener {
                 args.addElement(getGameAction(keyCode) == 0 ? LUA_NIL : new Double(getGameAction(keyCode)));
                 callback.call(args);
             } catch (Exception e) {
-                midlet.print(midlet.getCatch(e), midlet.stdout);
+                midlet.print(midlet.getCatch(e), null);
             }
         }
     }
@@ -291,7 +291,7 @@ class LuaCanvas extends Canvas implements CommandListener {
                 args.addElement(getGameAction(keyCode) == 0 ? LUA_NIL : new Double(getGameAction(keyCode)));
                 callback.call(args);
             } catch (Exception e) {
-                midlet.print(midlet.getCatch(e), midlet.stdout);
+                midlet.print(midlet.getCatch(e), null);
             }
         }
     }
@@ -306,7 +306,7 @@ class LuaCanvas extends Canvas implements CommandListener {
                 args.addElement(new Double(y));
                 callback.call(args);
             } catch (Exception e) {
-                midlet.print(midlet.getCatch(e), midlet.stdout);
+                midlet.print(midlet.getCatch(e), null);
             }
         }
     }
@@ -321,7 +321,7 @@ class LuaCanvas extends Canvas implements CommandListener {
                 args.addElement(new Double(y));
                 callback.call(args);
             } catch (Exception e) {
-                midlet.print(midlet.getCatch(e), midlet.stdout);
+                midlet.print(midlet.getCatch(e), null);
             }
         }
     }
@@ -336,7 +336,7 @@ class LuaCanvas extends Canvas implements CommandListener {
                 args.addElement(new Double(y));
                 callback.call(args);
             } catch (Exception e) {
-                midlet.print(midlet.getCatch(e), midlet.stdout);
+                midlet.print(midlet.getCatch(e), null);
             }
         }
     }
@@ -349,7 +349,7 @@ class LuaCanvas extends Canvas implements CommandListener {
                 args.addElement(this);
                 callback.call(args);
             } catch (Exception e) {
-                midlet.print(midlet.getCatch(e), midlet.stdout);
+                midlet.print(midlet.getCatch(e), null);
             }
         }
     }
@@ -362,7 +362,7 @@ class LuaCanvas extends Canvas implements CommandListener {
                 args.addElement(this);
                 callback.call(args);
             } catch (Exception e) {
-                midlet.print(midlet.getCatch(e), midlet.stdout);
+                midlet.print(midlet.getCatch(e), null);
             }
         }
     }
@@ -384,7 +384,7 @@ class LuaCanvas extends Canvas implements CommandListener {
                 args.addElement(new Double(h));
                 callback.call(args);
             } catch (Exception e) {
-                midlet.print(midlet.getCatch(e), midlet.stdout);
+                midlet.print(midlet.getCatch(e), null);
             }
         }
     }
@@ -400,7 +400,7 @@ class LuaCanvas extends Canvas implements CommandListener {
                     args.addElement(c.getLabel());
                     callback.call(args);
                 } catch (Exception e) {
-                    midlet.print(midlet.getCatch(e), midlet.stdout);
+                    midlet.print(midlet.getCatch(e), null);
                 }
             }
         }
