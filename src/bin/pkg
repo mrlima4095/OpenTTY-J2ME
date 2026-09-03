@@ -40,6 +40,7 @@ local mirror = {
     ["nc"] = { remote = "net/netcat.lua", here = "/bin/nc", description = "Connect with Remote Interfaces" },
     ["netstat"] = { remote = "net/netstat.lua", here = "/bin/netstat", description = "Network connection test" },
     ["nice"] = { remote = "sys/nice.lua", here = "/bin/nice", description = "Chance process priority" },
+    ["open"] = { remote = "sys/open.lua", here = "/bin/open", description = "Open a file with the default application" },
     ["passwd"] = { remote = "sys/passwd.lua", here = "/bin/passwd", description = "Change password" },
     ["pastebin"] = { remote = "net/pastebin", here = "/bin/pastebin", description = "PasteBin Client for OpenTTY" },
     ["ping"] = { remote = "net/ping.lua", here = "/bin/ping", description = "Test connection delay" },
