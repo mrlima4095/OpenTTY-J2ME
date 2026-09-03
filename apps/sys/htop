@@ -17,6 +17,7 @@ local function monitor()
     graphics.handler(screen, handler)
 
     update_info(info)
+    os.setproc("screen", screen)
     graphics.display(screen)
 end
 

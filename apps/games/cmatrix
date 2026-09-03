@@ -21,6 +21,7 @@ local function cmatrix()
         end
     end)
 
+    os.setproc("screen", screen)
 end
 
 os.setproc("name", "cmatrix")
