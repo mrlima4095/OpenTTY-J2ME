@@ -1632,8 +1632,7 @@ public class Lua {
                         else if (attribute.equals("handler")) { if (value instanceof LuaFunction) { proc.handler = value; kill = false; } else { return gotbad(1, "setproc", "function expected"); } }
                         else if (attribute.equals("cmd")) { if (value != null) { proc.cmd = toLuaString(value); } else { return gotbad(1, "setproc", "string expected"); } }
                         else if (attribute.equals("sighandler")) { if (value instanceof LuaFunction) { proc.sighandler = value; } else { return gotbad(1, "setproc", "function expected"); } }
-                        else if (attribute.equals("screen")) { if (value instanceof Displayable) { proc.displayableScreen = (Displayable) value; } else { return gotbad(1, "setproc", "Displayable expected"); } }
-                        else if (attribute.equals("title")) { if (value != null) { proc.screenTitle = toLuaString(value); } else { proc.screenTitle = null; } }
+                        else if (attribute.equals("screen")) { if (value instanceof Displayable) { proc.screen = (Displayable) value; } else { return gotbad(1, "setproc", "Displayable expected"); } }
                         else if (attribute.equals("stdout")) { if (value != null) { proc.stdout = value; stdout = value; } }
                         else { if (value == null) { proc.db.remove(attribute); } else { proc.db.put(attribute, value); } }
                     } 

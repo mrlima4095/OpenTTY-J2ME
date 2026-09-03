@@ -27,8 +27,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // Graphics
     public Display display = Display.getDisplay(this);
     public Displayable previous = null;
-    public List taskMngr = new List("Running", List.IMPLICIT);
-    private Vector taskMngrPids = new Vector();
+    public List taskMngr = null;
+    private Vector taskMngrPids = null;
     // |
     // MIDlet Loader
     // | (Triggers)
@@ -91,21 +91,29 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return dst;
     }
     public void showTaskManager() {
-        previous = display.getCurrent();
-        taskMngr = new List("Running", List.IMPLICIT);
+        if (taskMngr == null) {
+            taskMngr = new List("Running", List.IMPLICIT);
+            taskMngr.addCommand(new Command("Back", Command.BACK, 1));
+            taskMngr.addCommand(new Command("Interrupt", Command.STOP, 2));
+            taskMngr.setSelectCommand(List.SELECT_COMMAND);
+            taskMngr.setCommandListener(this);
+        } else {
+            taskMngr.deleteAll();
+        }
+
+        Displayable current = display.getCurrent();
+        if (current != taskMngr) { previous = display.getCurrent(); }
+        
         taskMngrPids = new Vector();
         for (Enumeration keys = sys.keys(); keys.hasMoreElements();) {
             String pid = (String) keys.nextElement();
             Process p = (Process) sys.get(pid);
-            if (p != null && p.displayableScreen != null) {
-                taskMngr.append((p.screenTitle != null ? p.screenTitle : p.name) + " [" + pid + "]", null);
+            if (p != null && p.screen != null) {
+                taskMngr.append((p.screen.getTitle() : p.name) + " [" + pid + "]", null);
                 taskMngrPids.addElement(pid);
             }
         }
-        taskMngr.addCommand(new Command("Back", Command.BACK, 1));
-        taskMngr.addCommand(new Command("Interrupt", Command.STOP, 2));
-        taskMngr.setSelectCommand(List.SELECT_COMMAND);
-        taskMngr.setCommandListener(this);
+
         display.setCurrent(taskMngr);
     }
     public void commandAction(Command c, Displayable d) {
@@ -129,7 +137,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (sel >= 0 && sel < taskMngrPids.size()) {
                     String pid = (String) taskMngrPids.elementAt(sel);
                     Process p = (Process) sys.get(pid);
-                    if (p != null && p.displayableScreen != null) { display.setCurrent(p.displayableScreen); }
+                    if (p != null && p.screen != null) { display.setCurrent(p.screen); }
                 }
             }
         }
@@ -724,8 +732,7 @@ class Process {
   
     public Object stdout, stderr;
     public Object handler = null, sighandler = null;
-    public Displayable displayableScreen = null;
-    public String screenTitle = null;
+    public Displayable screen = null;
     public Lua lua = null;
     public ELF elf = null;
 
