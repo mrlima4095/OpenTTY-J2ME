@@ -51,6 +51,7 @@ function app.write(content)
 end
 
 os.setproc("name", "nano")
+os.setproc("screen", app.editor)
 
 graphics.addCommand(app.editor, app.back)
 graphics.addCommand(app.editor, app.save)

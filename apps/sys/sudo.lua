@@ -43,6 +43,7 @@ if arg[1] then
         end,
         [switch] = graphics.taskmngr
     })
+    
     os.setproc("screen", screen)
     graphics.display(screen)
 else

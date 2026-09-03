@@ -30,6 +30,7 @@ local term = graphics.new("screen", _VERSION)
 local run = graphics.new("command", { label = "Run", type = "ok", priority = 1 })
 local back = graphics.new("command", { label = "Back", type = "screen", priority = 1 })
 local clear = graphics.new("command", { label = "Clear", type = "screen", priority = 1 })
+local switch = graphics.new("command", { label = "Switch to...", type = "screen", priority = 2 })
 local output = graphics.new("buffer", {})
 local input = graphics.new("field", { type = "field", label = ">" })
 
@@ -57,9 +58,11 @@ graphics.handler(term, {
     end,
     [clear] = function()
         graphics.SetText(output, "")
-    end
+    end,
+    [switch] = graphics.taskmngr
 })
 
 os.setproc("name", "lua")
+os.setproc("screen", term)
 
 graphics.display(term)

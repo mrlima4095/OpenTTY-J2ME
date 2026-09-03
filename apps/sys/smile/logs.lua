@@ -1,5 +1,7 @@
 #!/bin/lua
 
+os.setproc("name", "log")
+
 if arg[1] == "add" then
     if arg[2] and arg[3] then
         local file = io.open("/tmp/logs")

@@ -1,7 +1,5 @@
 #!/bin/lua
 
-os.setproc("name", "sync")
-
 local proxy = getAppProperty("MIDlet-Proxy") or "http://nnp.nnchan.ru/proxy.php?"
 
 local previous = graphics.getCurrent()
@@ -51,3 +49,6 @@ graphics.handler(menu, {
     [graphics.fire] = handler
 })
 graphics.display(menu)
+
+os.setproc("name", "sync")
+os.setproc("screen", menu)

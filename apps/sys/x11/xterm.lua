@@ -1,35 +1,35 @@
 #!/bin/lua
 
-local xtermForm = graphics.new("screen", "OpenTTY " .. getAppProperty("MIDlet-Version"))
+local xterm = graphics.new("screen", "OpenTTY " .. getAppProperty("MIDlet-Version"))
 local run = graphics.new("command", { label = "Run", type = "ok", priority = 1 })
 local switchCmd = graphics.new("command", { label = "Switch to...", type = "screen", priority = 2 })
 
-local myStdout = graphics.new("buffer", { label = "", value = "", style = "monospace" })
-local myStdin = graphics.new("field", { label = "Command", value = "", length = 256, mode = "" })
+local stdout = graphics.new("buffer", { label = "", value = "", style = "monospace" })
+local stdin = graphics.new("field", { label = "Command", value = "", length = 256, mode = "" })
 
 os.setproc("name", "xterm")
-os.setproc("stdout", myStdout)
-os.setproc("screen", xtermForm)
+os.setproc("stdout", stdout)
+os.setproc("screen", xterm)
 
-io.stdout = myStdout
-io.stdin = myStdin
+io.stdout = stdout
+io.stdin = stdin
 
 local scope, hostname = os.scope(), io.read("/etc/hostname")
 
 print(string.env(io.read("/etc/motd")))
 
-local function label() graphics.SetLabel(myStdin, "[" .. scope["USER"] .. "@" .. hostname .. " " .. os.getcwd() .. "] " .. (os.getuid() == 0 and "#" or "$")) end
+local function label() graphics.SetLabel(stdin, "[" .. scope["USER"] .. "@" .. hostname .. " " .. os.getcwd() .. "] " .. (os.getuid() == 0 and "#" or "$")) end
 
 label()
 
-graphics.append(xtermForm, myStdout)
-graphics.append(xtermForm, myStdin)
-graphics.addCommand(xtermForm, run)
-graphics.addCommand(xtermForm, switchCmd)
-graphics.handler(xtermForm, {
+graphics.append(xterm, stdout)
+graphics.append(xterm, stdin)
+graphics.addCommand(xterm, run)
+graphics.addCommand(xterm, switchCmd)
+graphics.handler(xterm, {
     [run] = function(command)
         if command ~= "" then
-            graphics.SetText(myStdin, "")
+            graphics.SetText(stdin, "")
             local ok, msg = pcall(os.execute, command)
             if not ok then
                 print(tostring(msg))
@@ -39,5 +39,5 @@ graphics.handler(xtermForm, {
     end,
     [switchCmd] = graphics.taskmngr
 })
-graphics.db["xterm"] = xtermForm
-graphics.display(xtermForm)
+graphics.db["xterm"] = xterm
+graphics.display(xterm)

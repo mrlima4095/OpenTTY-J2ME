@@ -102,6 +102,7 @@ app.main = function ()
     local menu = graphics.new("list", "PasteBin")
     local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
     local select = graphics.new("command", { label = "Open", type = "ok", priority = 1 })
+    local switch = graphics.new("command", { label = "Switch to...", type = "ok", priority = 2 })
 
     if PASTEBIN_API then
         graphics.append(menu, "New Paste")
@@ -112,9 +113,20 @@ app.main = function ()
     end
     graphics.addCommand(menu, back)
     graphics.addCommand(menu, select)
-    graphics.handler(menu, { [back] = function () graphics.display(previous) os.exit(0) end, [select] = app.handler, [graphics.fire] = app.handler })
+    graphics.addCommand(menu, switch)
+    graphics.handler(menu, {
+        [back] = function ()
+            graphics.display(previous)
+            os.exit(0)
+        end,
+        [select] = app.handler,
+        [graphics.fire] = app.handler,
+        [switch] = graphics.taskmngr
+    })
     graphics.display(menu)
+
+    os.setproc("name", "pastebin")
+    os.setproc("screen", menu)
 end
 
-os.setproc("name", "pastebin")
 app.main()
