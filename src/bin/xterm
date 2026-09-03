@@ -7,16 +7,16 @@ local switchCmd = graphics.new("command", { label = "Switch to...", type = "scre
 local myStdout = graphics.new("buffer", { label = "", value = "", style = "monospace" })
 local myStdin = graphics.new("field", { label = "Command", value = "", length = 256, mode = "" })
 
+os.setproc("name", "xterm")
 os.setproc("stdout", myStdout)
 os.setproc("screen", xtermForm)
-os.setproc("title", "OpenTTY " .. getAppProperty("MIDlet-Version"))
 
 io.stdout = myStdout
 io.stdin = myStdin
 
 local scope, hostname = os.scope(), io.read("/etc/hostname")
 
-print(io.read("/etc/motd"))
+print(string.env(io.read("/etc/motd")))
 
 local function label() graphics.SetLabel(myStdin, "[" .. scope["USER"] .. "@" .. hostname .. " " .. os.getcwd() .. "] " .. (os.getuid() == 0 and "#" or "$")) end
 
@@ -37,9 +37,7 @@ graphics.handler(xtermForm, {
             label()
         end
     end,
-    [switchCmd] = function(command)
-        graphics.taskmngr()
-    end
+    [switchCmd] = graphics.taskmngr
 })
 graphics.db["xterm"] = xtermForm
 graphics.display(xtermForm)

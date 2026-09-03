@@ -4,6 +4,7 @@ local previous = graphics.getCurrent()
 local screen = graphics.new("screen", "Credentials")
 local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
 local go = graphics.new("command", { label = "Change", type = "ok", priority = 1 })
+local switch = graphics.new("command", { label = "Switch to...", type = "screen", priority = 2 })
 
 graphics.append(screen, { type = "field", label = "Current Password" })
 graphics.append(screen, { type = "field", label = "New Password" })
@@ -20,5 +21,6 @@ graphics.handler(screen, {
         end
         
         os.request(1, "passwd", { ["old"] = old, ["new"] = new })
-    end
+    end,
+    [switch] = graphics.taskmngr
 })

@@ -1,32 +1,35 @@
 #!/bin/lua
 
-local timeline, scope = {}, os.scope()
-
-local xterm = graphics.new("screen", "Terminal")
+local xtermForm = graphics.new("screen", "OpenTTY " .. getAppProperty("MIDlet-Version"))
 local run = graphics.new("command", { label = "Run", type = "ok", priority = 1 })
-local clear = graphics.new("command", { label = "Clear", type = "screen", priority = 1 })
-local history = graphics.new("command", { label = "History", type = "screen", priority = 1 })
+local switchCmd = graphics.new("command", { label = "Switch to...", type = "screen", priority = 2 })
 
-local function label() graphics.SetLabel(io.stdin, scope["USER"] .. " " .. os.getcwd() .. " " .. (os.getuid() == 0 and "#" or "$")) end
+local myStdout = graphics.new("buffer", { label = "", value = "", style = "monospace" })
+local myStdin = graphics.new("field", { label = "Command", value = "", length = 256, mode = "" })
 
-label()
+os.setproc("name", "xterm")
+os.setproc("stdout", myStdout)
+os.setproc("screen", xtermForm)
+
+io.stdout = myStdout
+io.stdin = myStdin
+
+local scope, hostname = os.scope(), io.read("/etc/hostname")
 
 print(string.env(io.read("/etc/motd")))
 
-graphics.append(xterm, io.stdout)
-graphics.append(xterm, io.stdin)
-graphics.addCommand(xterm, run)
-graphics.addCommand(xterm, clear)
-graphics.addCommand(xterm, history)
-graphics.handler(xterm, {
+local function label() graphics.SetLabel(myStdin, "[" .. scope["USER"] .. "@" .. hostname .. " " .. os.getcwd() .. "] " .. (os.getuid() == 0 and "#" or "$")) end
+
+label()
+
+graphics.append(xtermForm, myStdout)
+graphics.append(xtermForm, myStdin)
+graphics.addCommand(xtermForm, run)
+graphics.addCommand(xtermForm, switchCmd)
+graphics.handler(xtermForm, {
     [run] = function(command)
         if command ~= "" then
-            graphics.GetText()
-            if timeline[#timeline] ~= command then
-                timeline[#timeline + 1] = command
-            end
-            graphics.SetText(io.stdin, "")
-
+            graphics.SetText(myStdin, "")
             local ok, msg = pcall(os.execute, command)
             if not ok then
                 print(tostring(msg))
@@ -34,23 +37,7 @@ graphics.handler(xterm, {
             label()
         end
     end,
-    [clear] = function () graphics.SetText(io.stdout, "") end,
-    [history] = function ()
-        local list = graphics.new("list", "History")
-        local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
-        local go = graphics.new("command", { label = "Go", type = "screen", priority = 1 })
-
-        local function fire(command) graphics.SetText(io.stdin, command) end
-
-        for i = 1, #timeline do graphics.append(list, timeline[i]) end
-        graphics.addCommand(list, back)
-        graphics.addCommand(list, go)
-        graphics.handler(list, {
-            [back] = function () graphics.display(xterm) end,
-            [go] = fire, [graphics.fire] = fire
-        })
-        graphics.display(list)
-    end
+    [switchCmd] = graphics.taskmngr
 })
-graphics.db["xterm"] = xterm
-graphics.display(xterm)
+graphics.db["xterm"] = xtermForm
+graphics.display(xtermForm)

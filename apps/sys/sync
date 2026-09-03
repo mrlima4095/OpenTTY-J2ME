@@ -8,6 +8,7 @@ local previous = graphics.getCurrent()
 local menu = graphics.new("list", "MIDlet Updater")
 local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
 local open = graphics.new("command", { label = "Open", type = "screen", priority = 1 })
+local switch = graphics.new("command", { label = "Switch to...", type = "screen", priority = 2 })
 
 local function handler(opt)
     if opt == "Check for Updates" then
@@ -30,10 +31,8 @@ local function handler(opt)
         end
     elseif opt == "Go to releases" then
         os.open("http://opentty.fun/dist/")
-    elseif opt == "Download 1.16 LTS" then
-        os.open("http://opentty.fun/dist/versions/OpenTTY-1.16.jar")
     else
-        os.open("http://opentty.fun/dist/OpenTTY.jar")
+        os.open("http://opentty.fun/dist/debug/OpenTTY.jar")
     end
 
     graphics.display(previous)
@@ -42,12 +41,12 @@ end
 
 graphics.append(menu, "Check for Updates")
 graphics.append(menu, "Go to releases archive")
-graphics.append(menu, "Download 1.16 LTS")
 graphics.append(menu, "Download (Beta)")
 graphics.addCommand(menu, back)
 graphics.addCommand(menu, open)
 graphics.handler(menu, {
     [back] = function () graphics.display(previous) os.exit(0) end,
+    [switch] = graphics.taskmngr,
     [open] = handler,
     [graphics.fire] = handler
 })

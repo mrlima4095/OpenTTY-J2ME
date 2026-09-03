@@ -6,7 +6,7 @@ if not ok then
     os.exit(101)
 end
 
-local address, port = socket.device(conn)
+local address, _ = socket.device(conn)
 print(address)
 
 pcall(io.close, conn, i, o)

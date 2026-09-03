@@ -19,6 +19,7 @@ else
     local previous = graphics.getCurrent()
     local screen = graphics.new("screen", "Java ME")
     local back = graphics.new("command", { label = "Back", type = "ok", priority = 1 })
+    local switch = graphics.new("command", { label = "Switch to...", type = "screen", priority = 2 })
 
     graphics.append(screen, string.env("Java 1.2 (OpenTTY Edition)\n\nMicroEdition-Config: $CONFIG\nMicroEdition-Profile: $PROFILE"))
     graphics.addCommand(screen, back)
@@ -26,7 +27,8 @@ else
         [back] = function ()
             graphics.display(previous)
             os.exit()
-        end
+        end,
+        [switch] = graphics.taskmngr
     })
     graphics.display(screen)
 end
