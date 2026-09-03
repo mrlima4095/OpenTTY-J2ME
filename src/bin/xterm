@@ -16,7 +16,7 @@ io.stdin = stdin
 
 local scope, hostname = os.scope(), io.read("/etc/hostname")
 
-print(string.env(io.read("/etc/motd")))
+io.write(string.env(io.read("/etc/motd")), stdout)
 
 local function label() graphics.SetLabel(stdin, "[" .. scope["USER"] .. "@" .. hostname .. " " .. os.getcwd() .. "] " .. (os.getuid() == 0 and "#" or "$")) end
 
