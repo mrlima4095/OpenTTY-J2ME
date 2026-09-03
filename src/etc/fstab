@@ -3,4 +3,3 @@
 /dev/=null,random,stdin,stdout,zero
 /etc/=fstab,hostname,motd,os-release
 /lib/=libcore.so
-/proc/=uptime
