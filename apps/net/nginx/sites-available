@@ -1,0 +1,11 @@
+# Default site configuration
+# /etc/nginx/sites-available/default
+
+location / {
+    alias /home/;
+}
+
+location /api/ {
+    proxy_pass http://127.0.0.1:31522;
+    return type application/json;
+}

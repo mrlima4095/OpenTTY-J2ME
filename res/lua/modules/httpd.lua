@@ -331,4 +331,52 @@ function httpd.delete(endpoint, handler)
     return httpd.route(endpoint, "DELETE", handler)
 end
 
+-- Static file server support
+function httpd.static(root_dir)
+    local mime_map = {
+        [".html"] = "text/html",
+        [".htm"] = "text/html",
+        [".css"] = "text/css",
+        [".js"] = "application/javascript",
+        [".json"] = "application/json",
+        [".txt"] = "text/plain",
+        [".png"] = "image/png",
+        [".jpg"] = "image/jpeg",
+        [".jpeg"] = "image/jpeg",
+        [".gif"] = "image/gif",
+        [".svg"] = "image/svg+xml",
+        [".xml"] = "application/xml",
+        [".lua"] = "text/x-lua",
+    }
+
+    return function(req)
+        local path = req.path
+        if path == "/" then path = "/index.html" end
+
+        local file_path = root_dir
+        if string.sub(root_dir, -1) == "/" then
+            file_path = root_dir .. string.sub(path, 2)
+        else
+            file_path = root_dir .. path
+        end
+
+        local file = io.open(file_path)
+        if not file then
+            return { status = 404, content = "404 Not Found", content_type = "text/plain" }
+        end
+
+        local content = io.read(file)
+        io.close(file)
+
+        local ct = "application/octet-stream"
+        local dot = string.find(string.reverse(file_path), "%.")
+        if dot then
+            local ext = string.sub(file_path, -dot)
+            ct = mime_map[ext] or ct
+        end
+
+        return { content = content, status = 200, content_type = ct }
+    end
+end
+
 return httpd

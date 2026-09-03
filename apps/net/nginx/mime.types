@@ -1,0 +1,18 @@
+# OpenTTY Nginx MIME Types
+# /etc/nginx/mime.types
+
+text/html html htm
+text/css css
+application/javascript js
+application/json json
+text/plain txt
+image/png png
+image/jpeg jpg jpeg
+image/gif gif
+image/svg+xml svg
+application/xml xml
+application/pdf pdf
+audio/mpeg mp3
+audio/wav wav
+text/x-lua lua
+application/octet-stream bin
