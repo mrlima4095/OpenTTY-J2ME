@@ -109,7 +109,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             String pid = (String) keys.nextElement();
             Process p = (Process) sys.get(pid);
             if (p != null && p.screen != null) {
-                taskMngr.append((p.screen.getTitle() : p.name) + " [" + pid + "]", null);
+                taskMngr.append((p.screen.getTitle()) + " [" + pid + "]", null);
                 taskMngrPids.addElement(pid);
             }
         }

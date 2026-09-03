@@ -54,7 +54,7 @@ area; the most concrete, near-term items appear first.
 
 ## X11
 
-- [ ] Legacy screens
+- [x] Legacy screens
 - [ ] Themes
 
 ## Boot Menu
