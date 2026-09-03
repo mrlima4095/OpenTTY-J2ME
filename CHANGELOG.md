@@ -3,12 +3,6 @@ Copyright (C) 2026 - Mr. Lima
 
 ---
 
-# Changelog
-
-## Build 2026-1.18.1-03x28 (current — work since tag 1.18)
-
-All changes landed between the `1.18` release tag and `HEAD`.
-
 ### Multi-tasking / process management
 
 - `Process` now has its own `Displayable screen` (registered via `os.setproc("screen", ...)`); the global `midlet.stdout`/`midlet.stdin` were **removed** — each process has its own output buffer (per-process `StringBuffer`) and its own input `TextField`
@@ -20,7 +14,7 @@ All changes landed between the `1.18` release tag and `HEAD`.
 - `os.setproc("title", ...)` sets the title shown in the Task Manager (`title [pid]` instead of `name [pid]`)
 - Process scope is cloned by `cloneScope()` in `os.popen`/`serve`, so `su`/`cd` in one terminal no longer affect the others
 - **`/bin/xterm`** (new): the terminal emulator was extracted from `init` — it creates its own stdout/stdin/screen, `[USER@HOST PWD] #/$` prompt, "Run" command and "Switch to..." button (task manager); shows `/etc/motd` on open
-- **`/bin/init`** simplified: it only mounts fstab, sets env, `os.su`, runs `/home/.initrc` and calls `os.execute("xterm")`; also accepts `--serve=<program>` to spawn daemons
+- **`/bin/init`** simplified: it only mounts fstab, sets env, `os.su`, calls `os.execute("xterm")`; also accepts `--serve=<program>` to spawn daemons
 - `graphics.display()` clears `kill` when showing a `Displayable`, keeping the runtime alive with a foreground screen
 - Allowed multiple terminals
 
@@ -34,7 +28,6 @@ All changes landed between the `1.18` release tag and `HEAD`.
   - `shutdown` and `nanosleep` restored (success no-ops)
 - **Socket options**: `setsockopt`/`getsockopt` with an options table (`SO_REUSEADDR`, `SO_KEEPALIVE`, `SO_OOBINLINE`, `SO_BROADCAST`, `SO_DONTROUTE`, `SO_LINGER`, `SO_SNDBUF`, `SO_RCVBUF`, `TCP_NODELAY`); `SO_ERROR` and `SO_TYPE`; `-ENOPROTOOPT` for unsupported options
 - New constants: `SOL_SOCKET`, `SOL_IP`, `TCP_NODELAY`, `SO_*`; new errors `ENOTSOCK`, `ENOPROTOOPT`, `EADDRINUSE`, `EADDRNOTAVAIL`, `EISCONN`
-- Fixed `writeSockAddr` (avoids the cast to `short` that broke SDK codegen)
 - A failed `connect` sets `socketInfo["error"] = 111`
 - ELF `listdir` now sees the virtual `/proc/` (pid entries, `cpuinfo`, `meminfo`, `uptime`, `version`) via `midlet.procEntries()`
 - Shutdown cleanup also closes `datagram` connections
@@ -63,7 +56,7 @@ All changes landed between the `1.18` release tag and `HEAD`.
 - **`/bin/curl`**: fixed URL parsing (`sub(1,5)` for `"http:"`)
 - Add `#!/bin/sh` shebang support on `. [file]` run
 
-### New /bin apps
+### New apps
 
 - **`xterm`** — terminal emulator (see multi-tasking)
 - **`irc`** (`apps/net/irc.lua`) — IRC client with CLI (`connect`/`send`) and GUI modes, join/part/nick/PRIVMSG, PING/PONG, MOTD
@@ -114,7 +107,6 @@ All changes landed between the `1.18` release tag and `HEAD`.
 - `IMPLICT` → `IMPLICIT` in the `List` constructor
 - `init` uses the bare command name so `exec` resolves `/bin/` correctly
 - `socket.http.rget` was sending POST instead of GET (405 on package downloads) — now GET
-- `/proc/meminfo` uses `Runtime.totalMemory` instead of `maxMemory`
 - `>` redirection no longer dropped arguments before the operator
 - `rm` on VFS subdirectories (correct exit 0, `-r`)
 - silent `os.mkdir`/`os.exit`; cast fix in `deleteFile`; OOM handler with memory usage

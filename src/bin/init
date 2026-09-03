@@ -19,6 +19,4 @@ for k,v in pairs({ ["TYPE"] = "platform", ["CONFIG"] = "configuration", ["PROFIL
 io.mount(io.read("/etc/fstab"))
 
 os.su(java.midlet.username)
-pcall(io.popen, "/home/.initrc")
-
-os.execute("xterm")
+pcall(io.popen, "/bin/xterm")
