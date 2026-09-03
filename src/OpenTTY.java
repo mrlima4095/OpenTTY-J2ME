@@ -85,6 +85,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     private void logged() { Alert alert = new Alert("OpenTTY", "Reopen MIDlet to access console", null, AlertType.INFO); alert.setTimeout(Alert.FOREVER); alert.addCommand(new Command("Exit", Command.EXIT, 1)); alert.setCommandListener(this); display.setCurrent(alert); }
     // | (Graphical Handler)
+    public static Hashtable cloneScope(Hashtable src) {
+        Hashtable dst = new Hashtable();
+        for (Enumeration e = src.keys(); e.hasMoreElements();) { Object k = e.nextElement(); dst.put(k, src.get(k)); }
+        return dst;
+    }
     public void showTaskManager() {
         previous = display.getCurrent();
         taskMngr = new List("Running", List.IMPLICIT);
@@ -93,7 +98,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             String pid = (String) keys.nextElement();
             Process p = (Process) sys.get(pid);
             if (p != null && p.displayableScreen != null) {
-                taskMngr.append(p.name + " [" + pid + "]", null);
+                taskMngr.append((p.screenTitle != null ? p.screenTitle : p.name) + " [" + pid + "]", null);
                 taskMngrPids.addElement(pid);
             }
         }
@@ -106,7 +111,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public void commandAction(Command c, Displayable d) {
         if (c.getLabel() == "Exit") { destroyApp(true); }
         else if (d == taskMngr) {
-            if (c.getLabel() == "Back") { if (previous != null) display.setCurrent(previous); }
+            if (c.getLabel() == "Back") { if (taskMngrPids.size() == 0) { destroyApp(true); } else if (previous != null) { display.setCurrent(previous); } }
             else if (c.getLabel() == "Interrupt") {
                 int sel = taskMngr.getSelectedIndex();
                 if (sel >= 0 && sel < taskMngrPids.size()) {
@@ -720,6 +725,7 @@ class Process {
     public Object stdout, stderr;
     public Object handler = null, sighandler = null;
     public Displayable displayableScreen = null;
+    public String screenTitle = null;
     public Lua lua = null;
     public ELF elf = null;
 

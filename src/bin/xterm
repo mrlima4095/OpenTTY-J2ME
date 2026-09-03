@@ -9,11 +9,14 @@ local myStdin = graphics.new("field", { label = "Command", value = "", length = 
 
 os.setproc("stdout", myStdout)
 os.setproc("screen", xtermForm)
+os.setproc("title", "OpenTTY " .. getAppProperty("MIDlet-Version"))
 
 io.stdout = myStdout
 io.stdin = myStdin
 
 local scope, hostname = os.scope(), io.read("/etc/hostname")
+
+print(io.read("/etc/motd"))
 
 local function label() graphics.SetLabel(myStdin, "[" .. scope["USER"] .. "@" .. hostname .. " " .. os.getcwd() .. "] " .. (os.getuid() == 0 and "#" or "$")) end
 

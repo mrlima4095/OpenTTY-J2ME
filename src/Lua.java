@@ -1633,6 +1633,7 @@ public class Lua {
                         else if (attribute.equals("cmd")) { if (value != null) { proc.cmd = toLuaString(value); } else { return gotbad(1, "setproc", "string expected"); } }
                         else if (attribute.equals("sighandler")) { if (value instanceof LuaFunction) { proc.sighandler = value; } else { return gotbad(1, "setproc", "function expected"); } }
                         else if (attribute.equals("screen")) { if (value instanceof Displayable) { proc.displayableScreen = (Displayable) value; } else { return gotbad(1, "setproc", "Displayable expected"); } }
+                        else if (attribute.equals("title")) { if (value != null) { proc.screenTitle = toLuaString(value); } else { proc.screenTitle = null; } }
                         else if (attribute.equals("stdout")) { if (value != null) { proc.stdout = value; stdout = value; } }
                         else { if (value == null) { proc.db.remove(attribute); } else { proc.db.put(attribute, value); } }
                     } 
@@ -2791,7 +2792,8 @@ public class Lua {
                                 String program = toLuaString(arg), code = midlet.read(program, father);
                                 if (code == null || code.length() == 0) { return "service '" + program + "' not found"; }
 
-                                Process process = new Process(midlet, program, "/bin/init --serve=" + program, midlet.getUser(uid), uid, midlet.genpid(), stdout, father);
+                                Hashtable childScope = midlet.cloneScope(father);
+                                Process process = new Process(midlet, program, "/bin/init --serve=" + program, midlet.getUser(uid), uid, midlet.genpid(), stdout, childScope);
                                 process.lua.kill = false;
 
                                 Hashtable arg = new Hashtable(); arg.put(new Double(0), program); arg.put(new Double(1), "--deamon");
@@ -3364,7 +3366,8 @@ public class Lua {
 
                         result.addElement(new Double(status));
                     } else {
-                        Process process = new Process(midlet, ("lua " + program).trim(), midlet.joinpath(program, scope), midlet.getUser(owner), owner, pid, out, scope);
+                        Hashtable childScope = midlet.cloneScope(scope);
+                        Process process = new Process(midlet, ("lua " + program).trim(), midlet.joinpath(program, scope), midlet.getUser(owner), owner, pid, out, childScope);
                         midlet.sys.put(pid, process);
                         Hashtable digest = process.lua.run(program, code, arg);
                         
