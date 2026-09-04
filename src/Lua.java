@@ -3377,6 +3377,7 @@ public class Lua {
                         result.addElement(new Double(status));
                     } else {
                         Hashtable childScope = midlet.cloneScope(scope);
+                        childScope.put("USER", midlet.getUser(owner));
                         Process process = new Process(midlet, ("lua " + program).trim(), midlet.joinpath(program, scope), midlet.getUser(owner), owner, pid, out, childScope);
                         midlet.sys.put(pid, process);
                         Hashtable digest = process.lua.run(program, code, arg);
@@ -3385,7 +3386,9 @@ public class Lua {
                     }
                 } else {
                     InputStream elfStream = new ByteArrayInputStream(data);
-                    Process process = new Process(midlet, "elf", midlet.joinpath(program, scope), midlet.getUser(owner), owner, pid, out, arg, scope);
+                    Hashtable elfScope = midlet.cloneScope(scope);
+                    elfScope.put("USER", midlet.getUser(owner));
+                    Process process = new Process(midlet, "elf", midlet.joinpath(program, scope), midlet.getUser(owner), owner, pid, out, arg, elfScope);
                     midlet.sys.put(pid, process);
                     
                     if (process.elf.load(elfStream)) {
