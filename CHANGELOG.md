@@ -133,3 +133,7 @@ Copyright (C) 2026 - Mr. Lima
 - `docs/BUILD.md`, `docs/FILESYS.md`, `docs/USERS.md`, `docs/lua/README.md` expanded; 5 new examples in `docs/lua/examples/`
 - Proxy/HOME_URL: `opentty.xyz` → `opentty.fun`; `RELEASE` changed from `"stable"` to `"mod"`
 - New `res/template.ini`
+
+### Lua runtime
+
+- New global function `assert(v [, msg])`: raises an error with `msg` (default `"assertion failed!"`) when `v` is falsy (`false`/`nil`); returns all arguments unchanged when truthy

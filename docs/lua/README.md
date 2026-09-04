@@ -35,6 +35,7 @@ and standard libraries adapted for the J2ME environment.
 |----------|-------------|
 | `print(...)` | Output text to stdout |
 | `error(msg)` | Throw an error with a message |
+| `assert(v [, msg])` | Raise an error if `v` is falsy, return all args otherwise |
 | `pcall(f, ...)` | Call a function in protected mode |
 | `require(mod)` | Load a Lua module |
 | `load(string)` | Load and compile Lua code |

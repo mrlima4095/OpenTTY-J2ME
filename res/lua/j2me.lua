@@ -241,6 +241,8 @@ push = {
     setAlarm = function (midletClass, time) end,
     getAlarm = function (midletClass) end
 }
+--[=[Asserts that a value is truthy, raises an error otherwise]=]
+assert = function (v, msg) if not v then error(msg or "assertion failed!") end return v, msg end
 --[=[Get a MIDlet Property Value]=]
 getAppProperty = function (field) end
 --[=[Run code and returns value of code, inject scopes with a table on scope]=]
