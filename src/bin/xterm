@@ -11,12 +11,12 @@ os.setproc("name", "xterm")
 os.setproc("stdout", stdout)
 os.setproc("screen", xterm)
 
-io.stdout = stdout
+io.setstdout(stdout)
 io.stdin = stdin
 
 local scope, hostname = os.scope(), io.read("/etc/hostname")
 
-io.write(string.env(io.read("/etc/motd")), stdout)
+io.write(string.env(io.read("/etc/motd")))
 
 local function label() graphics.SetLabel(stdin, "[" .. scope["USER"] .. "@" .. hostname .. " " .. os.getcwd() .. "] " .. (os.getuid() == 0 and "#" or "$")) end
 
