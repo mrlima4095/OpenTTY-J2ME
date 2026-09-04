@@ -3438,7 +3438,24 @@ public class Lua {
             }
         }
 
-        public void exit(Vector args) { silent = true; if (PID.equals("1")) { midlet.destroyApp(true); } midlet.sys.remove(PID); if (args.isEmpty()) { throw new Error(); } else { status = getNumber(toLuaString(args.elementAt(0)), 1); } }
+        public void exit(Vector args) {
+            silent = true;
+            if (PID.equals("1")) { midlet.destroyApp(true); }
+            else {
+                boolean hadScreen = screen != null;
+                midlet.sys.remove(PID);
+                if (hadScreen) {
+                    Displayable target = null;
+                    for (Enumeration e = midlet.sys.keys(); e.hasMoreElements();) {
+                        Process p = (Process) midlet.sys.get(e.nextElement());
+                        if (p != null && p.screen != null) { target = p.screen; }
+                    }
+                    if (target != null) { midlet.display.setCurrent(target); }
+                    else { midlet.destroyApp(true); }
+                }
+            }
+            if (args.isEmpty()) { throw new Error(); } else { status = getNumber(toLuaString(args.elementAt(0)), 1); }
+        }
 
         public void commandAction(Command c, Displayable d) {
             try {
