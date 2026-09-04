@@ -739,6 +739,7 @@ public class Lua {
                         else if (token.type == EOF) { throw new RuntimeException("Unmatched 'while' statement: Expected 'end'"); }
                     }
                     endAlreadyConsumed = true; 
+                    breakLoop = false;
                     break;
                 }
 

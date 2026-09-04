@@ -105,7 +105,7 @@ gets a unique number that increments globally across all versions.
 | `BLOCO` | `03` | Block number (increments every 100 builds) |
 | `NUMERO` | `28` | Build number within the block |
 
-The full build number is `BLOCO * 100 + NUMERO`. Example: `03x28` = build #228.
+The full build number is `BLOCO * 100 + NUMERO`. Example: `03x28` = build #328.
 
 ### When to increment
 
@@ -129,7 +129,7 @@ Build #NUMERO - Short summary of the structural change
 Examples:
 
 ```
-Build #228 - VFS subdir mounts
+Build #328 - VFS subdir mounts
 Build #229 - Multi-terminal process isolation
 Build #230 - ELF network syscalls (bind/listen/accept)
 ```
