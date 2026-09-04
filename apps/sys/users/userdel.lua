@@ -8,7 +8,7 @@ if os.getuid() > 0 then
 end
 
 if arg[1] then
-    for i = 1, #arg - 1 do
+    for i = 1, #arg do
         local status = os.request(1, "userdel", arg[i])
         if status > 0 then
             print("useradd: " .. arg[i] .. ": " .. libcore.errormsg(status))

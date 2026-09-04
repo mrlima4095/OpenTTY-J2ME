@@ -21,15 +21,14 @@ if arg[1] then
             graphics.display(previous)
 
             if status == 0 then
-                local i = 1
-                local cmd = ""
-
-                while i < #arg - 1 do
-                    cmd = cmd .. arg[i + 1] .. " "
+                local cmd = arg[1]
+                local i = 2
+                while i <= #arg do
+                    cmd = cmd .. " " .. arg[i]
                     i = i + 1
                 end
                 
-                local cmd_status = os.execute(arg[1])
+                local cmd_status = os.execute(cmd)
 
                 os.su(username)
 

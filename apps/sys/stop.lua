@@ -3,7 +3,7 @@
 if arg[1] then
     local libcore = require("libcore")
 
-    for i = 1, #arg - 1 do
+    for i = 1, #arg do
         local pattern = arg[i]
         local sys = os.getproc()
 

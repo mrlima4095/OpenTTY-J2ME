@@ -1,7 +1,7 @@
 #!/bin/lua
 
 if arg[1] then
-    for i = 1, #arg - 1 do
+    for i = 1, #arg do
         local file = io.open(os.join(arg[i]))
         if file then
             print(#file .. "\t" .. arg[i])
