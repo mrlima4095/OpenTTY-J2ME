@@ -20,12 +20,15 @@ local output = graphics.new("buffer", { style = "monospace" })
 local run = graphics.new("command", { label = "Run", type = "ok", priority = 1 })
 local back = graphics.new("command", { label = "Exit", type = "back", priority = 1 })
 local clear = graphics.new("command", { label = "Clear", type = "screen", priority = 1 })
+local switch = graphics.new("command", { label = "Switch to...", type = "screen", priority = 2 })
 
 graphics.append(screen, output)
 graphics.append(screen, input)
 graphics.addCommand(screen, run)
 graphics.addCommand(screen, back)
 graphics.addCommand(screen, clear)
+graphics.addCommand(screen, switch)
+os.setproc("screen", screen)
 
 io.setstdout(output)
 
@@ -191,6 +194,7 @@ graphics.handler(screen, {
     [clear] = function()
         graphics.SetText(output, "")
     end,
+    [switch] = graphics.taskmngr,
 })
 
 graphics.display(screen)
