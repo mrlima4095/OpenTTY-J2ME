@@ -226,7 +226,7 @@ java = {
         --[=[OpenTTY Build Code]=]
         build = "2026-1.17-03x08",
         --[=[Returns MIDlet uptime's]=]
-        uptime = function () end
+        uptime = function () return 0 end
     }
 }
 
