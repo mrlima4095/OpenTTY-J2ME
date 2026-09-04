@@ -9,7 +9,6 @@ if arg[1] then
     graphics.append(screen, { type = "field", label = "[sudo] password for " .. java.midlet.username, value = "", mode = "password" })
     graphics.addCommand(screen, back)
     graphics.addCommand(screen, run)
-    graphics.addCommand(screen, switch)
     graphics.handler(screen, {
         [back] = function ()
             graphics.display(previous)
