@@ -5,7 +5,7 @@ local libcore = require("libcore")
 local recursive = false
 local files = {}
 
-for i = 1, #arg - 1 do
+for i = 1, #arg do
     local item = arg[i]
 
     if item == "-r" or item == "-rf" or item == "-fr" then

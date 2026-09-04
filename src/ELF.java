@@ -128,7 +128,7 @@ public class ELF {
         this.allocatedBlocks = new Hashtable();
         this.fileDescriptors = new Hashtable();
         this.nextFd = 3; // 0=stdin, 1=stdout, 2=stderr
-        this.heapStart = 0x200000; // 2MB - início do heap
+        this.heapStart = 0x40000; // 256KB - início do heap (dentro dos 1MB de RAM)
         this.heapEnd = heapStart;
         this.instructionCache = new Hashtable();
         this.cacheHits = 0;
@@ -1474,7 +1474,17 @@ public class ELF {
                 Integer fd = (Integer) key;
                 if (fd.intValue() >= 3) {
                     Object stream = fileDescriptors.get(fd);
-                    try { if (stream instanceof InputStream) { ((InputStream) stream).close(); } else if (stream instanceof OutputStream) { ((OutputStream) stream).close(); } } catch (Exception e) { }
+                    try {
+                        if (stream instanceof ByteArrayOutputStream) {
+                            ByteArrayOutputStream baos = (ByteArrayOutputStream) stream;
+                            String pathKey = fd + ":path";
+                            if (fileDescriptors.containsKey(pathKey)) {
+                                String path = (String) fileDescriptors.get(pathKey);
+                                midlet.write(path, baos.toByteArray(), id, scope);
+                            }
+                        } else if (stream instanceof InputStream) { ((InputStream) stream).close(); }
+                        else if (stream instanceof OutputStream) { ((OutputStream) stream).close(); }
+                    } catch (Exception e) { }
                 }
             }
         }

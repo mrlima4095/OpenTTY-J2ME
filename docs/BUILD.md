@@ -83,7 +83,7 @@ lua -e "assert(loadfile('src/bin/pkg'))"
 - `nbproject/project.properties` holds the NetBeans J2ME configuration:
   - `MIDlet-Version: 1.18.1`
   - JAR/JAD names `OpenTTY.jar` / `OpenTTY.jad`
-- Runtime logic is mirrored in `src/` and `java/` — **always update both trees**.
+- `src/` is the canonical home for all runtime logic (`Lua.java`, `OpenTTY.java`, `ELF.java`, `LuaCanvas.java`).
 
 ---
 

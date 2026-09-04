@@ -31,7 +31,7 @@ local function app()
         while true do
             local cmd = string.trim(io.read(i))
 
-            if cmd then
+            if cmd ~= "" then
                 local _ = pcall(os.execute, cmd)
             else break end
         end

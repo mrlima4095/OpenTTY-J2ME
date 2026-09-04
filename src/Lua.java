@@ -1078,7 +1078,7 @@ public class Lua {
         }
         else if (current.type == NOT) { consume(NOT); return new Boolean(!isTruthy(factor(scope))); } 
         else if (current.type == LPAREN) { consume(LPAREN); Object value = expression(scope); consume(RPAREN); return value; } 
-        else if (current.type == LENGTH) { consume(LENGTH); Object val = factor(scope); if (val == null || val instanceof Boolean) { throw new RuntimeException("attempt to get length of a " + (val == null ? "nil" : "boolean") + " value"); } else if (val instanceof String) { return luaNumber(((String) val).length()); } else if (val instanceof Hashtable) { return luaNumber(((Hashtable) val).size()); } else if (val instanceof Vector) { return luaNumber(((Vector) val).size()); } else if (val instanceof InputStream) { return luaNumber(((InputStream) val).available()); } else { return luaNumber(0); } }
+        else if (current.type == LENGTH) { consume(LENGTH); Object val = factor(scope); if (val == null || val instanceof Boolean) { throw new RuntimeException("attempt to get length of a " + (val == null ? "nil" : "boolean") + " value"); } else if (val instanceof String) { return luaNumber(((String) val).length()); } else if (val instanceof Hashtable) { int size = ((Hashtable) val).size(); if (val == globals.get("arg") && size > 0) { size -= 1; } return luaNumber(size); } else if (val instanceof Vector) { return luaNumber(((Vector) val).size()); } else if (val instanceof InputStream) { return luaNumber(((InputStream) val).available()); } else { return luaNumber(0); } }
         else if (current.type == IDENTIFIER) {
             String name = (String) consume(IDENTIFIER).value;
             Object value = unwrap(scope.get(name));
@@ -1462,9 +1462,9 @@ public class Lua {
                     if (args.isEmpty()) { return gotbad(1, "assert", "bad argument #1 (value expected)"); }
                     Object assertVal = unwrap(args.elementAt(0));
                     if (assertVal == null || assertVal.equals(FALSE) || assertVal.equals(LUA_NIL)) {
-                        String msg = "assertion failed!";
-                        if (args.size() > 1) { Object m = unwrap(args.elementAt(1)); if (m != null) msg = m.toString(); }
-                        throw new RuntimeException(msg);
+                        Object assertMsg = "assertion failed!";
+                        if (args.size() > 1) { Object m = unwrap(args.elementAt(1)); if (m != null) assertMsg = m.toString(); }
+                        throw new RuntimeException(assertMsg.toString());
                     }
                     Vector assertResult = new Vector();
                     for (int i = 0; i < args.size(); i++) { assertResult.addElement(unwrap(args.elementAt(i))); }
@@ -1605,8 +1605,8 @@ public class Lua {
                         break;
                     }
                 case CLOCK: return System.currentTimeMillis() - uptime;
-                case SETLOC: if (args.isEmpty()) { break; } else { midlet.attributes.put("LOCALE", toLuaString(args.elementAt(0))); }
-                case EXIT: exit(args); 
+                case SETLOC: if (args.isEmpty()) { break; } else { midlet.attributes.put("LOCALE", toLuaString(args.elementAt(0))); break; }
+                case EXIT: exit(args); break;
                 case DATE: return new java.util.Date().toString();
                 case GETPID: return args.isEmpty() || args.elementAt(0) == null ? PID : midlet.getpid(toLuaString(args.elementAt(0)));
                 case GETPROC:
@@ -1629,7 +1629,9 @@ public class Lua {
                             if (args.size() > 1) { return process.db.get(toLuaString(args.elementAt(1)).trim()); } 
                             else { return gotbad(2, "getproc", "field expected, got no value"); }
                         } 
+                        else { return gotbad(1, "getproc", "process not found"); }
                     }
+                    break;
                 case SETPROC:
                     if (args.isEmpty()) { }
                     else if (args.elementAt(0) instanceof Boolean) { kill = ((Boolean) args.elementAt(0)).booleanValue(); }
@@ -1817,11 +1819,13 @@ public class Lua {
 
                             proc.net.remove(arg); break;
                         }
-                    } 
+                    }
+                    break;
                 case OPEN: if (args.isEmpty()) { return new ByteArrayOutputStream(); } else { try { return midlet.getInputStream(toLuaString(args.elementAt(0)), father); } catch (Exception e) { return null; } }
                 case POPEN: return popen(args);
                 case DIRS: return dirs(args);
                 case SETOUT: if (args.isEmpty()) { } else { stdout = args.elementAt(0); }
+                    break;
                 case MOUNT:
                     if (args.isEmpty()) { break; }
                     else {
