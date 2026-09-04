@@ -24,15 +24,19 @@ elseif arg[1] == "view" then
         local previous = graphics.getCurrent()
         local screen = graphics.new("screen", "MIDlet Logs")
         local back = graphics.new("button", {})
+        local switch = graphics.new("command", { label = "Switch to...", type = "screen", priority = 2 })
 
         graphics.append(screen, io.read(file))
         graphics.addCommand(screen, back)
+        graphics.addCommand(screen, switch)
         graphics.handler(screen, {
             [back] = function ()
                 graphics.display(previous)
                 os.exit(0)
-            end
+            end,
+            [switch] = graphics.taskmngr
         })
+        os.setproc("screen", screen)
         graphics.display(screen)
     else
         print("no logs on session")
