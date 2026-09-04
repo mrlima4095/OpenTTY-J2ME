@@ -7,7 +7,7 @@ if arg[1] then
     end
     uri = string.trim(uri)
     os.setproc("name", "open")
-    os.open(arg[1])
+    pcall(os.open, uri)
 else
     print("open: usage: open [uri]")
 end
