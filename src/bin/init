@@ -13,7 +13,7 @@ if arg[1] then
     end
 end
 
-for k,v in pairs({ ["PATCH"] = "Deep Dream", ["VERSION"] = getAppProperty("MIDlet-Version"), ["RELEASE"] = "mod", ["SHELL"] = "/bin/sh" }) do os.setenv(k, v) end
+for k,v in pairs({ ["PATCH"] = "Deep Dream", ["VERSION"] = getAppProperty("MIDlet-Version"), ["RELEASE"] = "beta", ["SHELL"] = "/bin/sh" }) do os.setenv(k, v) end
 for k,v in pairs({ ["TYPE"] = "platform", ["CONFIG"] = "configuration", ["PROFILE"] = "profiles", ["LOCALE"] = "locale" }) do os.setenv(k, getAppProperty("/microedition." .. v)) end
 
 io.mount(io.read("/etc/fstab"))
