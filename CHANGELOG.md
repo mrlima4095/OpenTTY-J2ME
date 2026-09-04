@@ -137,3 +137,30 @@ Copyright (C) 2026 - Mr. Lima
 ### Lua runtime
 
 - New global function `assert(v [, msg])`: raises an error with `msg` (default `"assertion failed!"`) when `v` is falsy (`false`/`nil`); returns all arguments unchanged when truthy
+- **`#arg` no longer counts `arg[0]`** (the script name) — it now returns just the positional argument count; `arg[1]` remains the first argument
+- Fixed **missing `break` fall-through bugs** in the function dispatcher:
+  - `os.setlocale` no longer falls into `os.exit` (previously killed/destroyed the caller)
+  - `io.setstdout` no longer falls into `io.mount` (previously could wipe the VFS table)
+  - `io.close` no longer falls into `io.open` (previously returned a bogus stream)
+  - `os.getproc` with an unknown PID no longer falls into `os.setproc` (now returns "process not found")
+  - `os.exit` now has an explicit `break` instead of falling into `os.date`
+- `io.popen` now sets `USER` in the child scope to match the owner uid — so running a child with `sudo=false` (uid 1000) reflects the correct username; the ELF path also clones the scope instead of sharing the parent's
+
+### Process management
+
+- **`/bin/init`** now spawns `xterm` as `java.midlet.username` (uid 1000) via `io.popen("/bin/xterm", "", false)` **without** dropping init's own root privileges (the `os.su` call was removed)
+
+### Storage / persistence
+
+- `OpenTTY.loadRMS` now closes the `RecordStore` in a `finally` block before returning — no more leaked record-store handles on every VFS read
+
+### ELF emulator
+
+- `heapStart` fixed from `0x200000` (2MB, outside the 1MB RAM) to `0x40000` (256KB) — `brk()`/`mmap()`/`malloc` now actually allocate instead of returning `-ENOMEM`
+- `cleanup()` on process exit now flushes `ByteArrayOutputStream` file descriptors to disk — ELF output is no longer silently lost when the program exits without an explicit `close()`
+
+### Commands / apps
+
+- `src/bin` (`rm`, `mkdir`, `touch`, `kill`, `pkg`) and `apps/` (`useradd`, `userdel`, `stop`, `du`, `open`, `sudo`) updated for the new `#arg` semantics — the previous `#arg - 1` idiom skipped the last argument
+- `sudo` now builds and executes the full command (`arg[1] .. arg[N]`), no longer dropping extra arguments
+- `apps/net/proxy.lua` now breaks the read loop when the server disconnects (`cmd == ""`), fixing an infinite busy-spin
