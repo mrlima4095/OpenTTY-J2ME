@@ -10,6 +10,7 @@ graphics.append(screen, { type = "field", label = "Current Password" })
 graphics.append(screen, { type = "field", label = "New Password" })
 graphics.addCommand(screen, back)
 graphics.addCommand(screen, go)
+os.setproc("screen", screen)
 graphics.handler(screen, {
     [back] = function ()
         graphics.display(previous)
