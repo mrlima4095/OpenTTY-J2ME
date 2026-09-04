@@ -282,6 +282,7 @@ elseif arg[1] == "gui" or arg[1] == nil then
     local main_screen = graphics.new("list", "IRC Client v" .. version)
     local connect_btn = graphics.new("command", { label = "Connect", type = "ok", priority = 1 })
     local back_btn = graphics.new("command", { label = "Back", type = "back", priority = 1 })
+    local switch = graphics.new("command", { label = "Switch to...", type = "screen", priority = 2 })
 
     graphics.append(main_screen, "Connect to Server")
     graphics.append(main_screen, "Quick Connect (libera)")
@@ -289,6 +290,8 @@ elseif arg[1] == "gui" or arg[1] == nil then
 
     graphics.addCommand(main_screen, connect_btn)
     graphics.addCommand(main_screen, back_btn)
+    graphics.addCommand(main_screen, switch)
+    os.setproc("screen", main_screen)
 
     local function show_connect_form()
         local screen = graphics.new("screen", "Connect to IRC")
@@ -339,6 +342,7 @@ elseif arg[1] == "gui" or arg[1] == nil then
         local chat_screen = graphics.new("screen", "IRC: " .. channel)
         local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
         local send_btn = graphics.new("command", { label = "Send", type = "ok", priority = 1 })
+        local switch = graphics.new("command", { label = "Switch to...", type = "screen", priority = 2 })
         local chat_buf = graphics.new("buffer", {})
         local input_field = graphics.new("field", { label = "Message", value = "", length = 256 })
 
@@ -346,6 +350,8 @@ elseif arg[1] == "gui" or arg[1] == nil then
         graphics.append(chat_screen, input_field)
         graphics.addCommand(chat_screen, send_btn)
         graphics.addCommand(chat_screen, back)
+        graphics.addCommand(chat_screen, switch)
+        os.setproc("screen", chat_screen)
 
         java.run(function()
             while connected do
@@ -415,7 +421,8 @@ elseif arg[1] == "gui" or arg[1] == nil then
                     end
                     graphics.SetText(input_field, "")
                 end
-            end
+            end,
+            [switch] = graphics.taskmngr
         })
         graphics.display(chat_screen)
     end
@@ -438,7 +445,8 @@ elseif arg[1] == "gui" or arg[1] == nil then
             elseif opt == "Quick Connect (libera)" then
                 start_irc_session("irc.libera.chat", "6667", "OpenTTY_User", "#lua")
             end
-        end
+        end,
+        [switch] = graphics.taskmngr
     })
     graphics.display(main_screen)
 
