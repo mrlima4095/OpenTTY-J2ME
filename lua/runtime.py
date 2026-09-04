@@ -1832,6 +1832,8 @@ class LuaRuntime:
                 path = self.join_path(args[0])
                 content = self.get_content(path)
                 if content:
+                    if content.startswith("#!/bin/sh"):
+                        return self._exec_shell_script(content)
                     pid = self.genpid()
                     proc = Process(pid, f"lua {path}", self.uid)
                     self.register_process(pid, proc)
@@ -2847,6 +2849,16 @@ class LuaRuntime:
             return 0.0
         return None
 
+    def _exec_shell_script(self, content):
+        status = 0
+        for line in content.split("\n"):
+            if not line.strip():
+                continue
+            status = self.exec_shell(line)
+            if status != 0:
+                break
+        return status
+
     def _popen(self, args):
         if not args:
             return [0]
@@ -2867,6 +2879,9 @@ class LuaRuntime:
 
         if content is None:
             return [127]
+
+        if content.startswith("#!/bin/sh"):
+            return [self._exec_shell_script(content), output if isinstance(output, str) else ""]
 
         arg_table = {}
         arg_table[0.0] = program

@@ -198,3 +198,4 @@
 [2026-1.18.1-03x28] VFS subdir mounts
 [2026-1.18.1-03x29] Release 1.18.1
 [2026-1.18.2-03x30] 1.18.2 Suite case
+[2026-1.18.2-03x31]	"." sources sh scripts | xterm runs /home/.initrc
