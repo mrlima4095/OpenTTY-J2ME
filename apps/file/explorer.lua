@@ -11,6 +11,7 @@ local explorer = graphics.new("list", ROOT_TITLE)
 local open = graphics.new("command", { label = "Open", type = "ok", priority = 1 })
 local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
 local quit = graphics.new("command", { label = "Quit", type = "exit", priority = 1 })
+local switch = graphics.new("command", { label = "Switch to...", type = "screen", priority = 2 })
 
 local function join(base, name)
     if base == "" or base == "/" then return "/" .. name end
@@ -119,11 +120,14 @@ end
 graphics.addCommand(explorer, open)
 graphics.addCommand(explorer, back)
 graphics.addCommand(explorer, quit)
+graphics.addCommand(explorer, switch)
 
 graphics.handler(explorer, {
     [open] = navigate,
     [graphics.fire] = navigate,
     [back] = goUp,
     [quit] = os.exit,
+    [switch] = graphics.taskmngr,
 })
+os.setproc("screen", explorer)
 graphics.display(explorer)
