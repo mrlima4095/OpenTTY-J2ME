@@ -110,13 +110,16 @@ local function buildScreen(conf)
     end
 
     local back = graphics.new("command", { label = conf["screen.back.label"] or "Back", type = "back", priority = 1 })
+    local switch = graphics.new("command", { label = "Switch to...", type = "screen", priority = 2 })
     graphics.addCommand(screen, back)
+    graphics.addCommand(screen, switch)
     local handlers = {
         [back] = function ()
             if conf["screen.back"] then runCommand(conf["screen.back"]) end
             xterm()
             os.exit(0)
-        end
+        end,
+        [switch] = graphics.taskmngr
     }
 
     if conf["screen.button"] then
@@ -130,6 +133,7 @@ local function buildScreen(conf)
     end
 
     graphics.handler(screen, handlers)
+    os.setproc("screen", screen)
     graphics.display(screen)
 end
 
@@ -177,6 +181,7 @@ local function buildList(conf)
 
     local back = graphics.new("command", { label = conf["list.back.label"] or "Back", type = "back", priority = 1 })
     local go = graphics.new("command", { label = conf["list.button"] or "Select", type = "ok", priority = 2 })
+    local switch = graphics.new("command", { label = "Switch to...", type = "screen", priority = 2 })
 
     local function run(selected)
         if selected then
@@ -193,14 +198,17 @@ local function buildList(conf)
 
     graphics.addCommand(list, back)
     graphics.addCommand(list, go)
+    graphics.addCommand(list, switch)
     graphics.handler(list, {
         [back] = function ()
             if conf["list.back"] then runCommand(conf["list.back"]) end
             xterm()
             os.exit(0)
         end,
-        [go] = run, [graphics.fire] = run
+        [go] = run, [graphics.fire] = run,
+        [switch] = graphics.taskmngr
     })
+    os.setproc("screen", list)
     graphics.display(list)
 end
 
@@ -214,6 +222,7 @@ local function buildQuest(conf)
     graphics.append(form, { type = "field", label = conf["quest.label"], value = conf["quest.content"] or "", mode = conf["quest.type"] or "any" })
     local back = graphics.new("command", { label = conf["quest.back.label"] or "Cancel", type = "back", priority = 2 })
     local send = graphics.new("command", { label = conf["quest.cmd.label"] or "Send", type = "ok", priority = 1 })
+    local switch = graphics.new("command", { label = "Switch to...", type = "screen", priority = 2 })
 
     local function done(value)
         if value and string.trim(value) ~= "" then
@@ -226,14 +235,17 @@ local function buildQuest(conf)
 
     graphics.addCommand(form, back)
     graphics.addCommand(form, send)
+    graphics.addCommand(form, switch)
     graphics.handler(form, {
         [back] = function ()
             if conf["quest.back"] then runCommand(conf["quest.back"]) end
             xterm()
             os.exit(0)
         end,
-        [send] = done
+        [send] = done,
+        [switch] = graphics.taskmngr
     })
+    os.setproc("screen", form)
     graphics.display(form)
 end
 
@@ -251,6 +263,7 @@ local function buildEdit(conf)
     local box = graphics.new("edit", conf["edit.title"] or "OpenTTY", content)
     local back = graphics.new("command", { label = conf["edit.back.label"] or "Back", type = "back", priority = 1 })
     local go = graphics.new("command", { label = conf["edit.cmd.label"] or "Run", type = "ok", priority = 2 })
+    local switch = graphics.new("command", { label = "Switch to...", type = "screen", priority = 2 })
 
     local function save(text)
         if text and string.trim(text) ~= "" then
@@ -263,14 +276,17 @@ local function buildEdit(conf)
 
     graphics.addCommand(box, back)
     graphics.addCommand(box, go)
+    graphics.addCommand(box, switch)
     graphics.handler(box, {
         [back] = function ()
             if conf["edit.back"] then runCommand(conf["edit.back"]) end
             xterm()
             os.exit(0)
         end,
-        [go] = save
+        [go] = save,
+        [switch] = graphics.taskmngr
     })
+    os.setproc("screen", box)
     graphics.display(box)
 end
 
@@ -291,8 +307,11 @@ local function gauge(text)
     local screen = graphics.new("screen", "Gauge")
     graphics.append(screen, { type = "gauge", label = text or "", interactive = false, maxValue = 100, value = 0 })
     local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
+    local switch = graphics.new("command", { label = "Switch to...", type = "screen", priority = 2 })
     graphics.addCommand(screen, back)
-    graphics.handler(screen, { [back] = function () xterm() os.exit(0) end })
+    graphics.addCommand(screen, switch)
+    graphics.handler(screen, { [back] = function () xterm() os.exit(0) end, [switch] = graphics.taskmngr })
+    os.setproc("screen", screen)
     graphics.display(screen)
 end
 
@@ -300,9 +319,12 @@ local function banner()
     local previous = graphics.getCurrent()
     local screen = graphics.new("screen", "OpenTTY X.Org")
     local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
+    local switch = graphics.new("command", { label = "Switch to...", type = "screen", priority = 2 })
     graphics.append(screen, "OpenTTY X.Org - X Server " .. version .. "\nRelease Date: " .. release_date .. "\nX Protocol Version 1, Revision 3\nBuild OS: " .. getAppProperty("/microedition.profiles"))
     graphics.addCommand(screen, back)
-    graphics.handler(screen, { [back] = function () local prev = graphics.db["xterm"] if prev then graphics.display(prev) else graphics.display(previous) end os.exit(0) end })
+    graphics.addCommand(screen, switch)
+    graphics.handler(screen, { [back] = function () local prev = graphics.db["xterm"] if prev then graphics.display(prev) else graphics.display(previous) end os.exit(0) end, [switch] = graphics.taskmngr })
+    os.setproc("screen", screen)
     graphics.display(screen)
 end
 
