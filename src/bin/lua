@@ -42,6 +42,7 @@ graphics.append(term, input)
 graphics.addCommand(term, run)
 graphics.addCommand(term, back)
 graphics.addCommand(term, clear)
+graphics.addCommand(term, switch)
 graphics.handler(term, {
     [run] = function(command)
         if command ~= "" then
