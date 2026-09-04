@@ -829,19 +829,36 @@ class OpenTTYKernel:
 
     # ── app overlay (run the on-device catalog without installing) ───────
 
+    def _find_apps_root(self):
+        """Return the versioned app-store dir (apps/<major>) with the highest version."""
+        apps_root = _os.path.join(self.base_dir, "apps")
+        versioned = []
+        if _os.path.isdir(apps_root):
+            for name in _os.listdir(apps_root):
+                full = _os.path.join(apps_root, name)
+                if _os.path.isdir(full) and _os.path.isfile(_os.path.join(full, "sources.lua")):
+                    versioned.append(name)
+        if versioned:
+            versioned.sort(key=lambda v: [int(p or 0) for p in v.split(".")])
+            return _os.path.join(apps_root, versioned[-1])
+        return apps_root
+
     def _index_apps(self):
         """Expose apps/ as /bin commands.
 
-        The authoritative mapping is the pkg mirror (src/bin/pkg): it gives the
-        on-device install path (here=) for each app (remote=). We mirror that so
-        commands like useradd/userdel/svchost work without installing. Flat
+        The authoritative mapping is the mirror in the sources file
+        (apps/<major>/sources.lua, mirrored on-device at /etc/sources): it gives
+        the on-device install path (here=) for each app (remote=). We mirror that
+        so commands like useradd/userdel/svchost work without installing. Flat
         apps/<cat>/<name>.lua and <cat>/<name>/main.lua are also indexed as a
         fallback for anything not yet in the catalog.
         """
         self.apps_index = {}  # device path ("/bin/docker") -> host file under apps/
-        apps_root = _os.path.join(self.base_dir, "apps")
+        apps_root = self._find_apps_root()
 
-        mirror = _os.path.join(self.base_dir, "src", "bin", "pkg")
+        mirror = _os.path.join(apps_root, "sources.lua")
+        if not _os.path.isfile(mirror):
+            mirror = _os.path.join(self.base_dir, "src", "etc", "sources")
         try:
             with open(mirror, "r") as f:
                 lines = f.readlines()

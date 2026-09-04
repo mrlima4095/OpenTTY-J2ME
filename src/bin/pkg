@@ -1,74 +1,69 @@
 #!/bin/lua
 
-local version = "1.6.0"
+local version = "2.0.0"
 
 local server = os.getenv("REPO") or "http://opentty.fun"
-local mirror = {
-    --["appmenu"] = { remote = "sys/appmenu/main.lua", here = "/bin/init", description = "Application Menu" },
-    ["armitage"] = { remote = "net/armitage", here = "/bin/armitage", depends = { "ifconfig" }, description = "OpenTTY Network Tools" },
-    ["audio"] = { remote = "file/audio.lua", here = "/bin/audio", description = "Audio Codec Manager" },
-    ["autogc"] = { remote = "sys/autogc", here = "/bin/autogc", description = "Auto Clean Memory" },
-    ["chroot"] = { remote = "sys/chroot.lua", here = "/bin/chroot", description = "Change to a real File System" },
-    ["cmatrix"] = { remote = "games/cmatrix", here = "/bin/cmatrix", description = "The Matrix Effect" },
-    ["curl"] = { remote = "net/curl.lua", here = "/bin/curl", description = "Connect with a Server" },
-    ["debug"] = { remote = "sys/debug", here = "/bin/debug", description = "Toggle debug mode" },
-    ["dns"] = { remote = "net/dns/main.lua", here = "/bin/dns", description = "DNS Server for OpenTTY" },
-    ["docker"] = { remote = "sys/docker/main.lua", here = "/bin/docker", description = "Conteiners on OpenTTY" },
-    ["du"] = { remote = "file/du.lua", here = "/bin/du", description = "View files lenght" },
-    ["expr"] = { remote = "file/expr.lua", here = "/bin/expr", description = "Evaluate expressions" },
-    ["explorer"] = { remote = "file/explorer.lua", here = "/bin/explorer", description = "File Explorer" },
-    ["event"] = { remote = "sys/smile/event.lua", here = "/bin/event", description = "Event handler" },
-    ["exec"] = { remote = "sys/execute/exec.lua", here = "/bin/exec", description = "Legacy exec: run commands chained with &" },
-    ["execute"] = { remote = "sys/execute/main.lua", here = "/bin/execute", description = "Legacy execute: run commands chained with ;" },
-    ["free"] = { remote = "sys/free.lua", here = "/bin/free", description = "Memory Informations" },
-    ["forge"] = { remote = "dev/forge/main.lua", here = "/lib/forge", description = "Additional API for OpenTTY" },
-    ["find"] = { remote = "file/find.lua", here = "/bin/find", description = "Search a pattern value in a file" },
-    ["grep"] = { remote = "file/grep.lua", here = "/bin/grep", description = "Check if a file contains a pattern" },
-    ["hash"] = { remote = "file/hash.lua", here = "/bin/hash", description = "Prints file hash" },
-    ["head"] = { remote = "file/head.lua", here = "/bin/head", description = "Prints first lines of a file" },
-    ["tail"] = { remote = "file/tail.lua", here = "/bin/tail", description = "Prints last lines of a file" },
-    ["hostname"] = { remote = "net/hostname.lua", here = "/bin/hostname", description = "Manage Host Name" },
-    ["htop"] = { remote = "sys/htop", here = "/bin/htop", description = "System Monitor" },
-    ["ifconfig"] = { remote = "net/ifconfig.lua", here = "/bin/ifconfig", description = "Network Informations" },
-    ["irc"] = { remote = "net/irc.lua", here = "/bin/irc", description = "IRC Client for OpenTTY" },
-    ["java"] = { remote = "dev/java/main.lua", here = "/bin/java", description = "Java ME" },
-    ["jdb"] = { remote = "sys/benchmark/main.lua", here = "/bin/jdb", depends = { "forge", "log" }, description = "Debugging API" },
-    ["launch"] = { remote = "sys/launch.lua", here = "/bin/launch", description = "Launch Legacy Application" },
-    ["log"] = { remote = "sys/smile/logs.lua", here = "/bin/log", description = "MIDlet Logs" },
-    ["nano"] = { remote = "file/nano.lua", here = "/bin/nano", description = "Text Editor for OpenTTY" },
-    ["nginx"] = { remote = "net/nginx/main.lua", here = "/bin/nginx", description = "HTTP Server (Nginx-style)" },
-    ["nc"] = { remote = "net/netcat.lua", here = "/bin/nc", description = "Connect with Remote Interfaces" },
-    ["netstat"] = { remote = "net/netstat.lua", here = "/bin/netstat", description = "Network connection test" },
-    ["nice"] = { remote = "sys/nice.lua", here = "/bin/nice", description = "Chance process priority" },
-    ["open"] = { remote = "sys/open.lua", here = "/bin/open", description = "Open a file with the default application" },
-    ["passwd"] = { remote = "sys/passwd.lua", here = "/bin/passwd", description = "Change password" },
-    ["pastebin"] = { remote = "net/pastebin", here = "/bin/pastebin", description = "PasteBin Client for OpenTTY" },
-    ["ping"] = { remote = "net/ping.lua", here = "/bin/ping", description = "Test connection delay" },
-    ["play"] = { remote = "file/play.lua", here = "/bin/play", description = "Audio Player (play command)" },
-    ["prg"] = { remote = "sys/push.lua", here = "/bin/prg", description = "PushRegister Manager" },
-    ["sed"] = { remote = "file/sed.lua", here = "/bin/sed", description = "String Editor" },
-    ["sdk"] = { remote = "dev/sdkme", here = "/bin/sdk", depends = { "forge" }, description = "OpenTTY Application SDK" },
-    ["stop"] = { remote = "sys/stop.lua", here = "/bin/stop", description = "Kill application by name" },
-    ["sync"] = { remote = "sys/sync", here = "/bin/sync", description = "OpenTTY Updater Checker" },
-    ["svchost"] = { remote = "sys/svchost.lua", here = "/bin/svchost", description = "Quick Launch Services" },
-    ["sudo"] = { remote = "sys/sudo.lua", here = "/bin/sudo", description = "" },
-    ["smile"] = { remote = "sys/smile/main.lua", here = "/bin/smile", depends = { "event", "logs" }, description = "Service Manager" },
-    ["uname"] = { remote = "sys/uname", here = "/bin/uname", description = "System Informations" },
-    ["tree"] = { remote = "file/tree.lua", here = "/bin/tree", description = "Directory Tree Viewer" },
-    ["useradd"] = { remote = "sys/users/useradd.lua", here = "/bin/useradd", description = "Add users" },
-    ["userdel"] = { remote = "sys/users/userdel.lua", here = "/bin/userdel", description = "Remove users" },
-    ["viewer"] = { remote = "file/img.lua", here = "/bin/imgview", description = "View Images" },
-    ["webproxy"] = { remote = "net/proxy.lua", here = "/bin/shprxy", description = "Access OpenTTY on WebProxy" },
-    ["wget"] = { remote = "net/wget", here = "/bin/wget", description = "Download files from Network" },
-    ["xterm"] = { remote = "sys/x11/xterm.lua", here = "/bin/xterm", description = "MIDlet Terminal" },
-    ["x11"] = { remote = "sys/x11/main.lua", here = "/bin/x11", description = "X Server Client" },
-    ["watch"] = { remote = "sys/watch.lua", here = "", description = "Watch a program" },
 
-    --[""] = { remote = "", here = "", depends = {}, description = "" }
-}
+local sources = nil
+
+local function current_version()
+    return getAppProperty("MIDlet-Version") or "0.0.0"
+end
+
+local function major_of(v)
+    local parts = string.split(v or "", ".")
+    if type(parts) ~= "table" or parts[1] == nil then
+        return "0"
+    end
+    return tostring(parts[1]) .. "." .. tostring(parts[2] or "0")
+end
+
+local function current_major()
+    return major_of(current_version())
+end
+
+local function load_sources()
+    local content = io.read("/etc/sources")
+
+    if content ~= "" then
+        local ok, data = pcall(load, content)
+
+        if ok and type(data) == "table" and type(data.mirror) == "table" then
+            if data.version == nil then
+                data.version = current_major()
+            end
+
+            return data
+        end
+    end
+
+    return nil
+end
+
+sources = load_sources()
+
+local function require_sources()
+    if sources == nil then
+        print("pkg: no sources found at /etc/sources")
+        print("pkg: run 'pkg update' or 'pkg switch [version]'")
+        os.exit(1)
+    end
+end
+
+local function check_source()
+    if sources then
+        local sm = major_of(tostring(sources.version))
+        local cm = current_major()
+
+        if sm ~= cm then
+            print(":: Warning: active source is for OpenTTY " .. tostring(sources.version) .. " (running " .. current_version() .. ")")
+            print(":: Packages may not work as expected - run 'pkg update' to refresh the mirror")
+        end
+    end
+end
 
 local function fetch(remote)
-    local ok, content, status = pcall(socket.http.get, server .. "/apps/" .. remote)
+    local ok, content, status = pcall(socket.http.get, server .. "/apps/" .. sources.version .. "/" .. remote)
 
     if ok and status == 200 then
         return content
@@ -78,12 +73,15 @@ local function fetch(remote)
 end
 
 local function fetch_file(remote, here)
-    local ok, input, status = pcall(socket.http.rget, server .. "/apps/" .. remote)
+    local ok, input, status = pcall(socket.http.rget, server .. "/apps/" .. sources.version .. "/" .. remote)
 
     if ok and status == 200 then
         return io.copy(input, here)
     else
-        print(ok, input, status)
+        if ok then
+            print(ok, input, status)
+        end
+
         return nil
     end
 end
@@ -93,7 +91,7 @@ local function install(pkg, verbose)
         print(":: Installing " .. pkg .. "...")
     end
     
-    local info = mirror[pkg]
+    local info = sources.mirror[pkg]
 
     if info.depends then
         print(":: Building dependencies")
@@ -123,7 +121,7 @@ local function install(pkg, verbose)
     end
 end
 local function download(pkg, output)
-    local info = mirror[pkg]
+    local info = sources.mirror[pkg]
 
     if info then
         local status = fetch_file(info.remote, os.join(output))
@@ -141,7 +139,7 @@ local function remove(pkg, verbose)
         print(":: Removing " .. pkg .. "...")
     end
 
-    local info = mirror[pkg]
+    local info = sources.mirror[pkg]
 
     local status = os.remove(info.here)
 
@@ -167,28 +165,33 @@ if arg[1] == nil or arg[1] == "help" then
     print("  install <package>  - Install a package")
     print("  download <package> - Download a package")
     print("  remove <package>   - Remove a package")
-    print("  update             - Check for updates")
+    print("  update             - Update sources from the mirror")
+    print("  switch <version>   - Switch to another sources version")
     print("  list               - List available packages")
     print("  info <package>     - Show package information")
     print("  help               - Show this help")
 elseif arg[1] == "install" then
     if os.getuid() > 0 then print("Permission denied!") os.exit(13) end
 
+    require_sources()
+
     if arg[2] then
+        check_source()
+
         for i = 2, #arg do
             local pkg = arg[i]
 
-            if mirror[pkg] then
-                if mirror[pkg].remote then
+            if sources.mirror[pkg] then
+                if sources.mirror[pkg].remote then
                     install(pkg, true)
                 else
                     print("pkg: install: " .. pkg .. ": invalid package (not remote source)")
                     os.exit(1)
                 end
             elseif pkg == "*" then
-                print(":: Installing " .. (#mirror - 4) .. " packages...")
-                for pkg2,_ in pairs(mirror) do
-                    if mirror[pkg2].remote then
+                print(":: Installing " .. (#sources.mirror - 4) .. " packages...")
+                for pkg2,_ in pairs(sources.mirror) do
+                    if sources.mirror[pkg2].remote then
                        install(pkg2, true)
                     end
                 end
@@ -199,15 +202,21 @@ elseif arg[1] == "install" then
             end
         end
     else
-        print("pkg: usage: pkg remove [package]")
+        print("pkg: usage: pkg install [package]")
     end
 elseif arg[1] == "download" then
+    require_sources()
+    check_source()
+
     if arg[2] and arg[3] then
         download(arg[2], arg[3])
     else
         print("pkg: usage: pkg download [pkg] [file]")
     end
 elseif arg[1] == "run" then
+    require_sources()
+    check_source()
+
     if arg[2] then
         local file = io.read(os.join(arg[2]))
         if file ~= "" then
@@ -226,25 +235,27 @@ elseif arg[1] == "run" then
 elseif arg[1] == "remove" then
     if os.getuid() > 0 then print("Permission denied!") os.exit(13) end
 
+    require_sources()
+
     if arg[2] then
         for i = 2, #arg do
             local pkg = arg[i]
 
-            if mirror[pkg] then
-                if mirror[pkg].packages then
+            if sources.mirror[pkg] then
+                if sources.mirror[pkg].packages then
                     print(":: Removing collection: " .. pkg)
                     print("")
 
                     local remove_count = 0
 
-                    for _, query in ipairs(mirror[pkg].packages) do
+                    for _, query in ipairs(sources.mirror[pkg].packages) do
                         if remove(query, false) then
                             remove_count = remove_count + 1
                         end
                     end
 
                     print(":: Removed " .. remove_count .. " packages from collection '" .. pkg .. "'")
-                elseif mirror[pkg].remote then
+                elseif sources.mirror[pkg].remote then
                     remove(pkg, true)
                 else
                     print("pkg: remove: " .. pkg .. ": invalid package")
@@ -259,26 +270,87 @@ elseif arg[1] == "remove" then
         print("pkg: usage: pkg remove [package]")
     end
 elseif arg[1] == "update" then
-    local response = fetch("res/latest")
-    if response then
-        print(":: OpenTTY latest version: " .. response)
+    if os.getuid() > 0 then print("Permission denied!") os.exit(13) end
+
+    local target = current_major()
+    print(":: Updating sources for OpenTTY " .. target .. "...")
+
+    local ok, content, status = pcall(socket.http.get, server .. "/apps/" .. target .. "/sources.lua")
+
+    if ok and status == 200 and content ~= "" then
+        if io.write(content, "/etc/sources") == 0 then
+            local old = sources ~= nil and sources.version or "none"
+            sources = load_sources()
+
+            if sources == nil then
+                print("pkg: update: downloaded sources are invalid")
+                os.exit(1)
+            end
+
+            print(":: Sources updated: " .. tostring(old) .. " -> " .. tostring(sources.version))
+        else
+            print("pkg: update: could not write /etc/sources")
+            os.exit(1)
+        end
     else
         print(":: Connection error")
         os.exit(101)
     end
+
+    local ok2, online, status2 = pcall(socket.http.get, server .. "/res/latest")
+
+    if ok2 and status2 == 200 and online and online ~= "" then
+        print(":: OpenTTY latest version: " .. tostring(online))
+    end
+elseif arg[1] == "switch" then
+    if os.getuid() > 0 then print("Permission denied!") os.exit(13) end
+
+    if arg[2] then
+        local target = arg[2]
+
+        local ok, content, status = pcall(socket.http.get, server .. "/apps/" .. target .. "/sources.lua")
+
+        if ok and status == 200 and content ~= "" then
+            if io.write(content, "/etc/sources") == 0 then
+                local old = sources ~= nil and sources.version or "none"
+                sources = load_sources()
+
+                if sources ~= nil then
+                    print(":: Switched sources: " .. tostring(old) .. " -> " .. tostring(sources.version))
+                else
+                    print("pkg: switch: downloaded sources are invalid")
+                    os.exit(1)
+                end
+            else
+                print("pkg: switch: could not write /etc/sources")
+                os.exit(1)
+            end
+        else
+            print("pkg: switch: version '" .. target .. "' not found on the mirror")
+            os.exit(127)
+        end
+    else
+        require_sources()
+        print(":: Active source: OpenTTY " .. tostring(sources.version))
+        print("pkg: usage: pkg switch [version]")
+    end
 elseif arg[1] == "list" then
-    print("Available packages:")
-    for name, info in pairs(mirror) do
+    require_sources()
+
+    print("Available packages (source " .. tostring(sources.version) .. "):")
+    for name, info in pairs(sources.mirror) do
         if not info.packages then
             print("- " .. name .. ": " .. info.description)
         end
     end
 elseif arg[1] == "info" then
+    require_sources()
+
     if arg[2] then
         local pkg = arg[2]
 
-        if mirror[pkg] then
-            local info = mirror[pkg]
+        if sources.mirror[pkg] then
+            local info = sources.mirror[pkg]
             if info.packages then
             else
                 print("Package: " .. pkg)

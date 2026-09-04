@@ -5,7 +5,7 @@ OpenTTY: a J2ME MIDlet (CLDC-1.0/MIDP-2.0) that is a Lua-scripted shell + ARM EL
 ## Source layout — what edits go where
 
 - `src/` — canonical MIDlet source: `OpenTTY.java`, `Lua.java`, `ELF.java`, `LuaCanvas.java`, plus `src/bin` (built-in `/bin` commands, Lua scripts with `#!/bin/lua` shebang), `src/etc`, `src/lib/libcore.so` (a Lua module despite the `.so` name).
-- `apps/` — the on-device app-store catalog (dirs `file/ net/ sys/ games/ dev/`), installed via `yang`/`pkg`. Apps are registered in the mirror tables in `src/bin/pkg` (e.g. `["docker"] = { remote = "sys/docker/main.lua", here = "/bin/docker", ... }`). Adding an app means updating the app files **and** the catalog table.
+- `apps/<major>/` — the on-device app-store catalog, versioned by major release. `apps/1.18/` holds the `file/ net/ sys/ games/ dev/` dirs currently shipping with 1.18.x. Apps are registered in the mirror table in `apps/<major>/sources.lua` (e.g. `["docker"] = { remote = "sys/docker/main.lua", here = "/bin/docker", ... }`), which doubles as the `/etc/sources` file on-device (seeded from `src/etc/sources`). Adding an app means updating the app files **and** the sources mirror. New majors: copy the previous `apps/<major>/` dir; the `remote` paths stay relative to the major dir and `version = "<major>"` inside `sources.lua`.
 - `res/` — embedded resources (lua modules under `res/lua/modules/`, bundled apps, pages).
 - `dist/archive/<ver>` — per-version filesystem snapshots of the app store.
 - `nbproject/project.properties` — NetBeans J2ME project config (MIDlet-Version 1.18.1, jar/jad names).

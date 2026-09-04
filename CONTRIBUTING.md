@@ -80,7 +80,7 @@ on the source:
 
 - `src/` — canonical MIDlet source (Java runtime + built-in `/bin` Lua commands)
 - `java/` — desktop port (J2ME API stubs + mirrored runtime)
-- `apps/` — on-device app-store catalog
+- `apps/<major>/` — on-device app-store catalog, versioned by major release (e.g. `apps/1.18/`)
 - `res/` — embedded resources (Lua modules, bundled apps, pages)
 - `dist/archive/<ver>` — per-version filesystem snapshots of the app store
 - `docker/` — web services deployment (PHP + Python proxies)
@@ -99,7 +99,8 @@ on the source:
   a top-level `return function(payload, args, scope, pid, uid) ... end` handler.
 - Java exceptions carry no message; the runtime appends a Lua-side traceback.
 - When adding an app to the store, update the app files **and** the catalog
-  table in both `src/bin/pkg` and `java/bin/pkg`.
+  table in the `sources.lua` of your release's `apps/<major>/` dir (mirrored
+  on-device at `/etc/sources`, seeded from `src/etc/sources`).
 
 ## Pull Request Workflow
 
