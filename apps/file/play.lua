@@ -136,6 +136,7 @@ local function gui_player()
     local stop_btn = graphics.new("command", { label = "Stop", type = "stop", priority = 1 })
     local pause_btn = graphics.new("command", { label = "Pause", type = "screen", priority = 1 })
     local resume_btn = graphics.new("command", { label = "Resume", type = "screen", priority = 1 })
+    local switch = graphics.new("command", { label = "Switch to...", type = "screen", priority = 2 })
 
     local file_field = graphics.new("field", { label = "Audio File", value = "", length = 128 })
     local vol_field = graphics.new("field", { label = "Volume (0-100)", value = "80", length = 3 })
@@ -149,6 +150,7 @@ local function gui_player()
     graphics.addCommand(screen, pause_btn)
     graphics.addCommand(screen, resume_btn)
     graphics.addCommand(screen, back)
+    graphics.addCommand(screen, switch)
 
     graphics.handler(screen, {
         [back] = function()
@@ -178,7 +180,9 @@ local function gui_player()
             resume_playback()
             io.write("Resumed\n", status_buf, "a")
         end,
+        [switch] = graphics.taskmngr,
     })
+    os.setproc("screen", screen)
     graphics.display(screen)
 end
 
