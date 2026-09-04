@@ -3442,7 +3442,7 @@ public class Lua {
             silent = true;
             if (PID.equals("1")) { midlet.destroyApp(true); }
             else {
-                boolean hadScreen = screen != null;
+                boolean hadScreen = proc.screen != null;
                 midlet.sys.remove(PID);
                 if (hadScreen) {
                     Displayable target = null;
