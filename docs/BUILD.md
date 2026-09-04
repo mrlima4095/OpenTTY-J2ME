@@ -9,16 +9,8 @@ OpenTTY's canonical source lives in `src/` and is a **MIDlet** (CLDC-1.0 /
 MIDP-2.0). The real build is performed **on-device** with a J2ME toolchain.
 
 > **Important:** there is currently **no working CI or desktop build** in the
-> repository.
->
-> - `src/` requires a J2ME compiler (its `j2me-lib/` stubs depend on
->   `android.util` and are not usable standalone).
-> - The `java/` port (the desktop stubs + runtime that mirror `src/`) compiles
->   only under its own runtime and has no `LuaCanvas.java`.
->
-> Use the on-device flow below. When you edit runtime logic (`Lua.java`,
-> `OpenTTY.java`, `ELF.java`), remember it is mirrored in both `src/` and
-> `java/` — keep the copies in sync.
+> repository. `src/` requires a J2ME toolchain. The real build happens
+> **on-device** with the J2ME SDK, producing `dist/OpenTTY.jar` + `dist/OpenTTY.jad`.
 
 ## On-Device Build
 
@@ -92,6 +84,61 @@ lua -e "assert(loadfile('src/bin/pkg'))"
   - `MIDlet-Version: 1.18.1`
   - JAR/JAD names `OpenTTY.jar` / `OpenTTY.jad`
 - Runtime logic is mirrored in `src/` and `java/` — **always update both trees**.
+
+---
+
+## Build Numbering
+
+OpenTTY uses a sub-versioning system tracked in `res/build.txt`. Each build
+gets a unique number that increments globally across all versions.
+
+### Format
+
+```
+[ANO-VERSAO-BLOCOxNUMERO] Descrição curta
+```
+
+| Field | Example | Description |
+|-------|---------|-------------|
+| `ANO` | `2026` | Year of the build |
+| `VERSAO` | `1.18.1` | MIDlet version at the time |
+| `BLOCO` | `03` | Block number (increments every 100 builds) |
+| `NUMERO` | `28` | Build number within the block |
+
+The full build number is `BLOCO * 100 + NUMERO`. Example: `03x28` = build #228.
+
+### When to increment
+
+The build number changes **only when a structural code change occurs**, such as:
+- New subsystem or major feature (e.g. ELF emulator, multi-user, VFS rewrite)
+- Architecture change in `Lua.java`, `OpenTTY.java`, or `ELF.java`
+- New syscall, new global library, or breaking API change in Lua runtime
+- File system layout changes
+
+Minor fixes, new apps, documentation edits, and Lua script changes do **not**
+increment the build number.
+
+### Commit message convention
+
+When incrementing the build number, use the format:
+
+```
+Build #NUMERO - Short summary of the structural change
+```
+
+Examples:
+
+```
+Build #228 - VFS subdir mounts
+Build #229 - Multi-terminal process isolation
+Build #230 - ELF network syscalls (bind/listen/accept)
+```
+
+Update `res/build.txt` with a new entry at the end:
+
+```
+[2026-1.18.1-03x29] Build #229 - Multi-terminal process isolation
+```
 
 ---
 
