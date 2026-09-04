@@ -15,6 +15,7 @@ local refresh = graphics.new("command", { label = "Refresh", type = "ok", priori
 local config = graphics.new("command", { label = "Config", type = "ok", priority = 1 })
 local quit = graphics.new("command", { label = "Quit", type = "ok", priority = 1 })
 local menu = graphics.new("command", { label = "Menu", type = "ok", priority = 1 })
+local switch = graphics.new("command", { label = "Switch to...", type = "screen", priority = 2 })
 
 
 local function loadApps()
@@ -84,12 +85,15 @@ graphics.addCommand(appmenu, launch)
 graphics.addCommand(appmenu, refresh)
 graphics.addCommand(appmenu, config)
 graphics.addCommand(appmenu, quit)
+graphics.addCommand(appmenu, switch)
 
 graphics.handler(appmenu, {
     [menu] = function() graphics.display(graphics.new("alert", "Menu", "Application Launcher v1.0")) end,
     [quit] = os.exit, [config] = showConfig, [refresh] = loadApps,
     [launch] = launcher, [graphics.fire] = launcher,
+    [switch] = graphics.taskmngr,
 })
+os.setproc("screen", appmenu)
 graphics.display(appmenu)
 
 os.su(java.midlet.username)
