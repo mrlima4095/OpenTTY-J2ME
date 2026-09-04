@@ -21,6 +21,7 @@ if arg[1] and arg[2] then
     local back = graphics.new("command", { label = "Back", type = "screen", priority = 1 })
     local clear = graphics.new("command", { label = "Clear", type = "screen", priority = 1 })
     local run = graphics.new("command", { label = "Send", type = "ok", priority = 1 })
+    local switch = graphics.new("command", { label = "Switch to...", type = "screen", priority = 2 })
     local buffer = graphics.new("buffer", { })
 
     local function reading() while running do local x, response = pcall(io.read, i) if x then io.write(response, buffer, "a") end end end
@@ -31,6 +32,7 @@ if arg[1] and arg[2] then
     graphics.addCommand(screen, run)
     graphics.addCommand(screen, back)
     graphics.addCommand(screen, clear)
+    graphics.addCommand(screen, switch)
     graphics.handler({
         [back] = function ()
             graphics.display(previous)
@@ -38,8 +40,10 @@ if arg[1] and arg[2] then
             os.exit(0)
         end,
         [clear] = function () graphics.SetText(buffer, "") end,
-        [run] = function (payload) pcall(io.write, payload, o) end
+        [run] = function (payload) pcall(io.write, payload, o) end,
+        [switch] = graphics.taskmngr
     })
+    os.setproc("screen", screen)
     graphics.display(screen)
 else
     print("nano [file]")
