@@ -1631,7 +1631,6 @@ public class Lua {
                         } 
                         else { return gotbad(1, "getproc", "process not found"); }
                     }
-                    break;
                 case SETPROC:
                     if (args.isEmpty()) { }
                     else if (args.elementAt(0) instanceof Boolean) { kill = ((Boolean) args.elementAt(0)).booleanValue(); }
