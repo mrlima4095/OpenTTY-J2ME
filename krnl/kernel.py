@@ -1052,8 +1052,10 @@ class OpenTTYKernel:
                 return name
         return None
 
-    def useradd(self, name):
+    def useradd(self, name, uid):
         name = name.strip()
+        if uid != 0:
+            return E_PERM
         if not name or name == "root":
             return E_BADPARAMS
         if self.get_user_id(name) != -1:
@@ -1538,7 +1540,7 @@ class OpenTTYKernel:
             if arg is None or arg == "" or self.runtime.to_lua_string(arg) == "root":
                 return float(E_BADPARAMS)
             name = self.runtime.to_lua_string(arg)
-            return float(self.useradd(name))
+            return float(self.useradd(name, uid))
 
         if payload == "userdel":
             if arg is None or arg == "":

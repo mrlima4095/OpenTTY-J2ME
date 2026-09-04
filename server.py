@@ -6,7 +6,6 @@
 
 import sys, os
 import socket
-import subprocess
 import threading
 import urllib.request
 import urllib.parse
@@ -52,7 +51,6 @@ class Server:
         if cmd == "get": return self.get_file_content(parts[1] if len(parts) > 1 else "")
         elif cmd == "http": return self.fetch_url(parts[1] if len(parts) > 1 else "")
         elif cmd == "post": return self.post_request(parts[1] if len(parts) > 1 else "")
-        elif cmd == "fetch": os.system("git pull"); return "200 OK"
         else: return "Invalid API request\n"
 
     def get_file_content(self, filename):

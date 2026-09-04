@@ -71,15 +71,12 @@ on the source:
 
 - The canonical runtime lives in `src/` (`Lua.java`, `OpenTTY.java`, `ELF.java`,
   `LuaCanvas.java`).
-- `java/` mirrors the same runtime for a desktop port. **When changing runtime
-  logic, update both `src/` and `java/`.**
-- Lua scripts under `src/bin` and `java/bin` should be sanity-checked with:
+- Lua scripts under `src/bin` should be sanity-checked with:
   `lua -e "assert(loadfile('<file>'))"`.
 
 ## Source Layout
 
 - `src/` — canonical MIDlet source (Java runtime + built-in `/bin` Lua commands)
-- `java/` — desktop port (J2ME API stubs + mirrored runtime)
 - `apps/<major>/` — on-device app-store catalog, versioned by major release (e.g. `apps/1.18/`)
 - `res/` — embedded resources (Lua modules, bundled apps, pages)
 - `dist/archive/<ver>` — per-version filesystem snapshots of the app store

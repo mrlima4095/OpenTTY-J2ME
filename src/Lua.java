@@ -2834,6 +2834,7 @@ public class Lua {
                         }
                         else if (payload.equals("useradd")) {
                             if (arg == null || arg.equals("") || arg.equals("root")) { return new Double(2); }
+                            else if (uid != 0) { return new Double(13); }
                             else if (midlet.userID.containsKey(arg)) { return new Double(128); }
                             else { midlet.userID.put(arg, new Integer(midlet.lastID + 1)); midlet.lastID++; return new Double(0); }
                         }
