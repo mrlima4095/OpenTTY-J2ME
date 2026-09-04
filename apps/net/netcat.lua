@@ -29,6 +29,7 @@ if arg[1] and arg[2] then
     local run = graphics.new("command", { label = "Send", type = "ok", priority = 1 })
     print("buffer de saida")
     local buffer = graphics.new("buffer", { })
+    local switch = graphics.new("command", { label = "Switch to...", type = "screen", priority = 2 })
 
     print("subiu bg")
     java.run(function()
@@ -44,6 +45,7 @@ if arg[1] and arg[2] then
     graphics.addCommand(screen, run)
     graphics.addCommand(screen, back)
     graphics.addCommand(screen, clear)
+    graphics.addCommand(screen, switch)
     graphics.handler(screen, {
         [back] = function()
             print("voltou")
@@ -52,9 +54,11 @@ if arg[1] and arg[2] then
             os.exit(0)
         end,
         [clear] = function() graphics.SetText(buffer, "") end,
-        [run] = function(payload) pcall(io.write, payload, o) end
+        [run] = function(payload) pcall(io.write, payload, o) end,
+        [switch] = graphics.taskmngr
     })
     print("mostrou")
+    os.setproc("screen", screen)
     graphics.display(screen)
 else
     print("nc: usage: nc [host] [port]")
