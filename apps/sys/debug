@@ -1,0 +1,10 @@
+#!/bin/lua
+
+local status = os.request(1, "debug")
+if status then
+    os.request(1, "debug", false)
+    print("Debug mode disabled")
+else
+    os.request(1, "debug", true)
+    print("Debug mode enabled")
+end

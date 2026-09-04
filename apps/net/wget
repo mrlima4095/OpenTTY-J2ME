@@ -1,0 +1,19 @@
+#!/bin/lua
+
+local function parse_url(url)
+    if string.sub(url, 1, 4) == "http:" or string.sub(url, 0, 6) == "https:" then return url end
+    return "http://" .. url
+end
+
+if arg[1] and arg[2] then
+    local url = parse_url(arg[1])
+    local ok, i, status = pcall(socket.http.rget, url)
+    if ok then
+        io.copy(i, os.join(arg[2]))
+    else
+        print("wget: (6) Could not resolve host: " .. arg[1])
+    end
+else
+    print("wget [url] [file]")
+end
+
