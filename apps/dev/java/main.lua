@@ -23,6 +23,7 @@ else
 
     graphics.append(screen, string.env("Java 1.2 (OpenTTY Edition)\n\nMicroEdition-Config: $CONFIG\nMicroEdition-Profile: $PROFILE"))
     graphics.addCommand(screen, back)
+    os.setproc("screen", screen)
     graphics.handler(screen, {
         [back] = function ()
             graphics.display(previous)
