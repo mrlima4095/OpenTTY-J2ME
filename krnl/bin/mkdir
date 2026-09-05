@@ -1,0 +1,24 @@
+#!/bin/lua
+
+local libcore = require("libcore")
+
+if #arg > 0 then
+    for i = 1, #arg do
+        local status = os.mkdir(os.join(arg[i]))
+
+        if status > 0 then
+            if status == 128 then
+                print("mkdir: " .. arg[i] .. ": File exists")
+            else
+                local message = libcore.errormsg(status)
+
+                print("mkdir: " .. arg[i] .. ": " .. message)
+            end
+
+            os.exit(status)
+        end
+    end
+else
+    print("mkdir: usage: mkdir [dir]")
+    os.exit(2)
+end
