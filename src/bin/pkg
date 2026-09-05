@@ -93,7 +93,8 @@ elseif arg[1] == "update" then
         os.exit(1)
     end
 
-    local ok, body = pcall(socket.http.get, server .. "/apps/" .. api .. "/sources.lua")
+    local url = server .. "/apps/" .. api .. "/sources.lua"
+    local ok, body = pcall(socket.http.get, url)
     if ok then
         ok, err = pcall(io.write, body, "/etc/sources")
         if ok then
@@ -112,7 +113,8 @@ elseif arg[1] == "switch" then
         os.exit(2)
     end
 
-    local ok, body = pcall(socket.http.get, server .. "/apps/" .. arg[2] .. "/sources.lua")
+    local url = server .. "/apps/" .. arg[2] .. "/sources.lua"
+    local ok, body = pcall(socket.http.get, url)
     if ok then
         ok, err = pcall(io.write, body, "/etc/sources")
         if ok then
