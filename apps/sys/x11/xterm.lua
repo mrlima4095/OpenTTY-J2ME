@@ -6,6 +6,9 @@ local historyCmd = graphics.new("command", { label = "history", type = "screen",
 local switchCmd = graphics.new("command", { label = "Switch to...", type = "screen", priority = 3 })
 local historyBack = graphics.new("command", { label = "Back", type = "back", priority = 1 })
 local history = graphics.new("list", "Command History")
+local historyRun = graphics.new("command", { label = "Run", type = "ok", priority = 1 })
+local historyEdit = graphics.new("command", { label = "Edit", type = "item", priority = 2 })
+local historyItems = {}
 
 local stdout = graphics.new("buffer", { label = "", value = "", style = "monospace" })
 local stdin = graphics.new("field", { label = "Command", value = "", length = 256, mode = "" })
@@ -25,31 +28,57 @@ local function label() graphics.SetLabel(stdin, "[" .. scope["USER"] .. "@" .. h
 
 label()
 
+local function refresh_history()
+    graphics.clear(history)
+    for i = 1, #historyItems do
+        graphics.append(history, historyItems[i])
+    end
+end
+
+local function execute(command)
+    if command ~= nil and command ~= "" then
+        if historyItems[#historyItems] ~= command then
+            historyItems[#historyItems + 1] = command
+        end
+        graphics.SetText(stdin, "")
+        local ok, msg = pcall(os.execute, command)
+        if not ok then
+            print(tostring(msg))
+        end
+        label()
+    end
+end
+
 graphics.append(xterm, stdout)
 graphics.append(xterm, stdin)
 graphics.addCommand(xterm, run)
 graphics.addCommand(xterm, historyCmd)
 graphics.addCommand(xterm, switchCmd)
 graphics.addCommand(history, historyBack)
+graphics.addCommand(history, historyRun)
+graphics.addCommand(history, historyEdit)
 graphics.handler(xterm, {
     [run] = function(command)
-        if command ~= "" then
-            graphics.append(history, command)
-            graphics.SetText(stdin, "")
-            local ok, msg = pcall(os.execute, command)
-            if not ok then
-                print(tostring(msg))
-            end
-            label()
-        end
+        execute(command)
     end,
     [historyCmd] = function()
+        refresh_history()
         graphics.display(history)
     end,
     [switchCmd] = graphics.taskmngr
 })
 graphics.handler(history, {
     [historyBack] = function()
+        graphics.display(xterm)
+    end,
+    [historyRun] = function(command)
+        execute(command)
+        graphics.display(xterm)
+    end,
+    [historyEdit] = function(command)
+        if command ~= nil then
+            graphics.SetText(stdin, command)
+        end
         graphics.display(xterm)
     end
 })
