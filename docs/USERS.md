@@ -1,7 +1,8 @@
 # OpenTTY User System
 
-OpenTTY implements a multi-user model with different permission levels, managed
-through a combination of MIDlet RecordStore persistence and runtime user tables.
+OpenTTY implements a multi-user model with different permission levels. Account
+data is persisted in `/etc/passwd`, `/etc/shadow`, `/etc/group` and
+`/etc/gshadow`; legacy RMS records are used only when migrating an installation.
 
 ## User Types
 
@@ -20,6 +21,13 @@ through a combination of MIDlet RecordStore persistence and runtime user tables.
 - Can only modify their own files in `/home/`
 - Can only kill their own processes
 - Cannot modify system directories (exit code `13` / permission denied)
+- Each user has a primary group with the same numeric ID by default.
+
+### Groups (`GID`)
+
+- `root` uses GID 0; user and manually-created groups use GID 1000+.
+- Supplementary memberships are stored in `/etc/group`.
+- Group passwords are stored in `/etc/gshadow`, readable only by root.
 
 ## User Management
 
@@ -67,6 +75,12 @@ sudo <cmd>          # run a command as root
 useradd <name>      # add a user (root)
 userdel <name>      # delete a user (root)
 passwd              # change password
+groupadd <name>      # add a group (root)
+groupdel <name>      # delete a group (root)
+usermod <user> <grp> # add a user to a group (root)
+gpasswd -a <u> <g>  # add group membership (root)
+gpasswd -d <u> <g>  # remove group membership (root)
+groups [user]        # list group memberships
 pkg install <p>     # requires root
 ```
 

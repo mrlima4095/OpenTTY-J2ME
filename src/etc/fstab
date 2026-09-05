@@ -1,5 +1,5 @@
 /=bin/,dev/,etc/,home/,lib/,mnt/,proc/,root/,tmp/
 /bin/=cp,curl,init,kill,lua,mkdir,nano,pkg,rm,sh,touch,xterm,yang
 /dev/=null,random,stdin,stdout,zero
-/etc/=fstab,hostname,motd,os-release,sources
+/etc/=fstab,hostname,motd,os-release,sources,passwd,shadow,group,gshadow
 /lib/=libcore.so
