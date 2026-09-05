@@ -1,6 +1,6 @@
 #!/bin/lua
 
-local version = "2.0.0"
+local version = "2.1.0"
 
 -- ---------------------------------------------------------------------------
 -- Runtime facts this script was written against:
@@ -8,6 +8,8 @@ local version = "2.0.0"
 --     Therefore "x and x.y" is forbidden; index only after explicit checks.
 --   * `load(chunk)` executes the chunk and returns its return value.
 --   * `type()` is safe on nil; index operators are not.
+--   * Server URLs use the exact installed version (base); patch releases
+--     like "1.18.1" are served as symlinks to the "1.18" catalog root.
 -- ---------------------------------------------------------------------------
 
 local sources = nil
@@ -68,6 +70,8 @@ end
 local function current_major()
     return major_of(app_version())
 end
+
+local base = app_version()
 
 local function load_sources()
     local ok, data = pcall(load, io.read("/etc/sources"))
@@ -150,7 +154,7 @@ local function store_sources(content)
 end
 
 local function fetch_file(remote, here)
-    local ok, input, status = pcall(socket.http.rget, server .. "/apps/" .. text(sources.version) .. "/" .. remote)
+    local ok, input, status = pcall(socket.http.rget, server .. "/apps/" .. text(base) .. "/" .. remote)
 
     if ok and status == 200 then
         return io.copy(input, here)
@@ -430,7 +434,7 @@ elseif cmd == "update" then
         os.exit(13)
     end
 
-    local target = current_major()
+    local target = app_version()
 
     if target == nil or target == "" or target == "0" then
         target = "1.18"
@@ -463,6 +467,7 @@ elseif cmd == "update" then
     end
 
     sources = new_sources
+    base = target
 
     print(":: Sources updated: " .. old .. " -> " .. tostring(new_sources.version))
 
@@ -491,6 +496,7 @@ elseif cmd == "switch" then
 
             if new_sources ~= nil then
                 sources = new_sources
+                base = target
                 print(":: Switched sources: " .. old .. " -> " .. tostring(new_sources.version))
             else
                 print("pkg: switch: downloaded sources are invalid")
