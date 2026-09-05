@@ -281,6 +281,7 @@ elseif arg[1] == "update" then
     if os.getuid() > 0 then print("Permission denied!") os.exit(13) end
 
     local target = current_major()
+    if not target or target == "" or target == "0" then target = "1.18" end
     print(":: Updating sources for OpenTTY " .. target .. "...")
 
     local ok, content, status = pcall(socket.http.get, server .. "/apps/" .. target .. "/sources.lua")
