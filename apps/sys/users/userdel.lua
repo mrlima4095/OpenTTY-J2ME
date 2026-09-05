@@ -11,7 +11,7 @@ if arg[1] then
     for i = 1, #arg do
         local status = os.request(1, "userdel", arg[i])
         if status > 0 then
-            print("userdel: " .. arg[i] .. ": " .. libcore.errormsg(status))
+            print("useradd: " .. arg[i] .. ": " .. libcore.errormsg(status))
             os.exit(tonumber(status))
         end
     end

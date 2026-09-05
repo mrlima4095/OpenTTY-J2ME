@@ -16,13 +16,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public boolean useCache = true, debug = false;
     // |
     // System Objects
-    public int lastID = 1000, lastGID = 1000;
+    public int lastID = 1000;
     public Random random = new Random();
     public Runtime runtime = Runtime.getRuntime();
     public Object shell;
     // |
-    public Hashtable attributes = new Hashtable(), fs = new Hashtable(), sys = new Hashtable(), tmp = new Hashtable(), cache = new Hashtable(), cacheLua = new Hashtable(), graphics = new Hashtable(), servers = new Hashtable(), globals = new Hashtable(), userID = new Hashtable(), userGID = new Hashtable(), userPass = new Hashtable(), groupID = new Hashtable(), groupMembers = new Hashtable(), groupPass = new Hashtable();
-    public boolean accountsLoaded = false;
+    public Hashtable attributes = new Hashtable(), fs = new Hashtable(), sys = new Hashtable(), tmp = new Hashtable(), cache = new Hashtable(), cacheLua = new Hashtable(), graphics = new Hashtable(), servers = new Hashtable(), globals = new Hashtable(), userID = new Hashtable();
     public String username = read("/home/OpenRMS", globals), build = "2026-1.18.2-03x30";
     // |
     // Graphics
@@ -231,53 +230,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // | (Generators)
     public String genpid() { return String.valueOf(1000 + random.nextInt(9000)); }
     // | (User Manager)
-    private String[] accountFields(String line) { Vector fields = new Vector(); int start = 0; for (int i = 0; i <= line.length(); i++) { if (i == line.length() || line.charAt(i) == ':') { fields.addElement(line.substring(start, i)); start = i + 1; } } String[] result = new String[fields.size()]; for (int i = 0; i < result.length; i++) { result[i] = (String) fields.elementAt(i); } return result; }
-    private String accountValue(String[] fields, int index) { return index < fields.length ? fields[index] : ""; }
-    private void loadAccounts() {
-        if (accountsLoaded) { return; }
-        String passwdFile = read("/etc/passwd", globals), shadowFile = read("/etc/shadow", globals), groupFile = read("/etc/group", globals), gshadowFile = read("/etc/gshadow", globals);
-        if (passwdFile.length() == 0) {
-            String main = username.length() == 0 ? "user" : username;
-            userID.put(main, new Integer(1000)); userGID.put(main, new Integer(1000)); userPass.put(main, String.valueOf(passwd().hashCode()));
-            groupID.put("root", new Integer(0)); groupMembers.put("root", new Vector()); groupPass.put("root", "!");
-            Vector members = new Vector(); members.addElement(main); groupID.put(main, new Integer(1000)); groupMembers.put(main, members); groupPass.put(main, "!");
-            saveAccounts();
-        } else {
-            String[] lines = split(passwdFile, '\n');
-            for (int i = 0; i < lines.length; i++) { String[] f = accountFields(lines[i].trim()); if (f.length >= 7) { try { int uid = Integer.parseInt(f[2]), gid = Integer.parseInt(f[3]); userID.put(f[0], new Integer(uid)); userGID.put(f[0], new Integer(gid)); if (uid > lastID) { lastID = uid; } } catch (Exception e) { } } }
-            lines = split(shadowFile, '\n'); for (int i = 0; i < lines.length; i++) { String[] f = accountFields(lines[i].trim()); if (f.length >= 2) { userPass.put(f[0], f[1]); } }
-            lines = split(groupFile, '\n'); for (int i = 0; i < lines.length; i++) { String[] f = accountFields(lines[i].trim()); if (f.length >= 4) { try { int gid = Integer.parseInt(f[2]); groupID.put(f[0], new Integer(gid)); if (gid > lastGID) { lastGID = gid; } Vector members = new Vector(); if (f[3].length() > 0) { String[] names = split(f[3], ','); for (int j = 0; j < names.length; j++) { members.addElement(names[j]); } } groupMembers.put(f[0], members); } catch (Exception e) { } } }
-            lines = split(gshadowFile, '\n'); for (int i = 0; i < lines.length; i++) { String[] f = accountFields(lines[i].trim()); if (f.length >= 2) { groupPass.put(f[0], f[1]); } }
-        }
-        if (!userID.containsKey("root")) { userID.put("root", new Integer(0)); userGID.put("root", new Integer(0)); userPass.put("root", String.valueOf(passwd().hashCode())); }
-        accountsLoaded = true;
-    }
-    private String accountLines() { StringBuffer out = new StringBuffer(); for (Enumeration e = userID.keys(); e.hasMoreElements();) { String name = (String) e.nextElement(); int uid = ((Integer) userID.get(name)).intValue(), gid = userGID.containsKey(name) ? ((Integer) userGID.get(name)).intValue() : uid; out.append(name).append(":x:").append(uid).append(":").append(gid).append(":").append(name).append(":").append(name.equals("root") ? "/root/" : "/home/").append(":/bin/sh\n"); } return out.toString(); }
-    private String shadowLines() { StringBuffer out = new StringBuffer(); for (Enumeration e = userID.keys(); e.hasMoreElements();) { String name = (String) e.nextElement(); out.append(name).append(":").append(userPass.containsKey(name) ? userPass.get(name) : "!").append(":0:0:99999:7:::\n"); } return out.toString(); }
-    private String groupLines() { StringBuffer out = new StringBuffer(); for (Enumeration e = groupID.keys(); e.hasMoreElements();) { String name = (String) e.nextElement(); Vector members = (Vector) groupMembers.get(name); out.append(name).append(":x:").append(groupID.get(name)).append(":"); if (members != null) { for (int i = 0; i < members.size(); i++) { if (i > 0) { out.append(','); } out.append(members.elementAt(i)); } } out.append('\n'); } return out.toString(); }
-    private String gshadowLines() { StringBuffer out = new StringBuffer(); for (Enumeration e = groupID.keys(); e.hasMoreElements();) { String name = (String) e.nextElement(); out.append(name).append(":").append(groupPass.containsKey(name) ? groupPass.get(name) : "!").append(":\n"); } return out.toString(); }
-    public void saveAccounts() { if (!accountsLoaded) { accountsLoaded = true; } write("/etc/passwd", accountLines(), 0, globals); write("/etc/shadow", shadowLines(), 0, globals); write("/etc/group", groupLines(), 0, globals); write("/etc/gshadow", gshadowLines(), 0, globals); }
-    public int getUserID(String user) { loadAccounts(); return user.equals("root") ? 0 : userID.containsKey(user) ? ((Integer) userID.get(user)).intValue() : -1; }
-    public int getUserGID(String user) { loadAccounts(); return userGID.containsKey(user) ? ((Integer) userGID.get(user)).intValue() : -1; }
+    public int getUserID(String user) { return user.equals("root") ? 0 : user.equals(username) ? 1000 : userID.containsKey(user) ? ((Integer) userID.get(user)).intValue() : -1; }
     public String getUser(int uid) {
-        loadAccounts();
-        if (uid == 0) { return "root"; }
-        for (Enumeration keys = userID.keys(); keys.hasMoreElements();) {
+        if (uid == 0) { return "root"; } else if (uid == 1000) { return username; }
+        for (Enumeration keys = sys.keys(); keys.hasMoreElements();) {
             String user = (String) keys.nextElement();
             Integer id = (Integer) userID.get(user);
-            if (id != null && id.intValue() == uid) { return user; }
+            if (id.intValue() == uid) { return user; }
         }
         return null;
     }
-    public boolean authenticate(String user, String password) { loadAccounts(); return userPass.containsKey(user) && password != null && String.valueOf(password.hashCode()).equals(userPass.get(user)); }
-    public String groupsFor(String user) { loadAccounts(); StringBuffer out = new StringBuffer(); for (Enumeration e = groupID.keys(); e.hasMoreElements();) { String group = (String) e.nextElement(); Vector members = (Vector) groupMembers.get(group); int gid = ((Integer) groupID.get(group)).intValue(); if ((userGID.containsKey(user) && ((Integer) userGID.get(user)).intValue() == gid) || (members != null && members.contains(user))) { if (out.length() > 0) { out.append(' '); } out.append(group); } } return out.toString(); }
-    public int addUser(String name) { loadAccounts(); if (name == null || name.length() == 0 || name.equals("root")) { return 2; } if (userID.containsKey(name)) { return 128; } int uid = ++lastID; userID.put(name, new Integer(uid)); userGID.put(name, new Integer(uid)); userPass.put(name, "!"); groupID.put(name, new Integer(uid)); Vector members = new Vector(); members.addElement(name); groupMembers.put(name, members); groupPass.put(name, "!"); saveAccounts(); return 0; }
-    public int removeUser(String name) { loadAccounts(); if (name == null || name.length() == 0 || name.equals("root") || name.equals(username)) { return 13; } if (!userID.containsKey(name)) { return 127; } userID.remove(name); userGID.remove(name); userPass.remove(name); groupID.remove(name); groupMembers.remove(name); groupPass.remove(name); for (Enumeration e = groupMembers.elements(); e.hasMoreElements();) { Vector members = (Vector) e.nextElement(); if (members != null) { members.removeElement(name); } } saveAccounts(); return 0; }
-    public int setPassword(String name, String oldpw, String newpw, int uid) { loadAccounts(); if (name == null || !userID.containsKey(name) || newpw == null || newpw.length() == 0) { return 2; } if (uid != 0 && (uid != getUserID(name) || !authenticate(name, oldpw))) { return 13; } userPass.put(name, String.valueOf(newpw.hashCode())); saveAccounts(); return 0; }
-    public int addGroup(String name) { loadAccounts(); if (name == null || name.length() == 0 || groupID.containsKey(name)) { return 128; } int gid = ++lastGID; while (groupID.containsKey(new Integer(gid))) { gid = ++lastGID; } groupID.put(name, new Integer(gid)); groupMembers.put(name, new Vector()); groupPass.put(name, "!"); saveAccounts(); return 0; }
-    public int removeGroup(String name) { loadAccounts(); if (name == null || name.length() == 0 || name.equals("root") || !groupID.containsKey(name)) { return 127; } int gid = ((Integer) groupID.get(name)).intValue(); for (Enumeration e = userGID.elements(); e.hasMoreElements();) { if (((Integer) e.nextElement()).intValue() == gid) { return 13; } } groupID.remove(name); groupMembers.remove(name); groupPass.remove(name); saveAccounts(); return 0; }
-    public int modifyUser(String name, String group, boolean add) { loadAccounts(); if (name == null || group == null || !userID.containsKey(name) || !groupID.containsKey(group)) { return 127; } Vector members = (Vector) groupMembers.get(group); if (members == null) { members = new Vector(); groupMembers.put(group, members); } if (add) { if (!members.contains(name)) { members.addElement(name); } } else { members.removeElement(name); } saveAccounts(); return 0; }
-    public int setGroupPassword(String name, String password, int uid) { loadAccounts(); if (uid != 0 || name == null || !groupID.containsKey(name)) { return 13; } groupPass.put(name, password == null || password.length() == 0 ? "!" : String.valueOf(password.hashCode())); saveAccounts(); return 0; }
     // | (Trackers)
     public String getpid(String name) { for (Enumeration KEYS = sys.keys(); KEYS.hasMoreElements();) { String PID = (String) KEYS.nextElement(); Process process = (Process) sys.get(PID); if (process != null && process.name != null && name != null && name.equals(process.name)) { return PID; } } return null; } 
     // |
@@ -319,7 +281,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
             else if (filename.startsWith("/bin/") || filename.startsWith("/etc/") || filename.startsWith("/lib/") || filename.startsWith("/root/")) {
                 if (filename.startsWith("/root/") && !isRootCaller(scope)) { return null; }
-                if ((filename.equals("/etc/shadow") || filename.equals("/etc/gshadow")) && (scope == null || !"root".equals(scope.get("USER")))) { return null; }
                 String full = filename;
                 int slash = filename.lastIndexOf('/');
                 String dir = slash < 0 ? filename : filename.substring(0, slash + 1);
@@ -581,11 +542,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         long s = (System.currentTimeMillis() - p.startTime) / 1000;
         if (file.equals("status")) {
-            return "Name:\t" + p.name + "\nState:\tR (running)\nPid:\t" + p.pid + "\nPPid:\t" + (p.pid.equals("1") ? "0" : "1") + "\nUid:\t" + p.uid + "\nGid:\t" + p.gid + "\nUtime:\t" + s + "\nStime:\t0\nPriority:\t" + p.priority + "\nNice:\t" + (p.priority - 10) + "\nThreads:\t1\nOwner:\t" + p.owner;
+            return "Name:\t" + p.name + "\nState:\tR (running)\nPid:\t" + p.pid + "\nPPid:\t" + (p.pid.equals("1") ? "0" : "1") + "\nUid:\t" + p.uid + "\nGid:\t" + p.uid + "\nUtime:\t" + s + "\nStime:\t0\nPriority:\t" + p.priority + "\nNice:\t" + (p.priority - 10) + "\nThreads:\t1\nOwner:\t" + p.owner;
         }
         else if (file.equals("cmdline")) { return (p.cmd != null && p.cmd.length() > 0 ? p.cmd : p.name) + "\0"; }
         else if (file.equals("comm")) { return p.name != null ? p.name : ""; }
-        else if (file.equals("stat")) { return p.pid + " (" + (p.name != null ? p.name : "") + ") R " + (p.pid.equals("1") ? "0" : "1") + " " + p.uid + " " + p.gid + " 0 0 0 0 " + s + " 0 0 " + s + " 0 0 20"; }
+        else if (file.equals("stat")) { return p.pid + " (" + (p.name != null ? p.name : "") + ") R " + (p.pid.equals("1") ? "0" : "1") + " " + p.uid + " " + p.uid + " 0 0 0 0 " + s + " 0 0 " + s + " 0 0 20"; }
         return null;
     }
     // | (Normalize Path)
@@ -765,7 +726,7 @@ class Process {
     public String name, owner, pid, cmd;
     public Hashtable scope, db = new Hashtable(), net = new Hashtable();
     public final long startTime;
-    public int uid = 1000, gid = 1000, priority = DEFAULT_PRIORITY;
+    public int uid = 1000, priority = DEFAULT_PRIORITY;
 
     public static final int MIN_PRIORITY = 0, DEFAULT_PRIORITY = 10, MAX_PRIORITY = 20;
   
@@ -775,8 +736,8 @@ class Process {
     public Lua lua = null;
     public ELF elf = null;
 
-    public Process(OpenTTY midlet, String name, String command, String owner, int uid, String pid, Object stdout, Hashtable scope) { this.lua = new Lua(midlet, uid, pid, this, stdout, scope); this.name = name; this.owner = owner; this.uid = uid; this.gid = midlet.accountsLoaded && midlet.userGID.containsKey(owner) ? ((Integer) midlet.userGID.get(owner)).intValue() : uid; this.pid = pid; this.stdout = stdout; this.stderr = stdout; this.scope = scope; this.startTime = System.currentTimeMillis(); }
-    public Process(OpenTTY midlet, String name, String command, String owner, int uid, String pid, Object stdout, Hashtable args, Hashtable scope) { this.elf = new ELF(midlet, args, stdout, scope, uid, pid, this); this.name = name; this.owner = owner; this.uid = uid; this.gid = midlet.accountsLoaded && midlet.userGID.containsKey(owner) ? ((Integer) midlet.userGID.get(owner)).intValue() : uid; this.pid = pid; this.stdout = stdout; this.stderr = stdout; this.scope = scope; this.startTime = System.currentTimeMillis(); }
+    public Process(OpenTTY midlet, String name, String command, String owner, int uid, String pid, Object stdout, Hashtable scope) { this.lua = new Lua(midlet, uid, pid, this, stdout, scope); this.name = name; this.owner = owner; this.uid = uid; this.pid = pid; this.stdout = stdout; this.stderr = stdout; this.scope = scope; this.startTime = System.currentTimeMillis(); }
+    public Process(OpenTTY midlet, String name, String command, String owner, int uid, String pid, Object stdout, Hashtable args, Hashtable scope) { this.elf = new ELF(midlet, args, stdout, scope, uid, pid, this); this.name = name; this.owner = owner; this.uid = uid; this.pid = pid; this.stdout = stdout; this.stderr = stdout; this.scope = scope; this.startTime = System.currentTimeMillis(); }
 
     public String toString() { return "{ name=" + name + ", owner=" + owner + ", uid=" + uid + ", pid=" + pid + ", " + (lua != null ? "lua=" + lua + ", " : elf != null ? "elf=" + elf + ", " : "") + (handler != null ? "handler=" + handler + ", " : "") + "priority=" + priority + ", scope=" + scope + ", db=" + db + " }"; }
 }

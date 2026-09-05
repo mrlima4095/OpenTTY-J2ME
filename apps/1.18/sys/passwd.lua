@@ -2,13 +2,6 @@
 
 os.setproc("name", "passwd")
 
-if arg[1] and arg[2] then
-    if os.getuid() ~= 0 then print("passwd: permission denied") os.exit(13) end
-    local status = os.request(1, "passwd", { ["user"] = arg[1], ["new"] = arg[2] })
-    if status ~= 0 then print("passwd: operation failed") os.exit(tonumber(status)) end
-    return
-end
-
 local previous = graphics.getCurrent()
 local screen = graphics.new("screen", "Change Password")
 local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })

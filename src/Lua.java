@@ -1676,8 +1676,9 @@ public class Lua {
                     else {
                         String user = toLuaString(args.elementAt(0)), query = args.size() > 1 ? toLuaString(args.elementAt(1)) : null;
                         if (user.equals(midlet.username)) { id = 1000; father.put("USER", user); father.put("PWD", "/home/"); proc.uid = 1000; return new Double(0); }
+                        else if (midlet.userID.containsKey(user)) { id = midlet.getUserID(user); father.put("USER", user); father.put("PWD", "/home/"); proc.uid = id; return new Double(0); }
                         else if (query == null) { return gotbad(2, "su", "string expected, got nil"); }
-                        else if (midlet.getUserID(user) != -1 && midlet.authenticate(user, query)) { id = midlet.getUserID(user); father.put("USER", user); father.put("PWD", user.equals("root") ? "/root/" : "/home/"); proc.uid = id; proc.gid = midlet.getUserGID(user); return new Double(0); }
+                        else if (user.equals("root") && midlet.passwd(query)) { id = 0; father.put("USER", "root"); father.put("PWD", "/home/"); proc.uid = 0; return new Double(0); }
                         else { return new Double(13); }
                     }
                 case REMOVE: return args.isEmpty() ? (Double) gotbad(1, "remove", "string expected, got no value") : new Double(midlet.deleteFile(toLuaString(args.elementAt(0)), id, father));
@@ -2764,10 +2765,12 @@ public class Lua {
                         else if (payload.equals("passwd")) {
                             if (arg instanceof String) { return new Boolean(midlet.passwd((String) arg)); }
                             else if (arg instanceof Hashtable) {
-                                Hashtable query = (Hashtable) arg; String user = query.get("user") == null ? midlet.getUser(uid) : toLuaString(query.get("user"));
-                                String old = query.get("old") == null ? null : toLuaString(query.get("old")), newpw = query.get("new") == null ? null : toLuaString(query.get("new"));
-                                if (newpw == null || newpw.equals("") || (uid != 0 && (old == null || old.equals("")))) { return new Double(2); }
-                                return new Double(midlet.setPassword(user, old, newpw, uid));
+                                Hashtable query = (Hashtable) arg;
+                                String old = (String) query.get("old"), newpw = (String) query.get("new");
+
+                                if (old == null || newpw == null || old.equals("") || newpw.equals("")) { return new Double(2); }
+                                else if (uid == 0 || midlet.passwd(old)) { return new Double(midlet.writeRMS("OpenRMS", String.valueOf(newpw.hashCode()).getBytes(), 2)); }
+                                else { return new Double(13); }
                             }
                         }
                         else if (payload.equals("setsh")) {
@@ -2832,19 +2835,14 @@ public class Lua {
                         else if (payload.equals("useradd")) {
                             if (arg == null || arg.equals("") || arg.equals("root")) { return new Double(2); }
                             else if (uid != 0) { return new Double(13); }
-                            else { return new Double(midlet.addUser(toLuaString(arg))); }
+                            else if (midlet.userID.containsKey(arg)) { return new Double(128); }
+                            else { midlet.userID.put(arg, new Integer(midlet.lastID + 1)); midlet.lastID++; return new Double(0); }
                         }
                         else if (payload.equals("userdel")) {
                             if (arg == null || arg.equals("") || arg.equals("root") || arg.equals(midlet.username)) { return new Double(13); }
-                            else if (uid != 0) { return new Double(13); }
-                            else { return new Double(midlet.removeUser(toLuaString(arg))); }
+                            else if (midlet.userID.containsKey(arg)) { if (uid == 0) { midlet.userID.remove(arg); return new Double(0); } else { return new Double(13); } }
+                            else { return new Double(127); }
                         }
-                        else if (payload.equals("groupadd")) { if (uid != 0) { return new Double(13); } return new Double(midlet.addGroup(toLuaString(arg))); }
-                        else if (payload.equals("groupdel")) { if (uid != 0) { return new Double(13); } return new Double(midlet.removeGroup(toLuaString(arg))); }
-                        else if (payload.equals("usermod")) { if (uid != 0 || !(arg instanceof Hashtable)) { return new Double(13); } Hashtable query = (Hashtable) arg; String user = toLuaString(query.get("user")), group = toLuaString(query.get("group")); return new Double(midlet.modifyUser(user, group, !"remove".equals(toLuaString(query.get("action"))))); }
-                        else if (payload.equals("gpasswd")) { if (!(arg instanceof Hashtable)) { return new Double(2); } Hashtable query = (Hashtable) arg; return new Double(midlet.setGroupPassword(toLuaString(query.get("group")), query.get("password") == null ? "" : toLuaString(query.get("password")), uid)); }
-                        else if (payload.equals("groups")) { return midlet.groupsFor(arg == null || arg.equals("") ? midlet.getUser(uid) : toLuaString(arg)); }
-                        else if (payload.equals("getgid")) { String user = arg == null || arg.equals("") ? midlet.getUser(uid) : toLuaString(arg); return new Double(midlet.getUserGID(user)); }
                         else if (payload.equals("user")) {
                             if (arg == null || arg.equals("") || !(arg instanceof Double)) { return new Double(2); }
                             else {
@@ -3078,11 +3076,17 @@ public class Lua {
                 }
                 else if (mainCommand.equals("su")) {
                     if (args.length >= 2) {
-                        if (midlet.getUserID(args[0]) != -1 && midlet.authenticate(args[0], args[1])) { id = midlet.getUserID(args[0]); father.put("USER", args[0]); father.put("PWD", args[0].equals("root") ? "/root/" : "/home/"); proc.uid = id; proc.gid = midlet.getUserGID(args[0]); }
+                        if (args[0].equals("root") && midlet.passwd(args[1])) { id = 0; father.put("USER", "root"); }
                         else { midlet.print("Permission denied!", output, id, father); status = 13; }
                     } 
                     else if (args.length == 1) {
-                        midlet.print("su: usage: su [username] [passwd]", output, id, father); status = 2;
+                        if (midlet.userID.containsKey(args[0])) {
+                            id = midlet.getUserID(args[0]);
+                            father.put("USER", args[0]);
+                        } else {
+                            midlet.print("Permission denied!", output, id, father);
+                            status = 13;
+                        }
                     }
                     else {
                         if (id != 1000) {
@@ -3105,8 +3109,7 @@ public class Lua {
                 else if (mainCommand.equals("whoami")) { midlet.print((String) father.get("USER"), output, id, father); }
                 else if (mainCommand.equals("id")) {
                     if (args.length == 0) {
-                        String currentUser = midlet.getUser(id); int currentGid = midlet.getUserGID(currentUser); String currentGroups = midlet.groupsFor(currentUser);
-                        midlet.print("uid=" + id + "(" + currentUser + ") gid=" + currentGid + "(" + currentUser + ") groups=" + currentGid + "(" + currentUser + ") " + currentGroups, output, id, father);
+                        midlet.print("uid=" + id + "(" + midlet.getUser(id) + ")", output, id, father);
                     } else {
                         for (int i = 0; i < args.length; i++) {
                             int uid = midlet.getUserID(args[i]);
