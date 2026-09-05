@@ -3,3 +3,7 @@ Copyright (C) 2026 - Mr. Lima
 
 ---
 
+[ User & Permissions ]
+
+- Added Groups
+- 
