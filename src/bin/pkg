@@ -1,552 +1,135 @@
 #!/bin/lua
 
-local version = "1.7.0"
-
--- ---------------------------------------------------------------------------
--- Runtime facts this script was written against:
---   * `and`/`or` are NOT short-circuit: both operands are always evaluated.
---     Therefore "x and x.y" is forbidden; index only after explicit checks.
---   * `load(chunk)` executes the chunk and returns its return value.
---   * `type()` is safe on nil; index operators are not.
---   * Server URLs use the exact installed version (base); patch releases
---     like "1.18.1" are served as symlinks to the "1.18" catalog root.
--- ---------------------------------------------------------------------------
-
-local sources = nil
-
-local function is_table(value)
-    return type(value) == "table"
-end
-
-local function text(value)
-    if value == nil then return "" end
-    return tostring(value)
-end
-
-local function env(name, fallback)
-    local value = os.getenv(name)
-    if value == nil or value == "" then return fallback end
-    return value
-end
-
-local server = env("REPO", "http://opentty.fun")
-
-if string.startswith(server, "socket://") then
-    local host = string.sub(server, 10)
-    local colon = string.find(host, ":")
-    if colon then
-        host = string.sub(host, 1, colon - 1)
-    end
-    server = "http://" .. host
-end
-
-local function app_version()
-    local value = getAppProperty("MIDlet-Version")
-    if value == nil or value == "" then
-        value = os.getenv("VERSION")
-    end
-    if value == nil or value == "" then
-        value = "0.0.0"
-    end
-    return tostring(value)
-end
-
-local function major_of(ver)
-    if ver == nil or ver == "" then return "0" end
-
-    local parts = string.split(text(ver), ".")
-
-    if not is_table(parts) then return "0" end
-
-    local major = parts[1]
-    local minor = parts[2]
-
-    if major == nil or major == "" then major = "0" end
-    if minor == nil or minor == "" then minor = "0" end
-
-    return tostring(major) .. "." .. tostring(minor)
-end
-
-local function current_major()
-    return major_of(app_version())
-end
-
-local base = app_version()
+local version = "1.6.0"
+local api = os.getenv("VERSION") or getAppProperty("MIDlet-Version")
+local server = os.getenv("REPO") or "http://opentty.fun/"
 
 local function load_sources()
-    local ok, data = pcall(load, io.read("/etc/sources"))
-
-    if not ok then return nil end
-    if not is_table(data) then return nil end
-    if not is_table(data.mirror) then return nil end
-
-    if data.version == nil then
-        data.version = current_major()
+    local ok, sources = pcall(load, io.read("/bin/sources"))
+    if not ok then
+        error(":: failed to load sources: " .. tostring(sources))
     end
-
-    return data
+    return sources
 end
 
-local function mirror_entry(name)
-    if not is_table(sources) then return nil end
-    if not is_table(sources.mirror) then return nil end
-
-    local entry = sources.mirror[name]
-
-    if not is_table(entry) then return nil end
-
-    return entry
-end
-
-local function installable_count()
-    local count = 0
-
-    if not is_table(sources) then return 0 end
-    if not is_table(sources.mirror) then return 0 end
-
-    for _, entry in pairs(sources.mirror) do
-        if is_table(entry) then
-            if entry.remote ~= nil then
-                count = count + 1
-            end
-        end
-    end
-
-    return count
-end
-
-local function require_sources()
-    if sources ~= nil then return end
-
-    print("pkg: no sources found at /etc/sources")
-    print("pkg: run 'pkg update' or 'pkg switch [version]'")
-    os.exit(1)
-end
-
-local function check_source()
-    if not is_table(sources) then return end
-
-    local active = sources.version
-
-    if active == nil or active == "" then return end
-
-    if major_of(active) ~= current_major() then
-        print(":: Warning: active source is for OpenTTY " .. text(active) .. " (running " .. app_version() .. ")")
-        print(":: Packages may not work as expected - run 'pkg update' to refresh the mirror")
-    end
-end
-
-local function store_sources(content)
-    local old = "none"
-
-    if is_table(sources) then
-        if sources.version ~= nil then
-            old = tostring(sources.version)
-        end
-    end
-
-    if io.write(content, "/etc/sources") ~= 0 then
-        print("pkg: could not write /etc/sources")
-        os.exit(1)
-    end
-
-    return old, load_sources()
-end
-
-local function fetch_file(remote, here)
-    local ok, input, status = pcall(socket.http.rget, server .. "/apps/" .. text(base) .. "/" .. remote)
-
-    if ok and status == 200 then
-        return io.copy(input, here)
-    end
-
-    return nil
-end
-
-local function install_one(name, verbose)
-    if verbose then
-        print(":: Installing " .. name .. "...")
-    end
-
-    local info = mirror_entry(name)
-
-    if info == nil then
-        if verbose then
-            print("pkg: install: " .. name .. ": not found")
-        end
-        return 2
-    end
-
-    local remote = info.remote
-    local here = info.here
-
-    if remote == nil or here == nil then
-        print("pkg: install: " .. name .. ": invalid package")
-        return 1
-    end
-
-    local deps = info.depends
-
-    if is_table(deps) then
-        if verbose then
-            print(":: Building dependencies")
-        end
-        for _, dep in ipairs(deps) do
-            install_one(text(dep), verbose)
-        end
-    end
-
-    local status = fetch_file(remote, here)
-
-    if status ~= nil then
-        if verbose then
-            if status == 0 then
-                print(":: Installed " .. here)
-            else
-                print(":: Installation error for " .. name)
-            end
-        end
-        return status
-    end
-
-    if verbose then
-        print(":: Connection error")
-    end
-
-    return 1
-end
-
-local function download(pkg, output)
-    local info = mirror_entry(pkg)
-
-    if info == nil then
-        print("pkg: download: " .. pkg .. ": not found")
-        return
-    end
-
-    local remote = info.remote
-
-    if remote == nil then
-        print("pkg: download: " .. pkg .. ": invalid package")
-        return
-    end
-
-    local status = fetch_file(remote, os.join(output))
-
-    if status == 0 then
-        print(":: Downloaded " .. remote .. " to " .. output)
-    else
-        print("download failed")
-    end
-end
-
-local function remove_one(name, verbose)
-    if verbose then
-        print(":: Removing " .. name .. "...")
-    end
-
-    local info = mirror_entry(name)
-
-    if info == nil then
-        if verbose then
-            print("pkg: remove: " .. name .. ": not found")
-        end
-        return 127
-    end
-
-    local status = os.remove(text(info.here))
-
-    if verbose then
-        if status == 0 then
-            print(":: Removed " .. text(info.here))
-        elseif status == 127 then
-            print(":: Package not installed")
-        else
-            print(":: Removing error for " .. name)
-        end
-    end
-
-    return status
-end
-
-local function strip_lines(content)
-    local lines = string.split(content, string.char(10))
-
-    if not is_table(lines) then
-        return {}
-    end
-
-    return lines
-end
-
-sources = load_sources()
+local db = load_sources()
 
 os.setproc("name", "pkg")
 
-local cmd = arg[1]
-
-if cmd == nil or cmd == "" or cmd == "help" then
-    print("Yang Package Manager v" .. version)
-    print("Usage: pkg <command> [package]")
-    print("Commands:")
-    print("  install <package>  - Install a package")
-    print("  download <package> - Download a package")
-    print("  remove <package>   - Remove a package")
-    print("  update             - Update sources from the mirror")
-    print("  switch <version>   - Switch to another sources version")
-    print("  list               - List available packages")
-    print("  info <package>     - Show package information")
-    print("  help               - Show this help")
-elseif cmd == "install" then
-    if os.getuid() > 0 then
-        print("Permission denied!")
-        os.exit(13)
-    end
-
-    require_sources()
-
-    if arg[2] ~= nil then
-        check_source()
-
-        for i = 2, #arg do
-            local pkg = arg[i]
-
-            if pkg == nil then break end
-
-            local info = mirror_entry(pkg)
-
-            if info ~= nil then
-                if info.remote ~= nil then
-                    install_one(pkg, true)
-                else
-                    print("pkg: install: " .. pkg .. ": invalid package (not remote source)")
-                    os.exit(1)
-                end
-            elseif pkg == "*" then
-                print(":: Installing " .. tostring(installable_count()) .. " packages...")
-
-                for name, entry in pairs(sources.mirror) do
-                    if is_table(entry) then
-                        if entry.remote ~= nil then
-                            install_one(tostring(name), true)
-                        end
-                    end
-                end
-
-                return
-            else
-                print("pkg: install: " .. pkg .. ": not found")
-                os.exit(127)
-            end
-        end
-    else
-        print("pkg: usage: pkg install [package]")
-    end
-elseif cmd == "download" then
-    require_sources()
-    check_source()
-
-    if arg[2] ~= nil then
-        if arg[3] ~= nil then
-            download(arg[2], arg[3])
-        else
-            print("pkg: usage: pkg download [pkg] [file]")
-        end
-    else
-        print("pkg: usage: pkg download [pkg] [file]")
-    end
-elseif cmd == "run" then
-    require_sources()
-    check_source()
-
-    if arg[2] ~= nil then
-        local file = io.read(os.join(arg[2]))
-
-        if file ~= nil and file ~= "" then
-            local pkgs = strip_lines(file)
-            print(":: Installing " .. tostring(#pkgs))
-
-            for i = 1, #pkgs do
-                local pkg = pkgs[i]
-
-                if pkg ~= nil then
-                    local name = string.trim(pkg)
-
-                    if name ~= "" then
-                        install_one(name, true)
-                    end
-                end
-            end
-        else
-            print("pkg: nothing to run")
-            os.exit(1)
-        end
-    else
-        print("pkg: usage: pkg run [requirements.txt]")
-    end
-elseif cmd == "remove" then
-    if os.getuid() > 0 then
-        print("Permission denied!")
-        os.exit(13)
-    end
-
-    require_sources()
-
-    if arg[2] ~= nil then
-        for i = 2, #arg do
-            local pkg = arg[i]
-
-            if pkg == nil then break end
-
-            local info = mirror_entry(pkg)
-
-            if info ~= nil then
-                if is_table(info.packages) then
-                    local removed = 0
-
-                    print(":: Removing collection: " .. pkg)
-                    print("")
-
-                    for _, query in ipairs(info.packages) do
-                        if remove_one(text(query), false) == 0 then
-                            removed = removed + 1
-                        end
-                    end
-
-                    print(":: Removed " .. tostring(removed) .. " packages from collection '" .. pkg .. "'")
-                elseif info.remote ~= nil then
-                    remove_one(pkg, true)
-                else
-                    print("pkg: remove: " .. pkg .. ": invalid package")
-                    os.exit(2)
-                end
-            else
-                print("pkg: remove: " .. pkg .. ": not found")
-                os.exit(127)
-            end
-        end
-    else
-        print("pkg: usage: pkg remove [package]")
-    end
-elseif cmd == "update" then
-    if os.getuid() > 0 then
-        print("Permission denied!")
-        os.exit(13)
-    end
-
-    local target = app_version()
-
-    if target == nil or target == "" or target == "0" then
-        target = "1.18"
-    end
-
-    print(":: Updating sources for OpenTTY " .. target .. "...")
-
-    local ok, content, status = pcall(socket.http.get, server .. "/apps/" .. target .. "/sources.lua")
-
-    if ok ~= true then
-        print(":: Connection error")
-        os.exit(101)
-    end
-
-    if status ~= 200 then
-        print(":: Connection error")
-        os.exit(101)
-    end
-
-    if content == "" then
-        print(":: Connection error")
-        os.exit(101)
-    end
-
-    local old, new_sources = store_sources(content)
-
-    if new_sources == nil then
-        print("pkg: update: downloaded sources are invalid")
+if arg[1] == "install" then
+    if os.getuid() ~= 0 then
+        print(":: must be root to install packages")
         os.exit(1)
     end
 
-    sources = new_sources
-    base = target
+    for i = 2, #arg do
+        local pkg_name, err = arg[i], nil
+        local pkg = db.mirror[pkg_name]
 
-    print(":: Sources updated: " .. old .. " -> " .. tostring(new_sources.version))
-
-    local ok2, online, status2 = pcall(socket.http.get, server .. "/res/latest")
-
-    if ok2 == true then
-        if status2 == 200 then
-            if online ~= nil and online ~= "" then
-                print(":: OpenTTY latest version: " .. tostring(online))
-            end
-        end
-    end
-elseif cmd == "switch" then
-    if os.getuid() > 0 then
-        print("Permission denied!")
-        os.exit(13)
-    end
-
-    if arg[2] ~= nil then
-        local target = arg[2]
-
-        local ok, content, status = pcall(socket.http.get, server .. "/apps/" .. target .. "/sources.lua")
-
-        if ok == true and status == 200 and content ~= "" then
-            local old, new_sources = store_sources(content)
-
-            if new_sources ~= nil then
-                sources = new_sources
-                base = target
-                print(":: Switched sources: " .. old .. " -> " .. tostring(new_sources.version))
-            else
-                print("pkg: switch: downloaded sources are invalid")
-                os.exit(1)
-            end
-        else
-            print("pkg: switch: version '" .. target .. "' not found on the mirror")
-            os.exit(127)
-        end
-    else
-        require_sources()
-        print(":: Active source: OpenTTY " .. text(sources.version))
-        print("pkg: usage: pkg switch [version]")
-    end
-elseif cmd == "list" then
-    require_sources()
-
-    print("Available packages (source " .. text(sources.version) .. "):")
-
-    for name, entry in pairs(sources.mirror) do
-        if is_table(entry) then
-            if not is_table(entry.packages) then
-                print("- " .. name .. ": " .. text(entry.description))
-            end
-        end
-    end
-elseif cmd == "info" then
-    require_sources()
-
-    if arg[2] ~= nil then
-        local info = mirror_entry(arg[2])
-
-        if info ~= nil then
-            if not is_table(info.packages) then
-                print("Package: " .. arg[2])
-                print("Description: " .. text(info.description))
-                print("Path: " .. text(info.here))
-
-                if is_table(info.depends) then
-                    print("Dependencies: " .. table.concat(info.depends, ", "))
+        if pkg then
+            if pkg.depends then
+                for _, dep in ipairs(pkg.depends) do
+                    local dep_pkg = db.mirror[dep]
+                    if not dep_pkg then
+                        print(":: dependency " .. dep .. " not found for package " .. pkg.name)
+                        os.exit(1)
+                    end
+                    print(":: installing dependency " .. dep_pkg.name)
+                    local ok, stream = pcall(socket.http.rget, server .. "/apps/" .. db.version .. "/" .. dep_pkg.remote)
+                    if ok then
+                        ok, err = pcall(io.copy, stream, dep_pkg.here)
+                        if not ok then
+                            print(":: error installing dependency " .. dep_pkg.name .. ": " .. tostring(err))
+                            os.exit(1)
+                        else
+                            print(":: installed dependency " .. dep_pkg.name)
+                        end
+                    else
+                        print(":: error downloading dependency " .. dep_pkg.name .. ": " .. tostring(stream))
+                        os.exit(1)
+                    end
                 end
             end
-        else
-            print(":: " .. arg[2] .. " not found")
-            os.exit(127)
-        end
-    else
-        print("pkg: usage: pkg info [package]")
+            print(":: downloading " .. pkg.name .. " from " .. pkg.remote)
+
+            local ok, stream = pcall(socket.http.rget, server .. "/apps/" .. db.version .. "/" .. pkg.remote)
+            if ok then
+                ok, err = pcall(io.copy, stream, pkg.here)
+                if not ok then
+                    print(":: error installing " .. pkg.name .. ": " .. tostring(err))
+                else
+                    print(":: installed " .. pkg.name)
+                end
+            else
+                print(":: error downloading " .. pkg.name .. ": " .. tostring(stream))
+            end
+        else print(":: package " .. pkg_name .. " not found") end
     end
+elseif arg[1] == "remove" then
+    if os.getuid() ~= 0 then
+        print(":: must be root to remove packages")
+        os.exit(1)
+    end
+
+    for i = 2, #arg do
+        local pkg_name = arg[i]
+        local pkg = db.mirror[pkg_name]
+
+        if pkg then
+            print(":: removing " .. pkg.name)
+            local ok, err = pcall(os.remove, pkg.here)
+            if not ok then
+                print(":: error removing " .. pkg.name .. ": " .. tostring(err))
+            else
+                print(":: removed " .. pkg.name)
+            end
+        else
+            print(":: package " .. pkg_name .. " not found")
+        end
+    end
+elseif arg[1] == "update" then
+    if os.getuid() ~= 0 then
+        print(":: must be root to update package database")
+        os.exit(1)
+    end
+
+    local ok, stream = pcall(socket.http.rget, server .. "/apps/" .. api .. "/sources.lua")
+    if ok then
+        ok, err = pcall(io.copy, stream, "/etc/sources")
+        if ok then
+            print(":: error updating package database: " .. tostring(err))
+        else
+            print(":: package database updated")
+        end
+elseif arg[1] == "switch" then
+    if os.getuid() ~= 0 then
+        print(":: must be root to switch package database")
+        os.exit(1)
+    end
+    if arg[2] == nil then
+        print(":: usage: pkg switch <version>")
+        os.exit(2)
+    end
+
+    local ok, stream = pcall(socket.http.rget, server .. "/apps/" .. arg[2] .. "/sources.lua")
+    if ok then
+        ok, err = pcall(io.copy, stream, "/etc/sources")
+        if ok then print(":: error switching package database: " .. tostring(err))
+        else print(":: package database switched to version " .. arg[2]) end
+    else print(":: error switching package database: " .. tostring(stream)) end
+elseif arg[1] == "list" then
+    print(":: available packages (" .. #db.mirror .. "):")
+    for pkg_name, pkg in pairs(db.mirror) do print(pkg_name .. " - " .. pkg.description) end
+elseif arg[1] == "version" then
+    print(":: pkg version " .. version)
+    print(":: sources for OpenTTY ".. db.version)
 else
-    print("pkg: " .. text(cmd) .. ": not found")
-    os.exit(127)
+    print(":: usage: pkg <command> [args]")
+    print(":: commands:")
+    print("   install <package> - install a package")
+    print("   remove <package> - remove a package")
+    print("   update - update the package database")
+    print("   switch <version> - switch to a different package database version")
+    print("   list - list available packages")
+    print("   version - show version")
 end

@@ -30,13 +30,8 @@ OpenTTY: a J2ME MIDlet (CLDC-1.0/MIDP-2.0) that is a Lua-scripted shell + ARM EL
 - nginx proxies `/cli` + `/api/` to a Flask upstream at `127.0.0.1:10141`; PHP via fastcgi `:9000`; several dirs served with `autoindex`. EXPOSE: `80, 31522, 4096, 10141`.
 - `pproxy` is a **git submodule**; the Dockerfile pip-installs from `pproxy/requirements.txt` plus `flask_cors requests`. Don't rely on the builder cloning submodules: the Dockerfile fell-back-clones `pproxy` from GitHub when `pproxy/app.py` is missing.
 
-## User feedback (2026-09-05)
-
-The user is disappointed with the automated `pkg` rewrite and scored it 0 ("nota 0"); they are rewriting `src/bin/pkg` (and the `krnl/bin/pkg` sync copy) **by hand**. Do not keep rewriting or "fixing" pkg from scratch — follow the user's hand-written version, and only make the minimal requested edits. Previous automated attempts were NOT accepted as the final word.
-
 ## Git workflow
 
-- `origin` is SSH-over-443 with no stored credentials here:
-  `git push ssh://git@ssh.github.com:443/mrlima4095/OpenTTY-J2ME.git main`
+- `origin` is SS//git@ssh.github.com:443/mrlima4095/OpenTTY-J2ME.git main`
   (port 22 is blocked from this host; plain `git push` works since `origin` already points at the 443 URL.)
 - User preference: commit and push completed work (via the SSH URL above) without waiting to be asked.
