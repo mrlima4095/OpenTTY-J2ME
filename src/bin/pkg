@@ -101,6 +101,7 @@ elseif arg[1] == "update" then
         else
             print(":: package database updated")
         end
+    end
 elseif arg[1] == "switch" then
     if os.getuid() ~= 0 then
         print(":: must be root to switch package database")
