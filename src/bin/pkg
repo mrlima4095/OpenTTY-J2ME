@@ -32,9 +32,9 @@ local function load_sources()
     local content = io.read("/etc/sources")
 
     if content ~= "" then
-        local ok, data = pcall(load, content)
+        local data = load(content)
 
-        if ok and type(data) == "table" then
+        if type(data) == "table" then
             if type(data.mirror) == "table" then
                 if data.version == nil then
                     data.version = current_major()
