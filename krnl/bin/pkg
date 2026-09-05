@@ -3,6 +3,12 @@
 local version = "2.0.0"
 
 local server = os.getenv("REPO") or "http://opentty.fun"
+if string.startswith(server, "socket://") then
+    local address = string.sub(server, 10)
+    local port = string.find(address, ":")
+    if port then address = string.sub(address, 1, port - 1) end
+    server = "http://" .. address
+end
 
 local sources = nil
 
