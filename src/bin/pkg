@@ -13,7 +13,7 @@ end
 local sources = nil
 
 local function current_version()
-    return getAppProperty("MIDlet-Version") or "0.0.0"
+    return getAppProperty("MIDlet-Version") or os.getenv("VERSION") or "0.0.0"
 end
 
 local function major_of(v)
@@ -32,9 +32,13 @@ local function load_sources()
     local content = io.read("/etc/sources")
 
     if content ~= "" then
-        local ok, data = pcall(load, content)
+        local ok, chunk = pcall(load, content)
+        local ok_data, data = false, nil
+        if ok and type(chunk) == "function" then
+            ok_data, data = pcall(chunk)
+        end
 
-        if ok and type(data) == "table" then
+        if ok_data and type(data) == "table" then
             if type(data.mirror) == "table" then
                 if data.version == nil then
                     data.version = current_major()
