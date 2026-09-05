@@ -9,10 +9,10 @@ local function load_sources()
     if not ok then
         error(":: failed to load sources: " .. tostring(sources))
     end
-    return sources
+    return sources.version, sources.mirror
 end
 
-local db = load_sources()
+local db_version, mirror = load_sources()
 
 os.setproc("name", "pkg")
 
@@ -24,18 +24,18 @@ if arg[1] == "install" then
 
     for i = 2, #arg do
         local pkg_name, err = arg[i], nil
-        local pkg = db.mirror[pkg_name]
+        local pkg = mirror[pkg_name]
 
         if pkg then
             if pkg.depends then
                 for _, dep in ipairs(pkg.depends) do
-                    local dep_pkg = db.mirror[dep]
+                    local dep_pkg = mirror[dep]
                     if not dep_pkg then
                         print(":: dependency " .. dep .. " not found for package " .. pkg.name)
                         os.exit(1)
                     end
                     print(":: installing dependency " .. dep_pkg.name)
-                    local ok, stream = pcall(socket.http.rget, server .. "/apps/" .. db.version .. "/" .. dep_pkg.remote)
+                    local ok, stream = pcall(socket.http.rget, server .. "/apps/" .. db_version .. "/" .. dep_pkg.remote)
                     if ok then
                         ok, err = pcall(io.copy, stream, dep_pkg.here)
                         if not ok then
@@ -52,7 +52,7 @@ if arg[1] == "install" then
             end
             print(":: downloading " .. pkg.name .. " from " .. pkg.remote)
 
-            local ok, stream = pcall(socket.http.rget, server .. "/apps/" .. db.version .. "/" .. pkg.remote)
+            local ok, stream = pcall(socket.http.rget, server .. "/apps/" .. db_version .. "/" .. pkg.remote)
             if ok then
                 ok, err = pcall(io.copy, stream, pkg.here)
                 if not ok then
@@ -93,9 +93,9 @@ elseif arg[1] == "update" then
         os.exit(1)
     end
 
-    local ok, stream = pcall(socket.http.rget, server .. "/apps/" .. api .. "/sources.lua")
+    local ok, body = pcall(socket.http.get, server .. "/apps/" .. api .. "/sources.lua")
     if ok then
-        ok, err = pcall(io.copy, stream, "/etc/sources")
+        ok, err = pcall(io.write, body, "/etc/sources")
         if ok then
             print(":: error updating package database: " .. tostring(err))
         else
@@ -112,18 +112,23 @@ elseif arg[1] == "switch" then
         os.exit(2)
     end
 
-    local ok, stream = pcall(socket.http.rget, server .. "/apps/" .. arg[2] .. "/sources.lua")
+    local ok, body = pcall(socket.http.get, server .. "/apps/" .. arg[2] .. "/sources.lua")
     if ok then
-        ok, err = pcall(io.copy, stream, "/etc/sources")
-        if ok then print(":: error switching package database: " .. tostring(err))
-        else print(":: package database switched to version " .. arg[2]) end
+        ok, err = pcall(io.write, body, "/etc/sources")
+        if ok then
+            print(":: error switching package database: " .. tostring(err))
+        else
+            print(":: package database switched to version " .. arg[2])
+        end
     else print(":: error switching package database: " .. tostring(stream)) end
 elseif arg[1] == "list" then
-    print(":: available packages (" .. #db.mirror .. "):")
-    for pkg_name, pkg in pairs(db.mirror) do print(pkg_name .. " - " .. pkg.description) end
+    print(":: available packages (" .. #mirror .. "):")
+    for pkg_name, pkg in pairs(mirror) do
+        print(pkg_name .. " - " .. pkg.description)
+    end
 elseif arg[1] == "version" then
     print(":: pkg version " .. version)
-    print(":: sources for OpenTTY ".. db.version)
+    print(":: sources for OpenTTY ".. db_version)
 else
     print(":: usage: pkg <command> [args]")
     print(":: commands:")
