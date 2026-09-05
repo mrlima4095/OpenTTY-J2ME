@@ -1,6 +1,6 @@
 #!/bin/lua
 
-local version = "2.0.0"
+local version = "1.6.0"
 
 local server = os.getenv("REPO") or "http://opentty.fun"
 
