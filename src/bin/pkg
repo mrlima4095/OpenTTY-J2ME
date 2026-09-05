@@ -31,37 +31,37 @@ if arg[1] == "install" then
                 for _, dep in ipairs(pkg.depends) do
                     local dep_pkg = mirror[dep]
                     if not dep_pkg then
-                        print(":: dependency " .. dep .. " not found for package " .. pkg.name)
+                        print(":: dependency " .. dep .. " not found for package " .. pkg_name)
                         os.exit(1)
                     end
-                    print(":: installing dependency " .. dep_pkg.name)
+                    print(":: installing dependency " .. dep)
                     local ok, stream = pcall(socket.http.rget, server .. "/apps/" .. db_version .. "/" .. dep_pkg.remote)
                     if ok then
                         ok, err = pcall(io.copy, stream, dep_pkg.here)
                         if not ok then
-                            print(":: error installing dependency " .. dep_pkg.name .. ": " .. tostring(err))
+                            print(":: error installing dependency " .. dep .. ": " .. tostring(err))
                             os.exit(1)
                         else
-                            print(":: installed dependency " .. dep_pkg.name)
+                            print(":: installed dependency " .. dep)
                         end
                     else
-                        print(":: error downloading dependency " .. dep_pkg.name .. ": " .. tostring(stream))
+                        print(":: error downloading dependency " .. dep .. ": " .. tostring(stream))
                         os.exit(1)
                     end
                 end
             end
-            print(":: downloading " .. pkg.name .. " from " .. pkg.remote)
+            print(":: downloading " .. pkg_name .. " from " .. pkg.remote)
 
             local ok, stream = pcall(socket.http.rget, server .. "/apps/" .. db_version .. "/" .. pkg.remote)
             if ok then
                 ok, err = pcall(io.copy, stream, pkg.here)
                 if not ok then
-                    print(":: error installing " .. pkg.name .. ": " .. tostring(err))
+                    print(":: error installing " .. pkg_name .. ": " .. tostring(err))
                 else
-                    print(":: installed " .. pkg.name)
+                    print(":: installed " .. pkg_name)
                 end
             else
-                print(":: error downloading " .. pkg.name .. ": " .. tostring(stream))
+                print(":: error downloading " .. pkg_name .. ": " .. tostring(stream))
             end
         else print(":: package " .. pkg_name .. " not found") end
     end
@@ -76,12 +76,12 @@ elseif arg[1] == "remove" then
         local pkg = db.mirror[pkg_name]
 
         if pkg then
-            print(":: removing " .. pkg.name)
+            print(":: removing " .. pkg_name)
             local ok, err = pcall(os.remove, pkg.here)
             if not ok then
-                print(":: error removing " .. pkg.name .. ": " .. tostring(err))
+                print(":: error removing " .. pkg_name .. ": " .. tostring(err))
             else
-                print(":: removed " .. pkg.name)
+                print(":: removed " .. pkg_name)
             end
         else
             print(":: package " .. pkg_name .. " not found")
