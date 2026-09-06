@@ -1,0 +1,48 @@
+return {
+    ["name"] = "opentty-base",
+    ["version"] = "1.18.1",
+    ["patch"] = "Lua J2ME",
+    ["release"] = "stable",
+    ["lts"] = true,
+    ["fs"] = {
+        ["/"] = { "home/", "bin/", "etc/", "lib/", "tmp/", "dev/", "proc/", "mnt/" },
+        ["/bin/"] = {
+            ["sh"] = "#!/bin/lua\nos.setproc(\"name\", \"sh\")\nos.execute(\"execute /lib/docker/shell.lua --container \" .. arg[2])",
+            ["ls"] = "#!/bin/lua\nos.setproc(\"name\", \"ls\")\nlocal d = io.dirs(arg[1] or os.getcwd())\nif d then for _,f in pairs(d) do print(f) end end",
+            ["cat"] = "#!/bin/lua\nos.setproc(\"name\", \"cat\")\nif arg[1] then local c = io.read(os.join(arg[1]))\nif c then print(c) else print(\"cat: \" .. arg[1] .. \": No such file\") os.exit(1) end\nelse print(\"cat: usage: cat <file>\") end",
+            ["echo"] = "#!/bin/lua\nos.setproc(\"name\", \"echo\")\nif arg[1] then print(string.env(table.concat(arg, \" \"))) else print(\"\") end",
+            ["exit"] = "#!/bin/lua\nos.exit(tonumber(arg[1]) or 0)",
+            ["clear"] = "#!/bin/lua\ngraphics.SetText(io.stdout, \"\")",
+            ["whoami"] = "#!/bin/lua\nprint(os.scope()[\"USER\"] or \"guest\")",
+            ["hostname"] = "#!/bin/lua\nprint(os.scope()[\"HOSTNAME\"] or \"container\")",
+            ["id"] = "#!/bin/lua\nprint(\"uid=\" .. tostring(os.getuid()) .. \"(\" .. (os.scope()[\"USER\"] or \"guest\") .. \")\")",
+            ["pwd"] = "#!/bin/lua\nprint(os.getcwd())",
+            ["mkdir"] = "#!/bin/lua\nif arg[1] then os.mkdir(os.join(arg[1])) else print(\"mkdir: usage: mkdir <dir>\") end",
+            ["rm"] = "#!/bin/lua\nif arg[1] then local s = os.remove(os.join(arg[1]))\nif s ~= 0 then print(\"rm: failed to remove \" .. arg[1]) os.exit(s) end\nelse print(\"rm: usage: rm <file>\") end",
+            ["cp"] = "#!/bin/lua\nif arg[1] and arg[2] then io.copy(os.join(arg[1]), os.join(arg[2]))\nelse print(\"cp: usage: cp <src> <dst>\") end",
+            ["touch"] = "#!/bin/lua\nif arg[1] then io.write(\"\", os.join(arg[1])) else print(\"touch: usage: touch <file>\") end",
+            ["date"] = "#!/bin/lua\nprint(os.date())",
+            ["uptime"] = "#!/bin/lua\nprint(tostring(os.clock()) .. \"ms\")",
+            ["env"] = "#!/bin/lua\nlocal s = os.scope()\nfor k,v in pairs(s) do if type(v) == \"string\" then print(k .. \"=\" .. v) end end",
+        },
+        ["/etc/"] = {
+            ["hostname"] = "container",
+            ["os-release"] = "NAME=\"OpenTTY Docker\"\nVERSION=\"1.18.1\"\nPRETTY_NAME=\"OpenTTY Docker 1.18.1\"",
+            ["fstab"] = "/\n/bin/\n/etc/\n/lib/\n/home/\n/tmp/",
+        },
+        ["/lib/"] = {
+            ["docker"] = {
+                ["shell"] = "[ Lua script - see apps/sys/docker/scripts/shell.lua ]",
+            },
+        },
+        ["/tmp/"] = {},
+    },
+    ["scope"] = {
+        ["PWD"] = "/home/",
+        ["USER"] = "guest",
+        ["ROOT"] = "/",
+        ["HOSTNAME"] = "container",
+        ["VERSION"] = "1.18.1",
+    },
+    ["password"] = "docker",
+}

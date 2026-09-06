@@ -1,0 +1,35 @@
+#!/bin/lua
+
+os.setproc("name", "java")
+
+if arg[1] then
+    if arg[1] == "-class" then
+        if arg[2] then
+            print(java.class(arg[2]))
+        else
+            print("java -class [class]")
+        end
+    elseif arg[1] == "--version" then
+        print(java.getName())
+    else
+        print("java: " .. arg[1] .. ": not found")
+        os.exit(127)
+    end
+else
+    local previous = graphics.getCurrent()
+    local screen = graphics.new("screen", "Java ME")
+    local back = graphics.new("command", { label = "Back", type = "ok", priority = 1 })
+    local switch = graphics.new("command", { label = "Switch to...", type = "screen", priority = 2 })
+
+    graphics.append(screen, string.env("Java 1.2 (OpenTTY Edition)\n\nMicroEdition-Config: $CONFIG\nMicroEdition-Profile: $PROFILE"))
+    graphics.addCommand(screen, back)
+    os.setproc("screen", screen)
+    graphics.handler(screen, {
+        [back] = function ()
+            graphics.display(previous)
+            os.exit()
+        end,
+        [switch] = graphics.taskmngr
+    })
+    graphics.display(screen)
+end

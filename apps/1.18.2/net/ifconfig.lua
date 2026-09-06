@@ -1,0 +1,12 @@
+#!/bin/lua
+
+local ok, conn, i, o = pcall(socket.connect, "socket://opentty.fun:31522")
+if not ok then
+    print(arg[0] .. ": " .. tostring(conn))
+    os.exit(101)
+end
+
+local address, _ = socket.device(conn)
+print(address)
+
+pcall(io.close, conn, i, o)
