@@ -1,5 +1,5 @@
 return {
-    version = "1.18",
+    version = "1.18.2",
     mirror = {
         --["appmenu"] = { remote = "sys/appmenu/main.lua", here = "/bin/init", description = "Application Menu" },
         ["armitage"] = { remote = "net/armitage", here = "/bin/armitage", depends = { "ifconfig" }, description = "OpenTTY Network Tools" },

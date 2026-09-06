@@ -35,7 +35,9 @@ if arg[1] == "install" then
                         os.exit(1)
                     end
                     print(":: installing dependency " .. dep)
-                    local ok, stream = pcall(socket.http.rget, server .. "/apps/" .. db_version .. "/" .. dep_pkg.remote)
+                    local url = server .. "/apps/" .. db_version .. "/" .. dep_pkg.remote
+                    print(url)
+                    local ok, stream = pcall(socket.http.rget, url)
                     if ok then
                         ok, err = pcall(io.copy, stream, dep_pkg.here)
                         if not ok then
@@ -52,7 +54,9 @@ if arg[1] == "install" then
             end
             print(":: downloading " .. pkg_name .. " from " .. pkg.remote)
 
-            local ok, stream = pcall(socket.http.rget, server .. "/apps/" .. db_version .. "/" .. pkg.remote)
+            local url = server .. "/apps/" .. db_version .. "/" .. pkg.remote
+            print(url)
+            local ok, stream = pcall(socket.http.rget, url)
             if ok then
                 ok, err = pcall(io.copy, stream, pkg.here)
                 if not ok then
