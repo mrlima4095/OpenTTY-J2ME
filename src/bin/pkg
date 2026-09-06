@@ -2,7 +2,7 @@
 
 local version = "1.6.0"
 local api = os.getenv("VERSION") or getAppProperty("MIDlet-Version")
-local server = os.getenv("REPO") or "http://opentty.fun/"
+local server = os.getenv("REPO") or "http://opentty.fun"
 
 local function load_sources()
     local ok, sources = pcall(load, io.read("/etc/sources"))
