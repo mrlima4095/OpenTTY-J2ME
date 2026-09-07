@@ -36,6 +36,7 @@ OpenTTY: a J2ME MIDlet (CLDC-1.0/MIDP-2.0) that is a Lua-scripted shell + ARM EL
 - Heap: first-fit with split, header `{size,next}` at payload−8, new regions from `findFreeMemoryRegion` (64 KB), no coalescing.
 - `ldrd`/`strd` (immediate, pre/post + writeback) are decoded in the halfword/doubleword family: `(instr & 0x0E400090)==0x00400090` with opcode bits 6‑5 (`10`=LDRD, `11`=STRD) and bit 20 = 0 — do not reuse the classic `0x0E40_0F00` masks.
 - Demo: `res/apps/src/libc-demo.c` → `./build-elf.sh res/apps/src/libc-demo.c -stdlib -o demo`. Typecheck after edits: `javac -d /tmp/jc -cp . src/ELF.java $STUBS` with stubs in `/tmp/opencode/tty-stubs`.
+- Sample C apps: `res/apps/src/*.c` → `res/apps/dist/<name>` (built with `-stdlib`; `count.c`/`h.c` are raw-syscall style and build with no stdlib flag). Avoid `long long` **multiplication** (no `__aeabi_lmul`) and `short` types (no `ldrh/strh`).
 
 ## Deployment (`docker/` + root)
 
