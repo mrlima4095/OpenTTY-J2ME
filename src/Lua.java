@@ -3106,6 +3106,7 @@ public class Lua {
 
                     midlet.print("at " + (System.currentTimeMillis() - before), output, id, father);
                 }
+                else if (mainCommand.equals("date")) { midlet.print(midlet.getDate(), output, id, father); }
                 else if (mainCommand.equals("whoami")) { midlet.print((String) father.get("USER"), output, id, father); }
                 else if (mainCommand.equals("id")) {
                     if (args.length == 0) {
