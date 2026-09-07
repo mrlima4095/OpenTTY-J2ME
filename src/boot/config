@@ -1,0 +1,6 @@
+# OpenTTY kernel boot configuration
+KERNEL=/boot/vmlinuz
+INITRD=/boot/initrd.img
+INIT=/bin/init
+ROOTFS=rms
+SHELL=/bin/sh

@@ -1724,7 +1724,7 @@ public class Lua {
                             catch (Exception e) { return e instanceof SecurityException ? 13 : 1; }
                             finally { if (fc != null) { try { fc.close(); } catch (Exception e) { } } }
                         } else if (midlet.vfsDirIndex(dir) != -1) {
-                            if (dir.startsWith("/bin/") || dir.startsWith("/etc/") || dir.startsWith("/lib/") || dir.startsWith("/root/")) {
+                            if (dir.startsWith("/bin/") || dir.startsWith("/etc/") || dir.startsWith("/lib/") || dir.startsWith("/root/") || dir.startsWith("/boot/")) {
                                 if (id != 0) { return new Double(13); }
                             }
                             if (midlet.fs.containsKey(dir)) { return new Double(128); }
@@ -2834,6 +2834,7 @@ public class Lua {
                                 else if (arg.equals("/bin/")) { midlet.writeRMS("OpenRMS", new byte[0], 3); }
                                 else if (arg.equals("/etc/")) { midlet.writeRMS("OpenRMS", new byte[0], 5); }
                                 else if (arg.equals("/lib/")) { midlet.writeRMS("OpenRMS", new byte[0], 4); }
+                                else if (arg.equals("/boot/")) { midlet.writeRMS("OpenRMS", new byte[0], 7); }
                                 else { String r = toLuaString(arg); int rmi = midlet.vfsDirIndex(r); if (rmi != -1 && rmi >= 6) { midlet.writeRMS("OpenRMS", new byte[0], rmi); if (midlet.fs.containsKey(r.endsWith("/") ? r : r + "/")) { String sd = r.endsWith("/") ? r : r + "/"; int base = sd.lastIndexOf('/', sd.length() - 2); String parent = sd.substring(0, base + 1); String entry = sd.substring(base + 1, sd.length() - 1) + "/"; Vector struct = (Vector) midlet.fs.get(parent); if (struct != null) { struct.removeElement(entry); } midlet.fs.remove(sd); midlet.unpersistVfsMount(sd); } } else { return new Double(5); } }
                             } else { return new Double(13); }
                         }

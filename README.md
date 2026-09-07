@@ -40,7 +40,7 @@ legacy handsets into a portable scripting platform.
 ### Shell & Runtime
 
 - Lua 5.x interpreter with functions, tables, loops, and protected error handling
-- Virtual Unix-like filesystem (`/bin`, `/etc`, `/home`, `/lib`, `/mnt`, `/tmp`, `/dev`, `/proc`, `/root`)
+- Virtual Unix-like filesystem (`/bin`, `/boot`, `/etc`, `/home`, `/lib`, `/mnt`, `/tmp`, `/dev`, `/proc`, `/root`)
 - Pipes, redirection, environment variables, and command execution
 - Multi-process environment with PID control and permissions
 

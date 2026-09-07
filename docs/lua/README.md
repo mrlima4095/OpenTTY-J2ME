@@ -84,7 +84,7 @@ and standard libraries adapted for the J2ME environment.
 | `io.copy(stream, file)` | Copy a stream to a file |
 
 > `io.dirs(path)` returns entries only for `/tmp/`, `/mnt/<sub>`, and exactly
-> `/bin/`, `/etc/`, `/lib/`, `/home/`. Any other path yields an empty table.
+> `/bin/`, `/etc/`, `/lib/`, `/boot/`, `/home/`. Any other path yields an empty table.
 
 ## `string` Library
 

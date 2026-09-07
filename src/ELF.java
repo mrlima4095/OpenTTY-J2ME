@@ -1978,7 +1978,7 @@ public class ELF {
             if (isDirectory) {
                 boolean isDir = false;
                 
-                if (fullPath.equals("/") || fullPath.equals("/home/") || fullPath.equals("/tmp/") || fullPath.equals("/bin/") || fullPath.equals("/etc/") || fullPath.equals("/lib/")) { isDir = true; } 
+                if (fullPath.equals("/") || fullPath.equals("/home/") || fullPath.equals("/tmp/") || fullPath.equals("/bin/") || fullPath.equals("/etc/") || fullPath.equals("/lib/") || fullPath.equals("/boot/")) { isDir = true; } 
                 else if (fullPath.startsWith("/mnt/")) {
                     try {
                         FileConnection conn = (FileConnection) Connector.open("file:///" + fullPath.substring(5), Connector.READ);

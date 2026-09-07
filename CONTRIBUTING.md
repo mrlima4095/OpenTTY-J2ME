@@ -90,7 +90,7 @@ on the source:
   `string.gmatch` do **not** exist. Don't introduce them. Use native
   `string.startswith` / `string.endswith` rather than Lua reimplementations.
 - `io.dirs(path)` returns entries only for `/tmp/`, `/mnt/<sub>`, and exactly
-  `/bin/`, `/etc/`, `/lib/`, `/home/`.
+  `/bin/`, `/etc/`, `/lib/`, `/boot/`, `/home/`.
 - **Daemon convention**: daemon apps must check `arg[1] == "--deamon"` (the typo
   is intentional), name themselves with `os.setproc("name", ...)`, and end with
   a top-level `return function(payload, args, scope, pid, uid) ... end` handler.

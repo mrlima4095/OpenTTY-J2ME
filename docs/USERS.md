@@ -73,7 +73,7 @@ pkg install <p>     # requires root
 ## Security Notes
 
 - Only root can modify system directories or create VFS subdirectories under
-  `/bin/`, `/etc/`, `/lib/`, `/root/`.
+  `/bin/`, `/etc/`, `/lib/`, `/boot/`, `/root/`.
 - Password changes require the current password (or root privileges).
 - Deleting a user requires root privileges.
 - `/root/` is inaccessible to regular users: entering it returns exit code `13`

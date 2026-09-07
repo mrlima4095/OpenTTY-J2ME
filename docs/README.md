@@ -32,7 +32,7 @@ installing programs, and troubleshooting.
 OpenTTY turns a J2ME device into a portable development and automation
 environment, featuring:
 
-- a **virtual filesystem** with `/bin`, `/etc`, `/home`, `/tmp`, `/mnt`, `/dev`, `/proc`
+- a **virtual filesystem** with `/bin`, `/boot`, `/etc`, `/home`, `/tmp`, `/mnt`, `/dev`, `/proc`
 - a **Lua 5.x interpreter** with adapted standard libraries (`os`, `io`, `string`, `table`, ...)
 - an **interactive terminal** with command and script execution
 - a **graphics API** for building user interfaces (Alert, Form, List, TextBox)

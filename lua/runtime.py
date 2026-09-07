@@ -1627,7 +1627,7 @@ class LuaRuntime:
                 for entry in _os.listdir(real):
                     result[float(idx)] = entry
                     idx += 1
-        elif path in ("/bin/", "/etc/", "/lib/"):
+        elif path in ("/bin/", "/etc/", "/lib/", "/boot/"):
             for vpath in self.vfs:
                 prefix = path
                 if vpath.startswith(prefix) and vpath != prefix:

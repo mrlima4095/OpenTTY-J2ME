@@ -3,3 +3,6 @@
 3   /bin/ Archive
 4   /lib/ Archive
 5   /etc/ Archive
+6   /root/ Archive
+7   /boot/ Archive
+9+  VFS subdirs (stable path hash)

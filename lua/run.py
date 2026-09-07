@@ -46,6 +46,15 @@ def main():
             with open(path, "r", errors="replace") as f:
                 runtime.vfs[f"/etc/{name}"] = f.read()
 
+    # Seed /boot/ from source (kernel / ramdisk seed files)
+    boot_root = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src", "boot")
+    if os.path.isdir(boot_root):
+        for name in os.listdir(boot_root):
+            path = os.path.join(boot_root, name)
+            if os.path.isfile(path):
+                with open(path, "r", errors="replace") as f:
+                    runtime.vfs[f"/boot/{name}"] = f.read()
+
     if len(sys.argv) < 2:
         repl(runtime)
         return

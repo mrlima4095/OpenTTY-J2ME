@@ -11,6 +11,7 @@ several storage backends: **RMS RecordStores** (`/home/`, `/bin/`, `/etc/`,
 /
 ├── /home/   # RMS RecordStores — user files (persistent)
 ├── /root/   # Protected home of the root user (RMS)
+├── /boot/   # Kernel & boot strapping files (RMS, root-writable)
 ├── /tmp/    # Temporary in-memory storage (volatile)
 ├── /mnt/    # Real device file system (JSR-75)
 ├── /bin/    # Executables & scripts (packaged in RMS)
@@ -32,6 +33,13 @@ several storage backends: **RMS RecordStores** (`/home/`, `/bin/`, `/etc/`,
 
 - **Backend**: RMS (OpenRMS index 6)
 - **Permissions**: root-only (UID 0). Regular users cannot read, write, or enter it.
+
+### `/boot/` — Boot unit
+
+- **Backend**: RMS (OpenRMS page 7 — next free page after `/root/`)
+- **Permissions**: readable by all users; writable only by root (UID 0)
+- Holds the kernel image (`vmlinuz`), ramdisk (`initrd.img`), boot config
+  (`config`, `grub/grub.cfg`). Seeded as jar resources, overridable via RMS.
 
 ### `/tmp/` — Temporary storage
 
@@ -93,12 +101,13 @@ rm -r /bin/tools          # Remove a VFS subdirectory (root)
 | `/tmp/` | read/write | all |
 | `/mnt/` | device-dependent | device-dependent |
 | `/bin/`, `/etc/`, `/lib/` | read-only | read/write (+subdirs) |
+| `/boot/` | read-only | read/write |
 | `/root/` | denied | read/write |
 | `/proc/` | own processes only | all |
 
 ## Special Features
 
-- **VFS subdirectories**: `/bin|etc|lib/...` folders persist into `/etc/vfs.conf`
+- **VFS subdirectories**: `/bin|etc|lib|boot/...` folders persist into `/etc/vfs.conf`
 - **Mount system**: create virtual directories via configuration
 - **Path resolution**: automatic path completion
 - **Storage management**: multiple physical files in a single RecordStore; memory
@@ -123,4 +132,4 @@ rmsfix swap /bin/ /home/backup/     # Backup system files
 - Device security may restrict some operations
 
 > `io.dirs(path)` returns entries only for `/tmp/`, `/mnt/<sub>`, and exactly
-> `/bin/`, `/etc/`, `/lib/`, `/home/`. Any other path yields an empty table.
+> `/bin/`, `/etc/`, `/lib/`, `/boot/`, `/home/`. Any other path yields an empty table.

@@ -1,0 +1,3 @@
+OpenTTY kernel image - placeholder
+arch: J2ME virtual CPU
+entry: 0x10000

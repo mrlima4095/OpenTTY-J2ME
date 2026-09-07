@@ -64,6 +64,7 @@ local mounts = {
     { fs = "OpenTTY-TMP",   size = 0,         used = 0,        free = 0,        mount = "/tmp" },
     { fs = "OpenTTY-MNT",   size = 0,         used = 0,        free = 0,        mount = "/mnt" },
     { fs = "OpenTTY-BIN",   size = 0,         used = 0,        free = 0,        mount = "/bin" },
+    { fs = "OpenTTY-BOOT",  size = 0,         used = 0,        free = 0,        mount = "/boot" },
 }
 
 pcall(function()
