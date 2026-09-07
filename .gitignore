@@ -8,7 +8,7 @@ java/*.class
 __pycache__/
 *.pyc
 
-# device root seeded when running the krnl port with the default --root (cwd)
+# device root seeded when running the python port with the default --root (cwd)
 /bin/
 /etc/
 /home/
@@ -17,12 +17,12 @@ __pycache__/
 /dev/
 /proc/
 
-# krnl/ package: keep only the ported source (bin/, *.py); the rest is a
-# seeded device root if the kernel is ever run from inside krnl/
-krnl/dev/
-krnl/etc/
-krnl/home/
-krnl/lib/
-krnl/mnt/
-krnl/proc/
-krnl/tmp/
+# lua/sys/ package: keep only the ported source (bin/, *.py); the rest is a
+# seeded device root if the kernel is ever run from inside lua/sys/
+lua/sys/dev/
+lua/sys/etc/
+lua/sys/home/
+lua/sys/lib/
+lua/sys/mnt/
+lua/sys/proc/
+lua/sys/tmp/

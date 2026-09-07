@@ -35,7 +35,7 @@ from lua.runtime import LuaRuntime, LuaFunction, Process, LuaError, LuaExit
 try:
     from . import tkgui
 except ImportError:  # pragma: no cover - loaded as a plain script
-    from krnl import tkgui
+    from lua.sys import tkgui
 
 # ─── constants from src/ (error codes match libcore.errormsg) ────────────────
 

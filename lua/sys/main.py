@@ -2,21 +2,21 @@
 """
 OpenTTY Python 1.18 — desktop launcher.
 
-Boots the OpenTTY kernel (this package, krnl/) on plain Python 3 instead of the
+Boots the OpenTTY kernel (this package, lua/sys/) on plain Python 3 instead of the
 J2ME MIDlet. The filesystem is mounted on a real directory of the host (default:
 the current directory; src/{bin,etc,lib} are mirrored into it on first boot) and
 the account is stored in ~/.opentty-keys.
 
 Usage:
-    python -m krnl                     boot and open the interactive shell
-    python -m krnl -e '<command>'      run a single shell command
-    python -m krnl <script.lua> [..]   run a Lua script
-    python -m krnl --root <dir>        mount the filesystem in <dir>
-    python -m krnl --keys <file>       credentials file (default ~/.opentty-keys)
-    python -m krnl --user <name>       force the main account name
-    python -m krnl --hostname <host>   host name (default opentty)
-    python -m krnl --norepl            exit after boot / command / script
-    python -m krnl --version
+    python -m lua.sys                   boot and open the interactive shell
+    python -m lua.sys -e '<command>'    run a single shell command
+    python -m lua.sys <script.lua> [..] run a Lua script
+    python -m lua.sys --root <dir>      mount the filesystem in <dir>
+    python -m lua.sys --keys <file>     credentials file (default ~/.opentty-keys)
+    python -m lua.sys --user <name>     force the main account name
+    python -m lua.sys --hostname <host> host name (default opentty)
+    python -m lua.sys --norepl          exit after boot / command / script
+    python -m lua.sys --version
 """
 
 import argparse
@@ -25,7 +25,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from krnl.kernel import OpenTTYKernel, OPEN_VERSION, OPEN_BUILD  # noqa: E402
+from lua.sys.kernel import OpenTTYKernel, OPEN_VERSION, OPEN_BUILD  # noqa: E402
 
 __version__ = OPEN_VERSION
 
