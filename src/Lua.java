@@ -1333,6 +1333,11 @@ public class Lua {
         // | (Screen)
         private Object root = null;
         private String handler = "";
+        // | (su)
+        private Form suPromptForm = null;
+        private Displayable suPromptPrevious = null;
+        private Command suPromptBack = null;
+        private Command suPromptRun = null;
         // | 
         // Config.
         LuaFunction(Vector params, Vector bodyTokens, Hashtable closureScope) { this.params = params; this.bodyTokens = bodyTokens; this.closureScope = closureScope; }
@@ -3480,18 +3485,23 @@ public class Lua {
         }
 
         public void suPrompt() {
-            final Displayable previous = midlet.display.getCurrent();
-            final Form prompt = new Form("su - root");
-            prompt.append(new TextField("[su] password for " + midlet.username, "", 256, TextField.ANY | TextField.PASSWORD));
-            final Command back = new Command("Back", Command.BACK, 1);
-            final Command run = new Command("Run", Command.SCREEN, 1);
-            prompt.addCommand(back);
-            prompt.addCommand(run);
-            prompt.setCommandListener(new CommandListener() {
-                public void commandAction(Command c, Displayable d) {
-                    if (previous != null) { midlet.display.setCurrent(previous); }
-                    if (c == run) {
-                        TextField tf = (TextField) prompt.get(0);
+            suPromptPrevious = midlet.display.getCurrent();
+            suPromptForm = new Form("su - root");
+            suPromptForm.append(new TextField("[su] password for " + midlet.username, "", 256, TextField.ANY | TextField.PASSWORD));
+            suPromptBack = new Command("Back", Command.BACK, 1);
+            suPromptRun = new Command("Run", Command.SCREEN, 1);
+            suPromptForm.addCommand(suPromptBack);
+            suPromptForm.addCommand(suPromptRun);
+            suPromptForm.setCommandListener(this);
+            midlet.display.setCurrent(suPromptForm);
+        }
+
+        public void commandAction(Command c, Displayable d) {
+            try {
+                if (suPromptForm != null && d == suPromptForm) {
+                    if (suPromptPrevious != null) { midlet.display.setCurrent(suPromptPrevious); }
+                    if (c == suPromptRun) {
+                        TextField tf = (TextField) suPromptForm.get(0);
                         String query = tf.getString();
                         if (query == null || !midlet.passwd(query)) {
                             midlet.print("Permission denied!", stdout, id, father);
@@ -3500,13 +3510,9 @@ public class Lua {
                             father.put("USER", "root");
                         }
                     }
+                    suPromptForm = null;
+                    return;
                 }
-            });
-            midlet.display.setCurrent(prompt);
-        }
-
-        public void commandAction(Command c, Displayable d) {
-            try {
                 if (cmds.containsKey(c) && cmds.get(c) instanceof LuaFunction) {
                     Vector args = new Vector();
                     if (d instanceof List) {
