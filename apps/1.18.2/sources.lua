@@ -9,6 +9,8 @@ return {
         ["cmatrix"] = { remote = "games/cmatrix", here = "/bin/cmatrix", description = "The Matrix Effect" },
         ["curl"] = { remote = "net/curl.lua", here = "/bin/curl", description = "Connect with a Server" },
         ["debug"] = { remote = "sys/debug", here = "/bin/debug", description = "Toggle debug mode" },
+        ["df"] = { remote = "sys/df.lua", here = "/bin/df", description = "Disk Free" },
+        ["diff"] = { remote = "file/diff.lua", here = "/bin/diff", description = "Compare two files" },
         ["dns"] = { remote = "net/dns/main.lua", here = "/bin/dns", description = "DNS Server for OpenTTY" },
         ["docker"] = { remote = "sys/docker/main.lua", here = "/bin/docker", description = "Conteiners on OpenTTY" },
         ["du"] = { remote = "file/du.lua", here = "/bin/du", description = "View files lenght" },
@@ -51,7 +53,9 @@ return {
         ["svchost"] = { remote = "sys/svchost.lua", here = "/bin/svchost", description = "Quick Launch Services" },
         ["sudo"] = { remote = "sys/sudo.lua", here = "/bin/sudo", description = "" },
         ["smile"] = { remote = "sys/smile/main.lua", here = "/bin/smile", depends = { "event", "logs" }, description = "Service Manager" },
+        ["sort"] = { remote = "file/sort.lua", here = "/bin/sort", description = "Sort lines of file" },
         ["uname"] = { remote = "sys/uname", here = "/bin/uname", description = "System Informations" },
+        ["uniq"] = { remote = "file/uniq.lua", here = "/bin/uniq", description = "Remove duplicate lines" },
         ["tree"] = { remote = "file/tree.lua", here = "/bin/tree", description = "Directory Tree Viewer" },
         ["useradd"] = { remote = "sys/users/useradd.lua", here = "/bin/useradd", description = "Add users" },
         ["userdel"] = { remote = "sys/users/userdel.lua", here = "/bin/userdel", description = "Remove users" },
@@ -61,6 +65,7 @@ return {
         ["xterm"] = { remote = "sys/x11/xterm.lua", here = "/bin/xterm", description = "MIDlet Terminal" },
         ["x11"] = { remote = "sys/x11/main.lua", here = "/bin/x11", description = "X Server Client" },
         ["watch"] = { remote = "sys/watch.lua", here = "", description = "Watch a program" },
+        ["wc"] = { remote = "file/wc.lua", here = "/bin/wc", description = "Word, line and char count" },
 
         --[""] = { remote = "", here = "", depends = {}, description = "" }
     }
