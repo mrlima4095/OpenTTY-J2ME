@@ -5,4 +5,8 @@ Copyright (C) 2026 - Mr. Lima
 
 [ User & Permissions ]
 
-- z
+- `su` login interface
+
+[ Package Manager ]
+
+- multi-sources for different versions
