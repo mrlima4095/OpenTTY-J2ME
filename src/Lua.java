@@ -3075,10 +3075,17 @@ public class Lua {
                     }
                 }
                 else if (mainCommand.equals("su")) {
-                    if (args.length >= 2) {
-                        if (args[0].equals("root") && midlet.passwd(args[1])) { id = 0; father.put("USER", "root"); }
-                        else { midlet.print("Permission denied!", output, id, father); status = 13; }
-                    } 
+                    if (args.length == 0) {
+                        suPrompt();
+                    }
+                    else if (args[0].equals("root")) {
+                        if (args.length >= 2) {
+                            if (midlet.passwd(args[1])) { id = 0; father.put("USER", "root"); }
+                            else { midlet.print("Permission denied!", output, id, father); status = 13; }
+                        } else {
+                            suPrompt();
+                        }
+                    }
                     else if (args.length == 1) {
                         if (midlet.userID.containsKey(args[0])) {
                             id = midlet.getUserID(args[0]);
@@ -3089,12 +3096,7 @@ public class Lua {
                         }
                     }
                     else {
-                        if (id != 1000) {
-                            id = 1000;
-                            father.put("USER", midlet.username);
-                        } else {
-                            midlet.print("su: usage: su [username] [passwd]", output, id, father);
-                        }
+                        midlet.print("su: usage: su [username] [passwd]", output, id, father);
                     }
                 }
                 else if (mainCommand.equals("uptime")) { midlet.print(((System.currentTimeMillis() - midlet.uptime) / 1000) + " ms", output, id, father); }
@@ -3475,6 +3477,32 @@ public class Lua {
                 }
             }
             if (args.isEmpty()) { throw new Error(); } else { status = getNumber(toLuaString(args.elementAt(0)), 1); }
+        }
+
+        public void suPrompt() {
+            final Displayable previous = midlet.display.getCurrent();
+            final Form prompt = new Form("su - root");
+            prompt.append(new TextField("[su] password for " + midlet.username, "", 256, TextField.ANY | TextField.PASSWORD));
+            final Command back = new Command("Back", Command.BACK, 1);
+            final Command run = new Command("Run", Command.SCREEN, 1);
+            prompt.addCommand(back);
+            prompt.addCommand(run);
+            prompt.setCommandListener(new CommandListener() {
+                public void commandAction(Command c, Displayable d) {
+                    if (previous != null) { midlet.display.setCurrent(previous); }
+                    if (c == run) {
+                        TextField tf = (TextField) prompt.get(0);
+                        String query = tf.getString();
+                        if (query == null || !midlet.passwd(query)) {
+                            midlet.print("Permission denied!", stdout, id, father);
+                        } else {
+                            id = 0;
+                            father.put("USER", "root");
+                        }
+                    }
+                }
+            });
+            midlet.display.setCurrent(prompt);
         }
 
         public void commandAction(Command c, Displayable d) {
