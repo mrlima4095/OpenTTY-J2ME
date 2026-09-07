@@ -10,3 +10,7 @@ Copyright (C) 2026 - Mr. Lima
 [ Package Manager ]
 
 - multi-sources for different versions
+
+[ VFS ]
+
+- `/boot/` partition
