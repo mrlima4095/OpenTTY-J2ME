@@ -3081,7 +3081,8 @@ public class Lua {
                 }
                 else if (mainCommand.equals("su")) {
                     if (args.length == 0) {
-                        suPrompt();
+                        if (id == 0) { id = 1000; father.put("USER", midlet.username); }
+                        else { suPrompt(); }
                     }
                     else if (args[0].equals("root")) {
                         if (args.length >= 2) {
