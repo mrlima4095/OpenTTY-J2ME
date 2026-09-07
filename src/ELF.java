@@ -925,8 +925,8 @@ public class ELF {
             
             int instructionCount = 0;
             while (running && pc < memory.length - 3 && midlet.sys.containsKey(pid)) {
-                if (instructionCount++ > 100000) {
-                    if (midlet.debug) midlet.print("DEBUG: Stopping after 100000 instructions", stdout, id, scope);
+                if (instructionCount++ > 1000000) {
+                    if (midlet.debug) midlet.print("DEBUG: Stopping after 1000000 instructions", stdout, id, scope);
                     break;
                 }
                 
@@ -979,7 +979,7 @@ public class ELF {
         int cond = (instruction >> 28) & 0xF;
         if (!checkCondition(cond)) { return; }
 
-        if ((instruction & 0xFF000000) == 0xEB000000) { int offset = instruction & 0x00FFFFFF; if ((offset & 0x00800000) != 0) offset |= 0xFF000000; offset <<= 2; int target = pc + offset - 4; if (pltBase != 0 && target >= pltBase && target < pltBase + 4096) { handlePLTCall(target); return; } }
+        if ((instruction & 0xFF000000) == 0xEB000000) { int offset = instruction & 0x00FFFFFF; if ((offset & 0x00800000) != 0) offset |= 0xFF000000; offset <<= 2; int target = pc + offset + 4; if (pltBase != 0 && target >= pltBase && target < pltBase + 4096) { handlePLTCall(target); return; } }
         if ((instruction & 0x0F000000) == 0x0F000000) { int swi_number = instruction & 0x00FFFFFF; if (swi_number == 0) { handleSyscall(registers[REG_R7]); } else { handleSyscall(swi_number); } return; }
         if ((instruction & 0x0FC000F0) == 0x00000090) { handleMultiply(instruction); return; }
         if ((instruction & 0x0F8000F0) == 0x00800090) { handleLongMultiply(instruction); return; }
@@ -987,8 +987,10 @@ public class ELF {
         if ((instruction & 0x0E000000) == 0x0C000000) { handleCoprocessor(instruction); return; }
         if ((instruction & 0x0E400090) == 0x00400090 && (instruction & 0x00000060) == 0x00000040 && (instruction & 0x00100000) == 0) { handleLdrd(instruction); return; }
         if ((instruction & 0x0E400090) == 0x00400090 && (instruction & 0x00000060) == 0x00000060 && (instruction & 0x00100000) == 0) { handleStrd(instruction); return; }
-        if ((instruction & 0x0C000000) == 0x00000000) { handleDataProcessing(instruction); return; }
+        if ((instruction & 0x0FFFFFF0) == 0x012FFF10) { handleBranchExchange(instruction); return; }
+        if ((instruction & 0x0FFFFFF0) == 0x012FFF30) { handleBranchExchangeLink(instruction); return; }
         if ((instruction & 0x0C000000) == 0x04000000) { handleLoadStore(instruction); return; }
+        if ((instruction & 0x0C000000) == 0x00000000) { handleDataProcessing(instruction); return; }
         if ((instruction & 0x0E000000) == 0x0A000000) { handleBranch(instruction); return; }
         if ((instruction & 0x0F000000) == 0x02800000 || (instruction & 0x0F000000) == 0x02400000) { handleAdrSub(instruction); return; }
         if (instruction == 0xE1A00000) { return; }
@@ -1075,7 +1077,7 @@ public class ELF {
     private void handleLdrd(int instruction) {
         int p = (instruction >> 24) & 1, u = (instruction >> 23) & 1, w = (instruction >> 21) & 1;
         int rn = (instruction >> 16) & 0xF, rt = (instruction >> 12) & 0xF;
-        int off = ((instruction >> 8) & 0xF0) | (instruction & 0xF);
+        int off = ((instruction >> 4) & 0xF0) | (instruction & 0xF);
         int base = registers[rn], offsetAddr = base + (u == 1 ? off : -off);
         int addr = (p == 1) ? offsetAddr : base;
         registers[rt] = readIntLE(memory, addr);
@@ -1085,7 +1087,7 @@ public class ELF {
     private void handleStrd(int instruction) {
         int p = (instruction >> 24) & 1, u = (instruction >> 23) & 1, w = (instruction >> 21) & 1;
         int rn = (instruction >> 16) & 0xF, rt = (instruction >> 12) & 0xF;
-        int off = ((instruction >> 8) & 0xF0) | (instruction & 0xF);
+        int off = ((instruction >> 4) & 0xF0) | (instruction & 0xF);
         int base = registers[rn], offsetAddr = base + (u == 1 ? off : -off);
         int addr = (p == 1) ? offsetAddr : base;
         int lo = registers[rt], hi = registers[rt + 1];
@@ -1097,20 +1099,21 @@ public class ELF {
         boolean load = (instruction & (1 << 20)) != 0, writeBack = (instruction & (1 << 21)) != 0, userMode = (instruction & (1 << 22)) != 0, increment = (instruction & (1 << 23)) != 0, before = (instruction & (1 << 24)) != 0;
         int rn = (instruction >> 16) & 0xF, registerList = instruction & 0xFFFF;
         
-        int address = registers[rn], startAddress = address, regCount = 0;
+        int regCount = 0;
         for (int i = 0; i < 16; i++) { if ((registerList & (1 << i)) != 0) { regCount++; } }
 
-        if (before) { if (increment) { address += 4; } else { address -= 4 * regCount; } }
+        int address = registers[rn];
+        if (increment) { if (before) { address += 4; } } else { if (before) { address -= 4 * regCount; } else { address -= 4 * (regCount - 1); } }
+        int oldPC = pc;
         for (int i = 0; i < 16; i++) {
             if ((registerList & (1 << i)) != 0) {
-                if (load) { if (address >= 0 && address + 3 < memory.length) { registers[i] = readIntLE(memory, address); } }
+                if (load) { if (address >= 0 && address + 3 < memory.length) { registers[i] = readIntLE(memory, address); if (i == REG_PC) { pc = registers[i]; } } }
                 else { if (address >= 0 && address + 3 < memory.length) { writeIntLE(memory, address, registers[i]); } }
-                
-                if (increment) { address += 4; } else { address -= 4; }
+                address += 4;
             }
         }
 
-        if (writeBack) { if (increment) { registers[rn] = startAddress + 4 * regCount; } else { registers[rn] = startAddress - 4 * regCount; } }
+        if (writeBack) { if (rn == REG_PC) { registers[rn] = oldPC; } else { registers[rn] = (increment ? registers[rn] + 4 * regCount : registers[rn] - 4 * regCount); } }
     }
     private void handleCoprocessor(int instruction) { int cpNum = (instruction >> 8) & 0xF; if (cpNum == 10 || cpNum == 11) { handleFPU(instruction); } else { midlet.print("[WARN] Coprocessor " + cpNum + " not implemented", stdout, id, scope); } }
 
@@ -1280,7 +1283,7 @@ public class ELF {
                 break;
         }
 
-        if (opcode != 0x8 && opcode != 0x9 && opcode != 0xA && opcode != 0xB) { registers[rd] = result; }
+        if (opcode != 0x8 && opcode != 0x9 && opcode != 0xA && opcode != 0xB) { registers[rd] = result; if (rd == REG_PC) { pc = result; } }
         if (setFlags != 0) { updateFlags(result, updateCarry ? shifter_carry_out : -1); if (opcode == 0x2 || opcode == 0x3 || opcode == 0x4 || opcode == 0x5 || opcode == 0x6 || opcode == 0x7 || opcode == 0xA || opcode == 0xB) { updateOverflow(rnValue, shifter_operand, result, opcode); } }
     }
 
@@ -1293,12 +1296,15 @@ public class ELF {
         int address = baseAddress;
         
         if (preIndexed) { if (addOffset) { address += offset; } else { address -= offset; } if (writeBack && rn != REG_PC) { registers[rn] = address; } }
-        if (isLoad) { if (address >= 0 && address < memory.length) { if (isByte) { registers[rd] = memory[address] & 0xFF; } else { int alignedAddr = address & ~3; if (alignedAddr + 3 < memory.length) { registers[rd] = readIntLE(memory, alignedAddr); } } } }
+        if (isLoad) { if (address >= 0 && address < memory.length) { if (isByte) { registers[rd] = memory[address] & 0xFF; } else { int alignedAddr = address & ~3; if (alignedAddr + 3 < memory.length) { registers[rd] = readIntLE(memory, alignedAddr); } } if (rd == REG_PC) { pc = registers[rd]; } } }
         else { if (address >= 0 && address < memory.length) { if (isByte) { memory[address] = (byte)(registers[rd] & 0xFF); } else { writeIntLE(memory, address, registers[rd]); } } }
         
         if (!preIndexed) { if (addOffset) { registers[rn] += offset; } else { registers[rn] -= offset; } }
     }
-    private void handleBranch(int instruction) { int offset = instruction & 0x00FFFFFF; if ((offset & 0x00800000) != 0) { offset |= 0xFF000000; } offset <<= 2; boolean link = (instruction & (1 << 24)) != 0; if (link) { registers[REG_LR] = pc; } pc = pc + offset - 4; }
+    private void handleBranch(int instruction) { int offset = instruction & 0x00FFFFFF; if ((offset & 0x00800000) != 0) { offset |= 0xFF000000; } offset <<= 2; boolean link = (instruction & (1 << 24)) != 0; if (link) { registers[REG_LR] = pc; } pc = pc + offset + 4; }
+
+    private void handleBranchExchange(int instruction) { int rm = instruction & 0xF; pc = registers[rm] & 0xFFFFFFFE; }
+    private void handleBranchExchangeLink(int instruction) { int rm = instruction & 0xF; registers[REG_LR] = pc; pc = registers[rm] & 0xFFFFFFFE; }
     private void handleAdrSub(int instruction) { boolean isAdd = (instruction & 0x0F000000) == 0x02800000; int rd = (instruction >> 12) & 0xF, imm = instruction & 0xFF, rotate = ((instruction >> 8) & 0xF) * 2, offset = rotateRight(imm, rotate), pcValue = pc + 4; if (isAdd) { registers[rd] = pcValue + offset; } else { registers[rd] = pcValue - offset; } }
     
     private int applyShift(int value, int shift_type, int shift_amount, int carry_in) {

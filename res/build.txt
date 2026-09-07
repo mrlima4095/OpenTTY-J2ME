@@ -202,3 +202,4 @@
 [2026-1.18.2-03x32]	Boot unit /boot/ implemented on OpenRMS page 7
 [2026-1.18.2-03x33]	ELF emulator stdlib: svc #LIB_* (printf/sprintf/malloc/memcpy/aeabi-div/crt) + ldrd/strd
 [2026-1.18.2-03x34]	Exemplos C em res/apps/src -> res/apps/dist (hello/fib/primes/sort/tower/str/math/count)
+[2026-1.18.2-03x35]	ELF emulator: fix B/BL +8, bx/blx, LDM/STM addressing, pc-sync em Rd15, LDRD/STRD imm decode
