@@ -37,6 +37,10 @@ public class ELF {
     private Vector loadedLibraries, memoryMappings; 
     private int pltGotAddr, dynamicSectionAddr, gotBase, pltBase, resolverCodeAddr, resolveFuncAddr;
 
+    // heap do stdlib (malloc/calloc/realloc/free): allocador first-fit com
+    // blocos escritos na RAM do guest: { int size; int next; ...payload }
+    private int libcHeapFree, libcHeapTop, libcHeapRegionEnd;
+
     
     // Constantes ELF
     private static final int EI_NIDENT = 16, ELFCLASS32 = 1, ELFDATA2LSB = 1, EM_ARM = 40, ET_EXEC = 2, PT_LOAD = 1, PT_DYNAMIC = 2, PT_INTERP = 3, PT_NOTE = 4;
@@ -88,6 +92,22 @@ public class ELF {
 
     // Dynamic linking constants - adicione com as outras constantes ELF
     private static final int DT_NULL = 0, DT_NEEDED = 1, DT_PLTRELSZ = 2, DT_PLTGOT = 3, DT_HASH = 4, DT_STRTAB = 5, DT_SYMTAB = 6, DT_RELA = 7, DT_RELASZ = 8, DT_RELAENT = 9, DT_STRSZ = 10, DT_SYMENT = 11, DT_INIT = 12, DT_FINI = 13, DT_SONAME = 14, DT_RPATH = 15, DT_SYMBOLIC = 16, DT_REL = 17, DT_RELSZ = 18, DT_RELENT = 19, DT_PLTREL = 20, DT_DEBUG = 21, DT_TEXTREL = 22, DT_JMPREL = 23, DT_BIND_NOW = 24, DT_INIT_ARRAY = 25, DT_FINI_ARRAY = 26, DT_INIT_ARRAYSZ = 27, DT_FINI_ARRAYSZ = 28;
+
+    // stdlib do emulador — "library syscalls" (svc #LIB_*) resolvidas no Java
+    // por handleLibraryCall(). Numeros > SYS vm máx (295) ficam fora do range
+    // das syscalls Linux ARM, entao podem ser usados como ID da libc.
+    private static final int LIB_BASE = 1000;
+    private static final int LIB_STRLEN = LIB_BASE + 1, LIB_STRCPY = LIB_BASE + 2, LIB_STRCMP = LIB_BASE + 3,
+        LIB_STRNCMP = LIB_BASE + 4, LIB_STRCAT = LIB_BASE + 5, LIB_STRCHR = LIB_BASE + 6, LIB_STRDUP = LIB_BASE + 7,
+        LIB_STRNCPY = LIB_BASE + 8, LIB_STRNCAT = LIB_BASE + 9, LIB_MEMCPY = LIB_BASE + 10, LIB_MEMMOVE = LIB_BASE + 11,
+        LIB_MEMSET = LIB_BASE + 12, LIB_MEMCMP = LIB_BASE + 13, LIB_MEMCHR = LIB_BASE + 14, LIB_ATOI = LIB_BASE + 15,
+        LIB_ABS = LIB_BASE + 16, LIB_PUTCHAR = LIB_BASE + 17, LIB_PUTS = LIB_BASE + 18, LIB_PRINTF = LIB_BASE + 19,
+        LIB_SPRINTF = LIB_BASE + 20, LIB_SNPRINTF = LIB_BASE + 21, LIB_WRITE_STRING = LIB_BASE + 22,
+        LIB_MALLOC = LIB_BASE + 23, LIB_CALLOC = LIB_BASE + 24, LIB_REALLOC = LIB_BASE + 25, LIB_FREE = LIB_BASE + 26,
+        LIB_TOUPPER = LIB_BASE + 27, LIB_TOLOWER = LIB_BASE + 28, LIB_GETPID = LIB_BASE + 29,
+        LIB_AEABI_UIDIV = LIB_BASE + 30, LIB_AEABI_IDIV = LIB_BASE + 31, LIB_AEABI_UIDIVMOD = LIB_BASE + 32,
+        LIB_AEABI_IDIVMOD = LIB_BASE + 33, LIB_AEABI_ULDIVMOD = LIB_BASE + 34, LIB_AEABI_LDIVMOD = LIB_BASE + 35,
+        LIB_AEABI_MEMCLR = LIB_BASE + 36, LIB_AEABI_MEMCPY = LIB_BASE + 37, LIB_AEABI_MEMSET = LIB_BASE + 38;
 
     // Relocation types
     private static final int R_ARM_ABS32 = 2, R_ARM_REL32 = 3, R_ARM_GLOB_DAT = 21, R_ARM_JUMP_SLOT = 22, R_ARM_RELATIVE = 23;
@@ -148,6 +168,9 @@ public class ELF {
         this.pltBase = 0;
         this.resolverCodeAddr = 0;
         this.resolveFuncAddr = 0;
+        this.libcHeapFree = 0;
+        this.libcHeapTop = 0;
+        this.libcHeapRegionEnd = 0;
 
         // Carregar bibliotecas padrão
         loadDefaultLibraries();
@@ -344,14 +367,547 @@ public class ELF {
 
     private void loadDefaultLibraries() {
         Hashtable libc = new Hashtable();
-        
-        libc.put("printf", new Integer(createSyscallStub("write"))); libc.put("puts", new Integer(createSyscallStub("write"))); libc.put("malloc", new Integer(createSyscallStub("brk"))); libc.put("free", new Integer(createSyscallStub("brk"))); 
-        libc.put("strlen", new Integer(createSimpleStub(16))); libc.put("strcpy", new Integer(createSimpleStub(32))); libc.put("strcmp", new Integer(createSimpleStub(32))); libc.put("memcpy", new Integer(createSimpleStub(48))); libc.put("memset", new Integer(createSimpleStub(32)));
-        libc.put("exit", new Integer(createSyscallStub("exit"))); libc.put("open", new Integer(createSyscallStub("open"))); libc.put("read", new Integer(createSyscallStub("read"))); libc.put("write", new Integer(createSyscallStub("write"))); libc.put("close", new Integer(createSyscallStub("close")));
-        
+
+        // stdlib do emulador: cada simbolo e um wrapper ARM de 2 instrucoes
+        // (svc #LIB_*; bx lr) cujo payload e implementado em handleLibraryCall().
+        libc.put("strlen",   new Integer(createLibraryStub(LIB_STRLEN)));
+        libc.put("strcpy",   new Integer(createLibraryStub(LIB_STRCPY)));
+        libc.put("strncpy",  new Integer(createLibraryStub(LIB_STRNCPY)));
+        libc.put("strcmp",   new Integer(createLibraryStub(LIB_STRCMP)));
+        libc.put("strncmp",  new Integer(createLibraryStub(LIB_STRNCMP)));
+        libc.put("strcat",   new Integer(createLibraryStub(LIB_STRCAT)));
+        libc.put("strncat",  new Integer(createLibraryStub(LIB_STRNCAT)));
+        libc.put("strchr",   new Integer(createLibraryStub(LIB_STRCHR)));
+        libc.put("strdup",   new Integer(createLibraryStub(LIB_STRDUP)));
+        libc.put("memcpy",   new Integer(createLibraryStub(LIB_MEMCPY)));
+        libc.put("memmove",  new Integer(createLibraryStub(LIB_MEMMOVE)));
+        libc.put("memset",   new Integer(createLibraryStub(LIB_MEMSET)));
+        libc.put("memcmp",   new Integer(createLibraryStub(LIB_MEMCMP)));
+        libc.put("memchr",   new Integer(createLibraryStub(LIB_MEMCHR)));
+        libc.put("atoi",     new Integer(createLibraryStub(LIB_ATOI)));
+        libc.put("abs",      new Integer(createLibraryStub(LIB_ABS)));
+        libc.put("toupper",  new Integer(createLibraryStub(LIB_TOUPPER)));
+        libc.put("tolower",  new Integer(createLibraryStub(LIB_TOLOWER)));
+        libc.put("putchar",  new Integer(createLibraryStub(LIB_PUTCHAR)));
+        libc.put("puts",     new Integer(createLibraryStub(LIB_PUTS)));
+        libc.put("printf",   new Integer(createLibraryStub(LIB_PRINTF)));
+        libc.put("sprintf",  new Integer(createLibraryStub(LIB_SPRINTF)));
+        libc.put("snprintf", new Integer(createLibraryStub(LIB_SNPRINTF)));
+        libc.put("malloc",   new Integer(createLibraryStub(LIB_MALLOC)));
+        libc.put("calloc",   new Integer(createLibraryStub(LIB_CALLOC)));
+        libc.put("realloc",  new Integer(createLibraryStub(LIB_REALLOC)));
+        libc.put("free",     new Integer(createLibraryStub(LIB_FREE)));
+        libc.put("getpid",   new Integer(createLibraryStub(LIB_GETPID)));
+
+        // ABI helpers que compiladores C (gcc — "$aeabi" / llvm) chamam
+        // implicitamente para divisao por 32/64 bits e blits de memoria.
+        libc.put("__aeabi_uidiv",    new Integer(createLibraryStub(LIB_AEABI_UIDIV)));
+        libc.put("__aeabi_idiv",     new Integer(createLibraryStub(LIB_AEABI_IDIV)));
+        libc.put("__aeabi_uidivmod", new Integer(createLibraryStub(LIB_AEABI_UIDIVMOD)));
+        libc.put("__aeabi_idivmod",  new Integer(createLibraryStub(LIB_AEABI_IDIVMOD)));
+        libc.put("__aeabi_uldivmod", new Integer(createLibraryStub(LIB_AEABI_ULDIVMOD)));
+        libc.put("__aeabi_ldivmod",  new Integer(createLibraryStub(LIB_AEABI_LDIVMOD)));
+        libc.put("__aeabi_memclr",   new Integer(createLibraryStub(LIB_AEABI_MEMCLR)));
+        libc.put("__aeabi_memcpy",   new Integer(createLibraryStub(LIB_AEABI_MEMCPY)));
+        libc.put("__aeabi_memset",   new Integer(createLibraryStub(LIB_AEABI_MEMSET)));
+
+        // syscalls diretas (open/read/write/close/exit/brk) como antes
+        libc.put("exit",  new Integer(createSyscallStub("exit")));
+        libc.put("open",  new Integer(createSyscallStub("open")));
+        libc.put("read",  new Integer(createSyscallStub("read")));
+        libc.put("write", new Integer(createSyscallStub("write")));
+        libc.put("close", new Integer(createSyscallStub("close")));
+
         globalSymbols.put("libc.so.6", libc); loadedLibraries.addElement("libc.so.6");
-        
+
         if (midlet.debug) { midlet.print("Loaded default libraries", stdout, id, scope); }
+    }
+
+    private int createLibraryStub(int libId) {
+        int stubAddr = findFreeMemoryRegion(32);
+        if (stubAddr == 0) { return 0; }
+        writeIntLE(memory, stubAddr, 0xEF000000 | (libId & 0x00FFFFFF));
+        writeIntLE(memory, stubAddr + 4, 0xE12FFF1E);
+        return stubAddr;
+    }
+
+    // | stdlib do emulador — implementacao das library syscalls (LIB_*)
+    // Argumentos chegam em R0-R3 (e stack nos varargs); retorno em R0.
+
+    private void handleLibraryCall(int libId) {
+        switch (libId) {
+            case LIB_STRLEN - LIB_BASE: registers[REG_R0] = libcStrlen(registers[REG_R0]); break;
+            case LIB_STRCPY - LIB_BASE: libcStrcpy(registers[REG_R0], registers[REG_R1]); break;
+            case LIB_STRNCPY - LIB_BASE: libcStrncpy(registers[REG_R0], registers[REG_R1], registers[REG_R2]); break;
+            case LIB_STRCMP - LIB_BASE: registers[REG_R0] = libcStrcmp(registers[REG_R0], registers[REG_R1]); break;
+            case LIB_STRNCMP - LIB_BASE: registers[REG_R0] = libcStrncmp(registers[REG_R0], registers[REG_R1], registers[REG_R2]); break;
+            case LIB_STRCAT - LIB_BASE: { int d = registers[REG_R0]; libcStrcpy(d + libcStrlen(d), registers[REG_R1]); registers[REG_R0] = d; break; }
+            case LIB_STRNCAT - LIB_BASE: { int d = registers[REG_R0]; libcStrncat(d, registers[REG_R1], registers[REG_R2]); registers[REG_R0] = d; break; }
+            case LIB_STRCHR - LIB_BASE: registers[REG_R0] = libcStrchr(registers[REG_R0], registers[REG_R1]); break;
+            case LIB_STRDUP - LIB_BASE: registers[REG_R0] = libcStrdup(registers[REG_R0]); break;
+            case LIB_MEMCPY - LIB_BASE: registers[REG_R0] = libcMemcpy(registers[REG_R0], registers[REG_R1], registers[REG_R2]); break;
+            case LIB_MEMMOVE - LIB_BASE: registers[REG_R0] = libcMemmove(registers[REG_R0], registers[REG_R1], registers[REG_R2]); break;
+            case LIB_MEMSET - LIB_BASE: registers[REG_R0] = libcMemset(registers[REG_R0], registers[REG_R1], registers[REG_R2]); break;
+            case LIB_MEMCMP - LIB_BASE: registers[REG_R0] = libcMemcmp(registers[REG_R0], registers[REG_R1], registers[REG_R2]); break;
+            case LIB_MEMCHR - LIB_BASE: registers[REG_R0] = libcMemchr(registers[REG_R0], registers[REG_R1], registers[REG_R2]); break;
+            case LIB_ATOI - LIB_BASE: registers[REG_R0] = libcAtoi(registers[REG_R0]); break;
+            case LIB_ABS - LIB_BASE: { int v = registers[REG_R0]; registers[REG_R0] = v < 0 ? -v : v; break; }
+            case LIB_TOUPPER - LIB_BASE: { int v = registers[REG_R0]; registers[REG_R0] = (v >= 'a' && v <= 'z') ? v - 32 : v; break; }
+            case LIB_TOLOWER - LIB_BASE: { int v = registers[REG_R0]; registers[REG_R0] = (v >= 'A' && v <= 'Z') ? v + 32 : v; break; }
+            case LIB_PUTCHAR - LIB_BASE: libcWriteChar(registers[REG_R0] & 0xFF); break;
+            case LIB_PUTS - LIB_BASE: { String s = libcReadCString(registers[REG_R0]); libcWriteOut(s + "\n"); registers[REG_R0] = s.length() + 1; break; }
+            case LIB_WRITE_STRING - LIB_BASE: { String s = libcReadCString(registers[REG_R0]); libcWriteOut(s); registers[REG_R0] = s.length(); break; }
+            case LIB_PRINTF - LIB_BASE: { String s = libcFormat(registers[REG_R0], 1); libcWriteOut(s); registers[REG_R0] = s.length(); break; }
+            case LIB_SPRINTF - LIB_BASE: { String s = libcFormat(registers[REG_R1], 2); libcWriteCString(registers[REG_R0], s); registers[REG_R0] = s.length(); break; }
+            case LIB_SNPRINTF - LIB_BASE: { String s = libcFormat(registers[REG_R2], 3); libcWriteCStringN(registers[REG_R0], s, registers[REG_R1]); registers[REG_R0] = s.length(); break; }
+            case LIB_MALLOC - LIB_BASE: registers[REG_R0] = libcMalloc(registers[REG_R0]); break;
+            case LIB_CALLOC - LIB_BASE: registers[REG_R0] = libcCalloc(registers[REG_R0], registers[REG_R1]); break;
+            case LIB_REALLOC - LIB_BASE: registers[REG_R0] = libcRealloc(registers[REG_R0], registers[REG_R1]); break;
+            case LIB_FREE - LIB_BASE: libcFree(registers[REG_R0]); registers[REG_R0] = 0; break;
+            case LIB_GETPID - LIB_BASE: { try { registers[REG_R0] = Integer.parseInt(pid); } catch (NumberFormatException e) { registers[REG_R0] = 1; } break; }
+            case LIB_AEABI_UIDIV - LIB_BASE: registers[REG_R0] = libcUdiv(registers[REG_R0], registers[REG_R1]); break;
+            case LIB_AEABI_IDIV - LIB_BASE: registers[REG_R0] = libcSdiv(registers[REG_R0], registers[REG_R1]); break;
+            case LIB_AEABI_UIDIVMOD - LIB_BASE: libcUdivmod(registers[REG_R0], registers[REG_R1]); break;
+            case LIB_AEABI_IDIVMOD - LIB_BASE: libcSdivmod(registers[REG_R0], registers[REG_R1]); break;
+            case LIB_AEABI_ULDIVMOD - LIB_BASE: libcUldivmod(registers[REG_R0], registers[REG_R1], registers[REG_R2], registers[REG_R3]); break;
+            case LIB_AEABI_LDIVMOD - LIB_BASE: libcLdivmod(registers[REG_R0], registers[REG_R1], registers[REG_R2], registers[REG_R3]); break;
+            case LIB_AEABI_MEMCLR - LIB_BASE: registers[REG_R0] = libcMemset(registers[REG_R0], 0, registers[REG_R1]); break;
+            case LIB_AEABI_MEMCPY - LIB_BASE: registers[REG_R0] = libcMemcpy(registers[REG_R0], registers[REG_R1], registers[REG_R2]); break;
+            case LIB_AEABI_MEMSET - LIB_BASE: registers[REG_R0] = libcMemset(registers[REG_R0], registers[REG_R1], registers[REG_R2]); break;
+            default: registers[REG_R0] = -1; break;
+        }
+    }
+
+    private int memByte(int addr) { return (addr >= 0 && addr < memory.length) ? (memory[addr] & 0xFF) : -1; }
+
+    private String libcReadCString(int p) {
+        StringBuffer sb = new StringBuffer();
+        int i = 0;
+        while (p + i < memory.length && i < 65536) {
+            int b = memory[p + i] & 0xFF;
+            if (b == 0) { break; }
+            sb.append((char) b);
+            i++;
+        }
+        return sb.toString();
+    }
+
+    private void libcWriteOut(String s) { midlet.print(s, stdout, id, scope); }
+    private void libcWriteChar(int c) { midlet.print(String.valueOf((char) c), stdout, id, scope); }
+    private void libcWriteCString(int addr, String s) {
+        int n = Math.min(s.length(), 65536);
+        for (int i = 0; i < n; i++) {
+            if (addr + i >= memory.length) { return; }
+            memory[addr + i] = (byte) s.charAt(i);
+        }
+        if (addr + n < memory.length) { memory[addr + n] = 0; }
+    }
+    private void libcWriteCStringN(int addr, String s, int max) {
+        if (max <= 0) { return; }
+        int n = Math.min(s.length(), max - 1);
+        for (int i = 0; i < n; i++) {
+            if (addr + i >= memory.length) { return; }
+            memory[addr + i] = (byte) s.charAt(i);
+        }
+        if (addr + n < memory.length) { memory[addr + n] = 0; }
+    }
+
+    private int libcStrlen(int p) {
+        int n = 0;
+        while (p + n < memory.length && memory[p + n] != 0 && n < 65536) { n++; }
+        return n;
+    }
+    private void libcStrcpy(int dst, int src) {
+        if (dst < 0 || dst >= memory.length) { return; }
+        int d = dst;
+        while (true) {
+            int b = memByte(src++);
+            if (b < 0 || d >= memory.length) { break; }
+            memory[d++] = (byte) b;
+            if (b == 0) { break; }
+        }
+    }
+    private void libcStrncpy(int dst, int src, int n) {
+        if (n <= 0) { return; }
+        int i = 0;
+        while (i < n) {
+            int b = memByte(src++);
+            if (b == 0) {
+                while (i < n) { if (dst + i < memory.length) { memory[dst + i] = 0; } i++; }
+                return;
+            }
+            if (dst + i < memory.length) { memory[dst + i] = (byte) b; }
+            i++;
+        }
+    }
+    private int libcStrcmp(int a, int b) {
+        while (true) {
+            int x = memByte(a++), y = memByte(b++);
+            if (x < 0 || y < 0) { return 0; }
+            if (x != y) { return x - y; }
+            if (x == 0) { return 0; }
+        }
+    }
+    private int libcStrncmp(int a, int b, int n) {
+        while (n > 0) {
+            int x = memByte(a++), y = memByte(b++);
+            if (x < 0 || y < 0) { return 0; }
+            if (x != y) { return x - y; }
+            if (x == 0) { return 0; }
+            n--;
+        }
+        return 0;
+    }
+    private void libcStrncat(int dst, int src, int n) {
+        int d = dst + libcStrlen(dst);
+        int i = 0;
+        while (i < n) {
+            int b = memByte(src + i);
+            if (b == 0) { break; }
+            if (d >= memory.length) { break; }
+            memory[d++] = (byte) b;
+            i++;
+        }
+        if (d < memory.length) { memory[d] = 0; }
+    }
+    private int libcStrchr(int s, int c) {
+        int i = 0;
+        while (true) {
+            int b = memByte(s + i);
+            if (b < 0) { return 0; }
+            if (b == c) { return s + i; }
+            if (b == 0) { return 0; }
+            i++;
+        }
+    }
+    private int libcStrdup(int s) {
+        int len = libcStrlen(s);
+        int p = libcMalloc(len + 1);
+        if (p == 0) { return 0; }
+        libcStrcpy(p, s);
+        return p;
+    }
+
+    private int libcMemcpy(int d, int s, int n) {
+        int p = d;
+        while (n > 0) {
+            int b = memByte(s++);
+            if (b < 0 || d >= memory.length) { break; }
+            memory[d++] = (byte) b;
+            n--;
+        }
+        return p;
+    }
+    private int libcMemmove(int d, int s, int n) {
+        if (d < s) { return libcMemcpy(d, s, n); }
+        int p = d;
+        int src = s + n - 1, dst = d + n - 1;
+        while (n > 0) {
+            int b = memByte(src--);
+            if (b < 0 || dst < 0 || dst >= memory.length) { break; }
+            memory[dst--] = (byte) b;
+            n--;
+        }
+        return p;
+    }
+    private int libcMemset(int p, int c, int n) {
+        int r = p;
+        int cByte = c & 0xFF;
+        while (n > 0) {
+            if (p >= 0 && p < memory.length) { memory[p] = (byte) cByte; }
+            p++;
+            n--;
+        }
+        return r;
+    }
+    private int libcMemcmp(int a, int b, int n) {
+        while (n > 0) {
+            int x = memByte(a++), y = memByte(b++);
+            if (x != y) { return x - y; }
+            n--;
+        }
+        return 0;
+    }
+    private int libcMemchr(int s, int c, int n) {
+        while (n > 0) {
+            int b = memByte(s);
+            if (b == c) { return s; }
+            if (b < 0) { return 0; }
+            s++;
+            n--;
+        }
+        return 0;
+    }
+
+    private int libcAtoi(int p) {
+        int sign = 1, r = 0;
+        int b = memByte(p);
+        while (b == ' ' || b == '\t' || b == '\n' || b == '\r' || b == '\f') { p++; b = memByte(p); }
+        if (b == '-') { sign = -1; p++; b = memByte(p); }
+        else if (b == '+') { p++; b = memByte(p); }
+        while (b >= '0' && b <= '9') {
+            r = r * 10 + (b - '0');
+            p++;
+            b = memByte(p);
+        }
+        return sign * r;
+    }
+
+    private int libcUdiv(int a, int b) { long u = a & 0xFFFFFFFFL, v = b & 0xFFFFFFFFL; if (v == 0) { return 0; } return (int) (u / v); }
+    private int libcSdiv(int a, int b) { if (b == 0) { return 0; } return a / b; }
+    private void libcUdivmod(int a, int b) {
+        long u = a & 0xFFFFFFFFL, v = b & 0xFFFFFFFFL;
+        if (v == 0) { registers[REG_R0] = 0; registers[REG_R1] = 0; return; }
+        long q = u / v, r = u % v;
+        registers[REG_R0] = (int) q; registers[REG_R1] = (int) r;
+    }
+    private void libcSdivmod(int a, int b) {
+        if (b == 0) { registers[REG_R0] = 0; registers[REG_R1] = 0; return; }
+        int q = a / b, r = a % b;
+        registers[REG_R0] = q; registers[REG_R1] = r;
+    }
+    private boolean ulongGe(long r, long d) {
+        long hi = 0x8000000000000000L;
+        boolean rn = (r & hi) != 0, dn = (d & hi) != 0;
+        if (rn != dn) { return rn; }
+        return r >= d;
+    }
+    private void libcUldivmod(int loA, int hiA, int loB, int hiB) {
+        long n = ((long) hiA & 0xFFFFFFFFL) << 32 | ((long) loA & 0xFFFFFFFFL);
+        long d = ((long) hiB & 0xFFFFFFFFL) << 32 | ((long) loB & 0xFFFFFFFFL);
+        if (d == 0) { registers[REG_R0] = 0; registers[REG_R1] = 0; registers[REG_R2] = 0; registers[REG_R3] = 0; return; }
+        long q = 0, r = 0;
+        for (int i = 63; i >= 0; i--) {
+            r = (r << 1) | ((n >>> i) & 1);
+            if (ulongGe(r, d)) { r -= d; q |= 1L << i; }
+        }
+        registers[REG_R0] = (int) q; registers[REG_R1] = (int) (q >>> 32);
+        registers[REG_R2] = (int) r; registers[REG_R3] = (int) (r >>> 32);
+    }
+    private void libcLdivmod(int loA, int hiA, int loB, int hiB) {
+        long a = ((long) hiA << 32) | ((long) loA & 0xFFFFFFFFL);
+        long b = ((long) hiB << 32) | ((long) loB & 0xFFFFFFFFL);
+        if (b == 0) { registers[REG_R0] = 0; registers[REG_R1] = 0; registers[REG_R2] = 0; registers[REG_R3] = -1; return; }
+        long q = a / b, r = a % b;
+        registers[REG_R0] = (int) q; registers[REG_R1] = (int) (q >>> 32);
+        registers[REG_R2] = (int) r; registers[REG_R3] = (int) (r >>> 32);
+    }
+
+    // | heap do stdlib (malloc/calloc/realloc/free): first-fit com splitting,
+    // | blocos na RAM do guest com header { int size; int next; } seguido de payload.
+
+    private int libcMalloc(int n) {
+        if (n <= 0) { n = 8; }
+        n = (n + 3) & ~3;
+        int prev = 0, cur = libcHeapFree;
+        while (cur != 0) {
+            int size = readIntLE(memory, cur);
+            int next = readIntLE(memory, cur + 4);
+            if (size >= n) {
+                int rem = size - n - 8;
+                int freeNext;
+                if (rem >= 8) {
+                    int rest = cur + 8 + n;
+                    writeIntLE(memory, rest, rem);
+                    writeIntLE(memory, rest + 4, next);
+                    freeNext = rest;
+                } else { freeNext = next; }
+                if (prev == 0) { libcHeapFree = freeNext; } else { writeIntLE(memory, prev + 4, freeNext); }
+                writeIntLE(memory, cur, n);
+                return cur + 8;
+            }
+            prev = cur;
+            cur = next;
+        }
+        if (libcHeapRegionEnd == 0 || libcHeapTop + 8 + n > libcHeapRegionEnd) {
+            int len = 0x10000, region = 0;
+            while (len >= 0x1000) {
+                region = findFreeMemoryRegion(len);
+                if (region != 0) { break; }
+                len >>= 1;
+            }
+            if (region == 0) { return 0; }
+            libcHeapTop = region;
+            libcHeapRegionEnd = region + len;
+        }
+        int top = libcHeapTop;
+        int avail = libcHeapRegionEnd - top;
+        if (avail < 8 + n) { return 0; }
+        writeIntLE(memory, top, avail - 8);
+        writeIntLE(memory, top + 4, libcHeapFree);
+        libcHeapFree = top;
+        libcHeapTop = top + avail;
+        return libcMalloc(n);
+    }
+    private void libcFree(int p) {
+        if (p == 0) { return; }
+        int hdr = p - 8;
+        if (hdr < 0 || hdr + 7 >= memory.length) { return; }
+        int size = readIntLE(memory, hdr);
+        if (size <= 0 || hdr + 8 + size > memory.length) { return; }
+        writeIntLE(memory, hdr + 4, libcHeapFree);
+        libcHeapFree = hdr;
+    }
+    private int libcCalloc(int nmemb, int size) {
+        long total = (long) nmemb * (long) size;
+        if (nmemb < 0 || size < 0 || total > 0xFFFFFFF0L) { return 0; }
+        int n = (int) total;
+        if (nmemb != 0 && size != 0 && n == 0) { return 0; }
+        int p = libcMalloc((int) ((total + 3) & ~3L));
+        if (p == 0) { return 0; }
+        int i = 0;
+        while (i < n && p + i < memory.length) { memory[p + i] = 0; i++; }
+        return p;
+    }
+    private int libcRealloc(int p, int n) {
+        if (p == 0) { return libcMalloc(n); }
+        int hdr = p - 8;
+        if (hdr < 0 || hdr + 7 >= memory.length) { return 0; }
+        int old = readIntLE(memory, hdr);
+        if (old >= n) { return p; }
+        int np = libcMalloc(n);
+        if (np == 0) { return 0; }
+        libcMemcpy(np, p, old);
+        libcFree(p);
+        return np;
+    }
+
+    // | printf/sprintf/snprintf — engine de formatacao sobre a RAM do guest
+
+    private int libcArgReg, libcArgSpOff;
+
+    private void libcArgInit(int regBase) { libcArgReg = regBase; libcArgSpOff = 0; }
+
+    private int libcNext32() {
+        if (libcArgReg <= 3) { return registers[libcArgReg++]; }
+        int addr = registers[REG_SP] + libcArgSpOff;
+        libcArgSpOff += 4;
+        return (addr >= 0 && addr + 3 < memory.length) ? readIntLE(memory, addr) : 0;
+    }
+    private long libcNext64() {
+        if (libcArgReg <= 3) {
+            if ((libcArgReg & 1) != 0) { libcArgReg++; }
+            if (libcArgReg + 1 <= 3) {
+                long lo = registers[libcArgReg] & 0xFFFFFFFFL;
+                long hi = ((long) registers[libcArgReg + 1]) << 32;
+                libcArgReg += 2;
+                return lo | hi;
+            }
+            libcArgReg = 4;
+        }
+        libcArgSpOff = (libcArgSpOff + 7) & ~7;
+        int addr = registers[REG_SP] + libcArgSpOff;
+        libcArgSpOff += 8;
+        if (addr < 0 || addr + 7 >= memory.length) { return 0; }
+        long lo = readIntLE(memory, addr) & 0xFFFFFFFFL;
+        long hi = ((long) readIntLE(memory, addr + 4)) << 32;
+        return lo | hi;
+    }
+
+    private void libcAppendUdec64(StringBuffer sb, long v) {
+        if (v == 0) { sb.append('0'); return; }
+        StringBuffer tmp = new StringBuffer();
+        long a = v;
+        while (a > 0) { tmp.append((char) ('0' + (a % 10))); a /= 10; }
+        for (int i = tmp.length() - 1; i >= 0; i--) { sb.append(tmp.charAt(i)); }
+    }
+    private void libcAppendDec(StringBuffer sb, int v) {
+        if (v < 0) { sb.append('-'); v = -v; }
+        libcAppendUdec(sb, v);
+    }
+    private void libcAppendUdec(StringBuffer sb, int v) { libcAppendUdec64(sb, v & 0xFFFFFFFFL); }
+    private void libcAppendDec64(StringBuffer sb, long v) {
+        if (v < 0) { sb.append('-'); v = -v; }
+        libcAppendUdec64(sb, v);
+    }
+    private void libcAppendHex64(StringBuffer sb, long v, boolean upper) {
+        if (v == 0) { sb.append('0'); return; }
+        StringBuffer tmp = new StringBuffer();
+        while (v != 0) {
+            int d = (int) (v & 0xF);
+            char c = (char) (d < 10 ? ('0' + d) : (upper ? ('A' + d - 10) : ('a' + d - 10)));
+            tmp.append(c);
+            v >>>= 4;
+        }
+        for (int i = tmp.length() - 1; i >= 0; i--) { sb.append(tmp.charAt(i)); }
+    }
+    private void libcAppendHex(StringBuffer sb, int v, boolean upper) { libcAppendHex64(sb, v & 0xFFFFFFFFL, upper); }
+    private void libcAppendOct(StringBuffer sb, long v) {
+        if (v == 0) { sb.append('0'); return; }
+        StringBuffer tmp = new StringBuffer();
+        while (v != 0) { tmp.append((char) ('0' + (v & 7))); v >>>= 3; }
+        for (int i = tmp.length() - 1; i >= 0; i--) { sb.append(tmp.charAt(i)); }
+    }
+
+    private String libcFormat(int fmt, int regBase) {
+        StringBuffer out = new StringBuffer();
+        libcArgInit(regBase);
+        int i = 0;
+        while (i < 2048) {
+            int c = memByte(fmt + i);
+            if (c < 0) { break; }
+            i++;
+            if (c == 0) { break; }
+            if (c != '%') { out.append((char) c); continue; }
+
+            int len = 0;
+            int spec = memByte(fmt + i);
+            while (spec == 'h' || spec == 'l') {
+                if (spec == 'l') { len++; } else { len--; }
+                i++;
+                spec = memByte(fmt + i);
+            }
+            while (spec == '-' || spec == '+' || spec == ' ' || spec == '0' || spec == '#') { i++; spec = memByte(fmt + i); }
+            while (spec >= '0' && spec <= '9') { i++; spec = memByte(fmt + i); }
+            if (spec == '.') { i++; spec = memByte(fmt + i); }
+            while (spec >= '0' && spec <= '9') { i++; spec = memByte(fmt + i); }
+            i++;
+
+            boolean is64 = len >= 2;
+            switch (spec < 0 ? -1 : spec) {
+                case 'd': case 'i':
+                    if (is64) { libcAppendDec64(out, libcNext64()); }
+                    else { libcAppendDec(out, libcNext32()); }
+                    break;
+                case 'u':
+                    if (is64) { libcAppendUdec64(out, libcNext64()); }
+                    else { libcAppendUdec(out, libcNext32()); }
+                    break;
+                case 'x': case 'X':
+                    if (is64) { libcAppendHex64(out, libcNext64(), spec == 'X'); }
+                    else { libcAppendHex(out, libcNext32(), spec == 'X'); }
+                    break;
+                case 'o':
+                    libcAppendOct(out, (long) libcNext32() & 0xFFFFFFFFL);
+                    break;
+                case 'c':
+                    out.append((char) (libcNext32() & 0xFF));
+                    break;
+                case 's':
+                    out.append(libcReadCString(libcNext32()));
+                    break;
+                case 'p':
+                    out.append("0x");
+                    libcAppendHex(out, libcNext32(), false);
+                    break;
+                case 'f': case 'e': case 'g':
+                    libcNext64();
+                    out.append('0');
+                    break;
+                case '%':
+                    out.append('%');
+                    break;
+                case 0:
+                    break;
+                case -1:
+                    break;
+                default:
+                    out.append('%').append((char) (spec < 0 ? '%' : spec));
+                    break;
+            }
+            if (spec == 0) { break; }
+        }
+        return out.toString();
     }
 
     // Runtime
@@ -429,6 +985,8 @@ public class ELF {
         if ((instruction & 0x0F8000F0) == 0x00800090) { handleLongMultiply(instruction); return; }
         if ((instruction & 0x0E000000) == 0x08000000) { handleLoadStoreMultiple(instruction); return; }
         if ((instruction & 0x0E000000) == 0x0C000000) { handleCoprocessor(instruction); return; }
+        if ((instruction & 0x0E400090) == 0x00400090 && (instruction & 0x00000060) == 0x00000040 && (instruction & 0x00100000) == 0) { handleLdrd(instruction); return; }
+        if ((instruction & 0x0E400090) == 0x00400090 && (instruction & 0x00000060) == 0x00000060 && (instruction & 0x00100000) == 0) { handleStrd(instruction); return; }
         if ((instruction & 0x0C000000) == 0x00000000) { handleDataProcessing(instruction); return; }
         if ((instruction & 0x0C000000) == 0x04000000) { handleLoadStore(instruction); return; }
         if ((instruction & 0x0E000000) == 0x0A000000) { handleBranch(instruction); return; }
@@ -513,6 +1071,27 @@ public class ELF {
             if (negative) { cpsr |= N_MASK; } else { cpsr &= ~N_MASK; }
             if (zero) { cpsr |= Z_MASK; } else { cpsr &= ~Z_MASK; }
         }
+    }
+    private void handleLdrd(int instruction) {
+        int p = (instruction >> 24) & 1, u = (instruction >> 23) & 1, w = (instruction >> 21) & 1;
+        int rn = (instruction >> 16) & 0xF, rt = (instruction >> 12) & 0xF;
+        int off = ((instruction >> 8) & 0xF0) | (instruction & 0xF);
+        int base = registers[rn], offsetAddr = base + (u == 1 ? off : -off);
+        int addr = (p == 1) ? offsetAddr : base;
+        registers[rt] = readIntLE(memory, addr);
+        registers[rt + 1] = readIntLE(memory, addr + 4);
+        if (p == 0 || w == 1) { registers[rn] = offsetAddr; }
+    }
+    private void handleStrd(int instruction) {
+        int p = (instruction >> 24) & 1, u = (instruction >> 23) & 1, w = (instruction >> 21) & 1;
+        int rn = (instruction >> 16) & 0xF, rt = (instruction >> 12) & 0xF;
+        int off = ((instruction >> 8) & 0xF0) | (instruction & 0xF);
+        int base = registers[rn], offsetAddr = base + (u == 1 ? off : -off);
+        int addr = (p == 1) ? offsetAddr : base;
+        int lo = registers[rt], hi = registers[rt + 1];
+        writeIntLE(memory, addr, lo);
+        writeIntLE(memory, addr + 4, hi);
+        if (p == 0 || w == 1) { registers[rn] = offsetAddr; }
     }
     private void handleLoadStoreMultiple(int instruction) {
         boolean load = (instruction & (1 << 20)) != 0, writeBack = (instruction & (1 << 21)) != 0, userMode = (instruction & (1 << 22)) != 0, increment = (instruction & (1 << 23)) != 0, before = (instruction & (1 << 24)) != 0;
@@ -1076,6 +1655,7 @@ public class ELF {
     // |
     private void handleSyscall(int number) {
         if (midlet.debug && number != SYS_GETTIMEOFDAY && number != SYS_GETPID) { midlet.print("Syscall " + number + " (R7=" + registers[REG_R7] + ")", stdout, id, scope); }
+        if (number >= LIB_BASE) { handleLibraryCall(number - LIB_BASE); return; }
         int savedPC = pc;
 
         switch (number) {

@@ -10,13 +10,18 @@
 #   ./build-elf.sh app.s -lib                 -> linka com res/lib/lib32.s
 #                                              (programa define main; a lib
 #                                              fornece _start/puts/printf/...)
+#   ./build-elf.sh demo.c -stdlib             -> linka com res/lib/libc.s: libc
+#                                              no EMULADOR (svc #LIB_*). Suporta
+#                                              .c: printf/sprintf/malloc/free/
+#                                              memcpy/divisao AEABI/etc.
 #   ./build-elf.sh app.s -T 0x8000            -> texto comeca em 0x8000
 #   CROSS=arm-linux-gnueabi- ./build-elf.sh x.s
 #
 # Opcoes:
 #   -o <arquivo>   nome do ELF final (default: basename do 1o fonte)
 #   -T <addr>      endereco do inicio do .text (default 0x10000)
-#   -lib           inclui a runtime res/lib/lib32.s
+#   -lib           inclui a runtime res/lib/lib32.s (stdlib em asm)
+#   -stdlib        inclui res/lib/libc.s (stdlib no emulador, svc #LIB_*)
 #   -entry <sym>   simbolo de entrada (default _start)
 #   -keep          mantem os .o intermediarios
 #   -h             mostra o help
@@ -25,10 +30,12 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LIB32="$HERE/res/lib/lib32.s"
+LIBC="$HERE/res/lib/libc.s"
 
 TEXT="0x10000"
 ENTRY="_start"
 USE_LIB=0
+USE_STDLIB=0
 KEEP=0
 OUTPUT=""
 INPUTS=()
@@ -82,6 +89,7 @@ while [ $# -gt 0 ]; do
         -o) shift; OUTPUT="$1" ;;
         -T) shift; TEXT="$1" ;;
         -lib) USE_LIB=1 ;;
+        -stdlib) USE_STDLIB=1 ;;
         -entry) shift; ENTRY="$1" ;;
         -keep) KEEP=1 ;;
         *) INPUTS+=("$1") ;;
@@ -101,6 +109,14 @@ WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
 OBJS=()
+
+# runtime libc.s do emulador (stdlib via svc #LIB_*) antes dos fontes
+if [ "$USE_STDLIB" -eq 1 ]; then
+    [ "$USE_LIB" -eq 1 ] && { echo "Erro: -lib e -stdlib sao mutuamente exclusivos." >&2; exit 1; }
+    [ -f "$LIBC" ] || { echo "Erro: $LIBC nao existe (o -stdlib precisa dela)." >&2; exit 1; }
+    "$AS" -o "$WORK/0.o" "$LIBC"
+    OBJS+=("$WORK/0.o")
+fi
 
 # runtime lib32.s antes dos fontes do programa (o entry _start dela chama main)
 if [ "$USE_LIB" -eq 1 ]; then
@@ -124,7 +140,7 @@ for src in "${INPUTS[@]}"; do
             "$AS" -o "$WORK/$n.o" "$src" ;;
         *.c)
             [ -n "$GCC" ] || { echo "Erro: preciso de ${AS%as}gcc para compilar .c." >&2; exit 1; }
-            "$GCC" -nostdlib -static -marm -fno-builtin -c -o "$WORK/$n.o" "$src" ;;
+            "$GCC" -nostdlib -static -marm -march=armv5te -fno-builtin -c -o "$WORK/$n.o" "$src" ;;
         *) echo "Erro: extensao nao suportada em '$src' (use .s/.S/.sx/.c)." >&2; exit 1 ;;
     esac
     OBJS+=("$WORK/$n.o")
