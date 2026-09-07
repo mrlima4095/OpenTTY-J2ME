@@ -91,6 +91,32 @@ elseif arg[1] == "remove" then
             print(":: package " .. pkg_name .. " not found")
         end
     end
+
+elseif arg[1] == "download" then
+    if arg[2] and arg[3] then
+        print(":: downloading " .. arg[2] .. " to " .. arg[3])
+        local pkg_name = arg[2]
+        local pkg = mirror[pkg_name]
+
+        if pkg then
+            local url = server .. "/apps/" .. db_version .. "/" .. pkg.remote
+            print(url)
+            local ok, stream = pcall(socket.http.rget, url)
+            if ok then
+                ok, err = pcall(io.copy, stream, arg[3])
+                if not ok then
+                    print(":: error downloading " .. pkg_name .. ": " .. tostring(err))
+                else
+                    print(":: downloaded " .. pkg_name .. " to " .. arg[3])
+                end
+            end
+        else
+            print(":: package " .. pkg_name .. " not found")
+        end
+    else
+        print(":: usage: pkg download <package> <destination>")
+        os.exit(2)
+    end
 elseif arg[1] == "update" then
     if os.getuid() ~= 0 then
         print(":: must be root to update package database")
