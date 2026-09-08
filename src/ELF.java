@@ -34,7 +34,8 @@ public class ELF {
 
     // Dynamic linking structures
     private Hashtable dynamicSymbols, neededLibraries, globalSymbols, pltEntries;
-    private Vector loadedLibraries, memoryMappings; 
+    private Vector loadedLibraries, memoryMappings, dynSymNames;
+    private Hashtable copyRelocs, libSymSizes; 
     private int pltGotAddr, dynamicSectionAddr, gotBase, pltBase, resolverCodeAddr, resolveFuncAddr;
 
     // heap do stdlib (malloc/calloc/realloc/free): allocador first-fit com
@@ -43,7 +44,7 @@ public class ELF {
 
     
     // Constantes ELF
-    private static final int EI_NIDENT = 16, ELFCLASS32 = 1, ELFDATA2LSB = 1, EM_ARM = 40, ET_EXEC = 2, PT_LOAD = 1, PT_DYNAMIC = 2, PT_INTERP = 3, PT_NOTE = 4;
+    private static final int EI_NIDENT = 16, ELFCLASS32 = 1, ELFDATA2LSB = 1, EM_ARM = 40, ET_EXEC = 2, ET_DYN = 3, PT_LOAD = 1, PT_DYNAMIC = 2, PT_INTERP = 3, PT_NOTE = 4;
     
     // Constantes ARM
     private static final int REG_R0 = 0, REG_R1 = 1, REG_R2 = 2, REG_R3 = 3, REG_R7 = 7, REG_SP = 13, REG_LR = 14, REG_PC = 15;
@@ -110,7 +111,7 @@ public class ELF {
         LIB_AEABI_MEMCLR = LIB_BASE + 36, LIB_AEABI_MEMCPY = LIB_BASE + 37, LIB_AEABI_MEMSET = LIB_BASE + 38;
 
     // Relocation types
-    private static final int R_ARM_ABS32 = 2, R_ARM_REL32 = 3, R_ARM_GLOB_DAT = 21, R_ARM_JUMP_SLOT = 22, R_ARM_RELATIVE = 23;
+    private static final int R_ARM_ABS32 = 2, R_ARM_REL32 = 3, R_ARM_COPY = 20, R_ARM_GLOB_DAT = 21, R_ARM_JUMP_SLOT = 22, R_ARM_RELATIVE = 23;
         
     // Constantes fcntl
     private static final int F_GETFL = 3, F_SETFL = 4, O_NONBLOCK = 2048;
@@ -162,6 +163,9 @@ public class ELF {
         this.neededLibraries = new Hashtable();
         this.globalSymbols = new Hashtable();
         this.pltEntries = new Hashtable();
+        this.dynSymNames = new Vector();
+        this.copyRelocs = new Hashtable();
+        this.libSymSizes = new Hashtable();
         this.pltGotAddr = 0;
         this.dynamicSectionAddr = 0;
         this.gotBase = 0;
@@ -236,12 +240,41 @@ public class ELF {
             }
         }
 
-        processSymbolsAndRelocations(elfData, sectionInfo); setupCRTStack();
-        processDynamicSection(elfData); loadNeededLibraries();
+        processDynamicSection(elfData); processSymbols(elfData); scanCopyRelocations(elfData); loadNeededLibraries(); applyCopyRelocations();
+        setupCRTStack();
         processSymbolsAndRelocations(elfData, sectionInfo); setupPLTGOT();
         executeInitFunctions();
         
         return true;
+    }
+    private void scanCopyRelocations(byte[] elfData) {
+        if (!elfInfo.containsKey("rel") || !elfInfo.containsKey("relsz")) { return; }
+        int relAddr = ((Integer)elfInfo.get("rel")).intValue(), relsz = ((Integer)elfInfo.get("relsz")).intValue();
+        for (int i = 0; i < relsz; i += 8) {
+            int offset = relAddr + i, r_offset = readIntLE(elfData, offset), r_info = readIntLE(elfData, offset + 4), symIndex = r_info >> 8, type = r_info & 0xFF;
+            if (type == R_ARM_COPY) {
+                String nm = getSymbolNameByIndex(symIndex);
+                if (nm != null) { copyRelocs.put(nm, new Integer(r_offset)); if (midlet.debug) { midlet.print("COPY reloc: " + nm + " home at " + toHex(r_offset), stdout, id, scope); } }
+            }
+        }
+    }
+    private void applyCopyRelocations() {
+        for (Enumeration e = copyRelocs.keys(); e.hasMoreElements();) {
+            String copyName = (String) e.nextElement();
+            int home = ((Integer) copyRelocs.get(copyName)).intValue();
+            Hashtable libTab = resolveLibrarySymbolTable(copyName);
+            if (libTab == null) { continue; }
+            Object symValue = libTab.get(copyName);
+            if (!(symValue instanceof Integer)) { continue; }
+            int src = ((Integer) symValue).intValue(), copySize = librarySymbolSize(copyName);
+            for (int k = 0; k < copySize && home + k < memory.length && src + k < memory.length; k++) { memory[home + k] = memory[src + k]; }
+            if (dynamicSymbols.containsKey(copyName)) {
+                Hashtable dyn = (Hashtable) dynamicSymbols.get(copyName);
+                dyn.put("value", new Integer(home));
+                dyn.put("size", new Integer(copySize));
+            }
+            if (midlet.debug) { midlet.print("Reloc COPY: " + copyName + " (" + copySize + " bytes) -> " + toHex(home) + " from " + toHex(src), stdout, id, scope); }
+        }
     }
 
     private void processDynamicSection(byte[] elfData) {
@@ -253,23 +286,22 @@ public class ELF {
             if (p_type == PT_DYNAMIC) {
                 dynamicSectionAddr = readIntLE(elfData, phdrOffset + 8);
                 int p_filesz = readIntLE(elfData, phdrOffset + 16);
-                processDynamicEntries(elfData, dynamicSectionAddr, p_filesz);
+                processDynamicEntries(memory, dynamicSectionAddr, p_filesz);
                 break;
             }
         }
     }
-    private void processDynamicEntries(byte[] elfData, int dynAddr, int dynSize) {
+    private void processDynamicEntries(byte[] mem, int dynAddr, int dynSize) {
         int offset = 0;
+        Vector neededOffsets = new Vector();
         
         while (offset < dynSize) {
-            int tag = readIntLE(elfData, dynAddr + offset), val = readIntLE(elfData, dynAddr + offset + 4);
+            int tag = readIntLE(mem, dynAddr + offset), val = readIntLE(mem, dynAddr + offset + 4);
             if (tag == DT_NULL) { break; }
             
             switch (tag) {
                 case DT_NEEDED:
-                    String libName = readString(elfData, val, 256);
-                    neededLibraries.put(libName, new Integer(val));
-                    if (midlet.debug) { midlet.print("Needed library: " + libName, stdout, id, scope); }
+                    neededOffsets.addElement(new Integer(val));
                     break;
                     
                 case DT_PLTGOT:
@@ -318,11 +350,22 @@ public class ELF {
                     break;
                     
                 case DT_HASH:
-                    processHashTable(elfData, val);
+                    processHashTable(mem, val);
                     break;
             }
             
             offset += 8;
+        }
+        
+        if (neededOffsets.size() > 0 && elfInfo.containsKey("dynstr")) {
+            int dynstrAddr = ((Integer)elfInfo.get("dynstr")).intValue();
+            for (int i = 0; i < neededOffsets.size(); i++) {
+                String libName = readString(mem, dynstrAddr + ((Integer)neededOffsets.elementAt(i)).intValue(), 256);
+                if (libName != null && libName.length() > 0 && !neededLibraries.containsKey(libName)) {
+                    neededLibraries.put(libName, new Integer(((Integer)neededOffsets.elementAt(i)).intValue()));
+                    if (midlet.debug) { midlet.print("Needed library: " + libName, stdout, id, scope); }
+                }
+            }
         }
     }
     private void processHashTable(byte[] elfData, int hashAddr) { int nbucket = readIntLE(elfData, hashAddr), nchain = readIntLE(elfData, hashAddr + 4); elfInfo.put("nbucket", new Integer(nbucket)); elfInfo.put("nchain", new Integer(nchain)); elfInfo.put("buckets", new Integer(hashAddr + 8)); elfInfo.put("chains", new Integer(hashAddr + 8 + nbucket * 4)); }
@@ -333,36 +376,118 @@ public class ELF {
             String libName = (String) libNames.nextElement();
             
             if (loadedLibraries.contains(libName)) { }
-            else { if (loadLibrary(libName)) { loadedLibraries.addElement(libName); if (midlet.debug) { midlet.print("Loaded library: " + libName, stdout, id, scope); } } else { if (midlet.debug) { midlet.print("Failed to load: " + libName, stdout, id, scope); } } }
+            else { if (loadLibrary(libName)) { if (midlet.debug) { midlet.print("Loaded library: " + libName, stdout, id, scope); } } else { if (midlet.debug) { midlet.print("Failed to load: " + libName, stdout, id, scope); } } }
         }
     }
     private boolean loadLibrary(String libName) {
+        if (loadedLibraries.contains(libName)) { return true; }
         String[] paths = { "/lib/" + libName, "/usr/lib/" + libName };
-        
+        byte[] libData = null;
         for (int i = 0; i < paths.length; i++) {
             try {
                 InputStream is = midlet.getInputStream(paths[i], scope);
                 if (is != null) {
-                    // Biblioteca encontrada - criar símbolos simulados
-                    Hashtable libSyms = new Hashtable();
-                    
-                    // Adicionar símbolos básicos baseados no nome da lib
-                    if (libName.indexOf("c") != -1) {
-                        libSyms.put("printf", globalSymbols.get("libc.so.6"));
-                    }
-                    if (libName.indexOf("m") != -1) { // math
-                        libSyms.put("sin", new Integer(createSimpleStub(32)));
-                        libSyms.put("cos", new Integer(createSimpleStub(32)));
-                    }
-                    
-                    globalSymbols.put(libName, libSyms);
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream(); byte[] buffer = new byte[4096]; int bytesRead;
+                    while ((bytesRead = is.read(buffer)) != -1) { baos.write(buffer, 0, bytesRead); }
                     is.close();
-                    return true;
+                    libData = baos.toByteArray();
+                    break;
                 }
-            } catch (Exception e) {}
+            } catch (Exception e) { if (midlet.debug) { midlet.print("lib read error: " + libName + " (" + e + ")", stdout, id, scope); } }
         }
-        
+        if (libData == null || !isSharedElf(libData)) { return false; }
+        if (loadSharedObject(libName, libData)) { loadedLibraries.addElement(libName); return true; }
         return false;
+    }
+    private boolean isSharedElf(byte[] d) {
+        if (d.length < 20 || d[0] != 0x7F || d[1] != 'E' || d[2] != 'L' || d[3] != 'F') { return false; }
+        if (d[4] != ELFCLASS32 || d[5] != ELFDATA2LSB) { return false; }
+        if (readShortLE(d, 16) != ET_DYN) { return false; }
+        if (readShortLE(d, 18) != EM_ARM) { return false; }
+        return true;
+    }
+    private boolean loadSharedObject(String libName, byte[] elfData) {
+        int e_phoff = readIntLE(elfData, 28), e_phnum = readShortLE(elfData, 44) & 0xFFFF, e_phentsize = readShortLE(elfData, 42) & 0xFFFF;
+        int dynAddr = 0, dynSize = 0;
+        for (int i = 0; i < e_phnum; i++) {
+            int off = e_phoff + i * e_phentsize, p_type = readIntLE(elfData, off);
+            if (p_type == PT_LOAD) {
+                int p_offset = readIntLE(elfData, off + 4), p_vaddr = readIntLE(elfData, off + 8), p_filesz = readIntLE(elfData, off + 16), p_memsz = readIntLE(elfData, off + 20);
+                for (int j = 0; j < p_filesz && p_vaddr + j < memory.length; j++) { memory[p_vaddr + j] = elfData[p_offset + j]; }
+                for (int j = p_filesz; j < p_memsz && p_vaddr + j < memory.length; j++) { memory[p_vaddr + j] = 0; }
+            } else if (p_type == PT_DYNAMIC) { dynAddr = readIntLE(elfData, off + 8); dynSize = readIntLE(elfData, off + 16); }
+        }
+        if (dynAddr == 0) { return false; }
+        
+        int symtab = 0, strtab = 0, syment = 16, rel = 0, relsz = 0, jmprel = 0, pltrelsz = 0, pltrel = DT_REL, hashAddr = 0;
+        int offset = 0;
+        while (offset + 8 <= dynSize) {
+            int tag = readIntLE(memory, dynAddr + offset), val = readIntLE(memory, dynAddr + offset + 4);
+            if (tag == DT_NULL) { break; }
+            switch (tag) {
+                case DT_SYMTAB: symtab = val; break;
+                case DT_STRTAB: strtab = val; break;
+                case DT_SYMENT: syment = val; break;
+                case DT_REL: rel = val; break;
+                case DT_RELSZ: relsz = val; break;
+                case DT_JMPREL: jmprel = val; break;
+                case DT_PLTRELSZ: pltrelsz = val; break;
+                case DT_PLTREL: pltrel = val; break;
+                case DT_HASH: hashAddr = val; break;
+            }
+            offset += 8;
+        }
+        if (symtab == 0 || strtab == 0) { return false; }
+        
+        // Registrar os símbolos exportados (st_shndx != 0, GLOBAL/WEAK) e o índice->nome
+        Hashtable libSyms = new Hashtable();
+        Hashtable sizeMap = new Hashtable();
+        Vector symNames = new Vector();
+        int s = symtab, symCountMax = 4096;
+        if (hashAddr != 0) {
+            int nchain = readIntLE(memory, hashAddr + 4);
+            if (nchain > 0 && nchain <= 8192) { symCountMax = nchain; }
+        }
+        for (int dynSymCount = 0; dynSymCount < symCountMax; dynSymCount++) {
+            int st_name = readIntLE(memory, s), st_value = readIntLE(memory, s + 4), st_size = readIntLE(memory, s + 8), st_info = memory[s + 12] & 0xFF, st_shndx = readShortLE(memory, s + 14) & 0xFFFF;
+            if (s != symtab && st_name == 0 && st_value == 0 && st_info == 0 && st_shndx == 0) { break; }
+            String nm = (st_name == 0) ? "" : readString(memory, strtab + st_name, 256);
+            if (nm == null) { break; }
+            symNames.addElement(nm);
+            int bind = (st_info >> 4) & 0xF;
+            if (st_shndx != 0 && (bind == 1 || bind == 2)) { libSyms.put(nm, new Integer(st_value)); if (st_size > 0) { sizeMap.put(nm, new Integer(st_size)); } }
+            s += syment;
+        }
+        globalSymbols.put(libName, libSyms);
+        loadedLibraries.addElement(libName);
+        if (sizeMap.size() > 0) { libSymSizes.put(libName, sizeMap); }
+        if (midlet.debug) { midlet.print("Loaded shared object: " + libName + " (" + symNames.size() + " dynsyms)", stdout, id, scope); }
+        
+        // Aplicar as relocacoes da propria lib (.rel.dyn e .rel.plt)
+        applyLibraryRelocations(rel, relsz, 8, symNames);
+        if (jmprel != 0 && pltrelsz != 0) { applyLibraryRelocations(jmprel, pltrelsz, (pltrel == DT_RELA) ? 12 : 8, symNames); }
+        return true;
+    }
+    private void applyLibraryRelocations(int relAddr, int relsz, int relent, Vector symNames) {
+        for (int i = 0; i < relsz && relAddr + i + relent <= memory.length; i += relent) {
+            int r_offset = readIntLE(memory, relAddr + i), r_info = readIntLE(memory, relAddr + i + 4), symIndex = r_info >> 8, type = r_info & 0xFF;
+            switch (type) {
+                case R_ARM_ABS32:
+                case R_ARM_GLOB_DAT:
+                case R_ARM_JUMP_SLOT: {
+                    String nm = (symIndex < symNames.size()) ? (String) symNames.elementAt(symIndex) : null;
+                    Integer addr = (nm != null) ? resolveSymbol(nm) : null;
+                    if (addr != null) { writeIntLE(memory, r_offset, addr.intValue()); if (midlet.debug) { midlet.print("lib reloc: " + nm + " -> " + toHex(addr.intValue()) + " at " + toHex(r_offset), stdout, id, scope); } }
+                    break;
+                }
+                    case R_ARM_RELATIVE: {
+                    int cur = readIntLE(memory, r_offset);
+                    writeIntLE(memory, r_offset, cur);
+                    if (midlet.debug) { midlet.print("lib reloc RELATIVE at " + toHex(r_offset), stdout, id, scope); }
+                    break;
+                }
+            }
+        }
     }
 
     private void loadDefaultLibraries() {
@@ -1421,8 +1546,7 @@ public class ELF {
             
             switch (tag) {
                 case 1:
-                    String libname = readString(elfData, val, 64);
-                    if (midlet.debug) { midlet.print("Needs library: " + libname, stdout, id, scope); }
+                    if (midlet.debug) { midlet.print("Needs library (strtab offset " + val + ")", stdout, id, scope); }
                     break;
                 case 5:
                     elfInfo.put("dynstr", new Integer(val));
@@ -1434,18 +1558,28 @@ public class ELF {
         }
     }
     private void processSymbolsAndRelocations(byte[] elfData, Hashtable sections) {
+        processSymbols(elfData);
+        processRelocations(elfData);
+    }
+    private void processSymbols(byte[] elfData) {
         if (!elfInfo.containsKey("dynsym") || !elfInfo.containsKey("dynstr")) { return; }
         
         int dynsymAddr = ((Integer)elfInfo.get("dynsym")).intValue(), dynstrAddr = ((Integer)elfInfo.get("dynstr")).intValue(), symentSize = elfInfo.containsKey("syment") ? ((Integer) elfInfo.get("syment")).intValue() : 16;
         
-        // Processar símbolos
+        dynSymNames.removeAllElements();
+        // Processar símbolos (a entrada 0 do dynsym é o symbolo nulo; o numero
+        // de entradas vem do DT_HASH quando presente — nchain).
         int symOffset = dynsymAddr;
-        while (true) {
+        int maxSym = elfInfo.containsKey("nchain") ? ((Integer) elfInfo.get("nchain")).intValue() : 4096;
+        if (maxSym <= 0 || maxSym > 4096) { maxSym = 4096; }
+        for (int dynSymCount = 0; dynSymCount < maxSym; dynSymCount++) {
             int st_name = readIntLE(elfData, symOffset), st_value = readIntLE(elfData, symOffset + 4), st_size = readIntLE(elfData, symOffset + 8), st_info = elfData[symOffset + 12] & 0xFF;
-            if (st_name == 0 && st_value == 0 && st_size == 0 && st_info == 0) { break; }
+            if (dynSymCount > 0 && st_name == 0 && st_value == 0 && st_size == 0 && st_info == 0) { break; }
             
-            String symName = readString(elfData, dynstrAddr + st_name, 256);
+            String symName = (st_name == 0) ? "" : readString(elfData, dynstrAddr + st_name, 256);
+            if (symName == null) { break; }
             
+            dynSymNames.addElement(symName);
             Hashtable symInfo = new Hashtable();
             symInfo.put("value", new Integer(st_value)); symInfo.put("size", new Integer(st_size)); symInfo.put("info", new Integer(st_info));
             symInfo.put("binding", new Integer((st_info >> 4) & 0xF)); symInfo.put("type", new Integer(st_info & 0xF));
@@ -1454,14 +1588,16 @@ public class ELF {
             
             symOffset += symentSize;
         }
-        processRelocations(elfData);
     }
-    private void processRelocations(byte[] elfData) { if (elfInfo.containsKey("rel") && elfInfo.containsKey("relsz")) { int relAddr = ((Integer) elfInfo.get("rel")).intValue(), relsz = ((Integer) elfInfo.get("relsz")).intValue(), relent = 8; for (int i = 0; i < relsz; i += relent) { int offset = relAddr + i, r_offset = readIntLE(elfData, offset), r_info = readIntLE(elfData, offset + 4), symIndex = r_info >> 8, type = r_info & 0xFF; applyRelocation(r_offset, type, symIndex, 0); } } if (elfInfo.containsKey("jmprel") && elfInfo.containsKey("pltrelsz")) { int jmprelAddr = ((Integer)elfInfo.get("jmprel")).intValue(), pltrelsz = ((Integer)elfInfo.get("pltrelsz")).intValue(), pltrel = elfInfo.containsKey("pltrel") ? ((Integer) elfInfo.get("pltrel")).intValue() : DT_REL, relent = (pltrel == DT_RELA) ? 12 : 8, numEntries = pltrelsz / relent; if (gotBase == 0 && pltGotAddr != 0) { gotBase = pltGotAddr + 12; } for (int i = 0; i < numEntries; i++) { int offset = jmprelAddr + i * relent, r_offset = readIntLE(elfData, offset), r_info = readIntLE(elfData, offset + 4), symIndex = r_info >> 8, type = r_info & 0xFF; if (type == R_ARM_JUMP_SLOT) { setupLazyBinding(r_offset, symIndex, i); } else { applyRelocation(r_offset, type, symIndex, 0); } } } }
-    private void applyRelocation(int r_offset, int type, int symIndex, int addend) {
+    private void processRelocations(byte[] elfData) { if (elfInfo.containsKey("rel") && elfInfo.containsKey("relsz")) { int relAddr = ((Integer) elfInfo.get("rel")).intValue(), relsz = ((Integer) elfInfo.get("relsz")).intValue(), relent = 8; for (int i = 0; i < relsz; i += relent) { int offset = relAddr + i, r_offset = readIntLE(elfData, offset), r_info = readIntLE(elfData, offset + 4), symIndex = r_info >> 8, type = r_info & 0xFF; applyRelocation(r_offset, type, symIndex, 0); } } if (elfInfo.containsKey("jmprel") && elfInfo.containsKey("pltrelsz")) { int jmprelAddr = ((Integer)elfInfo.get("jmprel")).intValue(), pltrelsz = ((Integer)elfInfo.get("pltrelsz")).intValue(), pltrel = elfInfo.containsKey("pltrel") ? ((Integer) elfInfo.get("pltrel")).intValue() : DT_REL, relent = (pltrel == DT_RELA) ? 12 : 8, numEntries = pltrelsz / relent; if (gotBase == 0 && pltGotAddr != 0) { gotBase = pltGotAddr + 12; } for (int i = 0; i < numEntries; i++) { int offset = jmprelAddr + i * relent, r_offset = readIntLE(elfData, offset), r_info = readIntLE(elfData, offset + 4), symIndex = r_info >> 8, type = r_info & 0xFF; if (type == R_ARM_JUMP_SLOT) { String platoonName = getSymbolNameByIndex(symIndex); Integer readyAddr = resolveSymbol(platoonName); if (readyAddr != null) { writeIntLE(memory, r_offset, readyAddr.intValue()); Hashtable pltInfo = new Hashtable(); pltInfo.put("symIndex", new Integer(symIndex)); pltInfo.put("gotOffset", new Integer(r_offset)); pltInfo.put("resolved", Boolean.TRUE); pltEntries.put("plt_" + i, pltInfo); if (midlet.debug) { midlet.print("PLT eager: " + platoonName + " -> " + toHex(readyAddr.intValue()) + " at GOT " + toHex(r_offset), stdout, id, scope); } } else { setupLazyBinding(r_offset, symIndex, i); } } else { applyRelocation(r_offset, type, symIndex, 0); } } } }
+    private void applyRelocation(int r_offset, int type, int symIndex, int addend) { applyRelocation(r_offset, type, symIndex, addend, null); }
+    private void applyRelocation(int r_offset, int type, int symIndex, int addend, Vector names) {
+        String symName = null;
+        if (names != null) { if (symIndex >= 0 && symIndex < names.size()) { symName = (String) names.elementAt(symIndex); } }
+        else { symName = getSymbolNameByIndex(symIndex); }
         switch (type) {
             case R_ARM_ABS32:
             case R_ARM_GLOB_DAT:
-                String symName = getSymbolNameByIndex(symIndex);
                 Integer symAddr = resolveSymbol(symName);
                 
                 if (symAddr != null) {
@@ -1473,6 +1609,26 @@ public class ELF {
                 int current = readIntLE(memory, r_offset);
                 writeIntLE(memory, r_offset, current + addend);
                 break;
+            case R_ARM_COPY: {
+                String copyName = symName;
+                Hashtable libTab = (copyName != null) ? resolveLibrarySymbolTable(copyName) : null;
+                if (libTab != null && copyName != null) {
+                    Object symValue = libTab.get(copyName);
+                    Integer copySrc = (symValue instanceof Integer) ? (Integer) symValue : null;
+                    if (copySrc != null) {
+                        int copySize = librarySymbolSize(copyName), src = copySrc.intValue();
+                        for (int k = 0; k < copySize && r_offset + k < memory.length && src + k < memory.length; k++) { memory[r_offset + k] = memory[src + k]; }
+                        copyRelocs.put(copyName, new Integer(r_offset));
+                        if (dynamicSymbols.containsKey(copyName)) {
+                            Hashtable dyn = (Hashtable) dynamicSymbols.get(copyName);
+                            dyn.put("value", new Integer(r_offset));
+                            dyn.put("size", new Integer(copySize));
+                        }
+                        if (midlet.debug) { midlet.print("Reloc COPY: " + copyName + " (" + copySize + " bytes) -> " + toHex(r_offset) + " from " + toHex(src), stdout, id, scope); }
+                    }
+                }
+                break;
+            }
         }
     }
 
@@ -1515,7 +1671,7 @@ public class ELF {
 
     private void processPLTResolverCall(int handlerAddr, int pltIndex) { int resolvedAddr = resolvePLTSymbol(pltIndex); if (resolvedAddr != 0) { registers[REG_R0] = resolvedAddr; } }
 
-    private String getSymbolNameByIndex(int index) { Enumeration keys = dynamicSymbols.keys(); int current = 0; while (keys.hasMoreElements()) { String name = (String) keys.nextElement(); if (current == index) { return name; } current++; } return null; }
+    private String getSymbolNameByIndex(int index) { if (index >= 0 && index < dynSymNames.size()) { return (String) dynSymNames.elementAt(index); } return null; }
     private int resolvePLTSymbol(int pltIndex) {
         String key = "plt_" + pltIndex;
         if (!pltEntries.containsKey(key)) return 0;
@@ -1544,6 +1700,9 @@ public class ELF {
             if (value != 0) { return new Integer(value); }
         }
 
+        // R_ARM_COPY: definicoes do executavel (simbolos copiados) preemptam as libs
+        if (copyRelocs.containsKey(name)) { return new Integer(((Integer) copyRelocs.get(name)).intValue()); }
+
         for (int i = 0; i < loadedLibraries.size(); i++) {
             String libName = (String) loadedLibraries.elementAt(i);
             Hashtable lib = (Hashtable) globalSymbols.get(libName);
@@ -1559,6 +1718,20 @@ public class ELF {
         if (name.startsWith("sys_")) { return new Integer(createSyscallStub(name)); }
         
         return null;
+    }
+    private Hashtable resolveLibrarySymbolTable(String name) {
+        for (int i = 0; i < loadedLibraries.size(); i++) {
+            Hashtable lib = (Hashtable) globalSymbols.get((String) loadedLibraries.elementAt(i));
+            if (lib != null && lib.containsKey(name)) { return lib; }
+        }
+        return null;
+    }
+    private int librarySymbolSize(String name) {
+        for (Enumeration e = libSymSizes.keys(); e.hasMoreElements();) {
+            Hashtable m = (Hashtable) libSymSizes.get(e.nextElement());
+            if (m != null && m.containsKey(name)) { return ((Integer) m.get(name)).intValue(); }
+        }
+        return 4;
     }
 
     private void setupPLTGOT() { if (pltGotAddr == 0) { return; } writeIntLE(memory, pltGotAddr, dynamicSectionAddr); writeIntLE(memory, pltGotAddr + 4, 0); writeIntLE(memory, pltGotAddr + 8, resolveFuncAddr); }
