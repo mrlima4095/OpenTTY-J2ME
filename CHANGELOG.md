@@ -14,3 +14,7 @@ Copyright (C) 2026 - Mr. Lima
 [ VFS ]
 
 - `/boot/` partition
+
+[ ELF ]
+
+- Support for `stdlib`
