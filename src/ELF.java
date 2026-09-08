@@ -1110,6 +1110,8 @@ public class ELF {
         if ((instruction & 0x0F8000F0) == 0x00800090) { handleLongMultiply(instruction); return; }
         if ((instruction & 0x0E000000) == 0x08000000) { handleLoadStoreMultiple(instruction); return; }
         if ((instruction & 0x0E000000) == 0x0C000000) { handleCoprocessor(instruction); return; }
+        if ((instruction & 0x0F000010) == 0x0E000010) { handleMcrMrc(instruction); return; }
+        if ((instruction & 0x0F000000) == 0x0E000000) { handleCdp(instruction); return; }
         if ((instruction & 0x0E400090) == 0x00400090 && (instruction & 0x00000060) == 0x00000040 && (instruction & 0x00100000) == 0) { handleLdrd(instruction); return; }
         if ((instruction & 0x0E400090) == 0x00400090 && (instruction & 0x00000060) == 0x00000060 && (instruction & 0x00100000) == 0) { handleStrd(instruction); return; }
         if ((instruction & 0x0FFFFFF0) == 0x012FFF10) { handleBranchExchange(instruction); return; }
@@ -1241,6 +1243,36 @@ public class ELF {
         if (writeBack) { if (rn == REG_PC) { registers[rn] = oldPC; } else { registers[rn] = (increment ? registers[rn] + 4 * regCount : registers[rn] - 4 * regCount); } }
     }
     private void handleCoprocessor(int instruction) { int cpNum = (instruction >> 8) & 0xF; if (cpNum == 10 || cpNum == 11) { handleFPU(instruction); } else { midlet.print("[WARN] Coprocessor " + cpNum + " not implemented", stdout, id, scope); } }
+
+    private void handleMcrMrc(int instruction) {
+        boolean load = (instruction & (1 << 20)) != 0;
+        int opcode1 = (instruction >> 21) & 0x7, crn = (instruction >> 16) & 0xF, rt = (instruction >> 12) & 0xF, cpNum = (instruction >> 8) & 0xF, opc2 = (instruction >> 5) & 0x7, crm = instruction & 0xF;
+
+        if (cpNum == 10 || cpNum == 11) { handleFPURegisterTransfer(instruction); return; }
+
+        cpuUndefined(cpNum, crn, opc2, crm, load, rt);
+    }
+
+    private void handleCdp(int instruction) {
+        int opcode = (instruction >> 20) & 0xF, crn = (instruction >> 16) & 0xF, crd = (instruction >> 12) & 0xF, cpNum = (instruction >> 8) & 0xF, opc2 = (instruction >> 5) & 0x7, crm = instruction & 0xF;
+
+        if (cpNum == 10 || cpNum == 11) { handleFPUDataProcessing(instruction); return; }
+
+        midlet.print("[WARN] CDP cp" + cpNum + " opcode " + opcode + " not implemented", stdout, id, scope);
+    }
+
+    private void cpuUndefined(int cpNum, int crn, int opc2, int crm, boolean load, int rt) {
+        switch (cpNum) {
+            case 15:
+                if (load) {
+                    if (crn == 0 && opc2 == 0) { registers[rt] = 0x410FC050; return; }
+                    if (crn == 13) { registers[rt] = registers[REG_SP]; return; }
+                }
+                return;
+            default:
+                midlet.print("[WARN] Coprocessor " + cpNum + " not implemented", stdout, id, scope);
+        }
+    }
 
     private void handleFPU(int instruction) {
         int opcode1 = (instruction >> 20) & 0xF, opcode2 = (instruction >> 16) & 0xF, crd = (instruction >> 12) & 0xF, crn = (instruction >> 16) & 0xF, crm = instruction & 0xF, cpNum = (instruction >> 8) & 0xF;
