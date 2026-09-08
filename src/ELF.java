@@ -1413,8 +1413,22 @@ public class ELF {
     }
 
     private void handleLoadStore(int instruction) {
-        int rn = (instruction >> 16) & 0xF, rd = (instruction >> 12) & 0xF, offset = instruction & 0xFFF, baseAddress;
+        int rn = (instruction >> 16) & 0xF, rd = (instruction >> 12) & 0xF, baseAddress;
         boolean isLoad = (instruction & (1 << 20)) != 0, isByte = (instruction & (1 << 22)) != 0, addOffset = (instruction & (1 << 23)) != 0, preIndexed = (instruction & (1 << 24)) != 0, writeBack = (instruction & (1 << 21)) != 0;
+        boolean isRegOffset = (instruction & (1 << 25)) != 0;
+        int offset = instruction & 0xFFF;
+        
+        if (isRegOffset) {
+            // Offset por registro (bit 25): low 12 bits = Rm + shift (nao e' imediato)
+            int rm = instruction & 0xF, shiftType = (instruction >> 5) & 3, shiftAmount = (instruction >> 7) & 0x1F;
+            int regVal = registers[rm];
+            switch (shiftType) {
+                case 1: offset = (shiftAmount == 0) ? 0 : regVal >>> shiftAmount; break;            // LSR
+                case 2: offset = (shiftAmount == 0) ? ((regVal & 0x80000000) != 0 ? -1 : 0) : regVal >> shiftAmount; break; // ASR
+                case 3: offset = (shiftAmount == 0) ? regVal : rotateRight(regVal, shiftAmount); break; // ROR
+                default: offset = regVal << shiftAmount; break;                                      // LSL
+            }
+        }
         
         if (rn == REG_PC) { baseAddress = pc + 4; } else { baseAddress = registers[rn]; }
         
