@@ -6,12 +6,11 @@
 static int is_ascii_text(const unsigned char *b, int n)
 {
     int i;
-    if (n >= 3 && b[0] == 0xEF && b[1] == 0xBB && b[2] == 0xBF) return 1; /* UTF-8 BOM */
     for (i = 0; i < n; i++) {
         unsigned char c = b[i];
         if (c == 0) return 0;
         if (c < 32 && c != '\t' && c != '\n' && c != '\r' && c != '\f' && c != 27) return 0;
-        if (c == 0x7F) return 0;
+        if (c == 0x7F || c > 126) return 0;
     }
     return 1;
 }
@@ -22,7 +21,7 @@ static void file_type(const unsigned char *b, int n, char *out)
     if (n <= 0) { strcpy(out, "empty"); return; }
 
     /* ELF: 7f E L F */
-    if (n >= 4 && b[0] == 0x7F && b[1] == 'E' && b[2] == 'L' && b[3] == 'F') {
+    if (n >= 20 && b[0] == 0x7F && b[1] == 'E' && b[2] == 'L' && b[3] == 'F') {
         int etype = b[16] | (b[17] << 8);
         int mach  = b[18] | (b[19] << 8);
         const char *t;

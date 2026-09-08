@@ -158,9 +158,9 @@ for src in "${INPUTS[@]}"; do
         *.c)
             [ -n "$GCC" ] || { echo "Erro: preciso de ${AS%as}gcc para compilar .c." >&2; exit 1; }
             if [ "$SHARED" -eq 1 ]; then
-                "$GCC" -fPIC -nostdlib -static -marm -march=armv5te -fno-builtin -c -o "$WORK/$n.o" "$src"
+                "$GCC" -fPIC -nostdlib -static -marm -march=armv5te -mfloat-abi=soft -fno-builtin -c -o "$WORK/$n.o" "$src"
             else
-                "$GCC" -nostdlib -static -marm -march=armv5te -fno-builtin -c -o "$WORK/$n.o" "$src"
+                "$GCC" -nostdlib -static -marm -march=armv5te -mfloat-abi=soft -fno-builtin -c -o "$WORK/$n.o" "$src"
             fi ;;
         *) echo "Erro: extensao nao suportada em '$src' (use .s/.S/.sx/.c)." >&2; exit 1 ;;
     esac
