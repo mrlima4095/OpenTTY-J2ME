@@ -22,6 +22,7 @@ return {
         ["free"] = { remote = "sys/free.lua", here = "/bin/free", description = "Memory Informations" },
         ["forge"] = { remote = "dev/forge/main.lua", here = "/lib/forge", description = "Additional API for OpenTTY" },
         ["find"] = { remote = "file/find.lua", here = "/bin/find", description = "Search a pattern value in a file" },
+        ["file"] = { remote = "file/file", here = "/bin/file", description = "Detect the type of a file" },
         ["grep"] = { remote = "file/grep.lua", here = "/bin/grep", description = "Check if a file contains a pattern" },
         ["hash"] = { remote = "file/hash.lua", here = "/bin/hash", description = "Prints file hash" },
         ["head"] = { remote = "file/head.lua", here = "/bin/head", description = "Prints first lines of a file" },

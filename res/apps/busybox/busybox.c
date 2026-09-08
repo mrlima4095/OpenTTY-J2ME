@@ -153,13 +153,14 @@ static const bb_applet_fn      a_md5  = app_md5sum;
 static const bb_applet_fn      a_sum  = app_sum;
 
 static const bb_applet_fn      a_date = app_date;
+static const bb_applet_fn      a_file = app_file;
 
 static const struct { const char *name; bb_applet_fn fn; } applets[] = {
     { "basename", a_base }, { "base64",  a_b64 },    { "cat", a_cat },
     { "clear",   a_clear }, { "cmp",     a_cmp },    { "cp", a_cp },
     { "date",    a_date },  { "dirname", a_dirn },   { "du", a_du },
     { "echo",    a_echo },  { "env",     a_env },    { "false", a_false },
-    { "head",    a_head },  { "id",      a_id },     { "ls", a_ls },
+    { "file",    a_file },  { "head",    a_head },  { "id",      a_id },     { "ls", a_ls },
     { "md5sum",  a_md5 },   { "mkdir",   a_mkdir },  { "mv", a_mv },
     { "printf",  a_print }, { "rev",     a_rev },    { "rm", a_rm },
     { "rmdir",   a_rmdir }, { "seq",     a_seq },    { "sort", a_sort },

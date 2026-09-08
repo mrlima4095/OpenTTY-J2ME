@@ -13,7 +13,7 @@ set -e
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$HERE/../../.."
-APPLETS="basename base64 cat clear cmp cp date dirname du echo env false head id ls md5sum mkdir mv printf rev rm rmdir seq sort sum tail touch tr true uname wc whoami"
+APPLETS="basename base64 cat clear cmp cp date dirname du echo env false file head id ls md5sum mkdir mv printf rev rm rmdir seq sort sum tail touch tr true uname wc whoami"
 
 cd "$ROOT"
 
@@ -21,13 +21,14 @@ cd "$ROOT"
 if command -v gcc >/dev/null 2>&1; then
     gcc -fsyntax-only -fno-builtin -Wall \
         res/apps/busybox/busybox.c res/apps/busybox/bb_file.c \
-        res/apps/busybox/bb_crypto.c res/apps/busybox/bb_date.c
+        res/apps/busybox/bb_crypto.c res/apps/busybox/bb_date.c \
+        res/apps/busybox/bb_filetype.c
 fi
 
 ./build-elf.sh \
     res/apps/busybox/busybox.c res/apps/busybox/bb_file.c \
     res/apps/busybox/bb_crypto.c res/apps/busybox/bb_date.c \
-    res/apps/busybox/bb_sys.s -stdlib \
+    res/apps/busybox/bb_filetype.c res/apps/busybox/bb_sys.s -stdlib \
     -o res/apps/busybox/busybox
 
 rm -rf res/apps/busybox/applets

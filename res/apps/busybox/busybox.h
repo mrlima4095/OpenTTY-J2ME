@@ -106,4 +106,6 @@ int app_sum(int argc, char **argv);
 
 int app_date(int argc, char **argv);
 
+int app_file(int argc, char **argv);
+
 #endif
