@@ -38,6 +38,7 @@ public class ELF {
 
     // Dynamic linking structures
     private Hashtable dynamicSymbols, neededLibraries, globalSymbols, pltEntries;
+    private Vector sharedObjectMappings;
     private Vector loadedLibraries, memoryMappings, dynSymNames;
     private Hashtable copyRelocs, libSymSizes; 
     private int pltGotAddr, dynamicSectionAddr, gotBase, pltBase, resolverCodeAddr, resolveFuncAddr;
@@ -167,6 +168,7 @@ public class ELF {
         this.neededLibraries = new Hashtable();
         this.globalSymbols = new Hashtable();
         this.pltEntries = new Hashtable();
+        this.sharedObjectMappings = new Vector();
         this.dynSymNames = new Vector();
         this.copyRelocs = new Hashtable();
         this.libSymSizes = new Hashtable();
@@ -416,16 +418,35 @@ public class ELF {
     }
     private boolean loadSharedObject(String libName, byte[] elfData) {
         int e_phoff = readIntLE(elfData, 28), e_phnum = readShortLE(elfData, 44) & 0xFFFF, e_phentsize = readShortLE(elfData, 42) & 0xFFFF;
-        int dynAddr = 0, dynSize = 0;
+        int minVaddr = memory.length, maxVaddr = 0, dynAddr = 0, dynSize = 0;
         for (int i = 0; i < e_phnum; i++) {
             int off = e_phoff + i * e_phentsize, p_type = readIntLE(elfData, off);
             if (p_type == PT_LOAD) {
                 int p_offset = readIntLE(elfData, off + 4), p_vaddr = readIntLE(elfData, off + 8), p_filesz = readIntLE(elfData, off + 16), p_memsz = readIntLE(elfData, off + 20);
-                for (int j = 0; j < p_filesz && p_vaddr + j < memory.length; j++) { memory[p_vaddr + j] = elfData[p_offset + j]; }
-                for (int j = p_filesz; j < p_memsz && p_vaddr + j < memory.length; j++) { memory[p_vaddr + j] = 0; }
+                if (p_offset < 0 || p_filesz < 0 || p_memsz < p_filesz || p_offset + p_filesz > elfData.length || p_vaddr < 0 || p_vaddr + p_memsz < p_vaddr) { return false; }
+                if (p_vaddr < minVaddr) { minVaddr = p_vaddr; }
+                if (p_vaddr + p_memsz > maxVaddr) { maxVaddr = p_vaddr + p_memsz; }
             } else if (p_type == PT_DYNAMIC) { dynAddr = readIntLE(elfData, off + 8); dynSize = readIntLE(elfData, off + 16); }
         }
-        if (dynAddr == 0) { return false; }
+        if (minVaddr == memory.length || maxVaddr <= minVaddr || dynAddr == 0 || dynSize <= 0) { return false; }
+
+        int runtimeBase = findFreeMemoryRegion(maxVaddr - minVaddr);
+        if (runtimeBase == 0) { return false; }
+        int loadBias = runtimeBase - minVaddr;
+        Hashtable mapping = new Hashtable();
+        mapping.put("addr", new Integer(runtimeBase));
+        mapping.put("length", new Integer(maxVaddr - minVaddr));
+        sharedObjectMappings.addElement(mapping);
+
+        for (int i = 0; i < e_phnum; i++) {
+            int off = e_phoff + i * e_phentsize, p_type = readIntLE(elfData, off);
+            if (p_type == PT_LOAD) {
+                int p_offset = readIntLE(elfData, off + 4), p_vaddr = readIntLE(elfData, off + 8), p_filesz = readIntLE(elfData, off + 16), p_memsz = readIntLE(elfData, off + 20), target = loadBias + p_vaddr;
+                for (int j = 0; j < p_filesz; j++) { memory[target + j] = elfData[p_offset + j]; }
+                for (int j = p_filesz; j < p_memsz; j++) { memory[target + j] = 0; }
+            }
+        }
+        dynAddr += loadBias;
         
         int symtab = 0, strtab = 0, syment = 16, rel = 0, relsz = 0, jmprel = 0, pltrelsz = 0, pltrel = DT_REL, hashAddr = 0;
         int offset = 0;
@@ -433,15 +454,15 @@ public class ELF {
             int tag = readIntLE(memory, dynAddr + offset), val = readIntLE(memory, dynAddr + offset + 4);
             if (tag == DT_NULL) { break; }
             switch (tag) {
-                case DT_SYMTAB: symtab = val; break;
-                case DT_STRTAB: strtab = val; break;
+                case DT_SYMTAB: symtab = loadBias + val; break;
+                case DT_STRTAB: strtab = loadBias + val; break;
                 case DT_SYMENT: syment = val; break;
-                case DT_REL: rel = val; break;
+                case DT_REL: rel = loadBias + val; break;
                 case DT_RELSZ: relsz = val; break;
-                case DT_JMPREL: jmprel = val; break;
+                case DT_JMPREL: jmprel = loadBias + val; break;
                 case DT_PLTRELSZ: pltrelsz = val; break;
                 case DT_PLTREL: pltrel = val; break;
-                case DT_HASH: hashAddr = val; break;
+                case DT_HASH: hashAddr = loadBias + val; break;
             }
             offset += 8;
         }
@@ -463,7 +484,7 @@ public class ELF {
             if (nm == null) { break; }
             symNames.addElement(nm);
             int bind = (st_info >> 4) & 0xF;
-            if (st_shndx != 0 && (bind == 1 || bind == 2)) { libSyms.put(nm, new Integer(st_value)); if (st_size > 0) { sizeMap.put(nm, new Integer(st_size)); } }
+            if (st_shndx != 0 && (bind == 1 || bind == 2)) { libSyms.put(nm, new Integer(loadBias + st_value)); if (st_size > 0) { sizeMap.put(nm, new Integer(st_size)); } }
             s += syment;
         }
         globalSymbols.put(libName, libSyms);
@@ -472,13 +493,13 @@ public class ELF {
         if (midlet.debug) { midlet.print("Loaded shared object: " + libName + " (" + symNames.size() + " dynsyms)", stdout, id, scope); }
         
         // Aplicar as relocacoes da propria lib (.rel.dyn e .rel.plt)
-        applyLibraryRelocations(rel, relsz, 8, symNames);
-        if (jmprel != 0 && pltrelsz != 0) { applyLibraryRelocations(jmprel, pltrelsz, (pltrel == DT_RELA) ? 12 : 8, symNames); }
+        applyLibraryRelocations(rel, relsz, 8, symNames, loadBias);
+        if (jmprel != 0 && pltrelsz != 0) { applyLibraryRelocations(jmprel, pltrelsz, (pltrel == DT_RELA) ? 12 : 8, symNames, loadBias); }
         return true;
     }
-    private void applyLibraryRelocations(int relAddr, int relsz, int relent, Vector symNames) {
+    private void applyLibraryRelocations(int relAddr, int relsz, int relent, Vector symNames, int loadBias) {
         for (int i = 0; i < relsz && relAddr + i + relent <= memory.length; i += relent) {
-            int r_offset = readIntLE(memory, relAddr + i), r_info = readIntLE(memory, relAddr + i + 4), symIndex = r_info >> 8, type = r_info & 0xFF;
+            int r_offset = loadBias + readIntLE(memory, relAddr + i), r_info = readIntLE(memory, relAddr + i + 4), symIndex = r_info >> 8, type = r_info & 0xFF;
             switch (type) {
                 case R_ARM_ABS32:
                 case R_ARM_GLOB_DAT:
@@ -490,7 +511,7 @@ public class ELF {
                 }
                     case R_ARM_RELATIVE: {
                     int cur = readIntLE(memory, r_offset);
-                    writeIntLE(memory, r_offset, cur);
+                    writeIntLE(memory, r_offset, loadBias + cur);
                     if (midlet.debug) { midlet.print("lib reloc RELATIVE at " + toHex(r_offset), stdout, id, scope); }
                     break;
                 }
@@ -3787,7 +3808,7 @@ public class ELF {
     private int findFreeMemoryRegion(int length) {
         int start = heapEnd;
         
-        while (start + length < memory.length) {
+        while (start + length > start && start + length <= stackPointer - 4096) {
             boolean free = true;
             
             // Verificar se sobrepõe com PLT
@@ -3795,6 +3816,11 @@ public class ELF {
             
             // Verificar se sobrepõe com resolvedor
             if (resolverCodeAddr != 0 && start < resolverCodeAddr + 256 && start + length > resolverCodeAddr) { free = false; start = resolverCodeAddr + 256; }
+            for (int i = 0; i < sharedObjectMappings.size(); i++) {
+                Hashtable mapping = (Hashtable) sharedObjectMappings.elementAt(i);
+                int addr = ((Integer) mapping.get("addr")).intValue(), size = ((Integer) mapping.get("length")).intValue();
+                if (start < addr + size && start + length > addr) { free = false; start = addr + size; break; }
+            }
             if (free) { start = (start + 4095) & ~4095; return start; }
         }
         

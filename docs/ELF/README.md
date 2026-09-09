@@ -33,6 +33,9 @@ smaller API and is not a replacement for `-stdlib`.
 - Static executables and the project's limited `ET_DYN` loader.
 - Dynamic imports using `DT_NEEDED`, PLT/GOT, `R_ARM_ABS32`, `R_ARM_COPY`,
   `R_ARM_GLOB_DAT`, `R_ARM_JUMP_SLOT`, and `R_ARM_RELATIVE`.
+- Shared objects receive a load bias in a free guest-memory region. Their
+  link-time virtual addresses are not used as runtime addresses, so separate
+  `.so` files do not overwrite the executable or each other.
 - The loader searches a needed `.so` in the current directory, `/lib/`, then
   `/bin/`. For example, `dcalc` requires `libutil.so`.
 - Program arguments are passed through the usual initial stack layout:
