@@ -173,7 +173,7 @@ static const struct { const char *name; bb_applet_fn fn; } applets[] = {
 static void bb_list_applets(void)
 {
     int i;
-    for (i = 0; i < N_APPLETS; i++) { bb_out(applets[i].name); bb_putc('\n'); }
+    for (i = 0; i < N_APPLETS; i++) { bb_out(applets[i].name); bb_putc(i + 1 < N_APPLETS ? '\t' : '\n'); }
 }
 
 int main(int argc, char **argv, char **envp)
