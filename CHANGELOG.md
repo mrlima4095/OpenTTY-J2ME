@@ -19,6 +19,7 @@ Copyright (C) 2026 - Mr. Lima
 [ ELF ]
 
 - Support for `stdlib`
+- Support for **Shared Objects**
 
 [ Lua ]
 
