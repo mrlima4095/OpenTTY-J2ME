@@ -10,6 +10,7 @@ Copyright (C) 2026 - Mr. Lima
 [ Package Manager ]
 
 - multi-sources for different versions
+- feature to block installing of **ARM32 binaries** on OpenTTY builds without emulator
 
 [ VFS ]
 
@@ -18,3 +19,10 @@ Copyright (C) 2026 - Mr. Lima
 [ ELF ]
 
 - Support for `stdlib`
+
+[ Lua ]
+
+- Added `debug` table
+- Added `coroutines` support
+- **LuaCanvas** API available
+- 
