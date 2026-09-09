@@ -49,6 +49,11 @@ Do not use Thumb code, floats, `short`, division instructions emitted for
 newer ARM cores, or `long long` multiplication. `build-elf.sh` already uses
 `-fno-builtin` and ARMv5TE flags for C files.
 
+`res/apps/dist/elflife` is the dynamic-loader integration test. It loads
+`libinit.so`, which transitively loads `libutil.so`, and should print the
+`libinit` constructor, `elflife: result=42`, then the destructor. The matching
+packages are `libutil`, `libinit`, and `elflife` in the 1.18.2 catalog.
+
 ## OpenTTY libc
 
 `res/lib/opentty.h` declares the available API:

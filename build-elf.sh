@@ -168,12 +168,16 @@ for src in "${INPUTS[@]}"; do
     n=$((n + 1))
 done
 
-[ -z "$TEXT" ] && TEXT=$([ "$SHARED" -eq 1 ] && echo "0x20000" || echo "0x10000")
+if [ -z "$TEXT" ]; then
+    if [ "$SHARED" -eq 1 ] || [ ${#LIBFLAGS[@]} -gt 0 ]; then TEXT="0x20000"; else TEXT="0x10000"; fi
+fi
 
 if [ "$SHARED" -eq 1 ]; then
-    "$LD" -shared -Ttext="$TEXT" -o "$OUTPUT" "${OBJS[@]}"
+    "$LD" -shared --hash-style=sysv --no-as-needed -Ttext="$TEXT" -o "$OUTPUT" "${OBJS[@]}" "${LIBFLAGS[@]}"
 else
-    "$LD" -Ttext="$TEXT" --entry="$ENTRY" -o "$OUTPUT" "${OBJS[@]}" "${LIBFLAGS[@]}"
+    # The emulator resolves DT_NEEDED itself; an ELF interpreter is neither
+    # available nor useful and would overlap .text at the fixed guest address.
+    "$LD" --hash-style=sysv -Ttext="$TEXT" --no-dynamic-linker --no-as-needed --allow-shlib-undefined --entry="$ENTRY" -o "$OUTPUT" "${OBJS[@]}" "${LIBFLAGS[@]}"
 fi
 
 if [ "$KEEP" -eq 1 ]; then cp "$WORK"/*.o "$(dirname "$OUTPUT")/" && echo "Objetos .o preservados em: $(dirname "$OUTPUT")/"; fi
