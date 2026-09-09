@@ -27,6 +27,12 @@ if arg[1] == "install" then
         local pkg = mirror[pkg_name]
 
         if pkg then
+            if pkg.arm == true then
+                if java.midlet.lite ~= false then
+                    print(":: package " .. pkg_name .. " requires the full OpenTTY ARM build")
+                    os.exit(69)
+                end
+            end
             if pkg.depends then
                 for _, dep in ipairs(pkg.depends) do
                     local dep_pkg = mirror[dep]

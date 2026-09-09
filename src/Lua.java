@@ -94,7 +94,7 @@ public class Lua {
         for (int i = 0; i < funcs.length; i++) { http.put(funcs[i], new LuaFunction(loaders[i])); } socket.put("http", http);
 
         funcs = new String[] { "class", "getName", "delete", "run", "thread", "sleep" }; loaders = new int[] { CLASS, NAME, DELETE, RUN, THREAD, SLEEP };
-        for (int i = 0; i < funcs.length; i++) { java.put(funcs[i], new LuaFunction(loaders[i])); } jdb.put("username", midlet.username); jdb.put("cache", midlet.cache); jdb.put("build", midlet.build); jdb.put("uptime", new LuaFunction(UPTIME)); java.put("midlet", jdb); globals.put("java", java);
+        for (int i = 0; i < funcs.length; i++) { java.put(funcs[i], new LuaFunction(loaders[i])); } jdb.put("username", midlet.username); jdb.put("cache", midlet.cache); jdb.put("build", midlet.build); jdb.put("lite", new Boolean(ELF.isLiteEdition())); jdb.put("uptime", new LuaFunction(UPTIME)); java.put("midlet", jdb); globals.put("java", java);
 
         funcs = new String[] { "connect", "peer", "device", "server", "accept" }; loaders = new int[] { CONNECT, PEER, DEVICE, SERVER, ACCEPT };
         for (int i = 0; i < funcs.length; i++) { socket.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("socket", socket);

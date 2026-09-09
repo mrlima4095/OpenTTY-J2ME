@@ -6,6 +6,10 @@ import java.io.*;
 // |
 // ELF ARM 32 Emulator
 public class ELF {
+    private static final boolean LITE_EDITION = false;
+
+    public static boolean isLiteEdition() { return LITE_EDITION; }
+
     private OpenTTY midlet;
     private Object stdout;
     private Process proc;

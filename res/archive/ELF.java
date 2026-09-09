@@ -8,6 +8,10 @@ import java.io.*;
 // Apenas valida o arquivo ELF e informa que o emulador nao esta
 // presente nesta build. Usado pelo res/swap_lite.sh.
 public class ELF {
+    private static final boolean LITE_EDITION = true;
+
+    public static boolean isLiteEdition() { return LITE_EDITION; }
+
     private Object stdout;
     private OpenTTY midlet;
     private Hashtable scope;
