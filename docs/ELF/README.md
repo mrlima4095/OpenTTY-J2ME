@@ -36,8 +36,11 @@ smaller API and is not a replacement for `-stdlib`.
 - Shared objects receive a load bias in a free guest-memory region. Their
   link-time virtual addresses are not used as runtime addresses, so separate
   `.so` files do not overwrite the executable or each other.
-- The loader searches a needed `.so` in the current directory, `/lib/`, then
-  `/bin/`. For example, `dcalc` requires `libutil.so`.
+- `DT_INIT` and `DT_INIT_ARRAY` constructors run before the executable entry
+  point, including constructors declared by loaded shared objects.
+- The loader resolves `DT_NEEDED` dependencies transitively and searches each
+  needed `.so` in the current directory, `/lib/`, then `/bin/`. For example,
+  `dcalc` requires `libutil.so`.
 - Program arguments are passed through the usual initial stack layout:
   `argc`, `argv[]`, a null pointer, then `envp[]`.
 

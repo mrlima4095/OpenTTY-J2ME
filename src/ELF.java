@@ -250,6 +250,7 @@ public class ELF {
         if (!loadNeededLibraries()) { return false; }
         applyCopyRelocations();
         setupCRTStack();
+        executeLibraryInitFunctions();
         processSymbolsAndRelocations(elfData, sectionInfo); setupPLTGOT();
         executeInitFunctions();
         
@@ -356,6 +357,14 @@ public class ELF {
                 case DT_FINI:
                     elfInfo.put("fini", new Integer(val));
                     break;
+
+                case DT_INIT_ARRAY:
+                    elfInfo.put("init_array", new Integer(val));
+                    break;
+
+                case DT_INIT_ARRAYSZ:
+                    elfInfo.put("init_arraysz", new Integer(val));
+                    break;
                     
                 case DT_HASH:
                     processHashTable(mem, val);
@@ -448,12 +457,14 @@ public class ELF {
         }
         dynAddr += loadBias;
         
-        int symtab = 0, strtab = 0, syment = 16, rel = 0, relsz = 0, jmprel = 0, pltrelsz = 0, pltrel = DT_REL, hashAddr = 0;
+        int symtab = 0, strtab = 0, syment = 16, rel = 0, relsz = 0, jmprel = 0, pltrelsz = 0, pltrel = DT_REL, hashAddr = 0, init = 0, initArray = 0, initArraySize = 0;
+        Vector neededOffsets = new Vector();
         int offset = 0;
         while (offset + 8 <= dynSize) {
             int tag = readIntLE(memory, dynAddr + offset), val = readIntLE(memory, dynAddr + offset + 4);
             if (tag == DT_NULL) { break; }
             switch (tag) {
+                case DT_NEEDED: neededOffsets.addElement(new Integer(val)); break;
                 case DT_SYMTAB: symtab = loadBias + val; break;
                 case DT_STRTAB: strtab = loadBias + val; break;
                 case DT_SYMENT: syment = val; break;
@@ -463,6 +474,9 @@ public class ELF {
                 case DT_PLTRELSZ: pltrelsz = val; break;
                 case DT_PLTREL: pltrel = val; break;
                 case DT_HASH: hashAddr = loadBias + val; break;
+                case DT_INIT: init = loadBias + val; break;
+                case DT_INIT_ARRAY: initArray = loadBias + val; break;
+                case DT_INIT_ARRAYSZ: initArraySize = val; break;
             }
             offset += 8;
         }
@@ -490,7 +504,14 @@ public class ELF {
         globalSymbols.put(libName, libSyms);
         loadedLibraries.addElement(libName);
         if (sizeMap.size() > 0) { libSymSizes.put(libName, sizeMap); }
+        if (init != 0) { mapping.put("init", new Integer(init)); }
+        if (initArray != 0 && initArraySize > 0) { mapping.put("init_array", new Integer(initArray)); mapping.put("init_arraysz", new Integer(initArraySize)); }
         if (midlet.debug) { midlet.print("Loaded shared object: " + libName + " (" + symNames.size() + " dynsyms)", stdout, id, scope); }
+
+        for (int i = 0; i < neededOffsets.size(); i++) {
+            String needed = readString(memory, strtab + ((Integer) neededOffsets.elementAt(i)).intValue(), 256);
+            if (needed.length() > 0 && !loadedLibraries.contains(needed) && !loadLibrary(needed)) { return false; }
+        }
         
         // Aplicar as relocacoes da propria lib (.rel.dyn e .rel.plt)
         applyLibraryRelocations(rel, relsz, 8, symNames, loadBias);
@@ -1156,23 +1177,43 @@ public class ELF {
     private void executeInitFunctions() {
         if (elfInfo.containsKey("init")) {
             int initAddr = ((Integer)elfInfo.get("init")).intValue();
-            if (initAddr != 0) {
-                int savedPC = pc, savedSP = registers[REG_SP];
-                
-                registers[REG_LR] = savedPC;pc = initAddr;
-                
-                if (midlet.debug) { midlet.print("Calling .init at " + toHex(initAddr), stdout, id, scope); }
-                
-                for (int i = 0; i < 100 && running; i++) {
-                    int instruction = fetchInstruction(pc);
-                    pc += 4;
-                    executeInstruction(instruction);
-                }
-                
-                pc = savedPC;
-                registers[REG_SP] = savedSP;
+            callInitFunction(initAddr, ".init");
+        }
+        if (elfInfo.containsKey("init_array") && elfInfo.containsKey("init_arraysz")) {
+            int array = ((Integer)elfInfo.get("init_array")).intValue(), size = ((Integer)elfInfo.get("init_arraysz")).intValue();
+            for (int offset = 0; offset + 3 < size; offset += 4) {
+                int initAddr = readIntLE(memory, array + offset);
+                if (initAddr != 0 && initAddr != -1) { callInitFunction(initAddr, ".init_array"); }
             }
         }
+    }
+    private void executeLibraryInitFunctions() {
+        for (int i = sharedObjectMappings.size() - 1; i >= 0; i--) {
+            Hashtable mapping = (Hashtable) sharedObjectMappings.elementAt(i);
+            if (mapping.containsKey("init")) { callInitFunction(((Integer) mapping.get("init")).intValue(), "shared .init"); }
+            if (mapping.containsKey("init_array") && mapping.containsKey("init_arraysz")) {
+                int array = ((Integer) mapping.get("init_array")).intValue(), size = ((Integer) mapping.get("init_arraysz")).intValue();
+                for (int offset = 0; offset + 3 < size; offset += 4) {
+                    int initAddr = readIntLE(memory, array + offset);
+                    if (initAddr != 0 && initAddr != -1) { callInitFunction(initAddr, "shared .init_array"); }
+                }
+            }
+        }
+    }
+    private void callInitFunction(int initAddr, String source) {
+        if (initAddr < 0 || initAddr >= memory.length) { return; }
+        int savedPC = pc, savedSP = registers[REG_SP], savedLR = registers[REG_LR];
+        registers[REG_LR] = savedPC;
+        pc = initAddr;
+        if (midlet.debug) { midlet.print("Calling " + source + " at " + toHex(initAddr), stdout, id, scope); }
+        for (int i = 0; i < 1024 && pc != savedPC && pc >= 0 && pc + 3 < memory.length; i++) {
+            int instruction = fetchInstruction(pc);
+            pc += 4;
+            executeInstruction(instruction);
+        }
+        pc = savedPC;
+        registers[REG_SP] = savedSP;
+        registers[REG_LR] = savedLR;
     }
     
     private boolean checkCondition(int cond) {
