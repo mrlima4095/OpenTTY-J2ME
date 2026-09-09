@@ -1,5 +1,5 @@
-/* bb_filetype.c - applet file: detecta o tipo de um arquivo pelos bytes de
- * cabecalho (magic). Funciona com a libc do emulador (sem floats/long long).
+/* bb_filetype.c - file applet: detects file types from magic header bytes.
+ * Works with the emulator libc (no floats or long long).
  */
 #include "busybox.h"
 
@@ -15,7 +15,7 @@ static int is_ascii_text(const unsigned char *b, int n)
     return 1;
 }
 
-/* preenche out com a descricao do tipo; out deve ter espaco suficiente */
+/* Writes the type description to out, which must have sufficient space. */
 static void file_type(const unsigned char *b, int n, char *out)
 {
     if (n <= 0) { strcpy(out, "empty"); return; }
@@ -33,7 +33,7 @@ static void file_type(const unsigned char *b, int n, char *out)
         if (mach == 40) strcat(out, " (ARM)");
         return;
     }
-    /* shebang */
+    /* Interpreter line */
     if (n >= 2 && b[0] == '#' && b[1] == '!') {
         int i;
         strcpy(out, "script: ");
@@ -82,25 +82,34 @@ int app_file(int argc, char **argv)
     int i = 1;
     while (i < argc && argv[i][0] == '-' && strcmp(argv[i], "-") != 0) {
         if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
-            bb_out("file: uso: file ARQUIVO...\n");
+            bb_out("file: usage: file [filename]");
             return 0;
         }
         i++;
     }
-    if (i >= argc) { bb_err("file: uso: file ARQUIVO...\n"); return 1; }
+    if (i >= argc) { bb_err("file: usage: file [filename]"); return 1; }
     for (; i < argc; i++) {
         char b[512];
-        int fd = open(argv[i], 0, 0), n = 0, r;
+        int fd, n = 0, r;
         char out[96];
+        char line[768];
+        if (bb_is_dir(argv[i])) {
+            snprintf(line, sizeof(line), "%s: directory", argv[i]);
+            bb_out(line);
+            continue;
+        }
+        fd = open(argv[i], 0, 0);
         if (fd < 0) {
-            bb_err("file: "); bb_err(argv[i]); bb_err(": No such file or directory\n");
+            snprintf(line, sizeof(line), "file: %s: No such file or directory", argv[i]);
+            bb_err(line);
             continue;
         }
         while (n < (int)sizeof(b) && (r = read(fd, b + n, sizeof(b) - n)) > 0)
             n += r;
         close(fd);
         file_type((const unsigned char *)b, n, out);
-        bb_out(argv[i]); bb_out(": "); bb_out(out); bb_putc('\n');
+        snprintf(line, sizeof(line), "%s: %s", argv[i], out);
+        bb_out(line);
     }
     return 0;
 }
