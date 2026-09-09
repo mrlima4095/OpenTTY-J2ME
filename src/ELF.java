@@ -423,7 +423,7 @@ public class ELF {
             } catch (Exception e) { if (midlet.debug) { midlet.print("lib read error: " + libName + " (" + e + ")", stdout, id, scope); } }
         }
         if (libData == null || !isSharedElf(libData)) { return false; }
-        if (loadSharedObject(libName, libData)) { loadedLibraries.addElement(libName); return true; }
+        if (loadSharedObject(libName, libData)) { return true; }
         return false;
     }
     private boolean isSharedElf(byte[] d) {
@@ -434,6 +434,7 @@ public class ELF {
         return true;
     }
     private boolean loadSharedObject(String libName, byte[] elfData) {
+        int mappingCount = sharedObjectMappings.size(), libraryCount = loadedLibraries.size();
         int e_phoff = readIntLE(elfData, 28), e_phnum = readShortLE(elfData, 44) & 0xFFFF, e_phentsize = readShortLE(elfData, 42) & 0xFFFF;
         int minVaddr = memory.length, maxVaddr = 0, dynAddr = 0, dynSize = 0;
         for (int i = 0; i < e_phnum; i++) {
@@ -491,7 +492,7 @@ public class ELF {
             }
             offset += 8;
         }
-        if (symtab == 0 || strtab == 0) { return false; }
+        if (symtab == 0 || strtab == 0) { rollbackSharedObjectLoad(mappingCount, libraryCount); return false; }
         
         // Registrar os símbolos exportados (st_shndx != 0, GLOBAL/WEAK) e o índice->nome
         Hashtable libSyms = new Hashtable();
@@ -523,13 +524,27 @@ public class ELF {
 
         for (int i = 0; i < neededOffsets.size(); i++) {
             String needed = readString(memory, strtab + ((Integer) neededOffsets.elementAt(i)).intValue(), 256);
-            if (needed.length() > 0 && !loadedLibraries.contains(needed) && !loadLibrary(needed)) { return false; }
+            if (needed.length() > 0 && !loadedLibraries.contains(needed) && !loadLibrary(needed)) { rollbackSharedObjectLoad(mappingCount, libraryCount); return false; }
         }
         
         // Aplicar as relocacoes da propria lib (.rel.dyn e .rel.plt)
         applyLibraryRelocations(rel, relsz, 8, symNames, loadBias);
         if (jmprel != 0 && pltrelsz != 0) { applyLibraryRelocations(jmprel, pltrelsz, (pltrel == DT_RELA) ? 12 : 8, symNames, loadBias); }
         return true;
+    }
+    private void rollbackSharedObjectLoad(int mappingCount, int libraryCount) {
+        while (sharedObjectMappings.size() > mappingCount) {
+            Hashtable mapping = (Hashtable) sharedObjectMappings.elementAt(sharedObjectMappings.size() - 1);
+            int address = ((Integer) mapping.get("addr")).intValue(), length = ((Integer) mapping.get("length")).intValue();
+            for (int i = 0; i < length; i++) { memory[address + i] = 0; }
+            sharedObjectMappings.removeElementAt(sharedObjectMappings.size() - 1);
+        }
+        while (loadedLibraries.size() > libraryCount) {
+            String library = (String) loadedLibraries.elementAt(loadedLibraries.size() - 1);
+            globalSymbols.remove(library);
+            libSymSizes.remove(library);
+            loadedLibraries.removeElementAt(loadedLibraries.size() - 1);
+        }
     }
     private void applyLibraryRelocations(int relAddr, int relsz, int relent, Vector symNames, int loadBias) {
         for (int i = 0; i < relsz && relAddr + i + relent <= memory.length; i += relent) {
