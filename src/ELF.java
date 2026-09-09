@@ -365,6 +365,14 @@ public class ELF {
                 case DT_INIT_ARRAYSZ:
                     elfInfo.put("init_arraysz", new Integer(val));
                     break;
+
+                case DT_FINI_ARRAY:
+                    elfInfo.put("fini_array", new Integer(val));
+                    break;
+
+                case DT_FINI_ARRAYSZ:
+                    elfInfo.put("fini_arraysz", new Integer(val));
+                    break;
                     
                 case DT_HASH:
                     processHashTable(mem, val);
@@ -457,7 +465,7 @@ public class ELF {
         }
         dynAddr += loadBias;
         
-        int symtab = 0, strtab = 0, syment = 16, rel = 0, relsz = 0, jmprel = 0, pltrelsz = 0, pltrel = DT_REL, hashAddr = 0, init = 0, initArray = 0, initArraySize = 0;
+        int symtab = 0, strtab = 0, syment = 16, rel = 0, relsz = 0, jmprel = 0, pltrelsz = 0, pltrel = DT_REL, hashAddr = 0, init = 0, initArray = 0, initArraySize = 0, fini = 0, finiArray = 0, finiArraySize = 0;
         Vector neededOffsets = new Vector();
         int offset = 0;
         while (offset + 8 <= dynSize) {
@@ -477,6 +485,9 @@ public class ELF {
                 case DT_INIT: init = loadBias + val; break;
                 case DT_INIT_ARRAY: initArray = loadBias + val; break;
                 case DT_INIT_ARRAYSZ: initArraySize = val; break;
+                case DT_FINI: fini = loadBias + val; break;
+                case DT_FINI_ARRAY: finiArray = loadBias + val; break;
+                case DT_FINI_ARRAYSZ: finiArraySize = val; break;
             }
             offset += 8;
         }
@@ -506,6 +517,8 @@ public class ELF {
         if (sizeMap.size() > 0) { libSymSizes.put(libName, sizeMap); }
         if (init != 0) { mapping.put("init", new Integer(init)); }
         if (initArray != 0 && initArraySize > 0) { mapping.put("init_array", new Integer(initArray)); mapping.put("init_arraysz", new Integer(initArraySize)); }
+        if (fini != 0) { mapping.put("fini", new Integer(fini)); }
+        if (finiArray != 0 && finiArraySize > 0) { mapping.put("fini_array", new Integer(finiArray)); mapping.put("fini_arraysz", new Integer(finiArraySize)); }
         if (midlet.debug) { midlet.print("Loaded shared object: " + libName + " (" + symNames.size() + " dynsyms)", stdout, id, scope); }
 
         for (int i = 0; i < neededOffsets.size(); i++) {
@@ -1142,6 +1155,7 @@ public class ELF {
         } 
         finally { 
             if (midlet.debug) midlet.print("=== ELF FINALLY DEBUG ===", stdout, id, scope);
+            executeFiniFunctions();
             if (midlet.sys.containsKey(pid)) { midlet.sys.remove(pid); } 
         }
 
@@ -1198,6 +1212,24 @@ public class ELF {
                     if (initAddr != 0 && initAddr != -1) { callInitFunction(initAddr, "shared .init_array"); }
                 }
             }
+        }
+    }
+    private void executeFiniFunctions() {
+        executeFiniArray(elfInfo, "fini_array");
+        if (elfInfo.containsKey("fini")) { callInitFunction(((Integer) elfInfo.get("fini")).intValue(), ".fini"); }
+        for (int i = 0; i < sharedObjectMappings.size(); i++) {
+            Hashtable mapping = (Hashtable) sharedObjectMappings.elementAt(i);
+            executeFiniArray(mapping, "fini_array");
+            if (mapping.containsKey("fini")) { callInitFunction(((Integer) mapping.get("fini")).intValue(), "shared .fini"); }
+        }
+    }
+    private void executeFiniArray(Hashtable values, String key) {
+        String sizeKey = key + "sz";
+        if (!values.containsKey(key) || !values.containsKey(sizeKey)) { return; }
+        int array = ((Integer) values.get(key)).intValue(), size = ((Integer) values.get(sizeKey)).intValue();
+        for (int offset = size - 4; offset >= 0; offset -= 4) {
+            int finiAddr = readIntLE(memory, array + offset);
+            if (finiAddr != 0 && finiAddr != -1) { callInitFunction(finiAddr, ".fini_array"); }
         }
     }
     private void callInitFunction(int initAddr, String source) {

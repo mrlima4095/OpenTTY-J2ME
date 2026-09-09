@@ -38,6 +38,7 @@ smaller API and is not a replacement for `-stdlib`.
   `.so` files do not overwrite the executable or each other.
 - `DT_INIT` and `DT_INIT_ARRAY` constructors run before the executable entry
   point, including constructors declared by loaded shared objects.
+- `DT_FINI` and `DT_FINI_ARRAY` destructors run when the guest process exits.
 - The loader resolves `DT_NEEDED` dependencies transitively and searches each
   needed `.so` in the current directory, `/lib/`, then `/bin/`. For example,
   `dcalc` requires `libutil.so`.
