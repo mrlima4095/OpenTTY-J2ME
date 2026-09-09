@@ -625,8 +625,8 @@ public class ELF {
         return sb.toString();
     }
 
-    private void libcWriteOut(String s) { midlet.print(s, stdout, id, scope); }
-    private void libcWriteChar(int c) { midlet.print(String.valueOf((char) c), stdout, id, scope); }
+    private void libcWriteOut(String s) { midlet.print(s, stdout, id, scope, false); }
+    private void libcWriteChar(int c) { midlet.print(String.valueOf((char) c), stdout, id, scope, false); }
     private void libcWriteCString(int addr, String s) {
         int n = Math.min(s.length(), 65536);
         for (int i = 0; i < n; i++) {
@@ -2958,7 +2958,7 @@ public class ELF {
             StringBuffer sb = new StringBuffer();
             for (int i = 0; i < count && buf + i < memory.length; i++) { sb.append((char)(memory[buf + i] & 0xFF)); }
             
-            midlet.print(sb.toString(), stdout, id, scope);
+            midlet.print(sb.toString(), stdout, id, scope, false);
             
             registers[REG_R0] = count;
             

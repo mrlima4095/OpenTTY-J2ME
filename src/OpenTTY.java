@@ -247,13 +247,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // | (Window-Based Interfaces)
     public int warn(String title, String message) { if (message == null || message.length() == 0) { return 2; } Alert alert = new Alert(title, message, null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); display.setCurrent(alert); return 0; }
     // |
-    public void print(String message, Object stdout) { print(message, stdout, 1000, globals); } 
-    public void print(String message, Object stdout, int id, Hashtable scope) { 
+    public void print(String message, Object stdout) { print(message, stdout, 1000, globals, true); }
+    public void print(String message, Object stdout, int id, Hashtable scope) { print(message, stdout, id, scope, true); }
+    public void print(String message, Object stdout, int id, Hashtable scope, boolean newLine) {
+        String separator = newLine ? "\n" : "";
         if (stdout == null) { }
-        else if (stdout instanceof StringItem) { String current = ((StringItem) stdout).getText(), output = current == null || current.length() == 0 ? message : current + "\n" + message; ((StringItem) stdout).setText(output); }
-        else if (stdout instanceof StringBuffer) { ((StringBuffer) stdout).append("\n").append(message); }
-        else if (stdout instanceof String) { write((String) stdout, read((String) stdout, scope) + "\n" + message, 1000, scope); }
-        else if (stdout instanceof OutputStream) { try { ((OutputStream) stdout).write((message + "\n").getBytes()); ((OutputStream) stdout).flush(); } catch (Exception e) { } }
+        else if (stdout instanceof StringItem) { String current = ((StringItem) stdout).getText(), output = current == null || current.length() == 0 ? message : current + separator + message; ((StringItem) stdout).setText(output); }
+        else if (stdout instanceof StringBuffer) { ((StringBuffer) stdout).append(separator).append(message); }
+        else if (stdout instanceof String) { write((String) stdout, read((String) stdout, scope) + separator + message, 1000, scope); }
+        else if (stdout instanceof OutputStream) { try { ((OutputStream) stdout).write((message + separator).getBytes()); ((OutputStream) stdout).flush(); } catch (Exception e) { } }
     }
     // |
     // | -=-=-=-=-=-=-=-=-=-=-
