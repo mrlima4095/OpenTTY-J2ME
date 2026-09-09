@@ -1796,31 +1796,35 @@ public class ELF {
         envVars.addElement("PATH=/bin"); envVars.addElement("USER=" + midlet.getUser(id)); envVars.addElement("HOME=/home"); envVars.addElement("TERM=vt100");
         for (Enumeration e = midlet.attributes.keys(); e.hasMoreElements();) { envVars.addElement(midlet.attributes.get(e.nextElement())); }
 
-        int envpStart = sp - (envVars.size() + 1) * 4;
+        Vector argsVec = new Vector();
+        for (int i = 0; i < args.size(); i++) { argsVec.addElement(args.get(new Double(i))); }
+        if (argsVec.size() == 0) { argsVec.addElement("program"); }
+
+        /* String data must live above argv/envp. The CRT expects both pointer
+         * tables immediately after argc, so never write strings into them. */
+        Vector envAddrs = new Vector(), argAddrs = new Vector();
         for (int i = 0; i < envVars.size(); i++) {
             String env = (String) envVars.elementAt(i);
             byte[] envBytes = env.getBytes();
             sp -= envBytes.length + 1;
             for (int j = 0; j < envBytes.length; j++) { memory[sp + j] = envBytes[j]; }
             memory[sp + envBytes.length] = 0;
-            writeIntLE(memory, envpStart + i * 4, sp);
+            envAddrs.addElement(new Integer(sp));
         }
-        writeIntLE(memory, envpStart + envVars.size() * 4, 0); // NULL terminator
-        sp = envpStart;
-
-        Vector argsVec = new Vector();
-        for (int i = 0; i < args.size(); i++) { argsVec.addElement(args.get(new Double(i))); }
-        if (argsVec.size() == 0) { argsVec.addElement("program"); }
-
-        int argvStart = sp - (argsVec.size() + 1) * 4;
         for (int i = 0; i < argsVec.size(); i++) {
             String arg = (String) argsVec.elementAt(i);
             byte[] argBytes = arg.getBytes();
             sp -= argBytes.length + 1;
             for (int j = 0; j < argBytes.length; j++) { memory[sp + j] = argBytes[j]; }
             memory[sp + argBytes.length] = 0;
-            writeIntLE(memory, argvStart + i * 4, sp);
+            argAddrs.addElement(new Integer(sp));
         }
+
+        int envpStart = sp - (envVars.size() + 1) * 4;
+        int argvStart = envpStart - (argsVec.size() + 1) * 4;
+        for (int i = 0; i < envVars.size(); i++) { writeIntLE(memory, envpStart + i * 4, ((Integer) envAddrs.elementAt(i)).intValue()); }
+        writeIntLE(memory, envpStart + envVars.size() * 4, 0); // NULL terminator
+        for (int i = 0; i < argsVec.size(); i++) { writeIntLE(memory, argvStart + i * 4, ((Integer) argAddrs.elementAt(i)).intValue()); }
         writeIntLE(memory, argvStart + argsVec.size() * 4, 0); // NULL terminator
         sp = argvStart; sp -= 4;
         writeIntLE(memory, sp, argsVec.size());
