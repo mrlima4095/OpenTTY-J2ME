@@ -38,7 +38,7 @@ public class Lua {
     public static final int EXEC = 300, GETENV = 301, SETENV = 302, CLOCK = 303, SETLOC = 304, EXIT = 305, DATE = 306, GETPID = 307, SETPROC = 308, GETPROC = 309, GETCWD = 310, GETUID = 311, CHDIR = 312, REQUEST = 313, START = 314, STOP = 315, PREQ = 316, SU = 318, REMOVE = 319, SCOPE = 320, JOIN = 321, MKDIR = 322;
     public static final int READ = 400, WRITE = 401, CLOSE = 402, OPEN = 403, POPEN = 404, DIRS = 405, SETOUT = 406, MOUNT = 407, GEN = 408, COPY = 409;
     public static final int HTTP_GET = 500, HTTP_POST = 501, CONNECT = 502, PEER = 503, DEVICE = 504, SERVER = 505, ACCEPT = 506, HTTP_RGET = 507, HTTP_RPOST = 508;
-    public static final int DISPLAY = 600, NEW = 601, RENDER = 602, APPEND = 603, ADDCMD = 604, HANDLER = 605, GETCURRENT = 606, TITLE = 607, TICKER = 608, VIBRATE = 609, SETLABEL = 610, SETTEXT = 611, GETLABEL = 612, GETTEXT = 613, CLEAR_SCREEN = 614, TASKMNGR = 615;
+    public static final int DISPLAY = 600, NEW = 601, RENDER = 602, APPEND = 603, ADDCMD = 604, HANDLER = 605, GETCURRENT = 606, TITLE = 607, TICKER = 608, VIBRATE = 609, SETLABEL = 610, SETTEXT = 611, GETLABEL = 612, GETTEXT = 613, CLEAR_SCREEN = 614, TASKMNGR = 615, CANVAS_NEW = 616, CANVAS_ON = 617, CANVAS_COLOR = 618, CANVAS_BACKGROUND = 619, CANVAS_FOREGROUND = 620, CANVAS_FONT = 621, CANVAS_CLEAR = 622, CANVAS_LINE = 623, CANVAS_RECT = 624, CANVAS_ROUNDRECT = 625, CANVAS_ARC = 626, CANVAS_TEXT = 627, CANVAS_IMAGE = 628, CANVAS_PIXEL = 629, CANVAS_CLIP = 630, CANVAS_RESETCLIP = 631, CANVAS_TRANSLATE = 632, CANVAS_RESET = 633, CANVAS_REPAINT = 634, CANVAS_FLUSH = 635, CANVAS_SIZE = 636, CANVAS_METRICS = 637, CANVAS_FULLSCREEN = 638, CANVAS_COMMAND = 639;
     public static final int CLASS = 700, NAME = 701, DELETE = 702, UPTIME = 703, RUN = 704, THREAD = 705, SLEEP = 706, KERNEL = 1000;
     public static final int AUDIO_LOAD = 800, AUDIO_PLAY = 801, AUDIO_PAUSE = 802, AUDIO_VOLUME = 803, AUDIO_DURATION = 804, AUDIO_TIME = 805;
     public static final int PUSH_REGISTER = 900, PUSH_UNREGISTER = 901, PUSH_LIST = 902, PUSH_PENDING = 903, PUSH_SET_ALARM = 904;
@@ -74,7 +74,7 @@ public class Lua {
         this.midlet = midlet; this.id = id; this.PID = pid; this.proc = proc; this.stdout = stdout; this.father = scope;
         this.tokenIndex = 0; 
 
-        Hashtable os = new Hashtable(), io = new Hashtable(), string = new Hashtable(), table = new Hashtable(), pkg = new Hashtable(), graphics = new Hashtable(), socket = new Hashtable(), http = new Hashtable(), java = new Hashtable(), jdb = new Hashtable(), math = new Hashtable(), audio = new Hashtable(), push = new Hashtable(), base64 = new Hashtable(), coroutine = new Hashtable(), debug = new Hashtable();
+        Hashtable os = new Hashtable(), io = new Hashtable(), string = new Hashtable(), table = new Hashtable(), pkg = new Hashtable(), graphics = new Hashtable(), canvas = new Hashtable(), socket = new Hashtable(), http = new Hashtable(), java = new Hashtable(), jdb = new Hashtable(), math = new Hashtable(), audio = new Hashtable(), push = new Hashtable(), base64 = new Hashtable(), coroutine = new Hashtable(), debug = new Hashtable();
         String[] funcs = new String[] { "getenv", "setenv", "clock", "setlocale", "exit", "date", "getpid", "setproc", "getproc", "getcwd", "request", "getuid", "chdir", "open", "su", "remove", "scope", "join", "mkdir" }; 
         int[] loaders = new int[] { GETENV, SETENV, CLOCK, SETLOC, EXIT, DATE, GETPID, SETPROC, GETPROC, GETCWD, REQUEST, GETUID, CHDIR, PREQ, SU, REMOVE, SCOPE, JOIN, MKDIR };
         for (int i = 0; i < funcs.length; i++) { os.put(funcs[i], new LuaFunction(loaders[i])); } os.put("execute", midlet.shell instanceof LuaFunction ? midlet.shell : new LuaFunction(EXEC)); globals.put("os", os);
@@ -106,6 +106,14 @@ public class Lua {
         funcs = new String[] { "display", "new", "render", "append", "addCommand", "handler", "getCurrent", "SetTitle", "SetTicker", "vibrate", "SetLabel", "SetText", "GetLabel", "GetText", "clear", "taskmngr" }; 
         loaders = new int[] { DISPLAY, NEW, RENDER, APPEND, ADDCMD, HANDLER, GETCURRENT, TITLE, TICKER, VIBRATE, SETLABEL, SETTEXT, GETLABEL, GETTEXT, CLEAR_SCREEN, TASKMNGR };
         for (int i = 0; i < funcs.length; i++) { graphics.put(funcs[i], new LuaFunction(loaders[i])); } graphics.put("db", midlet.graphics); graphics.put("fire", List.SELECT_COMMAND); globals.put("graphics", graphics);
+
+        funcs = new String[] { "new", "on", "color", "background", "foreground", "font", "clear", "line", "rect", "roundRect", "arc", "text", "image", "pixel", "clip", "resetClip", "translate", "reset", "repaint", "flush", "size", "metrics", "fullscreen", "command" };
+        loaders = new int[] { CANVAS_NEW, CANVAS_ON, CANVAS_COLOR, CANVAS_BACKGROUND, CANVAS_FOREGROUND, CANVAS_FONT, CANVAS_CLEAR, CANVAS_LINE, CANVAS_RECT, CANVAS_ROUNDRECT, CANVAS_ARC, CANVAS_TEXT, CANVAS_IMAGE, CANVAS_PIXEL, CANVAS_CLIP, CANVAS_RESETCLIP, CANVAS_TRANSLATE, CANVAS_RESET, CANVAS_REPAINT, CANVAS_FLUSH, CANVAS_SIZE, CANVAS_METRICS, CANVAS_FULLSCREEN, CANVAS_COMMAND };
+        for (int i = 0; i < funcs.length; i++) { canvas.put(funcs[i], new LuaFunction(loaders[i])); }
+        Hashtable anchor = new Hashtable(), key = new Hashtable();
+        anchor.put("LEFT", luaNumber(Graphics.LEFT)); anchor.put("RIGHT", luaNumber(Graphics.RIGHT)); anchor.put("TOP", luaNumber(Graphics.TOP)); anchor.put("BOTTOM", luaNumber(Graphics.BOTTOM)); anchor.put("HCENTER", luaNumber(Graphics.HCENTER)); anchor.put("VCENTER", luaNumber(Graphics.VCENTER)); anchor.put("BASELINE", luaNumber(Graphics.BASELINE));
+        key.put("UP", luaNumber(LuaCanvas.UP)); key.put("DOWN", luaNumber(LuaCanvas.DOWN)); key.put("LEFT", luaNumber(LuaCanvas.KEY_LEFT)); key.put("RIGHT", luaNumber(LuaCanvas.KEY_RIGHT)); key.put("FIRE", luaNumber(LuaCanvas.FIRE)); key.put("GAME_A", luaNumber(LuaCanvas.GAME_A)); key.put("GAME_B", luaNumber(LuaCanvas.GAME_B)); key.put("GAME_C", luaNumber(LuaCanvas.GAME_C)); key.put("GAME_D", luaNumber(LuaCanvas.GAME_D));
+        canvas.put("anchor", anchor); canvas.put("key", key); graphics.put("canvas", canvas);
 
         funcs = new String[] { "upper", "lower", "len", "find", "match", "reverse", "sub", "hash", "byte", "char", "trim", "uuid", "split", "getCommand", "getArgument", "env", "getpattern", "startswith", "endswith" }; loaders = new int[] { UPPER, LOWER, LEN, FIND, MATCH, REVERSE, SUB, HASH, BYTE, CHAR, TRIM, UUID, SPLIT, GETCMD, GETARGS, ENV, GETPATTERN, STARTSWITH, ENDSWITH };
         for (int i = 0; i < funcs.length; i++) { string.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("string", string);
@@ -1591,6 +1599,18 @@ public class Lua {
             }
             return null;
         }
+        private LuaCanvas canvas(Vector args, String name) throws Exception {
+            if (args.isEmpty() || !(args.elementAt(0) instanceof LuaCanvas)) { return (LuaCanvas) gotbad(1, name, "canvas expected, got " + (args.isEmpty() ? "no value" : type(args.elementAt(0)))); }
+            return (LuaCanvas) args.elementAt(0);
+        }
+        private int canvasNumber(Vector args, int index, String name) throws Exception {
+            if (index >= args.size() || !(args.elementAt(index) instanceof Double)) { return ((Double) gotbad(index + 1, name, "number expected, got " + (index >= args.size() ? "no value" : type(args.elementAt(index))))).intValue(); }
+            return ((Double) args.elementAt(index)).intValue();
+        }
+        private void canvasColor(LuaCanvas canvas, Vector args, int index, String name) throws Exception {
+            if (args.size() >= index + 3) { canvas.setColor(canvasNumber(args, index, name), canvasNumber(args, index + 1, name), canvasNumber(args, index + 2, name)); }
+            else { canvas.setColor(canvasNumber(args, index, name)); }
+        }
         public Object internals(Vector args) throws Exception {
             Object arg;
 
@@ -2730,6 +2750,49 @@ public class Lua {
                         break;
                     }
                 case TASKMNGR: midlet.showTaskManager(); break;
+                case CANVAS_NEW: {
+                    Hashtable options = args.isEmpty() ? new Hashtable() : args.elementAt(0) instanceof Hashtable ? (Hashtable) args.elementAt(0) : (Hashtable) gotbad(1, "graphics.canvas.new", "table expected, got " + type(args.elementAt(0)));
+                    LuaCanvas screen = new LuaCanvas(midlet, new Hashtable());
+                    screen.setTitle(getFieldValue(options, "title", "Canvas"));
+                    screen.setCallbacks(options.get("callbacks") instanceof Hashtable ? (Hashtable) options.get("callbacks") : options);
+                    Object background = options.get("background"), foreground = options.get("foreground");
+                    if (background instanceof Double) { screen.setBackgroundColor(((Double) background).intValue()); }
+                    if (foreground instanceof Double) { screen.setForegroundColor(((Double) foreground).intValue()); }
+                    if (options.get("font") instanceof String) { screen.setFont((String) options.get("font")); }
+                    if (isTruthy(options.get("fullscreen"))) { screen.setFullscreen(true); }
+                    return screen;
+                }
+                case CANVAS_ON: {
+                    LuaCanvas screen = canvas(args, "graphics.canvas.on");
+                    if (args.size() < 3 || !(args.elementAt(1) instanceof String) || !(args.elementAt(2) instanceof LuaFunction)) { return gotbad(2, "graphics.canvas.on", "event string and function expected"); }
+                    screen.setCallback((String) args.elementAt(1), (LuaFunction) args.elementAt(2)); return screen;
+                }
+                case CANVAS_COLOR: { LuaCanvas screen = canvas(args, "graphics.canvas.color"); canvasColor(screen, args, 1, "graphics.canvas.color"); return screen; }
+                case CANVAS_BACKGROUND: { LuaCanvas screen = canvas(args, "graphics.canvas.background"); screen.setBackgroundColor(canvasNumber(args, 1, "graphics.canvas.background")); return screen; }
+                case CANVAS_FOREGROUND: { LuaCanvas screen = canvas(args, "graphics.canvas.foreground"); screen.setForegroundColor(canvasNumber(args, 1, "graphics.canvas.foreground")); return screen; }
+                case CANVAS_FONT: { LuaCanvas screen = canvas(args, "graphics.canvas.font"); if (args.size() < 2 || !(args.elementAt(1) instanceof String)) { return gotbad(2, "graphics.canvas.font", "string expected"); } screen.setFont((String) args.elementAt(1)); return screen; }
+                case CANVAS_CLEAR: {
+                    LuaCanvas screen = canvas(args, "graphics.canvas.clear");
+                    if (args.size() >= 5) { screen.clear(canvasNumber(args, 1, "graphics.canvas.clear"), canvasNumber(args, 2, "graphics.canvas.clear"), canvasNumber(args, 3, "graphics.canvas.clear"), canvasNumber(args, 4, "graphics.canvas.clear")); } else { screen.clear(); }
+                    return screen;
+                }
+                case CANVAS_LINE: { LuaCanvas screen = canvas(args, "graphics.canvas.line"); screen.drawLine(canvasNumber(args, 1, "graphics.canvas.line"), canvasNumber(args, 2, "graphics.canvas.line"), canvasNumber(args, 3, "graphics.canvas.line"), canvasNumber(args, 4, "graphics.canvas.line")); return screen; }
+                case CANVAS_RECT: { LuaCanvas screen = canvas(args, "graphics.canvas.rect"); int x = canvasNumber(args, 1, "graphics.canvas.rect"), y = canvasNumber(args, 2, "graphics.canvas.rect"), w = canvasNumber(args, 3, "graphics.canvas.rect"), h = canvasNumber(args, 4, "graphics.canvas.rect"); if (args.size() > 5 && isTruthy(args.elementAt(5))) { screen.fillRect(x, y, w, h); } else { screen.drawRect(x, y, w, h); } return screen; }
+                case CANVAS_ROUNDRECT: { LuaCanvas screen = canvas(args, "graphics.canvas.roundRect"); int x = canvasNumber(args, 1, "graphics.canvas.roundRect"), y = canvasNumber(args, 2, "graphics.canvas.roundRect"), w = canvasNumber(args, 3, "graphics.canvas.roundRect"), h = canvasNumber(args, 4, "graphics.canvas.roundRect"), aw = canvasNumber(args, 5, "graphics.canvas.roundRect"), ah = canvasNumber(args, 6, "graphics.canvas.roundRect"); if (args.size() > 7 && isTruthy(args.elementAt(7))) { screen.fillRoundRect(x, y, w, h, aw, ah); } else { screen.drawRoundRect(x, y, w, h, aw, ah); } return screen; }
+                case CANVAS_ARC: { LuaCanvas screen = canvas(args, "graphics.canvas.arc"); int x = canvasNumber(args, 1, "graphics.canvas.arc"), y = canvasNumber(args, 2, "graphics.canvas.arc"), w = canvasNumber(args, 3, "graphics.canvas.arc"), h = canvasNumber(args, 4, "graphics.canvas.arc"), start = canvasNumber(args, 5, "graphics.canvas.arc"), arc = canvasNumber(args, 6, "graphics.canvas.arc"); if (args.size() > 7 && isTruthy(args.elementAt(7))) { screen.fillArc(x, y, w, h, start, arc); } else { screen.drawArc(x, y, w, h, start, arc); } return screen; }
+                case CANVAS_TEXT: { LuaCanvas screen = canvas(args, "graphics.canvas.text"); if (args.size() < 4 || !(args.elementAt(1) instanceof String)) { return gotbad(2, "graphics.canvas.text", "string expected"); } screen.drawString((String) args.elementAt(1), canvasNumber(args, 2, "graphics.canvas.text"), canvasNumber(args, 3, "graphics.canvas.text"), args.size() > 4 ? canvasNumber(args, 4, "graphics.canvas.text") : Graphics.TOP | Graphics.LEFT); return screen; }
+                case CANVAS_IMAGE: { LuaCanvas screen = canvas(args, "graphics.canvas.image"); if (args.size() < 4) { return gotbad(2, "graphics.canvas.image", "image or path expected"); } Object image = args.elementAt(1); Image value = image instanceof Image ? (Image) image : image instanceof String ? midlet.readImg((String) image, father) : null; if (value == null) { return gotbad(2, "graphics.canvas.image", "image or path expected, got " + type(image)); } screen.drawImage(value, canvasNumber(args, 2, "graphics.canvas.image"), canvasNumber(args, 3, "graphics.canvas.image"), args.size() > 4 ? canvasNumber(args, 4, "graphics.canvas.image") : Graphics.TOP | Graphics.LEFT); return screen; }
+                case CANVAS_PIXEL: { LuaCanvas screen = canvas(args, "graphics.canvas.pixel"); screen.drawPixel(canvasNumber(args, 1, "graphics.canvas.pixel"), canvasNumber(args, 2, "graphics.canvas.pixel")); return screen; }
+                case CANVAS_CLIP: { LuaCanvas screen = canvas(args, "graphics.canvas.clip"); screen.setClip(canvasNumber(args, 1, "graphics.canvas.clip"), canvasNumber(args, 2, "graphics.canvas.clip"), canvasNumber(args, 3, "graphics.canvas.clip"), canvasNumber(args, 4, "graphics.canvas.clip")); return screen; }
+                case CANVAS_RESETCLIP: { LuaCanvas screen = canvas(args, "graphics.canvas.resetClip"); screen.resetClip(); return screen; }
+                case CANVAS_TRANSLATE: { LuaCanvas screen = canvas(args, "graphics.canvas.translate"); screen.translate(canvasNumber(args, 1, "graphics.canvas.translate"), canvasNumber(args, 2, "graphics.canvas.translate")); return screen; }
+                case CANVAS_RESET: { LuaCanvas screen = canvas(args, "graphics.canvas.reset"); screen.resetState(); return screen; }
+                case CANVAS_REPAINT: { LuaCanvas screen = canvas(args, "graphics.canvas.repaint"); if (args.size() >= 5) { screen.repaint(canvasNumber(args, 1, "graphics.canvas.repaint"), canvasNumber(args, 2, "graphics.canvas.repaint"), canvasNumber(args, 3, "graphics.canvas.repaint"), canvasNumber(args, 4, "graphics.canvas.repaint")); } else { screen.repaint(); } return screen; }
+                case CANVAS_FLUSH: { LuaCanvas screen = canvas(args, "graphics.canvas.flush"); screen.flush(); return screen; }
+                case CANVAS_SIZE: { LuaCanvas screen = canvas(args, "graphics.canvas.size"); Vector result = new Vector(); result.addElement(luaNumber(screen.getCanvasWidth())); result.addElement(luaNumber(screen.getCanvasHeight())); return result; }
+                case CANVAS_METRICS: { LuaCanvas screen = canvas(args, "graphics.canvas.metrics"); Vector result = new Vector(); result.addElement(luaNumber(screen.getCurrentFont().getHeight())); result.addElement(luaNumber(screen.getBaselinePosition())); result.addElement(luaNumber(screen.getDrawX())); result.addElement(luaNumber(screen.getDrawY())); return result; }
+                case CANVAS_FULLSCREEN: { LuaCanvas screen = canvas(args, "graphics.canvas.fullscreen"); if (args.size() < 2) { return screen.isFullscreen() ? TRUE : FALSE; } screen.setFullscreen(isTruthy(args.elementAt(1))); return screen.isFullscreen() ? TRUE : FALSE; }
+                case CANVAS_COMMAND: { LuaCanvas screen = canvas(args, "graphics.canvas.command"); if (args.size() < 3 || !(args.elementAt(1) instanceof Command) || !(args.elementAt(2) instanceof LuaFunction)) { return gotbad(2, "graphics.canvas.command", "command and function expected"); } screen.addCommand((Command) args.elementAt(1), (LuaFunction) args.elementAt(2)); return screen; }
                 // Package [string]
                 case LOWER: case UPPER: if (args.isEmpty()) { return gotbad(1, MOD == LOWER ? "lower" : "upper", "string expected, got no value"); } else { String text = toLuaString(args.elementAt(0)); return MOD == LOWER ? text.toLowerCase() : text.toUpperCase(); }
                 case FIND: case MATCH: case LEN:

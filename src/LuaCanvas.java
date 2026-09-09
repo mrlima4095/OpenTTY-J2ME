@@ -17,6 +17,7 @@ class LuaCanvas extends Canvas implements CommandListener {
     private Graphics offgc;
     private int width, height;
     private boolean doubleBuffered = true;
+    private boolean fullScreen = false;
     private Vector commands = new Vector();
     private int backgroundColor = 0xFFFFFF;
     private int foregroundColor = 0x000000;
@@ -39,8 +40,11 @@ class LuaCanvas extends Canvas implements CommandListener {
         this.callbacks = callbacks != null ? callbacks : new Hashtable();
         this.width = getWidth();
         this.height = getHeight();
-        this.offscreen = Image.createImage(width, height);
+        this.offscreen = Image.createImage(Math.max(1, width), Math.max(1, height));
         this.offgc = offscreen.getGraphics();
+        this.offgc.setColor(backgroundColor);
+        this.offgc.fillRect(0, 0, Math.max(1, width), Math.max(1, height));
+        this.offgc.setColor(foregroundColor);
         
         setCommandListener(this);
     }
@@ -57,13 +61,23 @@ class LuaCanvas extends Canvas implements CommandListener {
         else if (event.equals("hide")) callbacks.put(new Integer(EVENT_HIDE), func);
         else if (event.equals("sizeChanged")) callbacks.put(new Integer(EVENT_SIZE_CHANGED), func);
     }
+    public void setCallbacks(Hashtable handlers) {
+        if (handlers == null) { return; }
+        String[] events = { "paint", "keyPressed", "keyReleased", "pointerPressed", "pointerReleased", "pointerDragged", "show", "hide", "sizeChanged" };
+        for (int i = 0; i < events.length; i++) {
+            Object callback = handlers.get(events[i]);
+            if (callback instanceof Lua.LuaFunction) { setCallback(events[i], (Lua.LuaFunction) callback); }
+        }
+    }
     
     // Drawing methods
     public void setColor(int rgb) {
+        foregroundColor = rgb;
         offgc.setColor(rgb);
     }
     
     public void setColor(int r, int g, int b) {
+        foregroundColor = ((r & 255) << 16) | ((g & 255) << 8) | (b & 255);
         offgc.setColor(r, g, b);
     }
     
@@ -71,6 +85,7 @@ class LuaCanvas extends Canvas implements CommandListener {
         backgroundColor = rgb;
         offgc.setColor(rgb);
         offgc.fillRect(0, 0, width, height);
+        offgc.setColor(foregroundColor);
     }
     
     public void setForegroundColor(int rgb) {
@@ -175,11 +190,13 @@ class LuaCanvas extends Canvas implements CommandListener {
     public void clear() {
         offgc.setColor(backgroundColor);
         offgc.fillRect(0, 0, this.width, this.height);
+        offgc.setColor(foregroundColor);
     }
     
     public void clear(int x, int y, int width, int height) {
         offgc.setColor(backgroundColor);
         offgc.fillRect(x, y, width, height);
+        offgc.setColor(foregroundColor);
     }
     
     public void translate(int x, int y) {
@@ -191,6 +208,9 @@ class LuaCanvas extends Canvas implements CommandListener {
     public void setClip(int x, int y, int width, int height) {
         offgc.setClip(x, y, width, height);
     }
+    public void resetClip() { offgc.setClip(0, 0, width, height); }
+    public void resetTransform() { if (currentX != 0 || currentY != 0) { offgc.translate(-currentX, -currentY); currentX = 0; currentY = 0; } }
+    public void resetState() { resetTransform(); resetClip(); offgc.setColor(foregroundColor); offgc.setFont(currentFont); }
     
     public void repaint() {
         repaint(0, 0, width, height);
@@ -243,13 +263,12 @@ class LuaCanvas extends Canvas implements CommandListener {
     public void flush() {
         repaint();
     }
+    public void setFullscreen(boolean enabled) { fullScreen = enabled; setFullScreenMode(enabled); }
+    public boolean isFullscreen() { return fullScreen; }
     
     // Canvas overrides
     protected void paint(Graphics g) {
-        // Copy offscreen buffer to display
-        g.drawImage(offscreen, 0, 0, Graphics.TOP | Graphics.LEFT);
-        
-        // Call Lua callback
+        // Let Lua prepare the persistent buffer before it is presented.
         Lua.LuaFunction callback = (Lua.LuaFunction) callbacks.get(new Integer(EVENT_PAINT));
         if (callback != null) {
             try {
@@ -264,6 +283,7 @@ class LuaCanvas extends Canvas implements CommandListener {
                 midlet.print(midlet.getCatch(e), null);
             }
         }
+        g.drawImage(offscreen, 0, 0, Graphics.TOP | Graphics.LEFT);
     }
     
     protected void keyPressed(int keyCode) {
@@ -273,8 +293,9 @@ class LuaCanvas extends Canvas implements CommandListener {
                 Vector args = new Vector();
                 args.addElement(this);
                 args.addElement(new Double(keyCode));
-                args.addElement(getGameAction(keyCode) == 0 ? LUA_NIL : new Double(getGameAction(keyCode)));
+                args.addElement(getGameAction(keyCode) == 0 ? Lua.LUA_NIL : new Double(getGameAction(keyCode)));
                 callback.call(args);
+                flush();
             } catch (Exception e) {
                 midlet.print(midlet.getCatch(e), null);
             }
@@ -288,8 +309,9 @@ class LuaCanvas extends Canvas implements CommandListener {
                 Vector args = new Vector();
                 args.addElement(this);
                 args.addElement(new Double(keyCode));
-                args.addElement(getGameAction(keyCode) == 0 ? LUA_NIL : new Double(getGameAction(keyCode)));
+                args.addElement(getGameAction(keyCode) == 0 ? Lua.LUA_NIL : new Double(getGameAction(keyCode)));
                 callback.call(args);
+                flush();
             } catch (Exception e) {
                 midlet.print(midlet.getCatch(e), null);
             }
@@ -305,6 +327,7 @@ class LuaCanvas extends Canvas implements CommandListener {
                 args.addElement(new Double(x));
                 args.addElement(new Double(y));
                 callback.call(args);
+                flush();
             } catch (Exception e) {
                 midlet.print(midlet.getCatch(e), null);
             }
@@ -320,6 +343,7 @@ class LuaCanvas extends Canvas implements CommandListener {
                 args.addElement(new Double(x));
                 args.addElement(new Double(y));
                 callback.call(args);
+                flush();
             } catch (Exception e) {
                 midlet.print(midlet.getCatch(e), null);
             }
@@ -335,6 +359,7 @@ class LuaCanvas extends Canvas implements CommandListener {
                 args.addElement(new Double(x));
                 args.addElement(new Double(y));
                 callback.call(args);
+                flush();
             } catch (Exception e) {
                 midlet.print(midlet.getCatch(e), null);
             }
@@ -372,8 +397,13 @@ class LuaCanvas extends Canvas implements CommandListener {
         this.height = h;
         
         // Recreate offscreen buffer
-        offscreen = Image.createImage(w, h);
+        offscreen = Image.createImage(Math.max(1, w), Math.max(1, h));
         offgc = offscreen.getGraphics();
+        currentX = 0; currentY = 0;
+        offgc.setColor(backgroundColor);
+        offgc.fillRect(0, 0, Math.max(1, w), Math.max(1, h));
+        offgc.setColor(foregroundColor);
+        offgc.setFont(currentFont);
         
         Lua.LuaFunction callback = (Lua.LuaFunction) callbacks.get(new Integer(EVENT_SIZE_CHANGED));
         if (callback != null) {
@@ -414,8 +444,8 @@ class LuaCanvas extends Canvas implements CommandListener {
     // Game action constants
     public static final int UP = Canvas.UP;
     public static final int DOWN = Canvas.DOWN;
-    public static final int LEFT = Canvas.LEFT;
-    public static final int RIGHT = Canvas.RIGHT;
+    public static final int KEY_LEFT = Canvas.LEFT;
+    public static final int KEY_RIGHT = Canvas.RIGHT;
     public static final int FIRE = Canvas.FIRE;
     public static final int GAME_A = Canvas.GAME_A;
     public static final int GAME_B = Canvas.GAME_B;
@@ -431,5 +461,4 @@ class LuaCanvas extends Canvas implements CommandListener {
     public static final int BOTTOM = Graphics.BOTTOM;
     public static final int BASELINE = Graphics.BASELINE;
     
-    public static final Object LUA_NIL = new Object();
 }
