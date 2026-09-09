@@ -188,7 +188,9 @@ int main(int argc, char **argv, char **envp)
         if (strcmp(applets[i].name, called) == 0) return applets[i].fn(argc, argv);
     }
 
-    if (argc >= 2 && strcmp(called, "busybox") == 0) {
+    /* Some launchers replace argv[0]. Accept the explicit applet form after
+     * basename dispatch has failed, regardless of the executable name. */
+    if (argc >= 2) {
         if (strcmp(argv[1], "--list") == 0) { bb_list_applets(); return 0; }
         if (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0) {
             bb_out("busybox 0.1 for OpenTTY - Multi-call binary\n");
