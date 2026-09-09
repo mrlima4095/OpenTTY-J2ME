@@ -32,7 +32,7 @@ public class Lua {
     public int status = 0;
     public boolean silent = false;
     // | (LuaFunction)
-    public static final int PRINT = 0, ERROR = 1, PCALL = 2, REQUIRE = 3, LOADS = 4, PAIRS = 5, GC = 6, TOSTRING = 7, TONUMBER = 8, SELECT = 9, TYPE = 10, GETPROPERTY = 11, SETMETATABLE = 12, GETMETATABLE = 13, IPAIRS = 14, RANDOM = 15, ASSERT = 16;
+    public static final int PRINT = 0, ERROR = 1, PCALL = 2, REQUIRE = 3, LOADS = 4, PAIRS = 5, GC = 6, TOSTRING = 7, TONUMBER = 8, SELECT = 9, TYPE = 10, GETPROPERTY = 11, SETMETATABLE = 12, GETMETATABLE = 13, IPAIRS = 14, RANDOM = 15, ASSERT = 16, CO_CREATE = 17, CO_RESUME = 18, CO_YIELD = 19, CO_STATUS = 20, CO_RUNNING = 21, CO_WRAP = 22;
     public static final int UPPER = 100, LOWER = 101, LEN = 102, FIND = 103, MATCH = 104, REVERSE = 105, SUB = 106, HASH = 107, BYTE = 108, CHAR = 109, TRIM = 110, SPLIT = 111, UUID = 112, GETCMD = 113, GETARGS = 114, ENV = 115, BASE64_ENCODE = 116, BASE64_DECODE = 117, GETPATTERN = 118, STARTSWITH = 119, ENDSWITH = 120;
     public static final int TB_INSERT = 200, TB_CONCAT = 201, TB_REMOVE = 202, TB_SORT = 203, TB_MOVE = 204, TB_UNPACK = 205, TB_PACK = 206, TB_DECODE = 207;
     public static final int EXEC = 300, GETENV = 301, SETENV = 302, CLOCK = 303, SETLOC = 304, EXIT = 305, DATE = 306, GETPID = 307, SETPROC = 308, GETPROC = 309, GETCWD = 310, GETUID = 311, CHDIR = 312, REQUEST = 313, START = 314, STOP = 315, PREQ = 316, SU = 318, REMOVE = 319, SCOPE = 320, JOIN = 321, MKDIR = 322;
@@ -46,6 +46,7 @@ public class Lua {
     public static final int EOF = 0, NUMBER = 1, STRING = 2, BOOLEAN = 3, NIL = 4, IDENTIFIER = 5, PLUS = 6, MINUS = 7, MULTIPLY = 8, DIVIDE = 9, MODULO = 10, EQ = 11, NE = 12, LT = 13, GT = 14, LE = 15, GE = 16, AND = 17, OR = 18, NOT = 19, ASSIGN = 20, IF = 21, THEN = 22, ELSE = 23, END = 24, WHILE = 25, DO = 26, RETURN = 27, FUNCTION = 28, LPAREN = 29, RPAREN = 30, COMMA = 31, LOCAL = 32, LBRACE = 33, RBRACE = 34, LBRACKET = 35, RBRACKET = 36, CONCAT = 37, DOT = 38, ELSEIF = 39, FOR = 40, IN = 41, POWER = 42, BREAK = 43, LENGTH = 44, VARARG = 45, REPEAT = 46, UNTIL = 47, COLON = 48, LABEL = 49, GOTO = 50;
     public static final Boolean TRUE = Boolean.TRUE, FALSE = Boolean.FALSE;
     public static final Object LUA_NIL = new Object();
+    private Hashtable coroutineThreads = new Hashtable();
     // | (Cached Double for small integers — avoids per-iteration boxing of counters/indices)
     private static final int NUM_MIN = -128, NUM_MAX = 1023;
     private static final Double[] SMALL_NUMBERS = new Double[NUM_MAX - NUM_MIN + 1];
@@ -73,7 +74,7 @@ public class Lua {
         this.midlet = midlet; this.id = id; this.PID = pid; this.proc = proc; this.stdout = stdout; this.father = scope;
         this.tokenIndex = 0; 
 
-        Hashtable os = new Hashtable(), io = new Hashtable(), string = new Hashtable(), table = new Hashtable(), pkg = new Hashtable(), graphics = new Hashtable(), socket = new Hashtable(), http = new Hashtable(), java = new Hashtable(), jdb = new Hashtable(), math = new Hashtable(), audio = new Hashtable(), push = new Hashtable(), base64 = new Hashtable();
+        Hashtable os = new Hashtable(), io = new Hashtable(), string = new Hashtable(), table = new Hashtable(), pkg = new Hashtable(), graphics = new Hashtable(), socket = new Hashtable(), http = new Hashtable(), java = new Hashtable(), jdb = new Hashtable(), math = new Hashtable(), audio = new Hashtable(), push = new Hashtable(), base64 = new Hashtable(), coroutine = new Hashtable();
         String[] funcs = new String[] { "getenv", "setenv", "clock", "setlocale", "exit", "date", "getpid", "setproc", "getproc", "getcwd", "request", "getuid", "chdir", "open", "su", "remove", "scope", "join", "mkdir" }; 
         int[] loaders = new int[] { GETENV, SETENV, CLOCK, SETLOC, EXIT, DATE, GETPID, SETPROC, GETPROC, GETCWD, REQUEST, GETUID, CHDIR, PREQ, SU, REMOVE, SCOPE, JOIN, MKDIR };
         for (int i = 0; i < funcs.length; i++) { os.put(funcs[i], new LuaFunction(loaders[i])); } os.put("execute", midlet.shell instanceof LuaFunction ? midlet.shell : new LuaFunction(EXEC)); globals.put("os", os);
@@ -112,6 +113,10 @@ public class Lua {
         funcs = new String[] { "print", "error", "pcall", "assert", "require", "load", "pairs", "ipairs", "collectgarbage", "tostring", "tonumber", "select", "type", "getAppProperty", "setmetatable", "getmetatable" }; 
         loaders = new int[] { PRINT, ERROR, PCALL, ASSERT, REQUIRE, LOADS, PAIRS, IPAIRS, GC, TOSTRING, TONUMBER, SELECT, TYPE, GETPROPERTY, SETMETATABLE, GETMETATABLE };
         for (int i = 0; i < funcs.length; i++) { globals.put(funcs[i], new LuaFunction(loaders[i])); }
+
+        funcs = new String[] { "create", "resume", "yield", "status", "running", "wrap" };
+        loaders = new int[] { CO_CREATE, CO_RESUME, CO_YIELD, CO_STATUS, CO_RUNNING, CO_WRAP };
+        for (int i = 0; i < funcs.length; i++) { coroutine.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("coroutine", coroutine);
 
         pkg.put("loaded", requireCache); pkg.put("loadlib", new LuaFunction(REQUIRE)); globals.put("package", pkg);
         math.put("random", new LuaFunction(RANDOM)); globals.put("math", math);
@@ -1333,6 +1338,21 @@ public class Lua {
         // | (Screen)
         private Object root = null;
         private String handler = "";
+        // A coroutine is a LuaFunction whose Java thread keeps its parser stack alive at yield.
+        private LuaFunction coroutineTarget = null;
+        private boolean coroutine = false, coroutineWrapper = false;
+        private Thread coroutineThread = null;
+        private int coroutineState = 0, coroutineSequence = 0; // 0=suspended, 1=running, 2=dead
+        private Vector coroutineStartArgs, coroutineResumeArgs, coroutineResults;
+        private String coroutineError = null;
+        private Vector coroutineTokens, coroutineFrames, coroutineThrownFrames, coroutineThrownTokens, coroutineLineOffsets;
+        private int coroutineTokenIndex, coroutineLoopDepth, coroutineThrownTokenIndex, coroutineStatusValue;
+        private boolean coroutineDoreturn, coroutineBreakLoop, coroutineSilent;
+        private String coroutineSource, coroutineCode, coroutineThrownSource, coroutineThrownCode;
+        private Vector parentTokens, parentFrames, parentThrownFrames, parentThrownTokens, parentLineOffsets;
+        private int parentTokenIndex, parentLoopDepth, parentThrownTokenIndex, parentStatusValue;
+        private boolean parentDoreturn, parentBreakLoop, parentSilent;
+        private String parentSource, parentCode, parentThrownSource, parentThrownCode;
         // | (su)
         private Form suPromptForm = null;
         private Displayable suPromptPrevious = null;
@@ -1345,10 +1365,13 @@ public class Lua {
         LuaFunction(Hashtable cmds) { this.cmds = cmds; }
         LuaFunction(LuaFunction root) { this.root = root; }
         LuaFunction(int type) { this.MOD = type; }
+        LuaFunction(LuaFunction target, boolean isCoroutine, boolean isWrapper) { this.coroutineTarget = target; this.coroutine = isCoroutine; this.coroutineWrapper = isWrapper; }
         // |
         // |
         // | (Main)
         public Object call(Vector args) throws Exception {
+            if (coroutineWrapper) { return coroutineTarget.resumeCoroutine(args, true); }
+            if (coroutine) { throw new RuntimeException("attempt to call a thread value"); }
             if (MOD != -1) { return internals(args); }
 
             // Chained scope: locals live here; closure + globals resolve on miss (no per-call copy).
@@ -1413,6 +1436,114 @@ public class Lua {
 
             return returnValue;
         }
+        private Object callCoroutine(Vector args) throws Exception {
+            if (MOD != -1) { return internals(args); }
+
+            Hashtable functionScope = new ScopeTable(closureScope, globals);
+            int paramCount = params.size();
+            boolean hasVararg = paramCount > 0 && params.elementAt(paramCount - 1).equals("...");
+            int fixedParamCount = hasVararg ? paramCount - 1 : paramCount;
+            for (int i = 0; i < fixedParamCount; i++) { String paramName = (String) params.elementAt(i); Object argValue = i < args.size() ? args.elementAt(i) : null; functionScope.put(paramName, argValue == null ? LUA_NIL : argValue); }
+            if (hasVararg) { Hashtable varargValues = new Hashtable(); for (int i = fixedParamCount; i < args.size(); i++) { Object value = args.elementAt(i); varargValues.put(luaNumber(i - fixedParamCount + 1), value == null ? LUA_NIL : value); } functionScope.put("...", varargValues); }
+
+            if (defSource != null) { currentSource = defSource; }
+            if (defCode != null) { lastCode = defCode; }
+            if (defLineOffsets != null) { lineOffsets = defLineOffsets; }
+            tokens = bodyTokens; tokenIndex = 0;
+            Object returnValue = null;
+            frameStack.addElement(new Frame(name == null ? "[anonymous]" : name, currentSource, defLine));
+            try {
+                while (peek().type != EOF) { Object result = statement(functionScope); if (doreturn) { returnValue = result; doreturn = false; break; } }
+            }
+            catch (Exception e) {
+                Vector snapshot = new Vector();
+                for (int f = 0; f < frameStack.size(); f++) { snapshot.addElement(frameStack.elementAt(f)); }
+                if (thrownFrames.isEmpty()) { thrownFrames = snapshot; }
+                recordThrow(tokenIndex, tokens);
+                throw e;
+            }
+            finally { frameStack.setSize(frameStack.size() - 1); }
+            return returnValue;
+        }
+        private void saveCoroutineContext() {
+            coroutineTokens = tokens; coroutineTokenIndex = tokenIndex; coroutineDoreturn = doreturn; coroutineBreakLoop = breakLoop; coroutineLoopDepth = loopDepth;
+            coroutineSource = currentSource; coroutineCode = lastCode; coroutineLineOffsets = lineOffsets; coroutineFrames = frameStack;
+            coroutineThrownFrames = thrownFrames; coroutineThrownTokens = thrownTokens; coroutineThrownTokenIndex = thrownTokenIndex; coroutineThrownSource = thrownSource; coroutineThrownCode = thrownCode;
+            coroutineStatusValue = status; coroutineSilent = silent;
+        }
+        private void restoreCoroutineContext() {
+            tokens = coroutineTokens; tokenIndex = coroutineTokenIndex; doreturn = coroutineDoreturn; breakLoop = coroutineBreakLoop; loopDepth = coroutineLoopDepth;
+            currentSource = coroutineSource; lastCode = coroutineCode; lineOffsets = coroutineLineOffsets; frameStack = coroutineFrames;
+            thrownFrames = coroutineThrownFrames; thrownTokens = coroutineThrownTokens; thrownTokenIndex = coroutineThrownTokenIndex; thrownSource = coroutineThrownSource; thrownCode = coroutineThrownCode;
+            status = coroutineStatusValue; silent = coroutineSilent;
+        }
+        private void saveParentContext() {
+            parentTokens = tokens; parentTokenIndex = tokenIndex; parentDoreturn = doreturn; parentBreakLoop = breakLoop; parentLoopDepth = loopDepth;
+            parentSource = currentSource; parentCode = lastCode; parentLineOffsets = lineOffsets; parentFrames = frameStack;
+            parentThrownFrames = thrownFrames; parentThrownTokens = thrownTokens; parentThrownTokenIndex = thrownTokenIndex; parentThrownSource = thrownSource; parentThrownCode = thrownCode;
+            parentStatusValue = status; parentSilent = silent;
+        }
+        private void restoreParentContext() {
+            tokens = parentTokens; tokenIndex = parentTokenIndex; doreturn = parentDoreturn; breakLoop = parentBreakLoop; loopDepth = parentLoopDepth;
+            currentSource = parentSource; lastCode = parentCode; lineOffsets = parentLineOffsets; frameStack = parentFrames;
+            thrownFrames = parentThrownFrames; thrownTokens = parentThrownTokens; thrownTokenIndex = parentThrownTokenIndex; thrownSource = parentThrownSource; thrownCode = parentThrownCode;
+            status = parentStatusValue; silent = parentSilent;
+        }
+        private void startCoroutineContext() {
+            tokens = null; tokenIndex = 0; doreturn = false; breakLoop = false; loopDepth = 0;
+            currentSource = ""; lastCode = ""; lineOffsets = new Vector(); frameStack = new Vector();
+            thrownFrames = new Vector(); thrownTokens = null; thrownTokenIndex = -1; thrownSource = ""; thrownCode = ""; thrownLineOffsets = null;
+            silent = false;
+        }
+        private Vector copyValues(Vector values) { Vector copy = new Vector(); if (values != null) { for (int i = 0; i < values.size(); i++) { copy.addElement(values.elementAt(i)); } } return copy; }
+        private Vector coroutineResult(boolean ok, Vector values, String error) {
+            Vector result = new Vector(); result.addElement(ok ? TRUE : FALSE);
+            if (ok) { if (values != null) { for (int i = 0; i < values.size(); i++) { result.addElement(values.elementAt(i)); } } }
+            else { result.addElement(error == null ? "cannot resume dead coroutine" : error); }
+            return result;
+        }
+        private Object resumeCoroutine(Vector args, boolean wrapped) throws Exception {
+            synchronized (this) {
+                if (coroutineState == 2) { if (wrapped) { throw new RuntimeException(coroutineError == null ? "cannot resume dead coroutine" : coroutineError); } return coroutineResult(false, null, coroutineError); }
+                if (coroutineState == 1) { if (wrapped) { throw new RuntimeException("cannot resume running coroutine"); } return coroutineResult(false, null, "cannot resume running coroutine"); }
+
+                saveParentContext();
+                coroutineResumeArgs = copyValues(args);
+                int sequence = coroutineSequence;
+                coroutineState = 1;
+                if (coroutineThread == null) {
+                    coroutineStartArgs = copyValues(args);
+                    coroutineThread = new Thread(this, "Lua coroutine");
+                    coroutineThreads.put(coroutineThread, this);
+                    coroutineThread.start();
+                }
+                else { restoreCoroutineContext(); notifyAll(); }
+
+                while (coroutineState == 1 && coroutineSequence == sequence) { wait(); }
+                Vector result = coroutineResult(coroutineError == null, coroutineResults, coroutineError);
+                if (wrapped) {
+                    if (coroutineError != null) { throw new RuntimeException(coroutineError); }
+                    result.removeElementAt(0);
+                }
+                return result;
+            }
+        }
+        private Object yieldCoroutine(Vector args) throws Exception {
+            LuaFunction active = (LuaFunction) coroutineThreads.get(Thread.currentThread());
+            if (active == null) { throw new RuntimeException("attempt to yield from outside a coroutine"); }
+            synchronized (active) {
+                active.saveCoroutineContext();
+                active.coroutineResults = active.copyValues(args);
+                active.coroutineError = null;
+                active.coroutineSequence++;
+                active.coroutineState = 0;
+                active.restoreParentContext();
+                active.notifyAll();
+                while (active.coroutineState == 0) { active.wait(); }
+                if (active.coroutineState == 2) { throw new RuntimeException("cannot resume dead coroutine"); }
+                return active.copyValues(active.coroutineResumeArgs);
+            }
+        }
         public Object internals(Vector args) throws Exception {
             Object arg;
 
@@ -1442,6 +1573,22 @@ public class Lua {
 
                     break;
                 case ERROR: String msg = toLuaString((args.size() > 0) ? args.elementAt(0) : null); throw new Exception(msg.equals("nil") ? "error" : msg);
+                case CO_CREATE:
+                    if (args.isEmpty() || !(args.elementAt(0) instanceof LuaFunction) || ((LuaFunction) args.elementAt(0)).coroutine) { return gotbad(1, "create", "function expected, got " + (args.isEmpty() ? "no value" : type(args.elementAt(0)))); }
+                    return new LuaFunction((LuaFunction) args.elementAt(0), true, false);
+                case CO_RESUME:
+                    if (args.isEmpty() || !(args.elementAt(0) instanceof LuaFunction) || !((LuaFunction) args.elementAt(0)).coroutine) { return gotbad(1, "resume", "thread expected, got " + (args.isEmpty() ? "no value" : type(args.elementAt(0)))); }
+                    Vector resumeArgs = new Vector(); for (int i = 1; i < args.size(); i++) { resumeArgs.addElement(args.elementAt(i)); }
+                    return ((LuaFunction) args.elementAt(0)).resumeCoroutine(resumeArgs, false);
+                case CO_YIELD: return yieldCoroutine(args);
+                case CO_STATUS:
+                    if (args.isEmpty() || !(args.elementAt(0) instanceof LuaFunction) || !((LuaFunction) args.elementAt(0)).coroutine) { return gotbad(1, "status", "thread expected, got " + (args.isEmpty() ? "no value" : type(args.elementAt(0)))); }
+                    LuaFunction thread = (LuaFunction) args.elementAt(0);
+                    return thread.coroutineState == 0 ? "suspended" : thread.coroutineState == 1 ? "running" : "dead";
+                case CO_RUNNING: return coroutineThreads.get(Thread.currentThread());
+                case CO_WRAP:
+                    if (args.isEmpty() || !(args.elementAt(0) instanceof LuaFunction) || ((LuaFunction) args.elementAt(0)).coroutine) { return gotbad(1, "wrap", "function expected, got " + (args.isEmpty() ? "no value" : type(args.elementAt(0)))); }
+                    return new LuaFunction(new LuaFunction((LuaFunction) args.elementAt(0), true, false), false, true);
                 case PCALL:
                     if (args.isEmpty()) { return gotbad(1, "pcall", "function expected"); }
                     else {
@@ -2883,7 +3030,7 @@ public class Lua {
             }
             return ret;
         }
-        public static String type(Object item) { return item == null || item == LUA_NIL ? "nil" : item instanceof String ? "string" : item instanceof Double ? "number" : item instanceof Boolean ? "boolean" : item instanceof LuaFunction ? "function" : item instanceof Hashtable ? "table" : item instanceof InputStream || item instanceof OutputStream || item instanceof StringBuffer || item instanceof StringItem ? "stream" : item instanceof SocketConnection || item instanceof StreamConnection ? "connection" : item instanceof ServerSocketConnection ? "server" : item instanceof Displayable || item instanceof Canvas ? "screen" : item instanceof Image ? "image" : item instanceof Command ? "button" : item instanceof Player ? "audio" : "userdata"; }
+        public static String type(Object item) { return item == null || item == LUA_NIL ? "nil" : item instanceof String ? "string" : item instanceof Double ? "number" : item instanceof Boolean ? "boolean" : item instanceof LuaFunction ? ((LuaFunction) item).coroutine ? "thread" : "function" : item instanceof Hashtable ? "table" : item instanceof InputStream || item instanceof OutputStream || item instanceof StringBuffer || item instanceof StringItem ? "stream" : item instanceof SocketConnection || item instanceof StreamConnection ? "connection" : item instanceof ServerSocketConnection ? "server" : item instanceof Displayable || item instanceof Canvas ? "screen" : item instanceof Image ? "image" : item instanceof Command ? "button" : item instanceof Player ? "audio" : "userdata"; }
         private Object gotbad(int pos, String name, String expect) throws Exception { throw new RuntimeException("bad argument #" + pos + " to '" + name + "' (" + expect + ")"); }
         private Object gotbad(String name, String field, String expected) throws Exception { throw new RuntimeException(name + " -> field '" + field + "' (" + expected + ")"); }
         private Object http(String method, String url, String data, Object item, boolean toget) throws Exception {
@@ -2963,7 +3110,27 @@ public class Lua {
         private String getFieldValue(Hashtable table, String key, String fallback) { Object val = table.get(key); return val != null ? toLuaString(val) : fallback; }
         private Font genFont(String params) { if (params == null || params.length() == 0 || params.equals("default")) { return Font.getDefaultFont(); } int face = Font.FACE_SYSTEM, style = Font.STYLE_PLAIN, size = Font.SIZE_MEDIUM; String[] tokens = midlet.split(params, ' '); for (int i = 0; i < tokens.length; i++) { String token = tokens[i].toLowerCase(); if (token.equals("system")) { face = Font.FACE_SYSTEM; } else if (token.equals("monospace")) { face = Font.FACE_MONOSPACE; } else if (token.equals("proportional")) { face = Font.FACE_PROPORTIONAL; } else if (token.equals("bold")) { style |= Font.STYLE_BOLD; } else if (token.equals("italic")) { style |= Font.STYLE_ITALIC; } else if (token.equals("ul") || token.equals("underline") || token.equals("underlined")) { style |= Font.STYLE_UNDERLINED; } else if (token.equals("small")) { size = Font.SIZE_SMALL; } else if (token.equals("medium")) { size = Font.SIZE_MEDIUM; } else if (token.equals("large")) { size = Font.SIZE_LARGE; } } Font f = Font.getFont(face, style, size); return f == null ? Font.getDefaultFont() : f; }
 
-        public void run() { if (root instanceof LuaFunction) { Vector arg = new Vector(); try { ((LuaFunction) root).call(arg); } catch (Throwable e) { if (!silent) { midlet.print(getTraceback(e), stdout, id, father); } } } }
+        public void run() {
+            if (coroutine) { runCoroutine(); return; }
+            if (root instanceof LuaFunction) { Vector arg = new Vector(); try { ((LuaFunction) root).call(arg); } catch (Throwable e) { if (!silent) { midlet.print(getTraceback(e), stdout, id, father); } } }
+        }
+        private void runCoroutine() {
+            Object value = null; String error = null;
+            synchronized (this) { startCoroutineContext(); }
+            try { value = coroutineTarget.callCoroutine(coroutineStartArgs); }
+            catch (Throwable e) { recordThrow(); error = getTraceback(e); }
+            synchronized (this) {
+                coroutineResults = new Vector();
+                if (value instanceof Vector) { coroutineResults = copyValues((Vector) value); }
+                else if (value != null) { coroutineResults.addElement(value); }
+                coroutineError = error;
+                coroutineState = 2;
+                coroutineSequence++;
+                restoreParentContext();
+                coroutineThreads.remove(Thread.currentThread());
+                notifyAll();
+            }
+        }
 
         // named (non-anonymous) background runner: the SDK preverifier and the
         // on-device VM choke on the synthetic anon class that a trailing `&`
