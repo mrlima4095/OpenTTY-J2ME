@@ -244,7 +244,9 @@ public class ELF {
             }
         }
 
-        processDynamicSection(elfData); processSymbols(elfData); scanCopyRelocations(elfData); loadNeededLibraries(); applyCopyRelocations();
+        processDynamicSection(elfData); processSymbols(elfData); scanCopyRelocations(elfData);
+        if (!loadNeededLibraries()) { return false; }
+        applyCopyRelocations();
         setupCRTStack();
         processSymbolsAndRelocations(elfData, sectionInfo); setupPLTGOT();
         executeInitFunctions();
@@ -374,18 +376,20 @@ public class ELF {
     }
     private void processHashTable(byte[] elfData, int hashAddr) { int nbucket = readIntLE(elfData, hashAddr), nchain = readIntLE(elfData, hashAddr + 4); elfInfo.put("nbucket", new Integer(nbucket)); elfInfo.put("nchain", new Integer(nchain)); elfInfo.put("buckets", new Integer(hashAddr + 8)); elfInfo.put("chains", new Integer(hashAddr + 8 + nbucket * 4)); }
 
-    private void loadNeededLibraries() {
+    private boolean loadNeededLibraries() {
+        boolean loaded = true;
         Enumeration libNames = neededLibraries.keys();
         while (libNames.hasMoreElements()) {
             String libName = (String) libNames.nextElement();
             
             if (loadedLibraries.contains(libName)) { }
-            else { if (loadLibrary(libName)) { if (midlet.debug) { midlet.print("Loaded library: " + libName, stdout, id, scope); } } else { if (midlet.debug) { midlet.print("Failed to load: " + libName, stdout, id, scope); } } }
+            else { if (loadLibrary(libName)) { if (midlet.debug) { midlet.print("Loaded library: " + libName, stdout, id, scope); } } else { midlet.print("Missing shared library: " + libName, stdout, id, scope); loaded = false; } }
         }
+        return loaded;
     }
     private boolean loadLibrary(String libName) {
         if (loadedLibraries.contains(libName)) { return true; }
-        String[] paths = { "/lib/" + libName, "/usr/lib/" + libName };
+        String[] paths = { midlet.joinpath(libName, scope), "/lib/" + libName, "/bin/" + libName };
         byte[] libData = null;
         for (int i = 0; i < paths.length; i++) {
             try {
