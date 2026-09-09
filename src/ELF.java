@@ -612,7 +612,7 @@ public class ELF {
     private String libcReadCString(int p) {
         StringBuffer sb = new StringBuffer();
         int i = 0;
-        while (p + i < memory.length && i < 65536) {
+        while (p + i >= 0 && p + i < memory.length && i < 65536) {
             int b = memory[p + i] & 0xFF;
             if (b == 0) { break; }
             sb.append((char) b);
@@ -643,7 +643,7 @@ public class ELF {
 
     private int libcStrlen(int p) {
         int n = 0;
-        while (p + n < memory.length && memory[p + n] != 0 && n < 65536) { n++; }
+        while (p + n >= 0 && p + n < memory.length && memory[p + n] != 0 && n < 65536) { n++; }
         return n;
     }
     private void libcStrcpy(int dst, int src) {
@@ -1820,13 +1820,17 @@ public class ELF {
             argAddrs.addElement(new Integer(sp));
         }
 
-        int envpStart = sp - (envVars.size() + 1) * 4;
-        int argvStart = envpStart - (argsVec.size() + 1) * 4;
+        /* Keep the initial ABI stack 8-byte aligned. Word loads in the ARM
+         * core align their address, so an unaligned argc/argv table makes the
+         * CRT receive corrupted arguments. */
+        int tableSize = (envVars.size() + argsVec.size() + 3) * 4;
+        sp = (sp - tableSize) & ~7;
+        int argvStart = sp + 4;
+        int envpStart = argvStart + (argsVec.size() + 1) * 4;
         for (int i = 0; i < envVars.size(); i++) { writeIntLE(memory, envpStart + i * 4, ((Integer) envAddrs.elementAt(i)).intValue()); }
         writeIntLE(memory, envpStart + envVars.size() * 4, 0); // NULL terminator
         for (int i = 0; i < argsVec.size(); i++) { writeIntLE(memory, argvStart + i * 4, ((Integer) argAddrs.elementAt(i)).intValue()); }
         writeIntLE(memory, argvStart + argsVec.size() * 4, 0); // NULL terminator
-        sp = argvStart; sp -= 4;
         writeIntLE(memory, sp, argsVec.size());
 
         elfInfo.put("argc", new Integer(argsVec.size()));
@@ -3824,7 +3828,7 @@ public class ELF {
 
     private String readString(byte[] data, int offset, int maxLen) {
         StringBuffer sb = new StringBuffer();
-        for (int i = 0; i < maxLen && offset + i < data.length; i++) {
+        for (int i = 0; i < maxLen && offset + i >= 0 && offset + i < data.length; i++) {
             byte b = data[offset + i];
             if (b == 0) break;
             sb.append((char)(b & 0xFF));
