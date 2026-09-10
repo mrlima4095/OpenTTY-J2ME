@@ -31,11 +31,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Displayable previous = null;
     public List taskMngr = null;
     private Vector taskMngrPids = null;
-    private Form recoveryScreen;
-    private Command recoveryExit, recoveryClear, recoveryRestoreInit, recoveryTrace, recoveryLite;
-    private String bootReport = "";
-    private Process bootProcess;
-    private Throwable recoveryError;
     // |
     // MIDlet Loader
     // | (Triggers)
@@ -54,100 +49,48 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 display.setCurrent(screen);
             } else {
                 try {
-                    bootReport = "OpenTTY boot report\n\n1. Preparing the Lua runtime";
                     Hashtable args = new Hashtable(); args.put(new Double(0), "/bin/init");
                     globals.put("PWD", "/home/"); globals.put("USER", "root"); globals.put("ROOT", "/"); globals.put("ALIAS", new Hashtable()); userID.put(username, 1000);
 
                     Process proc = new Process(this, "init", "/bin/init", "root", 0, "1", new StringBuffer(), globals);
-                    bootProcess = proc;
 
-                    bootReport += "\n2. Creating PID 1";
                     sys.put("1", proc); proc.lua.globals.put("arg", args); proc.handler = proc.lua.getKernel();
-                    bootReport += "\n3. Loading /bin/init";
                     proc.lua.currentSource = "/bin/init";
-                    String initCode = read("/bin/init", globals);
-                    proc.lua.lastCode = initCode;
-                    proc.lua.lineOffsets = Lua.computeLineOffsets(initCode);
-                    proc.lua.tokens = proc.lua.tokenize(initCode);
+                    proc.lua.tokens = proc.lua.tokenize(read("/bin/init", globals)); 
 
-                    bootReport += "\n4. Running /bin/init";
                     while (proc.lua.peek().type != 0) { Object res = proc.lua.statement(globals); if (proc.lua.doreturn) { break; } }
-                    bootReport += "\n5. Boot completed";
                 }
                 catch (IllegalStateException e) { }
                 catch (OutOfMemoryError e) {
-                    bootReport += "\n5. Failed: insufficient memory";
-                    showRecovery(e, true);
+                    Form screen = new Form("SandBox");
+                    screen.append("Insufficient Memory");
+                    screen.append("Used Memory: " + ((runtime.totalMemory() / 1024) - (runtime.freeMemory())) + " KB\nFree Memory: " + (runtime.freeMemory() / 1024) + " KB\nTotal Memory: " + (runtime.totalMemory() / 1024) + "KB total");
+
+                    screen.addCommand(new Command("Exit", Command.OK, 1));
+                    screen.addCommand(new Command("Download Lite", Command.OK, 2));
+                    screen.addCommand(new Command("Report Issue", Command.OK, 3));
+                    screen.setCommandListener(this);
+                    display.setCurrent(screen);
                 }
                 catch (Throwable e) {
-                    if (bootProcess != null && bootProcess.lua != null) { bootProcess.lua.recordThrow(); }
-                    bootReport += "\n5. Failed: " + getCatch(e);
-                    showRecovery(e, false);
+                    Form screen = new Form(e instanceof Exception ? "SandBox" : "Kernel Panic");
+                    screen.append("An error occurred while OpenTTY tried to start!\n\nError: " + getCatch(e));
+                    screen.append(e instanceof Exception ? "If you tried to install a program in /bin/init it can be the error" : "Try to clear your data or update OpenTTY");
+
+                    screen.addCommand(new Command("Exit", Command.OK, 1));
+                    screen.addCommand(new Command("Update", Command.OK, 2));
+                    screen.addCommand(new Command("Clear Data", Command.OK, 3));
+                    screen.addCommand(new Command("Report Issue", Command.OK, 4));
+                    screen.addCommand(new Command("Save Logs", Command.OK, 5));
+                    screen.addCommand(new Command("Backup", Command.OK, 6));
+                    screen.setCommandListener(this);
+                    display.setCurrent(screen);
                 }
             }
         }
     }
     public void pauseApp() { }
     public void destroyApp(boolean unconditional) { notifyDestroyed(); }
-    private void showRecovery(Throwable error, boolean outOfMemory) {
-        recoveryError = error;
-        boolean luaBoot = bootProcess != null && bootProcess.lua != null;
-        String title = outOfMemory ? "Memory Recovery" : luaBoot ? "Lua Recovery" : "Kernel Recovery";
-        recoveryScreen = new Form(title);
-        if (outOfMemory) {
-            recoveryScreen.append("OpenTTY ran out of memory while booting. Free memory: " + (runtime.freeMemory() / 1024) + " KB.\n\nClear data if storage is corrupted or full. On low-memory phones, install the Lite edition from GitHub.");
-        } else if (luaBoot) {
-            recoveryScreen.append("/bin/init failed while the Lua runtime was starting. Restoring the bundled /bin/init removes only a customized init and keeps your other data.\n\nError: " + getCatch(error));
-        } else {
-            recoveryScreen.append("The Java kernel failed before the Lua runtime could finish starting. Clear all data or update OpenTTY.\n\nError: " + getCatch(error));
-        }
-
-        recoveryExit = new Command("Exit", Command.EXIT, 1);
-        recoveryClear = new Command("Clear All Data", Command.STOP, 2);
-        recoveryRestoreInit = new Command("Restore /bin/init", Command.OK, 3);
-        recoveryTrace = new Command("Boot Details", Command.HELP, 4);
-        recoveryScreen.addCommand(recoveryExit);
-        recoveryScreen.addCommand(recoveryClear);
-        recoveryScreen.addCommand(recoveryRestoreInit);
-        recoveryScreen.addCommand(recoveryTrace);
-        if (outOfMemory) { recoveryLite = new Command("Get Lite Edition", Command.ITEM, 5); recoveryScreen.addCommand(recoveryLite); }
-        recoveryScreen.setCommandListener(this);
-        display.setCurrent(recoveryScreen);
-    }
-    private void resetBootState() {
-        sys.clear(); exited.clear(); tmp.clear(); cache.clear(); cacheLua.clear(); graphics.clear(); servers.clear(); globals.clear(); userID.clear(); fs.clear(); attributes.clear();
-        bootProcess = null;
-    }
-    private void restoreDefaultInit() {
-        int result = deleteFile("/bin/init", 0, globals);
-        resetBootState();
-        if (result != 0 && result != 5) { warn("Recovery", "Could not remove the custom /bin/init (error " + result + ")."); return; }
-        startApp();
-    }
-    private void clearAllData() {
-        String[] stores = RecordStore.listRecordStores();
-        if (stores != null) { for (int i = 0; i < stores.length; i++) { try { RecordStore.deleteRecordStore(stores[i]); } catch (Exception e) { } } }
-        username = "";
-        resetBootState();
-        runtime.gc();
-        startApp();
-    }
-    private String fullBootReport(Throwable error) {
-        StringBuffer report = new StringBuffer(bootReport);
-        report.append("\n\nStack trace:\n");
-        if (bootProcess != null && bootProcess.lua != null) { report.append(bootProcess.lua.getTraceback(error)); }
-        else { report.append(getCatch(error)); }
-        try { ByteArrayOutputStream out = new ByteArrayOutputStream(); error.printStackTrace(new PrintStream(out)); report.append("\n\nJava stack trace:\n").append(new String(out.toByteArray())); } catch (Throwable ignored) { }
-        return report.toString();
-    }
-    private void showBootDetails(Throwable error) {
-        String report = fullBootReport(error);
-        if (report.length() > 8178) { report = report.substring(0, 8178) + "\n[truncated]"; }
-        TextBox details = new TextBox("Boot Details", report, 8192, TextField.ANY);
-        details.addCommand(new Command("Back", Command.BACK, 1));
-        details.setCommandListener(this);
-        display.setCurrent(details);
-    }
     // |
     private void logged() { Alert alert = new Alert("OpenTTY", "Reopen MIDlet to access console", null, AlertType.INFO); alert.setTimeout(Alert.FOREVER); alert.addCommand(new Command("Exit", Command.EXIT, 1)); alert.setCommandListener(this); display.setCurrent(alert); }
     // | (Graphical Handler)
@@ -183,15 +126,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         display.setCurrent(taskMngr);
     }
     public void commandAction(Command c, Displayable d) {
-        if (d == recoveryScreen) {
-            if (c == recoveryExit) { destroyApp(true); }
-            else if (c == recoveryClear) { clearAllData(); }
-            else if (c == recoveryRestoreInit) { restoreDefaultInit(); }
-            else if (c == recoveryTrace) { showBootDetails(recoveryError); }
-            else if (c == recoveryLite) { try { platformRequest("https://github.com/mrlima4095/OpenTTY-J2ME/releases"); } catch (Exception e) { warn("Lite Edition", "Your device could not open GitHub. Visit github.com/mrlima4095/OpenTTY-J2ME/releases"); } }
-        }
-        else if (d instanceof TextBox && c.getCommandType() == Command.BACK) { display.setCurrent(recoveryScreen); }
-        else if (c.getLabel() == "Exit") { destroyApp(true); }
+        if (c.getLabel() == "Exit") { destroyApp(true); }
         else if (d == taskMngr) {
             if (c.getLabel() == "Back") { if (taskMngrPids.size() == 0) { destroyApp(true); } else if (previous != null) { display.setCurrent(previous); } }
             else if (c.getLabel() == "Interrupt") {
