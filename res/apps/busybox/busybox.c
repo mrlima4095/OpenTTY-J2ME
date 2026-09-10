@@ -1,4 +1,4 @@
-/* busybox.c - multi-tool estilo busybox para o emulador ELF ARM32 do OpenTTY.
+/* busybox.c - multi-tool estilo busybox para o emulador ELF RISC-V do OpenTTY.
  *
  * Um UNICO ELF estatico que despacha pelo basename(argv[0]). Para instalar,
  * copie o mesmo binario em /bin/<comando> (ex.: /bin/cat, /bin/ls, /bin/wc).

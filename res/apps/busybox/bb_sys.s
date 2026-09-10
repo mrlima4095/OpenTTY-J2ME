@@ -1,81 +1,86 @@
-@ bb_sys.s - syscalls crus do emulador (nao cobertos por res/lib/libc.s).
-@ Cada wrapper e' mov r7,#N; svc #0; bx lr. Args ja chegam em r0-r2 (AAPCS),
-@ retorno em r0. Ver src/ELF.java handleSyscall.
-@
-@ Compilar junto:  ./build-elf.sh busybox.c bb_sys.s -stdlib -o busybox
+# bb_sys.s - syscalls crus do emulador (nao cobertos por res/lib/libc.s).
+# Cada wrapper usa a0-a2 para argumentos, a7 para o numero e retorna em a0.
+# Compilar junto: ./build-elf.sh busybox.c bb_sys.s -stdlib -o busybox
 
-.syntax unified
-.arm
 .text
 
-@ linux_dirent simplificado: d_ino(4) d_off(4) d_reclen(2) d_name[var]
+# linux_dirent simplificado: d_ino(4) d_off(4) d_reclen(2) d_name[var]
 .globl bb_getdents
+.type bb_getdents, %function
 bb_getdents:
-    mov     r7, #217
-    svc     #0
-    bx      lr
+    li      a7, 217
+    ecall
+    ret
 
-@ struct stat simplificado: st_mode em offset 16, st_size em offset 44
+# struct stat simplificado: st_mode em offset 16, st_size em offset 44
 .globl bb_stat
+.type bb_stat, %function
 bb_stat:
-    mov     r7, #106
-    svc     #0
-    bx      lr
+    li      a7, 106
+    ecall
+    ret
 
 .globl bb_fstat
+.type bb_fstat, %function
 bb_fstat:
-    mov     r7, #108
-    svc     #0
-    bx      lr
+    li      a7, 108
+    ecall
+    ret
 
 .globl bb_unlink
+.type bb_unlink, %function
 bb_unlink:
-    mov     r7, #10
-    svc     #0
-    bx      lr
+    li      a7, 10
+    ecall
+    ret
 
 .globl bb_mkdir
+.type bb_mkdir, %function
 bb_mkdir:
-    mov     r7, #39
-    svc     #0
-    bx      lr
+    li      a7, 39
+    ecall
+    ret
 
 .globl bb_rmdir
+.type bb_rmdir, %function
 bb_rmdir:
-    mov     r7, #40
-    svc     #0
-    bx      lr
+    li      a7, 40
+    ecall
+    ret
 
 .globl bb_getuid
+.type bb_getuid, %function
 bb_getuid:
-    mov     r7, #199
-    svc     #0
-    bx      lr
+    li      a7, 199
+    ecall
+    ret
 
 .globl bb_geteuid
+.type bb_geteuid, %function
 bb_geteuid:
-    mov     r7, #201
-    svc     #0
-    bx      lr
+    li      a7, 201
+    ecall
+    ret
 
 .globl bb_time
+.type bb_time, %function
 bb_time:
-    mov     r0, #0          @ time(NULL): r0 eh o ponteiro de retorno
-    mov     r7, #13
-    svc     #0
-    bx      lr
+    li      a0, 0           # time(NULL): a0 e o ponteiro de retorno
+    li      a7, 13
+    ecall
+    ret
 
-@ utsname: 6 campos de 65 bytes
+# utsname: 6 campos de 65 bytes
 .globl bb_uname
+.type bb_uname, %function
 bb_uname:
-    mov     r7, #122
-    svc     #0
-    bx      lr
+    li      a7, 122
+    ecall
+    ret
 
 .globl bb_getcwd
+.type bb_getcwd, %function
 bb_getcwd:
-    mov     r7, #183
-    svc     #0
-    bx      lr
-
-.end
+    li      a7, 183
+    ecall
+    ret

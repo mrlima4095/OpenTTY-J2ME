@@ -4,10 +4,10 @@
 /* busybox.h - cabecalho comum do multi-tool ELF (res/apps/busybox).
  *
  * Compilado com ./build-elf.sh busybox.c bb_sys.s -stdlib:
- *   -stdlib linka res/lib/libc.s, que fornece (via svc #LIB_* no emulador):
+ *   -stdlib linka res/lib/libc.s, que fornece (via li a7,#LIB_*; ecall):
  *     open/read/write/close, printf/sprintf/snprintf, malloc/free,
  *     strlen/strcmp/strcpy/strdup/strncmp/memcpy/memset/memmemmove/atoi,
- *     divisao AEABI (int), exit, getpid.
+ *     helpers RV32, exit, getpid.
  *   bb_sys.s fornece os syscalls crus extras (getdents/stat/unlink/mkdir/...).
  * Sem floats, sem long long, sem short (idiotas do emulador).
  */
@@ -41,7 +41,7 @@ void *realloc(void *ptr, int size);
 void free(void *ptr);
 void exit(int status);
 
-/* ---- syscalls crus (bb_sys.s, mov r7,#N; svc #0) --------------------- */
+/* ---- syscalls crus (bb_sys.s, li a7,#N; ecall) ----------------------- */
 int bb_getdents(int fd, void *dirp, int count);   /* 217 linux_dirent simplificado */
 int bb_stat(const char *path, void *st);          /* 106 struct stat (mode@16,size@44) */
 int bb_fstat(int fd, void *st);                   /* 108 */

@@ -30,7 +30,7 @@ static void file_type(const unsigned char *b, int n, char *out)
         else if (etype == 3) t = "ELF shared object";
         else                 t = "ELF object";
         strcpy(out, t);
-        if (mach == 40) strcat(out, " (ARM)");
+        if (mach == 243) strcat(out, " (RISC-V)");
         return;
     }
     /* Interpreter line */

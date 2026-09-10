@@ -1,5 +1,5 @@
 #!/bin/bash
-# build.sh — compila o multi-tool busybox para o emulador ELF ARM32 do OpenTTY.
+# build.sh — compila o multi-tool busybox para o emulador ELF RISC-V RV32IM do OpenTTY.
 #
 # Uso: ./res/apps/busybox/build.sh
 #   -> res/apps/busybox/busybox         (ELF unico)
@@ -8,8 +8,8 @@
 # Depois, no dispositivo, instale applets/<cmd> em /bin/<cmd> (o shell resolve
 # /bin/<nome>, e o busybox despacha pelo basename(argv[0])).
 #
-# Requisitos: binutils-arm-none-eabi (arm-none-eabi-gcc/as/ld) + build-elf.sh.
-set -e
+# Requisitos: toolchain RISC-V aceito por build-elf.sh + build-elf.sh.
+set -eu
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$HERE/../../.."
@@ -17,7 +17,7 @@ APPLETS="basename base64 cat clear cmp cp date dirname du echo env false file he
 
 cd "$ROOT"
 
-# sanity sintatico (gcc do host, sem a parte ARM)
+# sanity sintatico (gcc do host, sem a parte RISC-V em assembly)
 if command -v gcc >/dev/null 2>&1; then
     gcc -fsyntax-only -fno-builtin -Wall \
         res/apps/busybox/busybox.c res/apps/busybox/bb_file.c \
