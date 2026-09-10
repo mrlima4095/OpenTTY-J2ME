@@ -1,25 +1,26 @@
-// contador.c - Mostra números de 0 a 5
-// Compilar: arm-none-eabi-gcc -nostdlib -static -o contador.elf contador.c
+// count.c - Mostra números de 0 a 5 (RISC-V RV32IM, syscalls crus).
+// Compilar:
+//   ./build-elf.sh res/apps/src/count.c -o res/apps/dist/count
 
 void write_syscall(int fd, const char* buf, int count) {
     __asm__ volatile (
-        "mov r7, #4\n"      // syscall write
-        "mov r0, %0\n"      // fd
-        "mov r1, %1\n"      // buffer
-        "mov r2, %2\n"      // count
-        "swi 0\n"
+        "li a7, 4\n"        // syscall write
+        "mv a0, %0\n"       // fd
+        "mv a1, %1\n"       // buffer
+        "mv a2, %2\n"       // count
+        "ecall\n"
         : : "r"(fd), "r"(buf), "r"(count)
-        : "r0", "r1", "r2", "r7"
+        : "a0", "a1", "a2", "a7"
     );
 }
 
 void exit_syscall(int status) {
     __asm__ volatile (
-        "mov r7, #1\n"      // syscall exit
-        "mov r0, %0\n"      // status
-        "swi 0\n"
+        "li a7, 1\n"        // syscall exit
+        "mv a0, %0\n"       // status
+        "ecall\n"
         : : "r"(status)
-        : "r0", "r7"
+        : "a0", "a7"
     );
 }
 
@@ -33,10 +34,10 @@ void print_number(int num) {
 
 void _start(void) {
     int i;
-    
+
     for (i = 0; i <= 5; i++) {
         print_number(i);
     }
-    
+
     exit_syscall(0);
 }

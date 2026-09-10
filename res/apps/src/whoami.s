@@ -1,55 +1,7 @@
+# whoami.s (RISC-V RV32IM) - imprime o usuario: le /home/OpenRMS.
+#   open (5), read (3), write (4), close (6), exit (1).
+# NOTA: .data antes de .text (llvm-mc nao dobra forward refs em imm).
 .global _start
-.section .text
-
-_start:
-    @ Abrir arquivo /home/OpenRMS
-    mov r7, #5              @ syscall open
-    ldr r0, =filename       @ caminho do arquivo
-    mov r1, #0              @ O_RDONLY
-    mov r2, #0              @ mode
-    svc #0
-    
-    cmp r0, #0
-    blt error               @ erro ao abrir
-    
-    mov r4, r0              @ salvar fd
-    
-    @ Ler arquivo
-    mov r7, #3              @ syscall read
-    mov r0, r4              @ fd
-    ldr r1, =buffer         @ buffer
-    ldr r2, =BUFFER_SIZE    @ tamanho
-    svc #0
-    
-    cmp r0, #0
-    ble close_file
-    
-    @ Escrever no stdout
-    mov r7, #4              @ syscall write
-    mov r0, #1              @ stdout
-    ldr r1, =buffer         @ buffer
-    svc #0
-    
-close_file:
-    @ Fechar arquivo
-    mov r7, #6              @ syscall close
-    mov r0, r4
-    svc #0
-    
-exit:
-    mov r7, #1              @ syscall exit
-    mov r0, #0
-    svc #0
-
-error:
-    @ Mensagem de erro
-    mov r7, #4
-    mov r0, #1
-    ldr r1, =err_msg
-    ldr r2, =err_len
-    svc #0
-    b exit
-
 .section .data
 filename:
     .asciz "/home/OpenRMS"
@@ -57,7 +9,51 @@ err_msg:
     .asciz "Error: Cannot open /home/OpenRMS\n"
 err_len = . - err_msg
 
+.section .text
+
+_start:
+    la      a0, filename        # open(filename, O_RDONLY, 0)
+    li      a1, 0
+    li      a2, 0
+    li      a7, 5
+    ecall
+
+    bltz    a0, error
+    mv      s0, a0              # fd
+
+    li      a7, 3               # read(fd, buffer, BUFFER_SIZE)
+    mv      a0, s0
+    la      a1, buffer
+    li      a2, 4096
+    ecall
+
+    blez    a0, close_file
+
+    mv      s1, a0              # n lidos
+    li      a7, 4               # write(1, buffer, n)
+    li      a0, 1
+    la      a1, buffer
+    mv      a2, s1
+    ecall
+
+close_file:
+    li      a7, 6               # close(fd)
+    mv      a0, s0
+    ecall
+
+exit:
+    li      a7, 1               # exit(0)
+    li      a0, 0
+    ecall
+
+error:
+    li      a7, 4               # write(1, err_msg, err_len)
+    li      a0, 1
+    la      a1, err_msg
+    li      a2, err_len
+    ecall
+    j       exit
+
 .section .bss
 buffer:
     .space 4096
-BUFFER_SIZE = . - buffer

@@ -1,19 +1,23 @@
-// hello.c
-void _start() {
+// h.c - "Hello from C!" (RISC-V RV32IM, syscalls crus).
+// Compilar:
+//   ./build-elf.sh res/apps/src/h.c -o res/apps/dist/h
+
+void _start(void) {
     const char msg[] = "Hello from C!\n";
     asm volatile (
-        "mov r0, #1\n"      // stdout
-        "mov r1, %0\n"      // buffer
-        "mov r2, %1\n"      // length
-        "mov r7, #4\n"      // SYS_write
-        "swi #0\n"
-        : : "r"(msg), "r"(14)
-        : "r0", "r1", "r2", "r7"
+        "li a7, 4\n"        // SYS_write
+        "li a0, 1\n"        // stdout
+        "mv a1, %0\n"       // buffer
+        "li a2, 14\n"       // length
+        "ecall\n"
+        : : "r"(msg)
+        : "a0", "a1", "a2", "a7"
     );
-    
+
     asm volatile (
-        "mov r0, #0\n"      // exit code
-        "mov r7, #1\n"      // SYS_exit
-        "swi #0\n"
+        "li a7, 1\n"        // SYS_exit
+        "li a0, 0\n"
+        "ecall\n"
+        : : : "a0", "a7"
     );
 }

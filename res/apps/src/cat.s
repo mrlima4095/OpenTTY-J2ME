@@ -1,77 +1,12 @@
+# cat.s (RISC-V RV32IM) - cat <arquivo>: imprime um arquivo no stdout.
+#
+# Usa syscalls crus do emulador (mesmos numeros do ARM-EABI, ecall com a7):
+#   open (5), read (3), write (4), close (6), exit (1).
+# CRT do emulador: [sp]=argc, [sp+4]=argv[0], [sp+8]=argv[1], ...
+#
+# NOTA: a .data vem antes do .text porque o llvm-mc nao dobra forward
+#       references em imediato (li a2, LEN); manter len = . - msg.
 .global _start
-.section .text
-
-_start:
-    @ O argc está em sp, mas o emulador pode estar usando um layout diferente
-    @ Vamos ler diretamente da forma que o setupCRTStack configurou
-    
-    ldr r0, [sp]           @ argc
-    cmp r0, #1
-    ble usage
-    
-    @ argv[1] - o emulador coloca os ponteiros dos argumentos
-    ldr r1, [sp, #4]       @ primeiro ponteiro após argc
-    
-    @ DEBUG: imprimir endereço do argumento (opcional, remover depois)
-    @ mov r7, #4
-    @ mov r0, #1
-    @ svc #0
-    
-    @ Tentar abrir o arquivo
-    mov r0, r1             @ filename pointer
-    mov r1, #0             @ O_RDONLY
-    mov r7, #5             @ SYS_OPEN
-    svc #0
-    
-    @ Verificar se abriu corretamente
-    cmp r0, #0
-    blt open_error
-    
-    mov r4, r0             @ salvar file descriptor
-    
-read_loop:
-    mov r7, #3             @ SYS_READ
-    mov r0, r4
-    ldr r1, =buffer
-    ldr r2, =BUFSZ
-    svc #0
-    
-    cmp r0, #0
-    ble close_file
-    
-    mov r7, #4             @ SYS_WRITE
-    mov r0, #1             @ stdout
-    ldr r1, =buffer
-    svc #0
-    b read_loop
-
-close_file:
-    mov r7, #6             @ SYS_CLOSE
-    mov r0, r4
-    svc #0
-    b exit
-
-usage:
-    mov r7, #4
-    mov r0, #1
-    ldr r1, =usage_msg
-    ldr r2, =usage_len
-    svc #0
-    b exit
-
-open_error:
-    mov r7, #4
-    mov r0, #1
-    ldr r1, =err_msg
-    ldr r2, =err_len
-    svc #0
-    b exit
-
-exit:
-    mov r7, #1
-    mov r0, #0
-    svc #0
-
 .section .data
 usage_msg:
     .asciz "Usage: cat <filename>\n"
@@ -81,7 +16,67 @@ err_msg:
     .asciz "cat: Cannot open file\n"
 err_len = . - err_msg
 
+.section .text
+
+_start:
+    lw      a0, 0(sp)            # argc
+    li      t0, 1
+    ble     a0, t0, usage        # precisa de argv[1]
+
+    lw      s0, 8(sp)            # argv[1] = nome do arquivo
+
+    mv      a0, s0               # open(filename, O_RDONLY, 0)
+    li      a1, 0
+    li      a2, 0
+    li      a7, 5
+    ecall
+
+    bltz    a0, open_error
+    mv      s1, a0               # fd
+
+read_loop:
+    li      a7, 3                # read(fd, buffer, BUFSZ)
+    mv      a0, s1
+    la      a1, buffer
+    li      a2, 4096
+    ecall
+
+    blez    a0, close_file
+
+    mv      s2, a0               # n lidos
+    li      a7, 4                # write(1, buffer, n)
+    li      a0, 1
+    la      a1, buffer
+    mv      a2, s2
+    ecall
+    j       read_loop
+
+close_file:
+    li      a7, 6                # close(fd)
+    mv      a0, s1
+    ecall
+    j       exit
+
+usage:
+    li      a7, 4                # write(1, usage_msg, usage_len)
+    li      a0, 1
+    la      a1, usage_msg
+    li      a2, usage_len
+    ecall
+    j       exit
+
+open_error:
+    li      a7, 4
+    li      a0, 1
+    la      a1, err_msg
+    li      a2, err_len
+    ecall
+
+exit:
+    li      a7, 1                # exit(0)
+    li      a0, 0
+    ecall
+
 .section .bss
 buffer:
     .space 4096
-BUFSZ = 4096

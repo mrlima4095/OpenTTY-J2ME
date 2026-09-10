@@ -114,6 +114,7 @@ public class ELF {
 
     // Relocation types
     private static final int R_ARM_ABS32 = 2, R_ARM_REL32 = 3, R_ARM_COPY = 20, R_ARM_GLOB_DAT = 21, R_ARM_JUMP_SLOT = 22, R_ARM_RELATIVE = 23;
+    private static final int R_RISCV_NONE = 0, R_RISCV_32 = 1, R_RISCV_RELATIVE = 3, R_RISCV_COPY = 4, R_RISCV_JUMP_SLOT = 5, R_RISCV_GLOB_DAT = 6;
         
     // Constantes fcntl
     private static final int F_GETFL = 3, F_SETFL = 4, O_NONBLOCK = 2048;
@@ -244,9 +245,11 @@ public class ELF {
     private void scanCopyRelocations(byte[] elfData) {
         if (!elfInfo.containsKey("rel") || !elfInfo.containsKey("relsz")) { return; }
         int relAddr = ((Integer)elfInfo.get("rel")).intValue(), relsz = ((Integer)elfInfo.get("relsz")).intValue();
-        for (int i = 0; i < relsz; i += 8) {
-            int offset = relAddr + i, r_offset = readIntLE(elfData, offset), r_info = readIntLE(elfData, offset + 4), symIndex = r_info >> 8, type = r_info & 0xFF;
-            if (type == R_ARM_COPY) {
+        int relent = elfInfo.containsKey("relent") ? ((Integer) elfInfo.get("relent")).intValue() : 8;
+        if (relent != 8 && relent != 12) { return; }
+        for (int i = 0; i < relsz; i += relent) {
+            int offset = relAddr + i, r_offset = readIntLE(memory, offset), r_info = readIntLE(memory, offset + 4), symIndex = r_info >> 8, type = r_info & 0xFF;
+            if (type == R_ARM_COPY || type == R_RISCV_COPY) {
                 String nm = getSymbolNameByIndex(symIndex);
                 if (nm != null) { copyRelocs.put(nm, new Integer(r_offset)); if (midlet.debug) { midlet.print("COPY reloc: " + nm + " home at " + toHex(r_offset), stdout, id, scope); } }
             }
@@ -333,6 +336,18 @@ public class ELF {
                     
                 case DT_RELSZ:
                     elfInfo.put("relsz", new Integer(val));
+                    break;
+
+                case DT_RELA:
+                    elfInfo.put("rel", new Integer(val));
+                    break;
+
+                case DT_RELASZ:
+                    elfInfo.put("relsz", new Integer(val));
+                    break;
+
+                case DT_RELAENT:
+                    elfInfo.put("relent", new Integer(val));
                     break;
                     
                 case DT_INIT:
@@ -451,7 +466,7 @@ public class ELF {
         }
         dynAddr += loadBias;
         
-        int symtab = 0, strtab = 0, syment = 16, rel = 0, relsz = 0, jmprel = 0, pltrelsz = 0, pltrel = DT_REL, hashAddr = 0, init = 0, initArray = 0, initArraySize = 0, fini = 0, finiArray = 0, finiArraySize = 0;
+        int symtab = 0, strtab = 0, syment = 16, rel = 0, relsz = 0, jmprel = 0, pltrelsz = 0, pltrel = DT_REL, hashAddr = 0, init = 0, initArray = 0, initArraySize = 0, fini = 0, finiArray = 0, finiArraySize = 0, libRelent = 8;
         Vector neededOffsets = new Vector();
         int offset = 0;
         while (offset + 8 <= dynSize) {
@@ -464,6 +479,10 @@ public class ELF {
                 case DT_SYMENT: syment = val; break;
                 case DT_REL: rel = loadBias + val; break;
                 case DT_RELSZ: relsz = val; break;
+                case DT_RELA: rel = loadBias + val; break;
+                case DT_RELASZ: relsz = val; break;
+                case DT_RELENT: libRelent = val; break;
+                case DT_RELAENT: libRelent = val; break;
                 case DT_JMPREL: jmprel = loadBias + val; break;
                 case DT_PLTRELSZ: pltrelsz = val; break;
                 case DT_PLTREL: pltrel = val; break;
@@ -512,8 +531,8 @@ public class ELF {
             if (needed.length() > 0 && !loadedLibraries.contains(needed) && !loadLibrary(needed)) { rollbackSharedObjectLoad(mappingCount, libraryCount); return false; }
         }
         
-        // Aplicar as relocacoes da propria lib (.rel.dyn e .rel.plt)
-        applyLibraryRelocations(rel, relsz, 8, symNames, loadBias);
+        // Aplicar as relocacoes da propria lib (.rel.dyn/.rela.dyn e .rel.plt/.rela.plt)
+        applyLibraryRelocations(rel, relsz, libRelent, symNames, loadBias);
         if (jmprel != 0 && pltrelsz != 0) { applyLibraryRelocations(jmprel, pltrelsz, (pltrel == DT_RELA) ? 12 : 8, symNames, loadBias); }
         return true;
     }
@@ -533,19 +552,23 @@ public class ELF {
     }
     private void applyLibraryRelocations(int relAddr, int relsz, int relent, Vector symNames, int loadBias) {
         for (int i = 0; i < relsz && relAddr + i + relent <= memory.length; i += relent) {
-            int r_offset = loadBias + readIntLE(memory, relAddr + i), r_info = readIntLE(memory, relAddr + i + 4), symIndex = r_info >> 8, type = r_info & 0xFF;
+            int r_offset = loadBias + readIntLE(memory, relAddr + i), r_info = readIntLE(memory, relAddr + i + 4), symIndex = r_info >> 8, type = r_info & 0xFF, addend = (relent == 12) ? readIntLE(memory, relAddr + i + 8) : 0;
             switch (type) {
                 case R_ARM_ABS32:
+                case R_RISCV_32:
                 case R_ARM_GLOB_DAT:
-                case R_ARM_JUMP_SLOT: {
+                case R_RISCV_GLOB_DAT:
+                case R_ARM_JUMP_SLOT:
+                case R_RISCV_JUMP_SLOT: {
                     String nm = (symIndex < symNames.size()) ? (String) symNames.elementAt(symIndex) : null;
                     Integer addr = (nm != null) ? resolveSymbol(nm) : null;
-                    if (addr != null) { writeIntLE(memory, r_offset, addr.intValue()); if (midlet.debug) { midlet.print("lib reloc: " + nm + " -> " + toHex(addr.intValue()) + " at " + toHex(r_offset), stdout, id, scope); } }
+                    if (addr != null) { writeIntLE(memory, r_offset, addr.intValue() + addend); if (midlet.debug) { midlet.print("lib reloc: " + nm + " -> " + toHex(addr.intValue()) + " at " + toHex(r_offset), stdout, id, scope); } }
                     break;
                 }
-                    case R_ARM_RELATIVE: {
+                    case R_ARM_RELATIVE:
+                case R_RISCV_RELATIVE: {
                     int cur = readIntLE(memory, r_offset);
-                    writeIntLE(memory, r_offset, loadBias + cur);
+                    writeIntLE(memory, r_offset, (relent == 12) ? loadBias + addend : loadBias + cur);
                     if (midlet.debug) { midlet.print("lib reloc RELATIVE at " + toHex(r_offset), stdout, id, scope); }
                     break;
                 }
@@ -1426,10 +1449,10 @@ public class ELF {
         int maxSym = elfInfo.containsKey("nchain") ? ((Integer) elfInfo.get("nchain")).intValue() : 4096;
         if (maxSym <= 0 || maxSym > 4096) { maxSym = 4096; }
         for (int dynSymCount = 0; dynSymCount < maxSym; dynSymCount++) {
-            int st_name = readIntLE(elfData, symOffset), st_value = readIntLE(elfData, symOffset + 4), st_size = readIntLE(elfData, symOffset + 8), st_info = elfData[symOffset + 12] & 0xFF;
+            int st_name = readIntLE(memory, symOffset), st_value = readIntLE(memory, symOffset + 4), st_size = readIntLE(memory, symOffset + 8), st_info = memory[symOffset + 12] & 0xFF;
             if (dynSymCount > 0 && st_name == 0 && st_value == 0 && st_size == 0 && st_info == 0) { break; }
             
-            String symName = (st_name == 0) ? "" : readString(elfData, dynstrAddr + st_name, 256);
+            String symName = (st_name == 0) ? "" : readString(memory, dynstrAddr + st_name, 256);
             if (symName == null) { break; }
             
             dynSymNames.addElement(symName);
@@ -1442,7 +1465,44 @@ public class ELF {
             symOffset += symentSize;
         }
     }
-    private void processRelocations(byte[] elfData) { if (elfInfo.containsKey("rel") && elfInfo.containsKey("relsz")) { int relAddr = ((Integer) elfInfo.get("rel")).intValue(), relsz = ((Integer) elfInfo.get("relsz")).intValue(), relent = 8; for (int i = 0; i < relsz; i += relent) { int offset = relAddr + i, r_offset = readIntLE(elfData, offset), r_info = readIntLE(elfData, offset + 4), symIndex = r_info >> 8, type = r_info & 0xFF; applyRelocation(r_offset, type, symIndex, 0); } } if (elfInfo.containsKey("jmprel") && elfInfo.containsKey("pltrelsz")) { int jmprelAddr = ((Integer)elfInfo.get("jmprel")).intValue(), pltrelsz = ((Integer)elfInfo.get("pltrelsz")).intValue(), pltrel = elfInfo.containsKey("pltrel") ? ((Integer) elfInfo.get("pltrel")).intValue() : DT_REL, relent = (pltrel == DT_RELA) ? 12 : 8, numEntries = pltrelsz / relent; if (gotBase == 0 && pltGotAddr != 0) { gotBase = pltGotAddr + 12; } for (int i = 0; i < numEntries; i++) { int offset = jmprelAddr + i * relent, r_offset = readIntLE(elfData, offset), r_info = readIntLE(elfData, offset + 4), symIndex = r_info >> 8, type = r_info & 0xFF; if (type == R_ARM_JUMP_SLOT) { String platoonName = getSymbolNameByIndex(symIndex); Integer readyAddr = resolveSymbol(platoonName); if (readyAddr != null) { writeIntLE(memory, r_offset, readyAddr.intValue()); Hashtable pltInfo = new Hashtable(); pltInfo.put("symIndex", new Integer(symIndex)); pltInfo.put("gotOffset", new Integer(r_offset)); pltInfo.put("resolved", Boolean.TRUE); pltEntries.put("plt_" + i, pltInfo); if (midlet.debug) { midlet.print("PLT eager: " + platoonName + " -> " + toHex(readyAddr.intValue()) + " at GOT " + toHex(r_offset), stdout, id, scope); } } else { setupLazyBinding(r_offset, symIndex, i); } } else { applyRelocation(r_offset, type, symIndex, 0); } } } }
+    private void processRelocations(byte[] elfData) {
+        if (elfInfo.containsKey("rel") && elfInfo.containsKey("relsz")) {
+            int relAddr = ((Integer) elfInfo.get("rel")).intValue(), relsz = ((Integer) elfInfo.get("relsz")).intValue();
+            int relent = elfInfo.containsKey("relent") ? ((Integer) elfInfo.get("relent")).intValue() : 8;
+            for (int i = 0; i < relsz; i += relent) {
+                int offset = relAddr + i, r_offset = readIntLE(memory, offset), r_info = readIntLE(memory, offset + 4), symIndex = r_info >> 8, type = r_info & 0xFF, addend = (relent == 12) ? readIntLE(memory, offset + 8) : 0;
+                if (type == R_ARM_JUMP_SLOT || type == R_RISCV_JUMP_SLOT) {
+                    String platoonName = getSymbolNameByIndex(symIndex);
+                    Integer readyAddr = resolveSymbol(platoonName);
+                    if (readyAddr != null) {
+                        writeIntLE(memory, r_offset, readyAddr.intValue() + addend);
+                        Hashtable pltInfo = new Hashtable();
+                        pltInfo.put("symIndex", new Integer(symIndex)); pltInfo.put("gotOffset", new Integer(r_offset)); pltInfo.put("resolved", Boolean.TRUE);
+                        pltEntries.put("plt_" + i, pltInfo);
+                        if (midlet.debug) { midlet.print("PLT eager: " + platoonName + " -> " + toHex(readyAddr.intValue()) + " at GOT " + toHex(r_offset), stdout, id, scope); }
+                    } else { setupLazyBinding(r_offset, symIndex, i); }
+                } else { applyRelocation(r_offset, type, symIndex, addend); }
+            }
+        }
+        if (elfInfo.containsKey("jmprel") && elfInfo.containsKey("pltrelsz")) {
+            int jmprelAddr = ((Integer)elfInfo.get("jmprel")).intValue(), pltrelsz = ((Integer)elfInfo.get("pltrelsz")).intValue(), pltrel = elfInfo.containsKey("pltrel") ? ((Integer) elfInfo.get("pltrel")).intValue() : DT_REL, relent = (pltrel == DT_RELA) ? 12 : 8, numEntries = pltrelsz / relent;
+            if (gotBase == 0 && pltGotAddr != 0) { gotBase = pltGotAddr + 12; }
+            for (int i = 0; i < numEntries; i++) {
+                int offset = jmprelAddr + i * relent, r_offset = readIntLE(memory, offset), r_info = readIntLE(memory, offset + 4), symIndex = r_info >> 8, type = r_info & 0xFF, addend = (relent == 12) ? readIntLE(memory, offset + 8) : 0;
+                if (type == R_ARM_JUMP_SLOT || type == R_RISCV_JUMP_SLOT) {
+                    String platoonName = getSymbolNameByIndex(symIndex);
+                    Integer readyAddr = resolveSymbol(platoonName);
+                    if (readyAddr != null) {
+                        writeIntLE(memory, r_offset, readyAddr.intValue() + addend);
+                        Hashtable pltInfo = new Hashtable();
+                        pltInfo.put("symIndex", new Integer(symIndex)); pltInfo.put("gotOffset", new Integer(r_offset)); pltInfo.put("resolved", Boolean.TRUE);
+                        pltEntries.put("plt_" + i, pltInfo);
+                        if (midlet.debug) { midlet.print("PLT eager: " + platoonName + " -> " + toHex(readyAddr.intValue()) + " at GOT " + toHex(r_offset), stdout, id, scope); }
+                    } else { setupLazyBinding(r_offset, symIndex, i); }
+                } else { applyRelocation(r_offset, type, symIndex, addend); }
+            }
+        }
+    }
     private void applyRelocation(int r_offset, int type, int symIndex, int addend) { applyRelocation(r_offset, type, symIndex, addend, null); }
     private void applyRelocation(int r_offset, int type, int symIndex, int addend, Vector names) {
         String symName = null;
@@ -1450,7 +1510,9 @@ public class ELF {
         else { symName = getSymbolNameByIndex(symIndex); }
         switch (type) {
             case R_ARM_ABS32:
+            case R_RISCV_32:
             case R_ARM_GLOB_DAT:
+            case R_RISCV_GLOB_DAT:
                 Integer symAddr = resolveSymbol(symName);
                 
                 if (symAddr != null) {
@@ -1459,10 +1521,12 @@ public class ELF {
                 }
                 break;
             case R_ARM_RELATIVE:
+            case R_RISCV_RELATIVE:
                 int current = readIntLE(memory, r_offset);
                 writeIntLE(memory, r_offset, current + addend);
                 break;
-            case R_ARM_COPY: {
+            case R_ARM_COPY:
+            case R_RISCV_COPY: {
                 String copyName = symName;
                 Hashtable libTab = (copyName != null) ? resolveLibrarySymbolTable(copyName) : null;
                 if (libTab != null && copyName != null) {
@@ -1587,7 +1651,7 @@ public class ELF {
         return 4;
     }
 
-    private void setupPLTGOT() { if (pltGotAddr == 0) { return; } writeIntLE(memory, pltGotAddr, dynamicSectionAddr); writeIntLE(memory, pltGotAddr + 4, 0); writeIntLE(memory, pltGotAddr + 8, resolveFuncAddr); }
+    private void setupPLTGOT() { if (pltGotAddr == 0) { return; } writeIntLE(memory, pltGotAddr, dynamicSectionAddr); writeIntLE(memory, pltGotAddr + 4, resolveFuncAddr); }
     private void setupCRTStack() {
         int sp = registers[REG_SP];
 

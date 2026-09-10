@@ -1,78 +1,69 @@
+# server.s (RISC-V RV32IM) - servidor TCP minimalista:
+#   socket(281) -> bind(282, &sockaddr, 16) -> listen(284, 5)
+#   -> accept(285) -> send(289, msg) -> close(6), em loop.
+# ABI RISC-V: args a0-a7, syscall number em a7.
 .data
     msg:        .asciz "Hello Network\n"
     msg_len = . - msg
 
     .align 2
     sockaddr_in:
-        .short 2           // AF_INET
-        .short 0x0FFF      // Porta 4095 (little‑endian – o emulador lê como 0x0FFF)
-        .byte 0,0,0,0      // INADDR_ANY
-        .space 8           // preenchimento (sin_zero) para 16 bytes
+        .short 2           # AF_INET
+        .short 0x0FFF      # Porta 4095
+        .byte 0,0,0,0      # INADDR_ANY
+        .space 8           # sin_zero para 16 bytes
 
 .text
 .global _start
 _start:
-    // socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)
-    mov     r0, #2          // AF_INET
-    mov     r1, #1          // SOCK_STREAM
-    mov     r2, #6          // IPPROTO_TCP
-    mov     r7, #281        // syscall SYS_SOCKET
-    swi     0
+    li      a0, 2               # AF_INET
+    li      a1, 1               # SOCK_STREAM
+    li      a2, 6               # IPPROTO_TCP
+    li      a7, 281             # SYS_SOCKET
+    ecall
 
-    cmp     r0, #0
-    blt     erro            // se fd < 0, sai com erro
+    bltz    a0, erro
+    mv      s0, a0              # socket fd
 
-    mov     r4, r0          // guarda o socket fd
+    li      a7, 282             # SYS_BIND
+    mv      a0, s0
+    la      a1, sockaddr_in
+    li      a2, 16
+    ecall
 
-    // bind(sockfd, &sockaddr_in, 16)
-    mov     r0, r4
-    ldr     r1, =sockaddr_in
-    mov     r2, #16
-    mov     r7, #282        // SYS_BIND
-    swi     0
+    bltz    a0, erro
 
-    cmp     r0, #0
-    blt     erro
+    li      a7, 284             # SYS_LISTEN
+    mv      a0, s0
+    li      a1, 5
+    ecall
 
-    // listen(sockfd, 5)
-    mov     r0, r4
-    mov     r1, #5
-    mov     r7, #284        // SYS_LISTEN
-    swi     0
-
-    cmp     r0, #0
-    blt     erro
+    bltz    a0, erro
 
 loop_accept:
-    // accept(sockfd, NULL, NULL)
-    mov     r0, r4
-    mov     r1, #0
-    mov     r2, #0
-    mov     r7, #285        // SYS_ACCEPT
-    swi     0
+    li      a7, 285             # SYS_ACCEPT
+    mv      a0, s0
+    li      a1, 0
+    li      a2, 0
+    ecall
 
-    cmp     r0, #0
-    blt     erro            // se erro, finaliza (pode‑se optar por continuar)
+    bltz    a0, erro
+    mv      s1, a0              # cliente
 
-    mov     r5, r0          // guarda o novo socket (cliente)
+    li      a7, 289             # SYS_SEND
+    mv      a0, s1
+    la      a1, msg
+    li      a2, msg_len
+    li      a3, 0
+    ecall
 
-    // send(new_fd, msg, msg_len, 0)
-    mov     r0, r5
-    ldr     r1, =msg
-    mov     r2, #msg_len
-    mov     r3, #0
-    mov     r7, #289        // SYS_SEND
-    swi     0
+    li      a7, 6               # SYS_CLOSE
+    mv      a0, s1
+    ecall
 
-    // close(new_fd)
-    mov     r0, r5
-    mov     r7, #6          // SYS_CLOSE
-    swi     0
-
-    b       loop_accept     // aceita nova conexão
+    j       loop_accept         # aceita nova conexao
 
 erro:
-    // exit(1)
-    mov     r0, #1
-    mov     r7, #1          // SYS_EXIT
-    swi     0
+    li      a7, 1               # SYS_EXIT
+    li      a0, 1
+    ecall

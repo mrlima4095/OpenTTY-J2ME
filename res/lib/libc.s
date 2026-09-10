@@ -124,8 +124,7 @@ LIBWRAP LIB_FREE,        free
 # ---- misc ----------------------------------------------------
 LIBWRAP LIB_GETPID,      getpid
 
-# ---- AEABI (mantidos para compat; RV32IM so usa __muldi3/divdi3
-#       para 64-bit, ainda sem implementacao) -------------------
+# ---- AEABI (mantidos para compat; o emulador implementa a divisao) ---
 LIBWRAP LIB_AEABI_UIDIV,      __aeabi_uidiv
 LIBWRAP LIB_AEABI_IDIV,       __aeabi_idiv
 LIBWRAP LIB_AEABI_UIDIVMOD,   __aeabi_uidivmod
@@ -146,6 +145,58 @@ LIBWRAP LIB_AEABI_MEMSET,     __aeabi_memset8
 LIBWRAP LIB_MEMMOVE,          __aeabi_memmove
 LIBWRAP LIB_MEMMOVE,          __aeabi_memmove4
 LIBWRAP LIB_MEMMOVE,          __aeabi_memmove8
+
+# ---- RISC-V 64-bit helpers (gerados pelo compilador) ------------------
+# clang/gcc RV32IM usa __muldi3/__divdi3/__moddi3/__udivdi3/__umoddi3 para
+# aritmetica de long long. Layout dos args (igual ao AEABI do emulador):
+#   a0:a1 = dividendo/destino, a2:a3 = divisor/fonte.
+# LIB_*LDIVMOD retorna quociente em a0:a1 E resto em a2:a3 (ver libcLdivmod
+# em src/ELF.java); as funcoes abaixo selecionam a metade certa.
+.globl __udivdi3
+.type __udivdi3, %function
+__udivdi3:
+    li      a7, LIB_AEABI_ULDIVMOD
+    ecall
+    ret
+
+.globl __divdi3
+.type __divdi3, %function
+__divdi3:
+    li      a7, LIB_AEABI_LDIVMOD
+    ecall
+    ret
+
+.globl __umoddi3
+.type __umoddi3, %function
+__umoddi3:
+    li      a7, LIB_AEABI_ULDIVMOD
+    ecall
+    mv      a0, a2               # resto a2:a3 -> a0:a1
+    mv      a1, a3
+    ret
+
+.globl __moddi3
+.type __moddi3, %function
+__moddi3:
+    li      a7, LIB_AEABI_LDIVMOD
+    ecall
+    mv      a0, a2               # resto a2:a3 -> a0:a1
+    mv      a1, a3
+    ret
+
+# __muldi3(a0:a1, a2:a3) -> a0:a1 (32x32 -> 64 via MUL/MULHU, sem lmul)
+.globl __muldi3
+.type __muldi3, %function
+__muldi3:
+    mul     t0, a0, a2           # lo32 de Alo*Blo
+    mulhu   t3, a0, a2           # carry de Alo*Blo (bit 32+)
+    mul     t1, a1, a2           # Ahi*Blo (lo32)
+    mul     t2, a0, a3           # Alo*Bhi (lo32)
+    add     t1, t1, t2
+    add     t1, t1, t3
+    mv      a0, t0
+    mv      a1, t1
+    ret
 
 # ---- saida ---------------------------------------------------
 .globl exit

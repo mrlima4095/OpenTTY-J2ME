@@ -1,20 +1,21 @@
+# hello.s (RISC-V RV32IM) - "Hello, World!" com syscalls crus.
+#   write(1, message, len) + exit(0) — o mesmo que hello.c com -stdlib.
+# NOTA: .data antes de .text (llvm-mc nao dobra forward refs em imm).
+.global _start
 .section .data
 message:
     .ascii "Hello, World!\n\0"
 len = . - message
 
 .section .text
-.global _start
 
 _start:
-    /* Syscall write(fd, buf, count) */
-    mov r0, #1          /* fd = stdout (1) */
-    ldr r1, =message    /* buffer */
-    ldr r2, =len        /* count */
-    mov r7, #4          /* syscall number for write */
-    swi #0              /* syscall */
+    li      a7, 4                # SYS_WRITE
+    li      a0, 1                # stdout
+    la      a1, message
+    li      a2, len
+    ecall
 
-    /* Syscall exit(status) */
-    mov r0, #0          /* status = 0 */
-    mov r7, #1          /* syscall number for exit */
-    swi #0              /* syscall */
+    li      a7, 1                # SYS_EXIT
+    li      a0, 0
+    ecall

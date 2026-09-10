@@ -1,4 +1,4 @@
-# OpenTTY — Terminal Environment & ARM ELF Emulator for J2ME
+# OpenTTY — Terminal Environment & RISC-V ELF Emulator for J2ME
 
 ![License](https://img.shields.io/badge/License-MIT-blue.svg)
 ![GitHub top language](https://img.shields.io/github/languages/top/mrlima4095/OpenTTY-J2ME)
@@ -10,7 +10,7 @@ Java ME (J2ME) mobile devices. It ships as a single MIDlet and bundles:
 
 - a **POSIX-like shell** with a virtual filesystem and process management,
 - a **Lua 5.x interpreter** tailored for low-memory devices,
-- an **ARM 32-bit ELF emulator** (in development),
+- a **RISC-V RV32IM ELF emulator** with a guest C runtime (`lib32.s` / `libc.s`),
 - **graphics**, **network**, and **audio** APIs.
 
 All of it runs inside a constrained CLDC-1.0 / MIDP-2.0 environment, turning
@@ -25,7 +25,7 @@ legacy handsets into a portable scripting platform.
 - [File System](#file-system)
 - [Shell Commands](#shell-commands)
 - [Lua API](#lua-api)
-- [ARM ELF Emulator](#arm-elf-emulator)
+- [RISC-V ELF Emulator](#risc-v-elf-emulator)
 - [Package Manager (`yang` / `pkg`)](#package-manager)
 - [Security](#security)
 - [Building & Installation](#building--installation)
@@ -44,12 +44,12 @@ legacy handsets into a portable scripting platform.
 - Pipes, redirection, environment variables, and command execution
 - Multi-process environment with PID control and permissions
 
-### ARM ELF Emulator
+### RISC-V ELF Emulator
 
-- 32-bit ARM ELF executable loading
-- Linux ARM (EABI) syscall emulation
-- 1 MB virtual memory with segment management
-- Basic ARM instruction emulation
+- RV32IM ELF executable loading (`ET_EXEC`, `EM_RISCV` 243, 32-bit LE)
+- Linux EABI syscall emulation on a 1 MB virtual memory with segment management
+- RV32I core + M extension (mul/div/rem), guest C runtime in `res/lib/`
+- Dynamic loading of `-shared` libraries (`.so`): `DT_NEEDED`, `.rela.plt`/`.rela.dyn` (RELA), `R_RISCV_JUMP_SLOT`/`R_RISCV_COPY`/`R_RISCV_RELATIVE`
 
 ### File System
 
@@ -174,16 +174,17 @@ graphics.display(form)
 
 ---
 
-## ARM ELF Emulator
+## RISC-V ELF Emulator
 
 ### Features
 
-- 32-bit ARM ELF executable loading
-- Basic ARM instruction emulation
-- Linux ARM syscalls (EABI)
+- RV32IM ELF executable loading (`ET_EXEC`, `EM_RISCV`, entry ≤ 1 MB)
+- RV32I instruction emulation plus M extension (`mul`/`mulh`/`div`/`rem`)
+- Linux EABI syscalls + library syscalls (`LIB_BASE` 1000: string/memory/printf/printf/sprintf/malloc/AEABI helpers)
 - 1 MB virtual memory with segment management
+- Shared-library loading (`.so`): `DT_NEEDED`, RELA relocations, PLT/GOT
 - File descriptors and I/O
-- Registers and CPSR flags
+- Registers (x0–x31, a7 syscall number)
 
 ### Supported Syscalls (partial)
 
