@@ -127,7 +127,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     Process p = (Process) sys.get(pid);
                     if (p != null) {
                         if (p.sighandler != null) { try { Vector sa = new Vector(); sa.addElement("15"); ((Lua.LuaFunction) p.sighandler).call(sa); } catch (Throwable e) { } }
-                        sys.remove(pid);
+                        if (p.elf != null) { p.elf.kill(); }
+                        else { sys.remove(pid); }
                         showTaskManager();
                     }
                 }

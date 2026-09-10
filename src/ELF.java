@@ -53,7 +53,7 @@ public class ELF implements CommandListener {
     private Hashtable uiObjects, uiHandles;
     private Vector uiEvents;
     private int nextUiHandle;
-    private boolean uiWaiting;
+    private boolean uiWaiting, cleaned;
 
     
     // Constantes ELF
@@ -123,7 +123,8 @@ public class ELF implements CommandListener {
         LIB_UI_LIST_APPEND = LIB_BASE + 42, LIB_UI_COMMAND = LIB_BASE + 43, LIB_UI_ADD_COMMAND = LIB_BASE + 44,
         LIB_UI_DISPLAY = LIB_BASE + 45, LIB_UI_SET_TEXT = LIB_BASE + 46, LIB_UI_GET_TEXT = LIB_BASE + 47,
         LIB_UI_SET_TITLE = LIB_BASE + 48, LIB_UI_CLEAR = LIB_BASE + 49, LIB_UI_WAIT_EVENT = LIB_BASE + 50,
-        LIB_UI_DESTROY = LIB_BASE + 51;
+        LIB_UI_DESTROY = LIB_BASE + 51, LIB_UI_TASKMNGR = LIB_BASE + 52,
+        LIB_PROC_SET_NAME = LIB_BASE + 53, LIB_PROC_SET_SCREEN = LIB_BASE + 54;
 
     // Relocation types
     private static final int R_RISCV_NONE = 0, R_RISCV_32 = 1, R_RISCV_RELATIVE = 3, R_RISCV_COPY = 4, R_RISCV_JUMP_SLOT = 5, R_RISCV_GLOB_DAT = 6;
@@ -180,6 +181,7 @@ public class ELF implements CommandListener {
         this.uiEvents = new Vector();
         this.nextUiHandle = 1;
         this.uiWaiting = false;
+        this.cleaned = false;
 
         // Carregar bibliotecas padrão
         loadDefaultLibraries();
@@ -644,6 +646,9 @@ public class ELF implements CommandListener {
         libc.put("lcdui_clear",        new Integer(createLibraryStub(LIB_UI_CLEAR)));
         libc.put("lcdui_wait_event",   new Integer(createLibraryStub(LIB_UI_WAIT_EVENT)));
         libc.put("lcdui_destroy",      new Integer(createLibraryStub(LIB_UI_DESTROY)));
+        libc.put("graphics_taskmngr",  new Integer(createLibraryStub(LIB_UI_TASKMNGR)));
+        libc.put("opentty_setproc_name", new Integer(createLibraryStub(LIB_PROC_SET_NAME)));
+        libc.put("opentty_setproc_screen", new Integer(createLibraryStub(LIB_PROC_SET_SCREEN)));
 
         // syscalls diretas (open/read/write/close/exit/brk) como antes
         libc.put("exit",  new Integer(createSyscallStub("exit")));
@@ -722,6 +727,9 @@ public class ELF implements CommandListener {
             case LIB_UI_CLEAR - LIB_BASE: registers[REG_A0] = uiClear(registers[REG_A0]); break;
             case LIB_UI_WAIT_EVENT - LIB_BASE: registers[REG_A0] = uiWaitEvent(registers[REG_A0]); break;
             case LIB_UI_DESTROY - LIB_BASE: registers[REG_A0] = uiDestroy(registers[REG_A0]); break;
+            case LIB_UI_TASKMNGR - LIB_BASE: midlet.showTaskManager(); registers[REG_A0] = 0; break;
+            case LIB_PROC_SET_NAME - LIB_BASE: registers[REG_A0] = procSetName(registers[REG_A0]); break;
+            case LIB_PROC_SET_SCREEN - LIB_BASE: registers[REG_A0] = procSetScreen(registers[REG_A0]); break;
             default: registers[REG_A0] = -1; break;
         }
     }
@@ -793,6 +801,17 @@ public class ELF implements CommandListener {
         displayable.setCommandListener(this);
         if (proc != null) { proc.screen = displayable; }
         midlet.display.setCurrent(displayable);
+        return 0;
+    }
+    private int procSetName(int namePtr) {
+        if (proc == null || namePtr == 0) { return -1; }
+        proc.name = uiString(namePtr);
+        return 0;
+    }
+    private int procSetScreen(int screenHandle) {
+        Object screen = uiObject(screenHandle);
+        if (proc == null || !(screen instanceof Displayable)) { return -1; }
+        proc.screen = (Displayable) screen;
         return 0;
     }
     private int uiSetText(int handle, int textPtr) {
@@ -1342,10 +1361,7 @@ public class ELF implements CommandListener {
         } 
         finally { 
             if (midlet.debug) midlet.print("=== ELF FINALLY DEBUG ===", stdout, id, scope);
-            if (!uiWaiting) {
-                executeFiniFunctions();
-                if (midlet.sys.containsKey(pid)) { midlet.sys.remove(pid); }
-            }
+            if (!uiWaiting) { executeFiniFunctions(); cleanup(); }
         }
 
         ITEM.put("status", new Double(0));
@@ -2237,6 +2253,8 @@ public class ELF implements CommandListener {
     // |
     private void handleExit() { int status = registers[REG_A0]; running = false; cleanup(); }
     private void cleanup() {
+        if (cleaned) { return; }
+        cleaned = true;
         Enumeration keys = fileDescriptors.keys();
         while (keys.hasMoreElements()) {
             Object key = keys.nextElement();
@@ -2268,10 +2286,21 @@ public class ELF implements CommandListener {
             if (socketInfo.containsKey("datagram")) { try { ((DatagramConnection) socketInfo.get("datagram")).close(); } catch (Exception e) { } }
         }
 
+        boolean hadScreen = proc != null && proc.screen != null;
         fileDescriptors.clear(); socketDescriptors.clear(); allocatedBlocks.clear(); jmpBufs.clear();
         uiObjects.clear(); uiHandles.clear(); uiEvents.removeAllElements(); uiWaiting = false;
         if (proc != null) { proc.screen = null; }
         memoryMappings.removeAllElements();
+        if (midlet.sys.containsKey(pid)) { midlet.sys.remove(pid); }
+        if (hadScreen) {
+            Displayable target = null;
+            for (Enumeration e = midlet.sys.keys(); e.hasMoreElements();) {
+                Process process = (Process) midlet.sys.get(e.nextElement());
+                if (process != null && process.screen != null) { target = process.screen; }
+            }
+            if (target != null) { midlet.display.setCurrent(target); }
+            else { midlet.destroyApp(true); }
+        }
     }
     // |
     private void handleGetpid() { try { int pidValue = Integer.parseInt(this.pid); registers[REG_A0] = pidValue; } catch (NumberFormatException e) { registers[REG_A0] = 1; } }

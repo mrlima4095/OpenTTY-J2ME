@@ -51,4 +51,11 @@ int lcdui_clear(int screen);
 int lcdui_wait_event(struct lcdui_event *event);
 int lcdui_destroy(int handle);
 
+/* ELF equivalents for graphics.taskmngr() and os.setproc(...). Displaying a
+ * screen registers it automatically; opentty_setproc_screen is for a screen
+ * that must be registered before it is displayed. */
+int graphics_taskmngr(void);
+int opentty_setproc_name(const char *name);
+int opentty_setproc_screen(int screen);
+
 #endif
