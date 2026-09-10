@@ -57,4 +57,9 @@ int open(const char *path, int flags, int mode);
 int close(int fd);
 int brk(void *address);
 
+/* OpenTTY process ABI. spawn starts a Lua or ELF program asynchronously and
+ * returns its PID; waitpid returns -11 while that child is still running. */
+int opentty_spawn(const char *path, int *pid_out);
+int opentty_waitpid(int pid, int *status_out);
+
 #endif

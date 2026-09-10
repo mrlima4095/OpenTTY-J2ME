@@ -68,6 +68,8 @@
 .equ LIB_UI_DESTROY,       LIB_BASE + 51
 .equ LIB_UI_TASKMNGR,      LIB_BASE + 52
 .equ LIB_PROC_SET,         LIB_BASE + 53
+.equ LIB_PROC_SPAWN,       LIB_BASE + 54
+.equ LIB_PROC_WAITPID,     LIB_BASE + 55
 
 # ============================================================
 # _start - Entry point (compativel com o CRT do emulador):
@@ -155,6 +157,8 @@ LIBWRAP LIB_UI_WAIT_EVENT,   lcdui_wait_event
 LIBWRAP LIB_UI_DESTROY,      lcdui_destroy
 LIBWRAP LIB_UI_TASKMNGR,     graphics_taskmngr
 LIBWRAP LIB_PROC_SET,        opentty_setproc
+LIBWRAP LIB_PROC_SPAWN,      opentty_spawn
+LIBWRAP LIB_PROC_WAITPID,    opentty_waitpid
 
 # ---- Helpers de runtime RISC-V ---------------------------------
 LIBWRAP LIB_UDIV32,           __udivsi3

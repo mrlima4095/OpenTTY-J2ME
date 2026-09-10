@@ -124,7 +124,8 @@ public class ELF implements CommandListener {
         LIB_UI_DISPLAY = LIB_BASE + 45, LIB_UI_SET_TEXT = LIB_BASE + 46, LIB_UI_GET_TEXT = LIB_BASE + 47,
         LIB_UI_SET_TITLE = LIB_BASE + 48, LIB_UI_CLEAR = LIB_BASE + 49, LIB_UI_WAIT_EVENT = LIB_BASE + 50,
         LIB_UI_DESTROY = LIB_BASE + 51, LIB_UI_TASKMNGR = LIB_BASE + 52,
-        LIB_PROC_SET = LIB_BASE + 53;
+        LIB_PROC_SET = LIB_BASE + 53, LIB_PROC_SPAWN = LIB_BASE + 54,
+        LIB_PROC_WAITPID = LIB_BASE + 55;
 
     // Relocation types
     private static final int R_RISCV_NONE = 0, R_RISCV_32 = 1, R_RISCV_RELATIVE = 3, R_RISCV_COPY = 4, R_RISCV_JUMP_SLOT = 5, R_RISCV_GLOB_DAT = 6;
@@ -648,6 +649,8 @@ public class ELF implements CommandListener {
         libc.put("lcdui_destroy",      new Integer(createLibraryStub(LIB_UI_DESTROY)));
         libc.put("graphics_taskmngr",  new Integer(createLibraryStub(LIB_UI_TASKMNGR)));
         libc.put("opentty_setproc", new Integer(createLibraryStub(LIB_PROC_SET)));
+        libc.put("opentty_spawn", new Integer(createLibraryStub(LIB_PROC_SPAWN)));
+        libc.put("opentty_waitpid", new Integer(createLibraryStub(LIB_PROC_WAITPID)));
 
         // syscalls diretas (open/read/write/close/exit/brk) como antes
         libc.put("exit",  new Integer(createSyscallStub("exit")));
@@ -728,6 +731,8 @@ public class ELF implements CommandListener {
             case LIB_UI_DESTROY - LIB_BASE: registers[REG_A0] = uiDestroy(registers[REG_A0]); break;
             case LIB_UI_TASKMNGR - LIB_BASE: midlet.showTaskManager(); registers[REG_A0] = 0; break;
             case LIB_PROC_SET - LIB_BASE: registers[REG_A0] = procSet(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_PROC_SPAWN - LIB_BASE: registers[REG_A0] = procSpawn(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_PROC_WAITPID - LIB_BASE: registers[REG_A0] = procWaitpid(registers[REG_A0], registers[REG_A1]); break;
             default: registers[REG_A0] = -1; break;
         }
     }
@@ -820,6 +825,52 @@ public class ELF implements CommandListener {
             proc.db.put(key, uiString(value));
         }
         return 0;
+    }
+    private int procSpawn(int pathPtr, int pidOut) {
+        if (pathPtr == 0) { return -22; }
+        final String path = uiString(pathPtr);
+        final byte[] data;
+        try {
+            InputStream is = midlet.getInputStream(path, scope);
+            if (is == null) { return -2; }
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            byte[] buffer = new byte[1024]; int count;
+            while ((count = is.read(buffer)) != -1) { out.write(buffer, 0, count); }
+            is.close(); data = out.toByteArray();
+        } catch (Exception e) { return -5; }
+        final String childPid = midlet.genpid();
+        final Hashtable childScope = midlet.cloneScope(scope);
+        childScope.put("USER", midlet.getUser(id));
+        final Hashtable childArgs = new Hashtable();
+        childArgs.put(new Double(0), path);
+        final Process child = midlet.isPureText(data)
+            ? new Process(midlet, ("lua " + path).trim(), path, midlet.getUser(id), id, childPid, stdout, childScope)
+            : new Process(midlet, "elf", path, midlet.getUser(id), id, childPid, stdout, childArgs, childScope);
+        child.parentPid = pid;
+        midlet.sys.put(childPid, child);
+        new Thread(new Runnable() { public void run() {
+            try {
+                if (child.lua != null) { child.lua.run(path, new String(data, "UTF-8"), childArgs); }
+                else if (child.elf.load(new ByteArrayInputStream(data))) { child.elf.run(); }
+                else { child.exitStatus = 8; }
+            } catch (Throwable e) { child.exitStatus = 1; }
+            if (midlet.sys.containsKey(childPid)) {
+                child.exited = true;
+                midlet.exited.put(childPid, child);
+                midlet.sys.remove(childPid);
+            }
+        }}).start();
+        if (pidOut != 0 && pidOut >= 0 && pidOut + 3 < memory.length) { try { writeIntLE(memory, pidOut, Integer.parseInt(childPid)); } catch (NumberFormatException e) { } }
+        try { return Integer.parseInt(childPid); } catch (NumberFormatException e) { return -1; }
+    }
+    private int procWaitpid(int childPid, int statusPtr) {
+        String key = String.valueOf(childPid);
+        Process child = (Process) midlet.exited.get(key);
+        if (child == null) { return midlet.sys.containsKey(key) ? -11 : -3; }
+        if (!pid.equals(child.parentPid)) { return -13; }
+        if (statusPtr != 0 && statusPtr >= 0 && statusPtr + 3 < memory.length) { writeIntLE(memory, statusPtr, child.exitStatus); }
+        midlet.exited.remove(key);
+        return childPid;
     }
     private int uiSetText(int handle, int textPtr) {
         Object object = uiObject(handle);

@@ -160,3 +160,14 @@ ELF process terminates, its PID, parent PID, exit status and process metadata
 are retained in the system's completed-process table for parent-side reaping.
 This is the basis for the ELF `spawn` and `waitpid` ABI; a completed process is
 not considered runnable and its LCDUI handles have already been destroyed.
+
+```c
+int child, status;
+if (opentty_spawn("/bin/my-app", &child) > 0) {
+    while (opentty_waitpid(child, &status) == -11) { }
+}
+```
+
+`opentty_waitpid` accepts only a child PID of the caller. It returns the reaped
+PID on success, `-11` while the child is running, `-3` for an unknown PID, and
+`-13` when the target is not a child of the caller.
