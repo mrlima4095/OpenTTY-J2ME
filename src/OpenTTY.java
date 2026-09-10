@@ -67,8 +67,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     screen.append("Used Memory: " + ((runtime.totalMemory() / 1024) - (runtime.freeMemory())) + " KB\nFree Memory: " + (runtime.freeMemory() / 1024) + " KB\nTotal Memory: " + (runtime.totalMemory() / 1024) + "KB total");
 
                     screen.addCommand(new Command("Exit", Command.OK, 1));
-                    screen.addCommand(new Command("Download Lite", Command.OK, 2));
-                    screen.addCommand(new Command("Report Issue", Command.OK, 3));
                     screen.setCommandListener(this);
                     display.setCurrent(screen);
                 }
@@ -78,11 +76,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     screen.append(e instanceof Exception ? "If you tried to install a program in /bin/init it can be the error" : "Try to clear your data or update OpenTTY");
 
                     screen.addCommand(new Command("Exit", Command.OK, 1));
-                    screen.addCommand(new Command("Update", Command.OK, 2));
-                    screen.addCommand(new Command("Clear Data", Command.OK, 3));
-                    screen.addCommand(new Command("Report Issue", Command.OK, 4));
-                    screen.addCommand(new Command("Save Logs", Command.OK, 5));
-                    screen.addCommand(new Command("Backup", Command.OK, 6));
                     screen.setCommandListener(this);
                     display.setCurrent(screen);
                 }
