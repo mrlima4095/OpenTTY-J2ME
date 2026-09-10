@@ -180,3 +180,7 @@ configured custom shell, and returns its exit status:
 ```c
 if (opentty_shell("ls /bin") != 0) { /* command failed */ }
 ```
+
+`opentty_getenv(key, buffer, size)` reads an environment value such as `USER`
+or `PWD`. `lcdui_set_label(item, label)` changes a `TextField` or `StringItem`
+label without changing its text.

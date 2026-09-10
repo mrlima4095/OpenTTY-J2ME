@@ -44,6 +44,7 @@ int lcdui_display(int screen);
 int lcdui_set_text(int item, const char *text);
 int lcdui_get_text(int item, char *buffer, int size);
 int lcdui_set_title(int screen, const char *title);
+int lcdui_set_label(int item, const char *label);
 int lcdui_clear(int screen);
 
 /* Returns 1 after filling event. With no event it suspends this ELF process;

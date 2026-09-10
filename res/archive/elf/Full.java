@@ -125,7 +125,8 @@ public class ELF implements CommandListener {
         LIB_UI_SET_TITLE = LIB_BASE + 48, LIB_UI_CLEAR = LIB_BASE + 49, LIB_UI_WAIT_EVENT = LIB_BASE + 50,
         LIB_UI_DESTROY = LIB_BASE + 51, LIB_UI_TASKMNGR = LIB_BASE + 52,
         LIB_PROC_SET = LIB_BASE + 53, LIB_PROC_SPAWN = LIB_BASE + 54,
-        LIB_PROC_WAITPID = LIB_BASE + 55, LIB_PROC_SHELL = LIB_BASE + 56;
+        LIB_PROC_WAITPID = LIB_BASE + 55, LIB_PROC_SHELL = LIB_BASE + 56,
+        LIB_PROC_GETENV = LIB_BASE + 57, LIB_UI_SET_LABEL = LIB_BASE + 58;
 
     // Relocation types
     private static final int R_RISCV_NONE = 0, R_RISCV_32 = 1, R_RISCV_RELATIVE = 3, R_RISCV_COPY = 4, R_RISCV_JUMP_SLOT = 5, R_RISCV_GLOB_DAT = 6;
@@ -652,6 +653,8 @@ public class ELF implements CommandListener {
         libc.put("opentty_spawn", new Integer(createLibraryStub(LIB_PROC_SPAWN)));
         libc.put("opentty_waitpid", new Integer(createLibraryStub(LIB_PROC_WAITPID)));
         libc.put("opentty_shell", new Integer(createLibraryStub(LIB_PROC_SHELL)));
+        libc.put("opentty_getenv", new Integer(createLibraryStub(LIB_PROC_GETENV)));
+        libc.put("lcdui_set_label", new Integer(createLibraryStub(LIB_UI_SET_LABEL)));
 
         // syscalls diretas (open/read/write/close/exit/brk) como antes
         libc.put("exit",  new Integer(createSyscallStub("exit")));
@@ -735,6 +738,8 @@ public class ELF implements CommandListener {
             case LIB_PROC_SPAWN - LIB_BASE: registers[REG_A0] = procSpawn(registers[REG_A0], registers[REG_A1]); break;
             case LIB_PROC_WAITPID - LIB_BASE: registers[REG_A0] = procWaitpid(registers[REG_A0], registers[REG_A1]); break;
             case LIB_PROC_SHELL - LIB_BASE: registers[REG_A0] = procShell(registers[REG_A0]); break;
+            case LIB_PROC_GETENV - LIB_BASE: registers[REG_A0] = procGetenv(registers[REG_A0], registers[REG_A1], registers[REG_A2]); break;
+            case LIB_UI_SET_LABEL - LIB_BASE: registers[REG_A0] = uiSetLabel(registers[REG_A0], registers[REG_A1]); break;
             default: registers[REG_A0] = -1; break;
         }
     }
@@ -890,6 +895,21 @@ public class ELF implements CommandListener {
             Object result = shell.call(args);
             return result instanceof Double ? ((Double) result).intValue() : 0;
         } catch (Exception e) { return -1; }
+    }
+    private int procGetenv(int keyPtr, int buffer, int size) {
+        if (keyPtr == 0 || buffer < 0 || size < 1) { return -22; }
+        Object value = scope.get(uiString(keyPtr));
+        if (value == null) { return -2; }
+        String text = String.valueOf(value);
+        libcWriteCStringN(buffer, text, size);
+        return text.length();
+    }
+    private int uiSetLabel(int handle, int labelPtr) {
+        Object object = uiObject(handle);
+        if (object instanceof StringItem) { ((StringItem) object).setLabel(uiString(labelPtr)); }
+        else if (object instanceof TextField) { ((TextField) object).setLabel(uiString(labelPtr)); }
+        else { return -1; }
+        return 0;
     }
     private int uiSetText(int handle, int textPtr) {
         Object object = uiObject(handle);
