@@ -18,12 +18,4 @@ Copyright (C) 2026 - Mr. Lima
 
 [ ELF ]
 
-- Support for `stdlib`
-- Support for **Shared Objects**
-
-[ Lua ]
-
-- Added `debug` table
-- Added `coroutines` support
-- **LuaCanvas** API available
-- 
+- Interface changed to RISC-V 32
