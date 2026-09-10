@@ -171,3 +171,10 @@ if (opentty_spawn("/bin/my-app", &child) > 0) {
 `opentty_waitpid` accepts only a child PID of the caller. It returns the reaped
 PID on success, `-11` while the child is running, `-3` for an unknown PID, and
 `-13` when the target is not a child of the caller.
+
+`opentty_shell(command)` uses the same Lua `os.execute` handler, including a
+configured custom shell, and returns its exit status:
+
+```c
+if (opentty_shell("ls /bin") != 0) { /* command failed */ }
+```

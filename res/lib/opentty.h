@@ -61,5 +61,6 @@ int brk(void *address);
  * returns its PID; waitpid returns -11 while that child is still running. */
 int opentty_spawn(const char *path, int *pid_out);
 int opentty_waitpid(int pid, int *status_out);
+int opentty_shell(const char *command);
 
 #endif

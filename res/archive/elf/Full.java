@@ -1,11 +1,13 @@
 import javax.microedition.io.*;
 import javax.microedition.io.file.*;
+import javax.microedition.lcdui.*;
+import javax.microedition.lcdui.List;
 import javax.microedition.rms.*;
 import java.util.*;
 import java.io.*;
 // |
 // ELF RISC-V 32 Emulator (RV32IM)
-public class ELF {
+public class ELF implements CommandListener {
     private static final boolean LITE_EDITION = false;
 
     public static boolean isLiteEdition() { return LITE_EDITION; }
@@ -37,22 +39,28 @@ public class ELF {
     private int heapStart, heapEnd;
 
     // Dynamic linking structures
-    private Hashtable dynamicSymbols, neededLibraries, globalSymbols, pltEntries;
+    private Hashtable dynamicSymbols, neededLibraries, globalSymbols;
     private Vector sharedObjectMappings;
     private Vector loadedLibraries, memoryMappings, dynSymNames;
     private Hashtable copyRelocs, libSymSizes; 
-    private int pltGotAddr, dynamicSectionAddr, gotBase, pltBase, resolverCodeAddr, resolveFuncAddr;
+    private int pltGotAddr, dynamicSectionAddr, gotBase;
 
     // heap do stdlib (malloc/calloc/realloc/free): allocador first-fit com
     // blocos escritos na RAM do guest: { int size; int next; ...payload }
     private int libcHeapFree, libcHeapTop, libcHeapRegionEnd;
 
+    // LCDUI guest objects live in Java; the guest accesses them through handles.
+    private Hashtable uiObjects, uiHandles;
+    private Vector uiEvents;
+    private int nextUiHandle;
+    private boolean uiWaiting, cleaned;
+
     
     // Constantes ELF
-    private static final int EI_NIDENT = 16, ELFCLASS32 = 1, ELFDATA2LSB = 1, EM_ARM = 40, EM_RISCV = 243, ET_EXEC = 2, ET_DYN = 3, PT_LOAD = 1, PT_DYNAMIC = 2, PT_INTERP = 3, PT_NOTE = 4;
+    private static final int EI_NIDENT = 16, ELFCLASS32 = 1, ELFDATA2LSB = 1, EM_RISCV = 243, ET_EXEC = 2, ET_DYN = 3, PT_LOAD = 1, PT_DYNAMIC = 2, PT_INTERP = 3, PT_NOTE = 4;
     
     // Constantes de Registradores RISC-V (a0-a7 = x10-x17; a7 carrega o numero de syscall)
-    private static final int REG_R0 = 10, REG_R1 = 11, REG_R2 = 12, REG_R3 = 13, REG_R7 = 17;
+    private static final int REG_A0 = 10, REG_A1 = 11, REG_A2 = 12, REG_A3 = 13, REG_A7 = 17;
     private static final int REG_SP = 2, REG_LR = 1, REG_PC = 31;
     
     // Opcodes RV32I
@@ -60,7 +68,7 @@ public class ELF {
         RV_OP_BRANCH = 0x63, RV_OP_LOAD = 0x03, RV_OP_STORE = 0x23, RV_OP_OPIMM = 0x13, RV_OP_OP = 0x33,
         RV_OP_MISCMEM = 0x0F, RV_OP_SYSTEM = 0x73;
     
-    // Syscalls Linux ARM (EABI)
+    // Syscalls do kernel (numeros EABI do emulador)
     private static final int SYS_EXIT = 1, SYS_FORK = 2, SYS_READ = 3, SYS_WRITE = 4, SYS_OPEN = 5, SYS_CLOSE = 6, SYS_CREAT = 8, SYS_UNLINK = 10, SYS_EXECVE = 11, SYS_CHDIR = 12, SYS_TIME = 13, SYS_LSEEK = 19, SYS_GETPID = 20, SYS_KILL = 37, SYS_MKDIR = 39, SYS_RMDIR = 40, SYS_DUP = 41, SYS_PIPE = 42, SYS_IOCTL = 54, SYS_FCNTL = 55, SYS_SIGNAL = 48, SYS_DUP2 = 63, SYS_GETPPID = 64, SYS_SIGACTION = 67, SYS_BRK = 45, SYS_TRUNCATE = 92, SYS_FTRUNCATE = 93, SYS_SETJMP = 96, SYS_LONGJMP = 97, SYS_FSYNC = 118, SYS_SIGRETURN = 119, SYS_UNAME = 122, SYS_MPROTECT = 125, SYS_SIGPROCMASK = 126, SYS_STAT = 106, SYS_FSTAT = 108, SYS_GETTIMEOFDAY = 78, SYS_GETPRIORITY = 140, SYS_SETPRIORITY = 141, SYS_SELECT = 142, SYS_SCHED_YIELD = 158, SYS_NANOSLEEP = 162, SYS_MREMAP = 163, SYS_POLL = 168, SYS_MUNMAP = 91, SYS_GETRLIMIT = 191, SYS_MMAP = 192, SYS_GETCWD = 183, SYS_GETUID32 = 199, SYS_GETEUID32 = 201, SYS_GETDENTS = 217, SYS_GETTID = 224, SYS_FUTEX = 240, SYS_SOCKET = 281, SYS_BIND = 282, SYS_CONNECT = 283, SYS_LISTEN = 284, SYS_ACCEPT = 285, SYS_GETSOCKNAME = 286, SYS_GETPEERNAME = 287, SYS_SEND = 289, SYS_SENDTO = 290, SYS_RECV = 291, SYS_RECVFROM = 292, SYS_SHUTDOWN = 293, SYS_SETSOCKOPT = 294, SYS_GETSOCKOPT = 295, SYS_SYSCALL = 0;
     
     // Constantes para socket
@@ -96,9 +104,9 @@ public class ELF {
     // Dynamic linking constants - adicione com as outras constantes ELF
     private static final int DT_NULL = 0, DT_NEEDED = 1, DT_PLTRELSZ = 2, DT_PLTGOT = 3, DT_HASH = 4, DT_STRTAB = 5, DT_SYMTAB = 6, DT_RELA = 7, DT_RELASZ = 8, DT_RELAENT = 9, DT_STRSZ = 10, DT_SYMENT = 11, DT_INIT = 12, DT_FINI = 13, DT_SONAME = 14, DT_RPATH = 15, DT_SYMBOLIC = 16, DT_REL = 17, DT_RELSZ = 18, DT_RELENT = 19, DT_PLTREL = 20, DT_DEBUG = 21, DT_TEXTREL = 22, DT_JMPREL = 23, DT_BIND_NOW = 24, DT_INIT_ARRAY = 25, DT_FINI_ARRAY = 26, DT_INIT_ARRAYSZ = 27, DT_FINI_ARRAYSZ = 28;
 
-    // stdlib do emulador — "library syscalls" (svc #LIB_*) resolvidas no Java
-    // por handleLibraryCall(). Numeros > SYS vm máx (295) ficam fora do range
-    // das syscalls Linux ARM, entao podem ser usados como ID da libc.
+    // stdlib do emulador — "library syscalls" (li a7,#LIB_*; ecall) resolvidas
+    // no Java por handleLibraryCall(). Numeros > syscall vm max (295) ficam
+    // fora do range das syscalls do kernel, entao podem ser usados como ID.
     private static final int LIB_BASE = 1000;
     private static final int LIB_STRLEN = LIB_BASE + 1, LIB_STRCPY = LIB_BASE + 2, LIB_STRCMP = LIB_BASE + 3,
         LIB_STRNCMP = LIB_BASE + 4, LIB_STRCAT = LIB_BASE + 5, LIB_STRCHR = LIB_BASE + 6, LIB_STRDUP = LIB_BASE + 7,
@@ -108,12 +116,19 @@ public class ELF {
         LIB_SPRINTF = LIB_BASE + 20, LIB_SNPRINTF = LIB_BASE + 21, LIB_WRITE_STRING = LIB_BASE + 22,
         LIB_MALLOC = LIB_BASE + 23, LIB_CALLOC = LIB_BASE + 24, LIB_REALLOC = LIB_BASE + 25, LIB_FREE = LIB_BASE + 26,
         LIB_TOUPPER = LIB_BASE + 27, LIB_TOLOWER = LIB_BASE + 28, LIB_GETPID = LIB_BASE + 29,
-        LIB_AEABI_UIDIV = LIB_BASE + 30, LIB_AEABI_IDIV = LIB_BASE + 31, LIB_AEABI_UIDIVMOD = LIB_BASE + 32,
-        LIB_AEABI_IDIVMOD = LIB_BASE + 33, LIB_AEABI_ULDIVMOD = LIB_BASE + 34, LIB_AEABI_LDIVMOD = LIB_BASE + 35,
-        LIB_AEABI_MEMCLR = LIB_BASE + 36, LIB_AEABI_MEMCPY = LIB_BASE + 37, LIB_AEABI_MEMSET = LIB_BASE + 38;
+        LIB_UDIV32 = LIB_BASE + 30, LIB_SDIV32 = LIB_BASE + 31, LIB_UDIVMOD32 = LIB_BASE + 32,
+        LIB_SDIVMOD32 = LIB_BASE + 33, LIB_UDIVMOD64 = LIB_BASE + 34, LIB_SDIVMOD64 = LIB_BASE + 35,
+        LIB_MEMCLR = LIB_BASE + 36, LIB_MEMCPY_ALIGN = LIB_BASE + 37, LIB_MEMSET_ALIGN = LIB_BASE + 38,
+        LIB_UI_NEW = LIB_BASE + 39, LIB_UI_APPEND_TEXT = LIB_BASE + 40, LIB_UI_APPEND_FIELD = LIB_BASE + 41,
+        LIB_UI_LIST_APPEND = LIB_BASE + 42, LIB_UI_COMMAND = LIB_BASE + 43, LIB_UI_ADD_COMMAND = LIB_BASE + 44,
+        LIB_UI_DISPLAY = LIB_BASE + 45, LIB_UI_SET_TEXT = LIB_BASE + 46, LIB_UI_GET_TEXT = LIB_BASE + 47,
+        LIB_UI_SET_TITLE = LIB_BASE + 48, LIB_UI_CLEAR = LIB_BASE + 49, LIB_UI_WAIT_EVENT = LIB_BASE + 50,
+        LIB_UI_DESTROY = LIB_BASE + 51, LIB_UI_TASKMNGR = LIB_BASE + 52,
+        LIB_PROC_SET = LIB_BASE + 53, LIB_PROC_SPAWN = LIB_BASE + 54,
+        LIB_PROC_WAITPID = LIB_BASE + 55, LIB_PROC_SHELL = LIB_BASE + 56;
 
     // Relocation types
-    private static final int R_ARM_ABS32 = 2, R_ARM_REL32 = 3, R_ARM_COPY = 20, R_ARM_GLOB_DAT = 21, R_ARM_JUMP_SLOT = 22, R_ARM_RELATIVE = 23;
+    private static final int R_RISCV_NONE = 0, R_RISCV_32 = 1, R_RISCV_RELATIVE = 3, R_RISCV_COPY = 4, R_RISCV_JUMP_SLOT = 5, R_RISCV_GLOB_DAT = 6;
         
     // Constantes fcntl
     private static final int F_GETFL = 3, F_SETFL = 4, O_NONBLOCK = 2048;
@@ -152,7 +167,6 @@ public class ELF {
         this.dynamicSymbols = new Hashtable();
         this.neededLibraries = new Hashtable();
         this.globalSymbols = new Hashtable();
-        this.pltEntries = new Hashtable();
         this.sharedObjectMappings = new Vector();
         this.dynSymNames = new Vector();
         this.copyRelocs = new Hashtable();
@@ -160,12 +174,15 @@ public class ELF {
         this.pltGotAddr = 0;
         this.dynamicSectionAddr = 0;
         this.gotBase = 0;
-        this.pltBase = 0;
-        this.resolverCodeAddr = 0;
-        this.resolveFuncAddr = 0;
         this.libcHeapFree = 0;
         this.libcHeapTop = 0;
         this.libcHeapRegionEnd = 0;
+        this.uiObjects = new Hashtable();
+        this.uiHandles = new Hashtable();
+        this.uiEvents = new Vector();
+        this.nextUiHandle = 1;
+        this.uiWaiting = false;
+        this.cleaned = false;
 
         // Carregar bibliotecas padrão
         loadDefaultLibraries();
@@ -244,9 +261,11 @@ public class ELF {
     private void scanCopyRelocations(byte[] elfData) {
         if (!elfInfo.containsKey("rel") || !elfInfo.containsKey("relsz")) { return; }
         int relAddr = ((Integer)elfInfo.get("rel")).intValue(), relsz = ((Integer)elfInfo.get("relsz")).intValue();
-        for (int i = 0; i < relsz; i += 8) {
-            int offset = relAddr + i, r_offset = readIntLE(elfData, offset), r_info = readIntLE(elfData, offset + 4), symIndex = r_info >> 8, type = r_info & 0xFF;
-            if (type == R_ARM_COPY) {
+        int relent = elfInfo.containsKey("relent") ? ((Integer) elfInfo.get("relent")).intValue() : 8;
+        if (relent != 8 && relent != 12) { return; }
+        for (int i = 0; i < relsz; i += relent) {
+            int offset = relAddr + i, r_offset = readIntLE(memory, offset), r_info = readIntLE(memory, offset + 4), symIndex = r_info >> 8, type = r_info & 0xFF;
+            if (type == R_RISCV_COPY) {
                 String nm = getSymbolNameByIndex(symIndex);
                 if (nm != null) { copyRelocs.put(nm, new Integer(r_offset)); if (midlet.debug) { midlet.print("COPY reloc: " + nm + " home at " + toHex(r_offset), stdout, id, scope); } }
             }
@@ -333,6 +352,18 @@ public class ELF {
                     
                 case DT_RELSZ:
                     elfInfo.put("relsz", new Integer(val));
+                    break;
+
+                case DT_RELA:
+                    elfInfo.put("rel", new Integer(val));
+                    break;
+
+                case DT_RELASZ:
+                    elfInfo.put("relsz", new Integer(val));
+                    break;
+
+                case DT_RELAENT:
+                    elfInfo.put("relent", new Integer(val));
                     break;
                     
                 case DT_INIT:
@@ -451,7 +482,7 @@ public class ELF {
         }
         dynAddr += loadBias;
         
-        int symtab = 0, strtab = 0, syment = 16, rel = 0, relsz = 0, jmprel = 0, pltrelsz = 0, pltrel = DT_REL, hashAddr = 0, init = 0, initArray = 0, initArraySize = 0, fini = 0, finiArray = 0, finiArraySize = 0;
+        int symtab = 0, strtab = 0, syment = 16, rel = 0, relsz = 0, jmprel = 0, pltrelsz = 0, pltrel = DT_REL, hashAddr = 0, init = 0, initArray = 0, initArraySize = 0, fini = 0, finiArray = 0, finiArraySize = 0, libRelent = 8;
         Vector neededOffsets = new Vector();
         int offset = 0;
         while (offset + 8 <= dynSize) {
@@ -464,6 +495,10 @@ public class ELF {
                 case DT_SYMENT: syment = val; break;
                 case DT_REL: rel = loadBias + val; break;
                 case DT_RELSZ: relsz = val; break;
+                case DT_RELA: rel = loadBias + val; break;
+                case DT_RELASZ: relsz = val; break;
+                case DT_RELENT: libRelent = val; break;
+                case DT_RELAENT: libRelent = val; break;
                 case DT_JMPREL: jmprel = loadBias + val; break;
                 case DT_PLTRELSZ: pltrelsz = val; break;
                 case DT_PLTREL: pltrel = val; break;
@@ -512,8 +547,8 @@ public class ELF {
             if (needed.length() > 0 && !loadedLibraries.contains(needed) && !loadLibrary(needed)) { rollbackSharedObjectLoad(mappingCount, libraryCount); return false; }
         }
         
-        // Aplicar as relocacoes da propria lib (.rel.dyn e .rel.plt)
-        applyLibraryRelocations(rel, relsz, 8, symNames, loadBias);
+        // Aplicar as relocacoes da propria lib (.rel.dyn/.rela.dyn e .rel.plt/.rela.plt)
+        applyLibraryRelocations(rel, relsz, libRelent, symNames, loadBias);
         if (jmprel != 0 && pltrelsz != 0) { applyLibraryRelocations(jmprel, pltrelsz, (pltrel == DT_RELA) ? 12 : 8, symNames, loadBias); }
         return true;
     }
@@ -533,19 +568,19 @@ public class ELF {
     }
     private void applyLibraryRelocations(int relAddr, int relsz, int relent, Vector symNames, int loadBias) {
         for (int i = 0; i < relsz && relAddr + i + relent <= memory.length; i += relent) {
-            int r_offset = loadBias + readIntLE(memory, relAddr + i), r_info = readIntLE(memory, relAddr + i + 4), symIndex = r_info >> 8, type = r_info & 0xFF;
+            int r_offset = loadBias + readIntLE(memory, relAddr + i), r_info = readIntLE(memory, relAddr + i + 4), symIndex = r_info >> 8, type = r_info & 0xFF, addend = (relent == 12) ? readIntLE(memory, relAddr + i + 8) : 0;
             switch (type) {
-                case R_ARM_ABS32:
-                case R_ARM_GLOB_DAT:
-                case R_ARM_JUMP_SLOT: {
+                case R_RISCV_32:
+                case R_RISCV_GLOB_DAT:
+                case R_RISCV_JUMP_SLOT: {
                     String nm = (symIndex < symNames.size()) ? (String) symNames.elementAt(symIndex) : null;
                     Integer addr = (nm != null) ? resolveSymbol(nm) : null;
-                    if (addr != null) { writeIntLE(memory, r_offset, addr.intValue()); if (midlet.debug) { midlet.print("lib reloc: " + nm + " -> " + toHex(addr.intValue()) + " at " + toHex(r_offset), stdout, id, scope); } }
+                    if (addr != null) { writeIntLE(memory, r_offset, addr.intValue() + addend); if (midlet.debug) { midlet.print("lib reloc: " + nm + " -> " + toHex(addr.intValue()) + " at " + toHex(r_offset), stdout, id, scope); } }
                     break;
                 }
-                    case R_ARM_RELATIVE: {
+                case R_RISCV_RELATIVE: {
                     int cur = readIntLE(memory, r_offset);
-                    writeIntLE(memory, r_offset, loadBias + cur);
+                    writeIntLE(memory, r_offset, (relent == 12) ? loadBias + addend : loadBias + cur);
                     if (midlet.debug) { midlet.print("lib reloc RELATIVE at " + toHex(r_offset), stdout, id, scope); }
                     break;
                 }
@@ -556,8 +591,8 @@ public class ELF {
     private void loadDefaultLibraries() {
         Hashtable libc = new Hashtable();
 
-        // stdlib do emulador: cada simbolo e um wrapper ARM de 2 instrucoes
-        // (svc #LIB_*; bx lr) cujo payload e implementado em handleLibraryCall().
+        // stdlib do emulador: cada simbolo e um wrapper de 3 instrucoes
+        // (li a7,#LIB_*; ecall; ret) cujo payload e implementado em handleLibraryCall().
         libc.put("strlen",   new Integer(createLibraryStub(LIB_STRLEN)));
         libc.put("strcpy",   new Integer(createLibraryStub(LIB_STRCPY)));
         libc.put("strncpy",  new Integer(createLibraryStub(LIB_STRNCPY)));
@@ -587,17 +622,36 @@ public class ELF {
         libc.put("free",     new Integer(createLibraryStub(LIB_FREE)));
         libc.put("getpid",   new Integer(createLibraryStub(LIB_GETPID)));
 
-        // ABI helpers que compiladores C (gcc — "$aeabi" / llvm) chamam
+        // Runtime helpers que compiladores C (clang/gcc RV32IM) emitem
         // implicitamente para divisao por 32/64 bits e blits de memoria.
-        libc.put("__aeabi_uidiv",    new Integer(createLibraryStub(LIB_AEABI_UIDIV)));
-        libc.put("__aeabi_idiv",     new Integer(createLibraryStub(LIB_AEABI_IDIV)));
-        libc.put("__aeabi_uidivmod", new Integer(createLibraryStub(LIB_AEABI_UIDIVMOD)));
-        libc.put("__aeabi_idivmod",  new Integer(createLibraryStub(LIB_AEABI_IDIVMOD)));
-        libc.put("__aeabi_uldivmod", new Integer(createLibraryStub(LIB_AEABI_ULDIVMOD)));
-        libc.put("__aeabi_ldivmod",  new Integer(createLibraryStub(LIB_AEABI_LDIVMOD)));
-        libc.put("__aeabi_memclr",   new Integer(createLibraryStub(LIB_AEABI_MEMCLR)));
-        libc.put("__aeabi_memcpy",   new Integer(createLibraryStub(LIB_AEABI_MEMCPY)));
-        libc.put("__aeabi_memset",   new Integer(createLibraryStub(LIB_AEABI_MEMSET)));
+        libc.put("__udivsi3",     new Integer(createLibraryStub(LIB_UDIV32)));
+        libc.put("__divsi3",      new Integer(createLibraryStub(LIB_SDIV32)));
+        libc.put("__udivmodsi4",  new Integer(createLibraryStub(LIB_UDIVMOD32)));
+        libc.put("__divmodsi4",   new Integer(createLibraryStub(LIB_SDIVMOD32)));
+        libc.put("__udivmoddi4",  new Integer(createLibraryStub(LIB_UDIVMOD64)));
+        libc.put("__divmoddi4",   new Integer(createLibraryStub(LIB_SDIVMOD64)));
+        libc.put("__memclr",      new Integer(createLibraryStub(LIB_MEMCLR)));
+        libc.put("__memcpy",      new Integer(createLibraryStub(LIB_MEMCPY_ALIGN)));
+        libc.put("__memset",      new Integer(createLibraryStub(LIB_MEMSET_ALIGN)));
+
+        libc.put("lcdui_new",          new Integer(createLibraryStub(LIB_UI_NEW)));
+        libc.put("lcdui_append_text",  new Integer(createLibraryStub(LIB_UI_APPEND_TEXT)));
+        libc.put("lcdui_append_field", new Integer(createLibraryStub(LIB_UI_APPEND_FIELD)));
+        libc.put("lcdui_list_append",  new Integer(createLibraryStub(LIB_UI_LIST_APPEND)));
+        libc.put("lcdui_command",      new Integer(createLibraryStub(LIB_UI_COMMAND)));
+        libc.put("lcdui_add_command",  new Integer(createLibraryStub(LIB_UI_ADD_COMMAND)));
+        libc.put("lcdui_display",      new Integer(createLibraryStub(LIB_UI_DISPLAY)));
+        libc.put("lcdui_set_text",     new Integer(createLibraryStub(LIB_UI_SET_TEXT)));
+        libc.put("lcdui_get_text",     new Integer(createLibraryStub(LIB_UI_GET_TEXT)));
+        libc.put("lcdui_set_title",    new Integer(createLibraryStub(LIB_UI_SET_TITLE)));
+        libc.put("lcdui_clear",        new Integer(createLibraryStub(LIB_UI_CLEAR)));
+        libc.put("lcdui_wait_event",   new Integer(createLibraryStub(LIB_UI_WAIT_EVENT)));
+        libc.put("lcdui_destroy",      new Integer(createLibraryStub(LIB_UI_DESTROY)));
+        libc.put("graphics_taskmngr",  new Integer(createLibraryStub(LIB_UI_TASKMNGR)));
+        libc.put("opentty_setproc", new Integer(createLibraryStub(LIB_PROC_SET)));
+        libc.put("opentty_spawn", new Integer(createLibraryStub(LIB_PROC_SPAWN)));
+        libc.put("opentty_waitpid", new Integer(createLibraryStub(LIB_PROC_WAITPID)));
+        libc.put("opentty_shell", new Integer(createLibraryStub(LIB_PROC_SHELL)));
 
         // syscalls diretas (open/read/write/close/exit/brk) como antes
         libc.put("exit",  new Integer(createSyscallStub("exit")));
@@ -621,49 +675,272 @@ public class ELF {
     }
 
     // | stdlib do emulador — implementacao das library syscalls (LIB_*)
-    // Argumentos chegam em R0-R3 (e stack nos varargs); retorno em R0.
+    // Argumentos chegam em a0-a3 (e stack nos varargs); retorno em a0.
 
     private void handleLibraryCall(int libId) {
         switch (libId) {
-            case LIB_STRLEN - LIB_BASE: registers[REG_R0] = libcStrlen(registers[REG_R0]); break;
-            case LIB_STRCPY - LIB_BASE: libcStrcpy(registers[REG_R0], registers[REG_R1]); break;
-            case LIB_STRNCPY - LIB_BASE: libcStrncpy(registers[REG_R0], registers[REG_R1], registers[REG_R2]); break;
-            case LIB_STRCMP - LIB_BASE: registers[REG_R0] = libcStrcmp(registers[REG_R0], registers[REG_R1]); break;
-            case LIB_STRNCMP - LIB_BASE: registers[REG_R0] = libcStrncmp(registers[REG_R0], registers[REG_R1], registers[REG_R2]); break;
-            case LIB_STRCAT - LIB_BASE: { int d = registers[REG_R0]; libcStrcpy(d + libcStrlen(d), registers[REG_R1]); registers[REG_R0] = d; break; }
-            case LIB_STRNCAT - LIB_BASE: { int d = registers[REG_R0]; libcStrncat(d, registers[REG_R1], registers[REG_R2]); registers[REG_R0] = d; break; }
-            case LIB_STRCHR - LIB_BASE: registers[REG_R0] = libcStrchr(registers[REG_R0], registers[REG_R1]); break;
-            case LIB_STRDUP - LIB_BASE: registers[REG_R0] = libcStrdup(registers[REG_R0]); break;
-            case LIB_MEMCPY - LIB_BASE: registers[REG_R0] = libcMemcpy(registers[REG_R0], registers[REG_R1], registers[REG_R2]); break;
-            case LIB_MEMMOVE - LIB_BASE: registers[REG_R0] = libcMemmove(registers[REG_R0], registers[REG_R1], registers[REG_R2]); break;
-            case LIB_MEMSET - LIB_BASE: registers[REG_R0] = libcMemset(registers[REG_R0], registers[REG_R1], registers[REG_R2]); break;
-            case LIB_MEMCMP - LIB_BASE: registers[REG_R0] = libcMemcmp(registers[REG_R0], registers[REG_R1], registers[REG_R2]); break;
-            case LIB_MEMCHR - LIB_BASE: registers[REG_R0] = libcMemchr(registers[REG_R0], registers[REG_R1], registers[REG_R2]); break;
-            case LIB_ATOI - LIB_BASE: registers[REG_R0] = libcAtoi(registers[REG_R0]); break;
-            case LIB_ABS - LIB_BASE: { int v = registers[REG_R0]; registers[REG_R0] = v < 0 ? -v : v; break; }
-            case LIB_TOUPPER - LIB_BASE: { int v = registers[REG_R0]; registers[REG_R0] = (v >= 'a' && v <= 'z') ? v - 32 : v; break; }
-            case LIB_TOLOWER - LIB_BASE: { int v = registers[REG_R0]; registers[REG_R0] = (v >= 'A' && v <= 'Z') ? v + 32 : v; break; }
-            case LIB_PUTCHAR - LIB_BASE: libcWriteChar(registers[REG_R0] & 0xFF); break;
-            case LIB_PUTS - LIB_BASE: { String s = libcReadCString(registers[REG_R0]); libcWriteOut(s + "\n"); registers[REG_R0] = s.length() + 1; break; }
-            case LIB_WRITE_STRING - LIB_BASE: { String s = libcReadCString(registers[REG_R0]); libcWriteOut(s); registers[REG_R0] = s.length(); break; }
-            case LIB_PRINTF - LIB_BASE: { String s = libcFormat(registers[REG_R0], 11); libcWriteOut(s); registers[REG_R0] = s.length(); break; }
-            case LIB_SPRINTF - LIB_BASE: { String s = libcFormat(registers[REG_R1], 12); libcWriteCString(registers[REG_R0], s); registers[REG_R0] = s.length(); break; }
-            case LIB_SNPRINTF - LIB_BASE: { String s = libcFormat(registers[REG_R2], 13); libcWriteCStringN(registers[REG_R0], s, registers[REG_R1]); registers[REG_R0] = s.length(); break; }
-            case LIB_MALLOC - LIB_BASE: registers[REG_R0] = libcMalloc(registers[REG_R0]); break;
-            case LIB_CALLOC - LIB_BASE: registers[REG_R0] = libcCalloc(registers[REG_R0], registers[REG_R1]); break;
-            case LIB_REALLOC - LIB_BASE: registers[REG_R0] = libcRealloc(registers[REG_R0], registers[REG_R1]); break;
-            case LIB_FREE - LIB_BASE: libcFree(registers[REG_R0]); registers[REG_R0] = 0; break;
-            case LIB_GETPID - LIB_BASE: { try { registers[REG_R0] = Integer.parseInt(pid); } catch (NumberFormatException e) { registers[REG_R0] = 1; } break; }
-            case LIB_AEABI_UIDIV - LIB_BASE: registers[REG_R0] = libcUdiv(registers[REG_R0], registers[REG_R1]); break;
-            case LIB_AEABI_IDIV - LIB_BASE: registers[REG_R0] = libcSdiv(registers[REG_R0], registers[REG_R1]); break;
-            case LIB_AEABI_UIDIVMOD - LIB_BASE: libcUdivmod(registers[REG_R0], registers[REG_R1]); break;
-            case LIB_AEABI_IDIVMOD - LIB_BASE: libcSdivmod(registers[REG_R0], registers[REG_R1]); break;
-            case LIB_AEABI_ULDIVMOD - LIB_BASE: libcUldivmod(registers[REG_R0], registers[REG_R1], registers[REG_R2], registers[REG_R3]); break;
-            case LIB_AEABI_LDIVMOD - LIB_BASE: libcLdivmod(registers[REG_R0], registers[REG_R1], registers[REG_R2], registers[REG_R3]); break;
-            case LIB_AEABI_MEMCLR - LIB_BASE: registers[REG_R0] = libcMemset(registers[REG_R0], 0, registers[REG_R1]); break;
-            case LIB_AEABI_MEMCPY - LIB_BASE: registers[REG_R0] = libcMemcpy(registers[REG_R0], registers[REG_R1], registers[REG_R2]); break;
-            case LIB_AEABI_MEMSET - LIB_BASE: registers[REG_R0] = libcMemset(registers[REG_R0], registers[REG_R1], registers[REG_R2]); break;
-            default: registers[REG_R0] = -1; break;
+            case LIB_STRLEN - LIB_BASE: registers[REG_A0] = libcStrlen(registers[REG_A0]); break;
+            case LIB_STRCPY - LIB_BASE: libcStrcpy(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_STRNCPY - LIB_BASE: libcStrncpy(registers[REG_A0], registers[REG_A1], registers[REG_A2]); break;
+            case LIB_STRCMP - LIB_BASE: registers[REG_A0] = libcStrcmp(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_STRNCMP - LIB_BASE: registers[REG_A0] = libcStrncmp(registers[REG_A0], registers[REG_A1], registers[REG_A2]); break;
+            case LIB_STRCAT - LIB_BASE: { int d = registers[REG_A0]; libcStrcpy(d + libcStrlen(d), registers[REG_A1]); registers[REG_A0] = d; break; }
+            case LIB_STRNCAT - LIB_BASE: { int d = registers[REG_A0]; libcStrncat(d, registers[REG_A1], registers[REG_A2]); registers[REG_A0] = d; break; }
+            case LIB_STRCHR - LIB_BASE: registers[REG_A0] = libcStrchr(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_STRDUP - LIB_BASE: registers[REG_A0] = libcStrdup(registers[REG_A0]); break;
+            case LIB_MEMCPY - LIB_BASE: registers[REG_A0] = libcMemcpy(registers[REG_A0], registers[REG_A1], registers[REG_A2]); break;
+            case LIB_MEMMOVE - LIB_BASE: registers[REG_A0] = libcMemmove(registers[REG_A0], registers[REG_A1], registers[REG_A2]); break;
+            case LIB_MEMSET - LIB_BASE: registers[REG_A0] = libcMemset(registers[REG_A0], registers[REG_A1], registers[REG_A2]); break;
+            case LIB_MEMCMP - LIB_BASE: registers[REG_A0] = libcMemcmp(registers[REG_A0], registers[REG_A1], registers[REG_A2]); break;
+            case LIB_MEMCHR - LIB_BASE: registers[REG_A0] = libcMemchr(registers[REG_A0], registers[REG_A1], registers[REG_A2]); break;
+            case LIB_ATOI - LIB_BASE: registers[REG_A0] = libcAtoi(registers[REG_A0]); break;
+            case LIB_ABS - LIB_BASE: { int v = registers[REG_A0]; registers[REG_A0] = v < 0 ? -v : v; break; }
+            case LIB_TOUPPER - LIB_BASE: { int v = registers[REG_A0]; registers[REG_A0] = (v >= 'a' && v <= 'z') ? v - 32 : v; break; }
+            case LIB_TOLOWER - LIB_BASE: { int v = registers[REG_A0]; registers[REG_A0] = (v >= 'A' && v <= 'Z') ? v + 32 : v; break; }
+            case LIB_PUTCHAR - LIB_BASE: libcWriteChar(registers[REG_A0] & 0xFF); break;
+            case LIB_PUTS - LIB_BASE: { String s = libcReadCString(registers[REG_A0]); libcWriteOut(s + "\n"); registers[REG_A0] = s.length() + 1; break; }
+            case LIB_WRITE_STRING - LIB_BASE: { String s = libcReadCString(registers[REG_A0]); libcWriteOut(s); registers[REG_A0] = s.length(); break; }
+            case LIB_PRINTF - LIB_BASE: { String s = libcFormat(registers[REG_A0], 11); libcWriteOut(s); registers[REG_A0] = s.length(); break; }
+            case LIB_SPRINTF - LIB_BASE: { String s = libcFormat(registers[REG_A1], 12); libcWriteCString(registers[REG_A0], s); registers[REG_A0] = s.length(); break; }
+            case LIB_SNPRINTF - LIB_BASE: { String s = libcFormat(registers[REG_A2], 13); libcWriteCStringN(registers[REG_A0], s, registers[REG_A1]); registers[REG_A0] = s.length(); break; }
+            case LIB_MALLOC - LIB_BASE: registers[REG_A0] = libcMalloc(registers[REG_A0]); break;
+            case LIB_CALLOC - LIB_BASE: registers[REG_A0] = libcCalloc(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_REALLOC - LIB_BASE: registers[REG_A0] = libcRealloc(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_FREE - LIB_BASE: libcFree(registers[REG_A0]); registers[REG_A0] = 0; break;
+            case LIB_GETPID - LIB_BASE: { try { registers[REG_A0] = Integer.parseInt(pid); } catch (NumberFormatException e) { registers[REG_A0] = 1; } break; }
+            case LIB_UDIV32 - LIB_BASE: registers[REG_A0] = libcUdiv(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_SDIV32 - LIB_BASE: registers[REG_A0] = libcSdiv(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_UDIVMOD32 - LIB_BASE: libcUdivmod(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_SDIVMOD32 - LIB_BASE: libcSdivmod(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_UDIVMOD64 - LIB_BASE: libcUldivmod(registers[REG_A0], registers[REG_A1], registers[REG_A2], registers[REG_A3]); break;
+            case LIB_SDIVMOD64 - LIB_BASE: libcLdivmod(registers[REG_A0], registers[REG_A1], registers[REG_A2], registers[REG_A3]); break;
+            case LIB_MEMCLR - LIB_BASE: registers[REG_A0] = libcMemset(registers[REG_A0], 0, registers[REG_A1]); break;
+            case LIB_MEMCPY_ALIGN - LIB_BASE: registers[REG_A0] = libcMemcpy(registers[REG_A0], registers[REG_A1], registers[REG_A2]); break;
+            case LIB_MEMSET_ALIGN - LIB_BASE: registers[REG_A0] = libcMemset(registers[REG_A0], registers[REG_A1], registers[REG_A2]); break;
+            case LIB_UI_NEW - LIB_BASE: registers[REG_A0] = uiNew(registers[REG_A0], registers[REG_A1], registers[REG_A2], registers[REG_A3]); break;
+            case LIB_UI_APPEND_TEXT - LIB_BASE: registers[REG_A0] = uiAppendText(registers[REG_A0], registers[REG_A1], registers[REG_A2]); break;
+            case LIB_UI_APPEND_FIELD - LIB_BASE: registers[REG_A0] = uiAppendField(registers[REG_A0], registers[REG_A1], registers[REG_A2], registers[REG_A3], getSyscallParam(4)); break;
+            case LIB_UI_LIST_APPEND - LIB_BASE: registers[REG_A0] = uiListAppend(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_UI_COMMAND - LIB_BASE: registers[REG_A0] = uiCommand(registers[REG_A0], registers[REG_A1], registers[REG_A2]); break;
+            case LIB_UI_ADD_COMMAND - LIB_BASE: registers[REG_A0] = uiAddCommand(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_UI_DISPLAY - LIB_BASE: registers[REG_A0] = uiDisplay(registers[REG_A0]); break;
+            case LIB_UI_SET_TEXT - LIB_BASE: registers[REG_A0] = uiSetText(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_UI_GET_TEXT - LIB_BASE: registers[REG_A0] = uiGetText(registers[REG_A0], registers[REG_A1], registers[REG_A2]); break;
+            case LIB_UI_SET_TITLE - LIB_BASE: registers[REG_A0] = uiSetTitle(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_UI_CLEAR - LIB_BASE: registers[REG_A0] = uiClear(registers[REG_A0]); break;
+            case LIB_UI_WAIT_EVENT - LIB_BASE: registers[REG_A0] = uiWaitEvent(registers[REG_A0]); break;
+            case LIB_UI_DESTROY - LIB_BASE: registers[REG_A0] = uiDestroy(registers[REG_A0]); break;
+            case LIB_UI_TASKMNGR - LIB_BASE: midlet.showTaskManager(); registers[REG_A0] = 0; break;
+            case LIB_PROC_SET - LIB_BASE: registers[REG_A0] = procSet(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_PROC_SPAWN - LIB_BASE: registers[REG_A0] = procSpawn(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_PROC_WAITPID - LIB_BASE: registers[REG_A0] = procWaitpid(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_PROC_SHELL - LIB_BASE: registers[REG_A0] = procShell(registers[REG_A0]); break;
+            default: registers[REG_A0] = -1; break;
+        }
+    }
+
+    private String uiString(int ptr) { return ptr == 0 ? "" : libcReadCString(ptr); }
+    private Object uiObject(int handle) { return uiObjects.get(new Integer(handle)); }
+    private int uiStore(Object object) {
+        Integer handle = new Integer(nextUiHandle++);
+        uiObjects.put(handle, object);
+        uiHandles.put(object, handle);
+        return handle.intValue();
+    }
+    private int uiHandle(Object object) {
+        Object handle = uiHandles.get(object);
+        return handle instanceof Integer ? ((Integer) handle).intValue() : 0;
+    }
+    private int uiListMode(int mode) { return mode == 1 ? List.EXCLUSIVE : mode == 2 ? List.MULTIPLE : List.IMPLICIT; }
+    private int uiCommandType(int type) {
+        switch (type) {
+            case 1: return Command.BACK;
+            case 2: return Command.OK;
+            case 3: return Command.CANCEL;
+            case 4: return Command.HELP;
+            case 5: return Command.STOP;
+            case 6: return Command.EXIT;
+            case 7: return Command.ITEM;
+            default: return Command.SCREEN;
+        }
+    }
+    private int uiNew(int kind, int titlePtr, int contentPtr, int mode) {
+        String title = uiString(titlePtr), content = uiString(contentPtr);
+        Object object;
+        if (kind == 1) { object = new Form(title); }
+        else if (kind == 2) { object = new List(title, uiListMode(mode)); }
+        else if (kind == 3) { object = new TextBox(title, content, 256, mode == 1 ? TextField.ANY | TextField.PASSWORD : TextField.ANY); }
+        else if (kind == 4) { Alert alert = new Alert(title, content, null, AlertType.INFO); alert.setTimeout(Alert.FOREVER); object = alert; }
+        else { return -1; }
+        return uiStore(object);
+    }
+    private int uiAppendText(int formHandle, int labelPtr, int textPtr) {
+        Object object = uiObject(formHandle);
+        if (!(object instanceof Form)) { return -1; }
+        StringItem item = new StringItem(uiString(labelPtr), uiString(textPtr));
+        ((Form) object).append(item);
+        return uiStore(item);
+    }
+    private int uiAppendField(int formHandle, int labelPtr, int valuePtr, int maxLength, int mode) {
+        Object object = uiObject(formHandle);
+        if (!(object instanceof Form) || maxLength < 1) { return -1; }
+        TextField item = new TextField(uiString(labelPtr), uiString(valuePtr), maxLength, mode == 1 ? TextField.ANY | TextField.PASSWORD : TextField.ANY);
+        ((Form) object).append(item);
+        return uiStore(item);
+    }
+    private int uiListAppend(int listHandle, int textPtr) {
+        Object object = uiObject(listHandle);
+        return object instanceof List ? ((List) object).append(uiString(textPtr), null) : -1;
+    }
+    private int uiCommand(int labelPtr, int type, int priority) { return uiStore(new Command(uiString(labelPtr), uiCommandType(type), priority)); }
+    private int uiAddCommand(int screenHandle, int commandHandle) {
+        Object screen = uiObject(screenHandle), command = uiObject(commandHandle);
+        if (!(screen instanceof Displayable) || !(command instanceof Command)) { return -1; }
+        ((Displayable) screen).addCommand((Command) command);
+        return 0;
+    }
+    private int uiDisplay(int screenHandle) {
+        Object screen = uiObject(screenHandle);
+        if (!(screen instanceof Displayable)) { return -1; }
+        Displayable displayable = (Displayable) screen;
+        displayable.setCommandListener(this);
+        if (proc != null) { proc.screen = displayable; }
+        midlet.display.setCurrent(displayable);
+        return 0;
+    }
+    private int procSet(int keyPtr, int value) {
+        if (proc == null || keyPtr == 0) { return -1; }
+        String key = uiString(keyPtr).trim().toLowerCase();
+        if (key.equals("name")) {
+            if (value == 0) { return -1; }
+            proc.name = uiString(value);
+        } else if (key.equals("screen")) {
+            Object screen = uiObject(value);
+            if (!(screen instanceof Displayable)) { return -1; }
+            proc.screen = (Displayable) screen;
+        } else if (key.equals("cmd")) {
+            if (value == 0) { return -1; }
+            proc.cmd = uiString(value);
+        } else if (value == 0) {
+            proc.db.remove(key);
+        } else {
+            proc.db.put(key, uiString(value));
+        }
+        return 0;
+    }
+    private int procSpawn(int pathPtr, int pidOut) {
+        if (pathPtr == 0) { return -22; }
+        final String path = uiString(pathPtr);
+        final byte[] data;
+        try {
+            InputStream is = midlet.getInputStream(path, scope);
+            if (is == null) { return -2; }
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            byte[] buffer = new byte[1024]; int count;
+            while ((count = is.read(buffer)) != -1) { out.write(buffer, 0, count); }
+            is.close(); data = out.toByteArray();
+        } catch (Exception e) { return -5; }
+        final String childPid = midlet.genpid();
+        final Hashtable childScope = midlet.cloneScope(scope);
+        childScope.put("USER", midlet.getUser(id));
+        final Hashtable childArgs = new Hashtable();
+        childArgs.put(new Double(0), path);
+        final Process child = midlet.isPureText(data)
+            ? new Process(midlet, ("lua " + path).trim(), path, midlet.getUser(id), id, childPid, stdout, childScope)
+            : new Process(midlet, "elf", path, midlet.getUser(id), id, childPid, stdout, childArgs, childScope);
+        child.parentPid = pid;
+        midlet.sys.put(childPid, child);
+        new Thread(new Runnable() { public void run() {
+            try {
+                if (child.lua != null) { child.lua.run(path, new String(data, "UTF-8"), childArgs); }
+                else if (child.elf.load(new ByteArrayInputStream(data))) { child.elf.run(); }
+                else { child.exitStatus = 8; }
+            } catch (Throwable e) { child.exitStatus = 1; }
+            if (midlet.sys.containsKey(childPid)) {
+                child.exited = true;
+                midlet.exited.put(childPid, child);
+                midlet.sys.remove(childPid);
+            }
+        }}).start();
+        if (pidOut != 0 && pidOut >= 0 && pidOut + 3 < memory.length) { try { writeIntLE(memory, pidOut, Integer.parseInt(childPid)); } catch (NumberFormatException e) { } }
+        try { return Integer.parseInt(childPid); } catch (NumberFormatException e) { return -1; }
+    }
+    private int procWaitpid(int childPid, int statusPtr) {
+        String key = String.valueOf(childPid);
+        Process child = (Process) midlet.exited.get(key);
+        if (child == null) { return midlet.sys.containsKey(key) ? -11 : -3; }
+        if (!pid.equals(child.parentPid)) { return -13; }
+        if (statusPtr != 0 && statusPtr >= 0 && statusPtr + 3 < memory.length) { writeIntLE(memory, statusPtr, child.exitStatus); }
+        midlet.exited.remove(key);
+        return childPid;
+    }
+    private int procShell(int commandPtr) {
+        if (commandPtr == 0) { return -22; }
+        Vector args = new Vector();
+        args.addElement(uiString(commandPtr));
+        try {
+            Lua shellLua = new Lua(midlet, id, pid, proc, stdout, scope);
+            Lua.LuaFunction shell = midlet.shell instanceof Lua.LuaFunction
+                ? (Lua.LuaFunction) midlet.shell : shellLua.new LuaFunction(Lua.EXEC);
+            Object result = shell.call(args);
+            return result instanceof Double ? ((Double) result).intValue() : 0;
+        } catch (Exception e) { return -1; }
+    }
+    private int uiSetText(int handle, int textPtr) {
+        Object object = uiObject(handle);
+        String text = uiString(textPtr);
+        if (object instanceof StringItem) { ((StringItem) object).setText(text); }
+        else if (object instanceof TextField) { ((TextField) object).setString(text); }
+        else if (object instanceof TextBox) { ((TextBox) object).setString(text); }
+        else { return -1; }
+        return 0;
+    }
+    private int uiGetText(int handle, int buffer, int size) {
+        Object object = uiObject(handle);
+        String text = object instanceof StringItem ? ((StringItem) object).getText() : object instanceof TextField ? ((TextField) object).getString() : object instanceof TextBox ? ((TextBox) object).getString() : null;
+        if (text == null || size < 1) { return -1; }
+        libcWriteCStringN(buffer, text, size);
+        return text.length();
+    }
+    private int uiSetTitle(int handle, int titlePtr) {
+        Object object = uiObject(handle);
+        if (!(object instanceof Displayable)) { return -1; }
+        ((Displayable) object).setTitle(uiString(titlePtr));
+        return 0;
+    }
+    private int uiClear(int handle) {
+        Object object = uiObject(handle);
+        if (object instanceof Form) { ((Form) object).deleteAll(); }
+        else if (object instanceof List) { ((List) object).deleteAll(); }
+        else { return -1; }
+        return 0;
+    }
+    private int uiWaitEvent(int buffer) {
+        if (uiEvents.size() == 0) {
+            uiWaiting = true;
+            running = false;
+            return 0;
+        }
+        int[] event = (int[]) uiEvents.elementAt(0);
+        uiEvents.removeElementAt(0);
+        if (buffer < 0 || buffer + 15 >= memory.length) { return -1; }
+        for (int i = 0; i < 4; i++) { writeIntLE(memory, buffer + i * 4, event[i]); }
+        return 1;
+    }
+    private int uiDestroy(int handle) {
+        Integer key = new Integer(handle);
+        Object object = uiObjects.remove(key);
+        if (object == null) { return -1; }
+        uiHandles.remove(object);
+        return 0;
+    }
+    public void commandAction(Command command, Displayable screen) {
+        int type = command == List.SELECT_COMMAND ? 2 : 1;
+        int selected = screen instanceof List ? ((List) screen).getSelectedIndex() : -1;
+        uiEvents.addElement(new int[] { type, uiHandle(screen), uiHandle(command), selected });
+        if (uiWaiting) {
+            uiWaiting = false;
+            run();
         }
     }
 
@@ -846,14 +1123,14 @@ public class ELF {
     private int libcSdiv(int a, int b) { if (b == 0) { return 0; } return a / b; }
     private void libcUdivmod(int a, int b) {
         long u = a & 0xFFFFFFFFL, v = b & 0xFFFFFFFFL;
-        if (v == 0) { registers[REG_R0] = 0; registers[REG_R1] = 0; return; }
+        if (v == 0) { registers[REG_A0] = 0; registers[REG_A1] = 0; return; }
         long q = u / v, r = u % v;
-        registers[REG_R0] = (int) q; registers[REG_R1] = (int) r;
+        registers[REG_A0] = (int) q; registers[REG_A1] = (int) r;
     }
     private void libcSdivmod(int a, int b) {
-        if (b == 0) { registers[REG_R0] = 0; registers[REG_R1] = 0; return; }
+        if (b == 0) { registers[REG_A0] = 0; registers[REG_A1] = 0; return; }
         int q = a / b, r = a % b;
-        registers[REG_R0] = q; registers[REG_R1] = r;
+        registers[REG_A0] = q; registers[REG_A1] = r;
     }
     private boolean ulongGe(long r, long d) {
         long hi = 0x8000000000000000L;
@@ -864,22 +1141,22 @@ public class ELF {
     private void libcUldivmod(int loA, int hiA, int loB, int hiB) {
         long n = ((long) hiA & 0xFFFFFFFFL) << 32 | ((long) loA & 0xFFFFFFFFL);
         long d = ((long) hiB & 0xFFFFFFFFL) << 32 | ((long) loB & 0xFFFFFFFFL);
-        if (d == 0) { registers[REG_R0] = 0; registers[REG_R1] = 0; registers[REG_R2] = 0; registers[REG_R3] = 0; return; }
+        if (d == 0) { registers[REG_A0] = 0; registers[REG_A1] = 0; registers[REG_A2] = 0; registers[REG_A3] = 0; return; }
         long q = 0, r = 0;
         for (int i = 63; i >= 0; i--) {
             r = (r << 1) | ((n >>> i) & 1);
             if (ulongGe(r, d)) { r -= d; q |= 1L << i; }
         }
-        registers[REG_R0] = (int) q; registers[REG_R1] = (int) (q >>> 32);
-        registers[REG_R2] = (int) r; registers[REG_R3] = (int) (r >>> 32);
+        registers[REG_A0] = (int) q; registers[REG_A1] = (int) (q >>> 32);
+        registers[REG_A2] = (int) r; registers[REG_A3] = (int) (r >>> 32);
     }
     private void libcLdivmod(int loA, int hiA, int loB, int hiB) {
         long a = ((long) hiA << 32) | ((long) loA & 0xFFFFFFFFL);
         long b = ((long) hiB << 32) | ((long) loB & 0xFFFFFFFFL);
-        if (b == 0) { registers[REG_R0] = 0; registers[REG_R1] = 0; registers[REG_R2] = 0; registers[REG_R3] = -1; return; }
+        if (b == 0) { registers[REG_A0] = 0; registers[REG_A1] = 0; registers[REG_A2] = 0; registers[REG_A3] = -1; return; }
         long q = a / b, r = a % b;
-        registers[REG_R0] = (int) q; registers[REG_R1] = (int) (q >>> 32);
-        registers[REG_R2] = (int) r; registers[REG_R3] = (int) (r >>> 32);
+        registers[REG_A0] = (int) q; registers[REG_A1] = (int) (q >>> 32);
+        registers[REG_A2] = (int) r; registers[REG_A3] = (int) (r >>> 32);
     }
 
     // | heap do stdlib (malloc/calloc/realloc/free): first-fit com splitting,
@@ -1124,7 +1401,7 @@ public class ELF {
                 
                 // Debug avançado
                 if (midlet.debug && instructionCount % 10000 == 0) {
-                    midlet.print("DEBUG: PC=" + toHex(pc) + ", R7=" + registers[REG_R7], stdout, id, scope);
+                    midlet.print("DEBUG: PC=" + toHex(pc) + ", a7=" + registers[REG_A7], stdout, id, scope);
                 }
                 
                 // Executar instrução com cache
@@ -1156,8 +1433,7 @@ public class ELF {
         } 
         finally { 
             if (midlet.debug) midlet.print("=== ELF FINALLY DEBUG ===", stdout, id, scope);
-            executeFiniFunctions();
-            if (midlet.sys.containsKey(pid)) { midlet.sys.remove(pid); } 
+            if (!uiWaiting) { executeFiniFunctions(); cleanup(); }
         }
 
         ITEM.put("status", new Double(0));
@@ -1209,7 +1485,7 @@ public class ELF {
             case RV_OP_OP: rvOp(rd, funct3, funct7, rs1, rs2); break;
             case RV_OP_MISCMEM: break; // FENCE
             case RV_OP_SYSTEM:
-                if (instruction == 0x00000073) { handleSyscall(registers[REG_R7]); } // ecall
+                if (instruction == 0x00000073) { handleSyscall(registers[REG_A7]); } // ecall
                 else if (instruction == 0x00100073) { running = false; } // ebreak
                 else if (rd != 0) { registers[rd] = 0; } // CSR (leitura basica = 0)
                 break;
@@ -1426,10 +1702,10 @@ public class ELF {
         int maxSym = elfInfo.containsKey("nchain") ? ((Integer) elfInfo.get("nchain")).intValue() : 4096;
         if (maxSym <= 0 || maxSym > 4096) { maxSym = 4096; }
         for (int dynSymCount = 0; dynSymCount < maxSym; dynSymCount++) {
-            int st_name = readIntLE(elfData, symOffset), st_value = readIntLE(elfData, symOffset + 4), st_size = readIntLE(elfData, symOffset + 8), st_info = elfData[symOffset + 12] & 0xFF;
+            int st_name = readIntLE(memory, symOffset), st_value = readIntLE(memory, symOffset + 4), st_size = readIntLE(memory, symOffset + 8), st_info = memory[symOffset + 12] & 0xFF;
             if (dynSymCount > 0 && st_name == 0 && st_value == 0 && st_size == 0 && st_info == 0) { break; }
             
-            String symName = (st_name == 0) ? "" : readString(elfData, dynstrAddr + st_name, 256);
+            String symName = (st_name == 0) ? "" : readString(memory, dynstrAddr + st_name, 256);
             if (symName == null) { break; }
             
             dynSymNames.addElement(symName);
@@ -1442,15 +1718,46 @@ public class ELF {
             symOffset += symentSize;
         }
     }
-    private void processRelocations(byte[] elfData) { if (elfInfo.containsKey("rel") && elfInfo.containsKey("relsz")) { int relAddr = ((Integer) elfInfo.get("rel")).intValue(), relsz = ((Integer) elfInfo.get("relsz")).intValue(), relent = 8; for (int i = 0; i < relsz; i += relent) { int offset = relAddr + i, r_offset = readIntLE(elfData, offset), r_info = readIntLE(elfData, offset + 4), symIndex = r_info >> 8, type = r_info & 0xFF; applyRelocation(r_offset, type, symIndex, 0); } } if (elfInfo.containsKey("jmprel") && elfInfo.containsKey("pltrelsz")) { int jmprelAddr = ((Integer)elfInfo.get("jmprel")).intValue(), pltrelsz = ((Integer)elfInfo.get("pltrelsz")).intValue(), pltrel = elfInfo.containsKey("pltrel") ? ((Integer) elfInfo.get("pltrel")).intValue() : DT_REL, relent = (pltrel == DT_RELA) ? 12 : 8, numEntries = pltrelsz / relent; if (gotBase == 0 && pltGotAddr != 0) { gotBase = pltGotAddr + 12; } for (int i = 0; i < numEntries; i++) { int offset = jmprelAddr + i * relent, r_offset = readIntLE(elfData, offset), r_info = readIntLE(elfData, offset + 4), symIndex = r_info >> 8, type = r_info & 0xFF; if (type == R_ARM_JUMP_SLOT) { String platoonName = getSymbolNameByIndex(symIndex); Integer readyAddr = resolveSymbol(platoonName); if (readyAddr != null) { writeIntLE(memory, r_offset, readyAddr.intValue()); Hashtable pltInfo = new Hashtable(); pltInfo.put("symIndex", new Integer(symIndex)); pltInfo.put("gotOffset", new Integer(r_offset)); pltInfo.put("resolved", Boolean.TRUE); pltEntries.put("plt_" + i, pltInfo); if (midlet.debug) { midlet.print("PLT eager: " + platoonName + " -> " + toHex(readyAddr.intValue()) + " at GOT " + toHex(r_offset), stdout, id, scope); } } else { setupLazyBinding(r_offset, symIndex, i); } } else { applyRelocation(r_offset, type, symIndex, 0); } } } }
+    private void processRelocations(byte[] elfData) {
+        if (elfInfo.containsKey("rel") && elfInfo.containsKey("relsz")) {
+            int relAddr = ((Integer) elfInfo.get("rel")).intValue(), relsz = ((Integer) elfInfo.get("relsz")).intValue();
+            int relent = elfInfo.containsKey("relent") ? ((Integer) elfInfo.get("relent")).intValue() : 8;
+            for (int i = 0; i < relsz; i += relent) {
+                int offset = relAddr + i, r_offset = readIntLE(memory, offset), r_info = readIntLE(memory, offset + 4), symIndex = r_info >> 8, type = r_info & 0xFF, addend = (relent == 12) ? readIntLE(memory, offset + 8) : 0;
+                if (type == R_RISCV_JUMP_SLOT) {
+                    String platoonName = getSymbolNameByIndex(symIndex);
+                    Integer readyAddr = resolveSymbol(platoonName);
+                    if (readyAddr != null) {
+                        writeIntLE(memory, r_offset, readyAddr.intValue() + addend);
+                        if (midlet.debug) { midlet.print("PLT eager: " + platoonName + " -> " + toHex(readyAddr.intValue()) + " at GOT " + toHex(r_offset), stdout, id, scope); }
+                    } else { setupLazyBinding(r_offset, symIndex, i); }
+                } else { applyRelocation(r_offset, type, symIndex, addend); }
+            }
+        }
+        if (elfInfo.containsKey("jmprel") && elfInfo.containsKey("pltrelsz")) {
+            int jmprelAddr = ((Integer)elfInfo.get("jmprel")).intValue(), pltrelsz = ((Integer)elfInfo.get("pltrelsz")).intValue(), pltrel = elfInfo.containsKey("pltrel") ? ((Integer) elfInfo.get("pltrel")).intValue() : DT_REL, relent = (pltrel == DT_RELA) ? 12 : 8, numEntries = pltrelsz / relent;
+            if (gotBase == 0 && pltGotAddr != 0) { gotBase = pltGotAddr + 8; }
+            for (int i = 0; i < numEntries; i++) {
+                int offset = jmprelAddr + i * relent, r_offset = readIntLE(memory, offset), r_info = readIntLE(memory, offset + 4), symIndex = r_info >> 8, type = r_info & 0xFF, addend = (relent == 12) ? readIntLE(memory, offset + 8) : 0;
+                if (type == R_RISCV_JUMP_SLOT) {
+                    String platoonName = getSymbolNameByIndex(symIndex);
+                    Integer readyAddr = resolveSymbol(platoonName);
+                    if (readyAddr != null) {
+                        writeIntLE(memory, r_offset, readyAddr.intValue() + addend);
+                        if (midlet.debug) { midlet.print("PLT eager: " + platoonName + " -> " + toHex(readyAddr.intValue()) + " at GOT " + toHex(r_offset), stdout, id, scope); }
+                    } else { setupLazyBinding(r_offset, symIndex, i); }
+                } else { applyRelocation(r_offset, type, symIndex, addend); }
+            }
+        }
+    }
     private void applyRelocation(int r_offset, int type, int symIndex, int addend) { applyRelocation(r_offset, type, symIndex, addend, null); }
     private void applyRelocation(int r_offset, int type, int symIndex, int addend, Vector names) {
         String symName = null;
         if (names != null) { if (symIndex >= 0 && symIndex < names.size()) { symName = (String) names.elementAt(symIndex); } }
         else { symName = getSymbolNameByIndex(symIndex); }
         switch (type) {
-            case R_ARM_ABS32:
-            case R_ARM_GLOB_DAT:
+            case R_RISCV_32:
+            case R_RISCV_GLOB_DAT:
                 Integer symAddr = resolveSymbol(symName);
                 
                 if (symAddr != null) {
@@ -1458,11 +1765,11 @@ public class ELF {
                     if (midlet.debug) { midlet.print("Reloc: " + symName + " -> " + toHex(symAddr.intValue()) + " at " + toHex(r_offset), stdout, id, scope); }
                 }
                 break;
-            case R_ARM_RELATIVE:
+            case R_RISCV_RELATIVE:
                 int current = readIntLE(memory, r_offset);
                 writeIntLE(memory, r_offset, current + addend);
                 break;
-            case R_ARM_COPY: {
+            case R_RISCV_COPY: {
                 String copyName = symName;
                 Hashtable libTab = (copyName != null) ? resolveLibrarySymbolTable(copyName) : null;
                 if (libTab != null && copyName != null) {
@@ -1485,67 +1792,15 @@ public class ELF {
         }
     }
 
+    // Binding PLT sem lazy resolver: simbolos nao resolvidos deixam o slot GOT
+    // zerado; toda resolucao suportada e feita eager em processRelocations.
     private void setupLazyBinding(int gotOffset, int symIndex, int slotIndex) {
-        int resolverAddr = setupResolverStub(slotIndex);
-        if (resolverAddr != 0) {
-            writeIntLE(memory, gotOffset, resolverAddr);
-            
-            Hashtable pltInfo = new Hashtable();
-            pltInfo.put("symIndex", new Integer(symIndex)); pltInfo.put("gotOffset", new Integer(gotOffset)); pltInfo.put("resolved", Boolean.FALSE);
-            pltEntries.put("plt_" + slotIndex, pltInfo);
-            
-            if (midlet.debug) { midlet.print("Lazy binding: slot " + slotIndex + " at GOT " + toHex(gotOffset), stdout, id, scope); }
-        }
+        writeIntLE(memory, gotOffset, 0);
+        if (midlet.debug) { midlet.print("PLT unresolved slot " + slotIndex + " at GOT " + toHex(gotOffset), stdout, id, scope); }
     }
-
-    private int setupResolverStub(int slotIndex) { if (pltBase == 0) { pltBase = findFreeMemoryRegion(4096); if (pltBase == 0) { return 0; } } int stubAddr = pltBase + slotIndex * 16; writeIntLE(memory, stubAddr, 0xE51FF004); int trampoline = setupResolverTrampoline(); writeIntLE(memory, stubAddr + 4, trampoline + slotIndex * 8); return stubAddr; }
-    private int setupResolverTrampoline() { if (resolverCodeAddr == 0) { resolverCodeAddr = findFreeMemoryRegion(256); if (resolverCodeAddr == 0) { return 0; } writeIntLE(memory, resolverCodeAddr, 0xE92D400F); writeIntLE(memory, resolverCodeAddr + 4, 0xE59F0004); int resolveAddr = setupResolveFunction(), offset = ((resolveAddr - (resolverCodeAddr + 8 + 8)) >> 2) & 0x00FFFFFF; writeIntLE(memory, resolverCodeAddr + 8, 0xEB000000 | offset); writeIntLE(memory, resolverCodeAddr + 12, 0xE8BD400F); writeIntLE(memory, resolverCodeAddr + 16, 0xE12FFF10); writeIntLE(memory, resolverCodeAddr + 20, 0); } return resolverCodeAddr; }
-    private int setupResolveFunction() { if (resolveFuncAddr == 0) { resolveFuncAddr = findFreeMemoryRegion(128); if (resolveFuncAddr == 0) { return 0; } writeIntLE(memory, resolveFuncAddr, 0xE92D4000); writeIntLE(memory, resolveFuncAddr + 4, 0xE59F0004); int resolveHandlerAddr = setupPLTResolverHandler(), offset = ((resolveHandlerAddr - (resolveFuncAddr + 8 + 8)) >> 2) & 0x00FFFFFF; writeIntLE(memory, resolveFuncAddr + 8, 0xEB000000 | offset); writeIntLE(memory, resolveFuncAddr + 12, 0xE8BD4000); writeIntLE(memory, resolveFuncAddr + 16, 0xE12FFF1E); writeIntLE(memory, resolveFuncAddr + 20, 0); } return resolveFuncAddr; }
-    private int setupPLTResolverHandler() {
-        if (!elfInfo.containsKey("plt_resolver_handler")) {
-            int handlerAddr = findFreeMemoryRegion(64);
-            if (handlerAddr == 0) return 0;
-            
-            // Handler simples que chama resolvePLTSymbol
-            // Este código é executado quando uma função PLT precisa ser resolvida
-            elfInfo.put("plt_resolver_handler", new Integer(handlerAddr));
-            
-            // Armazenar endereço do resolvedor no mapa de símbolos globais
-            if (!globalSymbols.containsKey("__plt_resolver")) {
-                Hashtable resolver = new Hashtable();
-                resolver.put("addr", new Integer(handlerAddr));
-                resolver.put("type", "plt_resolver");
-                globalSymbols.put("__plt_resolver", resolver);
-            }
-        }
-        
-        return ((Integer) elfInfo.get("plt_resolver_handler")).intValue();
-    }
-
-    private void processPLTResolverCall(int handlerAddr, int pltIndex) { int resolvedAddr = resolvePLTSymbol(pltIndex); if (resolvedAddr != 0) { registers[REG_R0] = resolvedAddr; } }
 
     private String getSymbolNameByIndex(int index) { if (index >= 0 && index < dynSymNames.size()) { return (String) dynSymNames.elementAt(index); } return null; }
-    private int resolvePLTSymbol(int pltIndex) {
-        String key = "plt_" + pltIndex;
-        if (!pltEntries.containsKey(key)) return 0;
-        
-        Hashtable pltInfo = (Hashtable) pltEntries.get(key);
-        int symIndex = ((Integer)pltInfo.get("symIndex")).intValue(), gotOffset = ((Integer)pltInfo.get("gotOffset")).intValue();
-        
-        String symName = getSymbolNameByIndex(symIndex);
-        Integer resolvedAddr = resolveSymbol(symName);
-        
-        if (resolvedAddr != null) {
-            writeIntLE(memory, gotOffset, resolvedAddr.intValue());
-            pltInfo.put("resolved", Boolean.TRUE);
-            
-            if (midlet.debug) { midlet.print("Resolved: " + symName + " -> " + toHex(resolvedAddr.intValue()), stdout, id, scope); }
-            
-            return resolvedAddr.intValue();
-        }
-        
-        return 0;
-    }
+
     private Integer resolveSymbol(String name) {
         if (dynamicSymbols.containsKey(name)) {
             Hashtable symInfo = (Hashtable) dynamicSymbols.get(name);
@@ -1553,7 +1808,7 @@ public class ELF {
             if (value != 0) { return new Integer(value); }
         }
 
-        // R_ARM_COPY: definicoes do executavel (simbolos copiados) preemptam as libs
+        // R_RISCV_COPY: definicoes do executavel (simbolos copiados) preemptam as libs
         if (copyRelocs.containsKey(name)) { return new Integer(((Integer) copyRelocs.get(name)).intValue()); }
 
         for (int i = 0; i < loadedLibraries.size(); i++) {
@@ -1587,7 +1842,7 @@ public class ELF {
         return 4;
     }
 
-    private void setupPLTGOT() { if (pltGotAddr == 0) { return; } writeIntLE(memory, pltGotAddr, dynamicSectionAddr); writeIntLE(memory, pltGotAddr + 4, 0); writeIntLE(memory, pltGotAddr + 8, resolveFuncAddr); }
+    private void setupPLTGOT() { if (pltGotAddr == 0) { return; } writeIntLE(memory, pltGotAddr, dynamicSectionAddr); }
     private void setupCRTStack() {
         int sp = registers[REG_SP];
 
@@ -1647,24 +1902,9 @@ public class ELF {
         }
     }
 
-    private void handlePLTCall(int stubAddr) {
-        int pltIndex = (stubAddr - pltBase) / 16;
-        
-        if (pltIndex >= 0) {
-            String key = "plt_" + pltIndex;
-            if (pltEntries.containsKey(key)) { Hashtable pltInfo = (Hashtable) pltEntries.get(key); if (!((Boolean)pltInfo.get("resolved")).booleanValue()) { resolvePLTSymbol(pltIndex); } }
-            
-            int gotOffset = pltGotAddr + 12 + pltIndex * 4, realAddr = readIntLE(memory, gotOffset);
-            
-            registers[REG_LR] = pc; pc = realAddr;
-            
-            if (midlet.debug) { midlet.print("PLT call via slot " + pltIndex + " to " + toHex(realAddr), stdout, id, scope); }
-        }
-    }
     public void dumpDynamicInfo(Object stdout) {
         midlet.print("=== Dynamic Linking Info ===", stdout, id, scope);
         midlet.print("PLT/GOT: " + toHex(pltGotAddr), stdout, id, scope);
-        midlet.print("PLT Base: " + toHex(pltBase), stdout, id, scope);
         midlet.print("GOT Base: " + toHex(gotBase), stdout, id, scope);
         
         midlet.print("\nLoaded Libraries (" + loadedLibraries.size() + "):", stdout, id, scope);
@@ -1692,7 +1932,7 @@ public class ELF {
     // Syscalls Handler
     // |
     private void handleSyscall(int number) {
-        if (midlet.debug && number != SYS_GETTIMEOFDAY && number != SYS_GETPID) { midlet.print("Syscall " + number + " (R7=" + registers[REG_R7] + ")", stdout, id, scope); }
+        if (midlet.debug && number != SYS_GETTIMEOFDAY && number != SYS_GETPID) { midlet.print("Syscall " + number + " (a7=" + registers[REG_A7] + ")", stdout, id, scope); }
         if (number >= LIB_BASE) { handleLibraryCall(number - LIB_BASE); return; }
         int savedPC = pc;
 
@@ -1862,11 +2102,11 @@ public class ELF {
                 break;
                 
             case SYS_SYSCALL:
-                int syscallNum = registers[REG_R0];
-                registers[REG_R7] = syscallNum;
-                registers[REG_R0] = registers[REG_R1];
-                registers[REG_R1] = registers[REG_R2];
-                registers[REG_R2] = registers[REG_R3];
+                int syscallNum = registers[REG_A0];
+                registers[REG_A7] = syscallNum;
+                registers[REG_A0] = registers[REG_A1];
+                registers[REG_A1] = registers[REG_A2];
+                registers[REG_A2] = registers[REG_A3];
                 handleSyscall(syscallNum);
                 break;
                 
@@ -1931,7 +2171,7 @@ public class ELF {
                 handleNanosleep();
                 break;
             case SYS_PIPE:
-                registers[REG_R0] = -38; //handlePipe();
+                registers[REG_A0] = -38; //handlePipe();
                 break;
             case SYS_SELECT:
                 handleSelect();
@@ -1943,7 +2183,7 @@ public class ELF {
                 handleFsync();
                 break;
             default:
-                registers[REG_R0] = -38; // ENOSYS - Syscall não implementada
+                registers[REG_A0] = -38; // ENOSYS - Syscall não implementada
                 if (midlet.debug) { midlet.print("Unimplemented syscall: " + number, stdout, id, scope); }
                 break;
         }
@@ -1951,10 +2191,10 @@ public class ELF {
     // |
     // | Kernel
     // | (Process)
-    private void handleFork() { registers[REG_R0] = -1; }
+    private void handleFork() { registers[REG_A0] = -1; }
     private void handleExecve() {
-        int pathAddr = registers[REG_R0], argvAddr = registers[REG_R1], envpAddr = registers[REG_R2];
-        if (pathAddr < 0 || pathAddr >= memory.length) { registers[REG_R0] = -1; return; }
+        int pathAddr = registers[REG_A0], argvAddr = registers[REG_A1], envpAddr = registers[REG_A2];
+        if (pathAddr < 0 || pathAddr >= memory.length) { registers[REG_A0] = -1; return; }
 
         StringBuffer pathBuf = new StringBuffer();
         int i = 0;
@@ -1985,7 +2225,7 @@ public class ELF {
         for (i = 1; i < argsVec.size(); i++) { if (i > 1) argsStr.append(" "); argsStr.append((String) argsVec.elementAt(i)); }
         try {
             InputStream is = midlet.getInputStream(path, scope);
-            if (is == null) { registers[REG_R0] = -2; return; }
+            if (is == null) { registers[REG_A0] = -2; return; }
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             byte[] buffer = new byte[1024];
@@ -2001,20 +2241,20 @@ public class ELF {
                 String code = new String(data, "UTF-8");
                 Process process = new Process(midlet, ("lua " + path).trim(), midlet.joinpath(path, scope), midlet.getUser(id), id, midlet.genpid(), stdout, scope);
                 process.lua.run(path, code, arg);
-                registers[REG_R0] = 0;
+                registers[REG_A0] = 0;
             }
             else {
                 InputStream elfStream = new ByteArrayInputStream(data);
                 Process process = new Process(midlet, "elf", midlet.joinpath(path, scope), midlet.getUser(id), id, midlet.genpid(), stdout, arg, scope);
                 
-                if (process.elf.load(elfStream)) { process.elf.run(); registers[REG_R0] = 0; } else { registers[REG_R0] = -8; }
+                if (process.elf.load(elfStream)) { process.elf.run(); registers[REG_A0] = 0; } else { registers[REG_A0] = -8; }
             }
-        } catch (Exception e) { registers[REG_R0] = -1; }
+        } catch (Exception e) { registers[REG_A0] = -1; }
     }
-    private void handleGetpriority() { int which = registers[REG_R0], who = registers[REG_R1]; if (who == 0) { registers[REG_R0] = proc.priority; } else { registers[REG_R0] = -22; } }
-    private void handleSetpriority() { int which = registers[REG_R0], who = registers[REG_R1], prio = registers[REG_R2]; if (who == 0) { proc.priority = prio; registers[REG_R0] = 0; } else { registers[REG_R0] = -22; } }
+    private void handleGetpriority() { int which = registers[REG_A0], who = registers[REG_A1]; if (who == 0) { registers[REG_A0] = proc.priority; } else { registers[REG_A0] = -22; } }
+    private void handleSetpriority() { int which = registers[REG_A0], who = registers[REG_A1], prio = registers[REG_A2]; if (who == 0) { proc.priority = prio; registers[REG_A0] = 0; } else { registers[REG_A0] = -22; } }
     // |
-    private void handleSignal() { int signum = registers[REG_R0], handler = registers[REG_R1]; if (signum <= 0 || signum >= NSIG) { registers[REG_R0] = SIG_ERR; return; } int oldHandler = signalHandlers[signum]; signalHandlers[signum] = handler; registers[REG_R0] = oldHandler; }
+    private void handleSignal() { int signum = registers[REG_A0], handler = registers[REG_A1]; if (signum <= 0 || signum >= NSIG) { registers[REG_A0] = SIG_ERR; return; } int oldHandler = signalHandlers[signum]; signalHandlers[signum] = handler; registers[REG_A0] = oldHandler; }
     private void handleSignal(int sig) {
         if (sig <= 0 || sig >= NSIG) return;
         int handler = signalHandlers[sig];
@@ -2034,20 +2274,20 @@ public class ELF {
         else if (handler != 0) { pushSignalFrame(sig); pc = handler; }
     }
     private void handleSigaction() {
-        int signum = registers[REG_R0], actPtr = registers[REG_R1], oldactPtr = registers[REG_R2];
-        if (signum <= 0 || signum >= NSIG) { registers[REG_R0] = -22; return; }
+        int signum = registers[REG_A0], actPtr = registers[REG_A1], oldactPtr = registers[REG_A2];
+        if (signum <= 0 || signum >= NSIG) { registers[REG_A0] = -22; return; }
 
         if (oldactPtr != 0 && oldactPtr + 12 <= memory.length) { writeIntLE(memory, oldactPtr, signalHandlers[signum]); writeIntLE(memory, oldactPtr + 4, 0); writeIntLE(memory, oldactPtr + 8, 0); }
         if (actPtr != 0 && actPtr + 4 <= memory.length) { int newHandler = readIntLE(memory, actPtr); signalHandlers[signum] = newHandler; }
         
-        registers[REG_R0] = 0;
+        registers[REG_A0] = 0;
     }
     private void handleKill() {
-        int pid = registers[REG_R0], sig = registers[REG_R1];
+        int pid = registers[REG_A0], sig = registers[REG_A1];
         String targetPid = String.valueOf(pid);
         
-        if (!midlet.sys.containsKey(targetPid)) { registers[REG_R0] = -3; return; }
-        if (this.id != 0 && !targetPid.equals(this.pid)) { registers[REG_R0] = -1; return; }
+        if (!midlet.sys.containsKey(targetPid)) { registers[REG_A0] = -3; return; }
+        if (this.id != 0 && !targetPid.equals(this.pid)) { registers[REG_A0] = -1; return; }
         
         Object procObj = midlet.sys.get(targetPid);
 
@@ -2060,7 +2300,7 @@ public class ELF {
                 }
             }
             midlet.sys.remove(targetPid);
-            registers[REG_R0] = 0;
+            registers[REG_A0] = 0;
             return;
         }
         
@@ -2075,16 +2315,18 @@ public class ELF {
                     // e o processaríamos na próxima syscall ou no retorno de syscall
                 }
             }
-            registers[REG_R0] = 0;
+            registers[REG_A0] = 0;
             return;
         }
         
-        if (sig == 0) { registers[REG_R0] = 0; }
-        else { registers[REG_R0] = -22; }
+        if (sig == 0) { registers[REG_A0] = 0; }
+        else { registers[REG_A0] = -22; }
     }
     // |
-    private void handleExit() { int status = registers[REG_R0]; running = false; cleanup(); }
+    private void handleExit() { running = false; cleanup(); }
     private void cleanup() {
+        if (cleaned) { return; }
+        cleaned = true;
         Enumeration keys = fileDescriptors.keys();
         while (keys.hasMoreElements()) {
             Object key = keys.nextElement();
@@ -2116,28 +2358,42 @@ public class ELF {
             if (socketInfo.containsKey("datagram")) { try { ((DatagramConnection) socketInfo.get("datagram")).close(); } catch (Exception e) { } }
         }
 
+        boolean hadScreen = proc != null && proc.screen != null;
         fileDescriptors.clear(); socketDescriptors.clear(); allocatedBlocks.clear(); jmpBufs.clear();
+        uiObjects.clear(); uiHandles.clear(); uiEvents.removeAllElements(); uiWaiting = false;
+        if (proc != null) { proc.screen = null; }
         memoryMappings.removeAllElements();
+        if (proc != null) { proc.exitStatus = registers[REG_A0]; proc.exited = true; midlet.exited.put(pid, proc); }
+        if (midlet.sys.containsKey(pid)) { midlet.sys.remove(pid); }
+        if (hadScreen) {
+            Displayable target = null;
+            for (Enumeration e = midlet.sys.keys(); e.hasMoreElements();) {
+                Process process = (Process) midlet.sys.get(e.nextElement());
+                if (process != null && process.screen != null) { target = process.screen; }
+            }
+            if (target != null) { midlet.display.setCurrent(target); }
+            else { midlet.destroyApp(true); }
+        }
     }
     // |
-    private void handleGetpid() { try { int pidValue = Integer.parseInt(this.pid); registers[REG_R0] = pidValue; } catch (NumberFormatException e) { registers[REG_R0] = 1; } }
-    private void handleGetppid() { registers[REG_R0] = 1; }
-    private void handleGetuid() { registers[REG_R0] = id; }
-    private void handleGettid() { registers[REG_R0] = id; }
+    private void handleGetpid() { try { int pidValue = Integer.parseInt(this.pid); registers[REG_A0] = pidValue; } catch (NumberFormatException e) { registers[REG_A0] = 1; } }
+    private void handleGetppid() { registers[REG_A0] = 1; }
+    private void handleGetuid() { registers[REG_A0] = id; }
+    private void handleGettid() { registers[REG_A0] = id; }
     // | (Users)
 
     // | (Memory)
     private void handleMmap() {
-        int addr = registers[REG_R0], length = registers[REG_R1], prot = registers[REG_R2], flags = registers[REG_R3], fd = getSyscallParam(4), offset = getSyscallParam(5);
+        int addr = registers[REG_A0], length = registers[REG_A1], prot = registers[REG_A2], flags = registers[REG_A3], fd = getSyscallParam(4), offset = getSyscallParam(5);
         
         if (midlet.debug) { midlet.print("mmap: addr=" + toHex(addr) + " length=" + length + " prot=" + prot + " flags=" + toHex(flags) + " fd=" + fd + " offset=" + offset, stdout, id, scope); }
-        if (length <= 0) { registers[REG_R0] = -22; return; }
+        if (length <= 0) { registers[REG_A0] = -22; return; }
 
         length = (length + 4095) & ~4095;
 
-        if (addr == 0) { addr = findFreeMemoryRegion(length); if (addr == 0) { registers[REG_R0] = -12; return; }
+        if (addr == 0) { addr = findFreeMemoryRegion(length); if (addr == 0) { registers[REG_A0] = -12; return; }
         }
-        if (!isMemoryRegionFree(addr, length)) { registers[REG_R0] = -12; return; }
+        if (!isMemoryRegionFree(addr, length)) { registers[REG_A0] = -12; return; }
         
         Hashtable mapping = new Hashtable();
         mapping.put("addr", new Integer(addr)); mapping.put("length", new Integer(length)); mapping.put("prot", new Integer(prot));
@@ -2147,51 +2403,51 @@ public class ELF {
         
         if ((flags & MAP_ANONYMOUS) != 0) { for (int i = 0; i < length && addr + i < memory.length; i++) { memory[addr + i] = 0; } }
         
-        registers[REG_R0] = addr;
+        registers[REG_A0] = addr;
     }
     private void handleMunmap() {
-        int addr = registers[REG_R0], length = registers[REG_R1];
+        int addr = registers[REG_A0], length = registers[REG_A1];
 
         for (int i = 0; i < memoryMappings.size(); i++) {
             Hashtable mapping = (Hashtable) memoryMappings.elementAt(i);
             int maddr = ((Integer) mapping.get("addr")).intValue(), mlen = ((Integer) mapping.get("length")).intValue();
-            if (addr >= maddr && addr < maddr + mlen) { for (int j = 0; j < mlen && maddr + j < memory.length; j++) { memory[maddr + j] = 0; } memoryMappings.removeElementAt(i); registers[REG_R0] = 0; return; }
+            if (addr >= maddr && addr < maddr + mlen) { for (int j = 0; j < mlen && maddr + j < memory.length; j++) { memory[maddr + j] = 0; } memoryMappings.removeElementAt(i); registers[REG_A0] = 0; return; }
         }
 
-        registers[REG_R0] = -22;
+        registers[REG_A0] = -22;
     }
     
     private void handleMprotect() {
-        int addr = registers[REG_R0], len = registers[REG_R1], prot = registers[REG_R2];
+        int addr = registers[REG_A0], len = registers[REG_A1], prot = registers[REG_A2];
 
         for (int i = 0; i < memoryMappings.size(); i++) {
             Hashtable mapping = (Hashtable) memoryMappings.elementAt(i);
             int maddr = ((Integer)mapping.get("addr")).intValue(), mlen = ((Integer)mapping.get("length")).intValue();
-            if (addr >= maddr && addr < maddr + mlen) { mapping.put("prot", new Integer(prot)); registers[REG_R0] = 0; return; }
+            if (addr >= maddr && addr < maddr + mlen) { mapping.put("prot", new Integer(prot)); registers[REG_A0] = 0; return; }
         }
         
-        registers[REG_R0] = -22;
+        registers[REG_A0] = -22;
     }
     private void handleMremap() {
-        int old_addr = registers[REG_R0], old_size = registers[REG_R1], new_size = registers[REG_R2], flags = registers[REG_R3], new_addr = getSyscallParam(4);
+        int old_addr = registers[REG_A0], old_size = registers[REG_A1], new_size = registers[REG_A2], flags = registers[REG_A3], new_addr = getSyscallParam(4);
         if (midlet.debug) { midlet.print("mremap: old=" + toHex(old_addr) + " oldsize=" + old_size + " newsize=" + new_size + " flags=" + flags + " newaddr=" + toHex(new_addr), stdout, id, scope); }
         if (new_addr == 0) { 
             for (int i = 0; i < memoryMappings.size(); i++) {
                 Hashtable mapping = (Hashtable) memoryMappings.elementAt(i);
                 int maddr = ((Integer)mapping.get("addr")).intValue(),mlen = ((Integer)mapping.get("length")).intValue();
-                if (maddr == old_addr && mlen == old_size) { if (isMemoryRegionFree(maddr + mlen, new_size - old_size)) { mapping.put("length", new Integer(new_size)); registers[REG_R0] = maddr; return; } }
+                if (maddr == old_addr && mlen == old_size) { if (isMemoryRegionFree(maddr + mlen, new_size - old_size)) { mapping.put("length", new Integer(new_size)); registers[REG_A0] = maddr; return; } }
             }
         }
 
-        registers[REG_R0] = -12;
+        registers[REG_A0] = -12;
     }
     private void handleBrk() {
-        int newBrk = registers[REG_R0];
-        if (newBrk == 0) { registers[REG_R0] = heapEnd; return; }
-        if (newBrk < heapStart) { registers[REG_R0] = -1; return; }
+        int newBrk = registers[REG_A0];
+        if (newBrk == 0) { registers[REG_A0] = heapEnd; return; }
+        if (newBrk < heapStart) { registers[REG_A0] = -1; return; }
 
         newBrk = (newBrk + 4095) & ~4095;
-        if (newBrk > memory.length) { registers[REG_R0] = -12; return; }
+        if (newBrk > memory.length) { registers[REG_A0] = -12; return; }
         if (newBrk < heapEnd) {
             Vector keysToRemove = new Vector();
             Enumeration keys = allocatedBlocks.keys();
@@ -2205,12 +2461,12 @@ public class ELF {
         }
         
         heapEnd = newBrk;
-        registers[REG_R0] = heapEnd;
+        registers[REG_A0] = heapEnd;
     }
     // |
     private void handleSetjmp() {
-        int jmpBufPtr = registers[REG_R0];
-        if (jmpBufPtr + 132 > memory.length) { registers[REG_R0] = -14; return; }
+        int jmpBufPtr = registers[REG_A0];
+        if (jmpBufPtr + 132 > memory.length) { registers[REG_A0] = -14; return; }
         
         // Salvar registradores no jmp_buf
         for (int i = 0; i < 32; i++) { writeIntLE(memory, jmpBufPtr + i * 4, registers[i]); }
@@ -2221,10 +2477,10 @@ public class ELF {
         int jmpBufId = nextJmpBufId++;
         jmpBufs.put(new Integer(jmpBufId), new Integer(jmpBufPtr));
         
-        registers[REG_R0] = 0; // Primeira chamada retorna 0
+        registers[REG_A0] = 0; // Primeira chamada retorna 0
     }
     private void handleLongjmp() {
-        int jmpBufPtr = registers[REG_R0], val = registers[REG_R1];
+        int jmpBufPtr = registers[REG_A0], val = registers[REG_A1];
         if (jmpBufPtr + 132 > memory.length) { running = false; return; }
         
         // Restaurar registradores
@@ -2234,18 +2490,18 @@ public class ELF {
         pc = readIntLE(memory, jmpBufPtr + 128);
         
         // Retornar valor não-zero
-        registers[REG_R0] = (val == 0) ? 1 : val;
+        registers[REG_A0] = (val == 0) ? 1 : val;
     }
     // |
     private void handleIoctl() {
-        int fd = registers[REG_R0];
-        int request = registers[REG_R1];
-        int argp = registers[REG_R2];
+        int fd = registers[REG_A0];
+        int request = registers[REG_A1];
+        int argp = registers[REG_A2];
         
         Integer fdKey = new Integer(fd);
         
         if (!fileDescriptors.containsKey(fdKey) && fd != 0 && fd != 1 && fd != 2) {
-            registers[REG_R0] = -9; // EBADF
+            registers[REG_A0] = -9; // EBADF
             return;
         }
         
@@ -2262,13 +2518,13 @@ public class ELF {
                     memory[argp] = 80; // colunas
                     memory[argp + 2] = 25; // linhas
                 }
-                registers[REG_R0] = 0;
+                registers[REG_A0] = 0;
                 break;
                 
             case TCSETS:
             case TIOCSWINSZ:
                 // Ignorar - terminal não configurável
-                registers[REG_R0] = 0;
+                registers[REG_A0] = 0;
                 break;
                 
             case FIONREAD:
@@ -2290,20 +2546,20 @@ public class ELF {
                 if (argp >= 0 && argp + 4 < memory.length) {
                     writeIntLE(memory, argp, bytesAvailable);
                 }
-                registers[REG_R0] = 0;
+                registers[REG_A0] = 0;
                 break;
                 
             default:
                 // IOCTL não suportado
-                registers[REG_R0] = -25; // ENOTTY
+                registers[REG_A0] = -25; // ENOTTY
                 break;
         }
     }
     // | (Time)
-    private void handleTime() { long currentTime = System.currentTimeMillis() / 1000; registers[REG_R0] = (int) currentTime; int timePtr = registers[REG_R1]; if (timePtr != 0 && timePtr >= 0 && timePtr + 3 < memory.length) { writeIntLE(memory, timePtr, (int) currentTime); } }
+    private void handleTime() { long currentTime = System.currentTimeMillis() / 1000; registers[REG_A0] = (int) currentTime; int timePtr = registers[REG_A1]; if (timePtr != 0 && timePtr >= 0 && timePtr + 3 < memory.length) { writeIntLE(memory, timePtr, (int) currentTime); } }
     private void handleGettimeofday() {
-        int tvPtr = registers[REG_R0];
-        int tzPtr = registers[REG_R1];
+        int tvPtr = registers[REG_A0];
+        int tzPtr = registers[REG_A1];
         
         long currentTimeMillis = System.currentTimeMillis();
         int seconds = (int)(currentTimeMillis / 1000);
@@ -2314,15 +2570,15 @@ public class ELF {
             writeIntLE(memory, tvPtr + 4, microseconds);
         }
         
-        registers[REG_R0] = 0;
+        registers[REG_A0] = 0;
     }
     // |
     // | File System
     // | (Directories)
     private void handleMkdir() {
-        int pathAddr = registers[REG_R0], mode = registers[REG_R1];
+        int pathAddr = registers[REG_A0], mode = registers[REG_A1];
 
-        if (pathAddr < 0 || pathAddr >= memory.length) { registers[REG_R0] = -1; return; }
+        if (pathAddr < 0 || pathAddr >= memory.length) { registers[REG_A0] = -1; return; }
 
         StringBuffer pathBuf = new StringBuffer();
         int i = 0;
@@ -2334,17 +2590,17 @@ public class ELF {
                 FileConnection conn = (FileConnection) Connector.open("file:///" + path.substring(5), Connector.READ_WRITE);
                 if (conn.exists()) {
                     conn.close();
-                    registers[REG_R0] = -17; // EEXIST
+                    registers[REG_A0] = -17; // EEXIST
                     return;
                 }
                 conn.mkdir(); conn.close();
-                registers[REG_R0] = 0; // Sucesso
-            } catch (Exception e) { registers[REG_R0] = -1; }
-        } else { registers[REG_R0] = -38; return; }
+                registers[REG_A0] = 0; // Sucesso
+            } catch (Exception e) { registers[REG_A0] = -1; }
+        } else { registers[REG_A0] = -38; return; }
     }
     private void handleRmdir() {
-        int pathAddr = registers[REG_R0];
-        if (pathAddr < 0 || pathAddr >= memory.length) { registers[REG_R0] = -1; return; }
+        int pathAddr = registers[REG_A0];
+        if (pathAddr < 0 || pathAddr >= memory.length) { registers[REG_A0] = -1; return; }
 
         StringBuffer pathBuf = new StringBuffer();
         int i = 0;
@@ -2354,23 +2610,23 @@ public class ELF {
         if (path.startsWith("/mnt/")) {
             try {
                 FileConnection conn = (FileConnection) Connector.open("file:///" + path.substring(5), Connector.READ_WRITE);
-                if (!conn.exists()) { conn.close(); registers[REG_R0] = -2; return; }
-                if (!conn.isDirectory()) { conn.close(); registers[REG_R0] = -20; return; }
+                if (!conn.exists()) { conn.close(); registers[REG_A0] = -2; return; }
+                if (!conn.isDirectory()) { conn.close(); registers[REG_A0] = -20; return; }
 
                 Enumeration list = conn.list();
                 if (list != null && list.hasMoreElements()) {
                     conn.close();
-                    registers[REG_R0] = -39; 
+                    registers[REG_A0] = -39;
                     return;
                 }
                 
                 conn.delete(); conn.close();
-                registers[REG_R0] = 0; // Sucesso
-            } catch (Exception e) { registers[REG_R0] = -1; }
-        } else { registers[REG_R0] = -38; }
+                registers[REG_A0] = 0; // Sucesso
+            } catch (Exception e) { registers[REG_A0] = -1; }
+        } else { registers[REG_A0] = -38; }
     }
     private void handleGetcwd() {
-        int buf = registers[REG_R0], size = registers[REG_R1];
+        int buf = registers[REG_A0], size = registers[REG_A1];
         
         String cwd = (String) scope.get("PWD");
         if (cwd == null) { cwd = "/home/"; }
@@ -2382,18 +2638,18 @@ public class ELF {
         
         if (buf + len < memory.length) { memory[buf + len] = 0; }
         
-        registers[REG_R0] = buf;
+        registers[REG_A0] = buf;
     }
     private void handleChdir() {
-        int pathAddr = registers[REG_R0];
-        if (pathAddr < 0 || pathAddr >= memory.length) { registers[REG_R0] = -1; return; }
+        int pathAddr = registers[REG_A0];
+        if (pathAddr < 0 || pathAddr >= memory.length) { registers[REG_A0] = -1; return; }
 
         StringBuffer pathBuf = new StringBuffer();
         int i = 0;
         while (pathAddr + i < memory.length && memory[pathAddr + i] != 0 && i < 256) { pathBuf.append((char)(memory[pathAddr + i] & 0xFF)); i++; }
         String path = pathBuf.toString();
         
-        if (path.equals("") || path.equals(".")) { registers[REG_R0] = 0; return; }
+        if (path.equals("") || path.equals(".")) { registers[REG_A0] = 0; return; }
         
         String fullPath = path;
         if (!path.startsWith("/")) {
@@ -2415,16 +2671,16 @@ public class ELF {
             } catch (Exception e) { dirExists = false; }
         } else if (midlet.fs.containsKey(fullPath)) { dirExists = true; }
         
-        if (dirExists) { scope.put("PWD", fullPath); registers[REG_R0] = 0; }
-        else { registers[REG_R0] = -2; }
+        if (dirExists) { scope.put("PWD", fullPath); registers[REG_A0] = 0; }
+        else { registers[REG_A0] = -2; }
     }
     private void handleGetdents() {
-        int fd = registers[REG_R0], dirp = registers[REG_R1], count = registers[REG_R2];
+        int fd = registers[REG_A0], dirp = registers[REG_A1], count = registers[REG_A2];
         
-        if (dirp < 0 || dirp >= memory.length) { registers[REG_R0] = -1; return; }
+        if (dirp < 0 || dirp >= memory.length) { registers[REG_A0] = -1; return; }
         
         Integer fdKey = new Integer(fd);
-        if (!fileDescriptors.containsKey(fdKey) && fd != 0 && fd != 1 && fd != 2) { registers[REG_R0] = -9; return; }
+        if (!fileDescriptors.containsKey(fdKey) && fd != 0 && fd != 1 && fd != 2) { registers[REG_A0] = -9; return; }
         
         // Obter caminho do diretório a partir do file descriptor
         String dirPath = null;
@@ -2438,7 +2694,7 @@ public class ELF {
             }
         }
         
-        if (dirPath == null) { registers[REG_R0] = -20; return; }
+        if (dirPath == null) { registers[REG_A0] = -20; return; }
         
         // Normalizar caminho (garantir que termina com /)
         String pwd = midlet.joinpath(dirPath, scope);
@@ -2494,7 +2750,7 @@ public class ELF {
                 Vector struct = (Vector) midlet.fs.get(pwd);
                 for (int i = 0; i < struct.size(); i++) { fileList.addElement(struct.elementAt(i)); }
             }
-        } catch (Exception e) { registers[REG_R0] = -1; return; }
+        } catch (Exception e) { registers[REG_A0] = -1; return; }
         
         // Estrutura linux_dirent simplificada
         // d_ino (4 bytes), d_off (4 bytes), d_reclen (2 bytes), d_name (variável)
@@ -2523,14 +2779,14 @@ public class ELF {
             memory[dirp + offset + 10 + nameLen] = 0; offset += reclen; written++;
         }
         
-        if (written == 0) { registers[REG_R0] = 0; }
-        else { registers[REG_R0] = offset; }
+        if (written == 0) { registers[REG_A0] = 0; }
+        else { registers[REG_A0] = offset; }
     }
     private void handleDup() {
-        int oldfd = registers[REG_R0];
+        int oldfd = registers[REG_A0];
         Integer oldKey = new Integer(oldfd);
         
-        if (!fileDescriptors.containsKey(oldKey) && oldfd != 0 && oldfd != 1 && oldfd != 2) { registers[REG_R0] = -9; return; }
+        if (!fileDescriptors.containsKey(oldKey) && oldfd != 0 && oldfd != 1 && oldfd != 2) { registers[REG_A0] = -9; return; }
         
         // Encontrar novo fd
         int newfd = nextFd++;
@@ -2539,14 +2795,14 @@ public class ELF {
         if (oldfd == 0 || oldfd == 1 || oldfd == 2) { fileDescriptors.put(new Integer(newfd), (oldfd == 1 || oldfd == 2) ? stdout : null); }
         else { fileDescriptors.put(new Integer(newfd), fileDescriptors.get(oldKey)); }
         
-        registers[REG_R0] = newfd;
+        registers[REG_A0] = newfd;
     }
     private void handleDup2() {
-        int oldfd = registers[REG_R0], newfd = registers[REG_R1];
+        int oldfd = registers[REG_A0], newfd = registers[REG_A1];
         
         Integer oldKey = new Integer(oldfd);
         
-        if (!fileDescriptors.containsKey(oldKey) && oldfd != 0 && oldfd != 1 && oldfd != 2) { registers[REG_R0] = -9; return; }
+        if (!fileDescriptors.containsKey(oldKey) && oldfd != 0 && oldfd != 1 && oldfd != 2) { registers[REG_A0] = -9; return; }
         
         // Fechar newfd se estiver aberto
         Integer newKey = new Integer(newfd);
@@ -2563,21 +2819,21 @@ public class ELF {
         if (oldfd == 0 || oldfd == 1 || oldfd == 2) { fileDescriptors.put(newKey, (oldfd == 1 || oldfd == 2) ? stdout : null); }
         else { fileDescriptors.put(newKey, fileDescriptors.get(oldKey)); }
         
-        registers[REG_R0] = newfd;
+        registers[REG_A0] = newfd;
     }
     // | (Operations)
     private void handleCreat() {
         // creat(path, mode) é equivalente a open(path, O_CREAT | O_WRONLY | O_TRUNC, mode)
-        int pathAddr = registers[REG_R0], mode = registers[REG_R1];
+        int pathAddr = registers[REG_A0], mode = registers[REG_A1];
         
-        registers[REG_R1] = O_CREAT | O_WRONLY | O_TRUNC;
-        registers[REG_R2] = mode;
+        registers[REG_A1] = O_CREAT | O_WRONLY | O_TRUNC;
+        registers[REG_A2] = mode;
         
         handleOpen();
     }
     private void handleOpen() {
-        int pathAddr = registers[REG_R0], flags = registers[REG_R1], mode = registers[REG_R2];
-        if (pathAddr < 0 || pathAddr >= memory.length) { registers[REG_R0] = -1; return; }
+        int pathAddr = registers[REG_A0], flags = registers[REG_A1], mode = registers[REG_A2];
+        if (pathAddr < 0 || pathAddr >= memory.length) { registers[REG_A0] = -1; return; }
         
         StringBuffer pathBuf = new StringBuffer();
         int i = 0;
@@ -2609,9 +2865,9 @@ public class ELF {
                 if (isDir) {
                     Integer fd = new Integer(nextFd++);
                     fileDescriptors.put(fd, fullPath); // Armazenar caminho como String
-                    registers[REG_R0] = fd.intValue();
+                    registers[REG_A0] = fd.intValue();
                 } 
-                else { registers[REG_R0] = -20; }
+                else { registers[REG_A0] = -20; }
                 return;
             }
             
@@ -2621,16 +2877,16 @@ public class ELF {
                 if (is != null) {
                     Integer fd = new Integer(nextFd++);
                     fileDescriptors.put(fd, is);
-                    registers[REG_R0] = fd.intValue();
+                    registers[REG_A0] = fd.intValue();
                 } else if (create) {
                     midlet.write(fullPath, "", id, scope);
                     InputStream is2 = midlet.getInputStream(fullPath, scope);
                     if (is2 != null) {
                         Integer fd = new Integer(nextFd++);
                         fileDescriptors.put(fd, is2);
-                        registers[REG_R0] = fd.intValue();
-                    } else { registers[REG_R0] = -1; }
-                } else { registers[REG_R0] = -2; }
+                        registers[REG_A0] = fd.intValue();
+                    } else { registers[REG_A0] = -1; }
+                } else { registers[REG_A0] = -2; }
             } else if (forWriting) {
                 // Para escrita, usamos um ByteArrayOutputStream temporário
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -2647,20 +2903,20 @@ public class ELF {
                 
                 Integer fd = new Integer(nextFd++);
                 fileDescriptors.put(fd, baos);
-                registers[REG_R0] = fd.intValue();
+                registers[REG_A0] = fd.intValue();
                 
                 // Guardar o caminho para uso no close/flush
                 fileDescriptors.put(fd + ":path", fullPath);
-            } else { registers[REG_R0] = -1; }
-        } catch (Exception e) { registers[REG_R0] = -1; }
+            } else { registers[REG_A0] = -1; }
+        } catch (Exception e) { registers[REG_A0] = -1; }
     }
     private void handleClose() {
-        int fd = registers[REG_R0];
+        int fd = registers[REG_A0];
         Integer fdKey = new Integer(fd);
         
         if (fd == 0 || fd == 1 || fd == 2) {
             // Não fechar stdin/stdout/stderr
-            registers[REG_R0] = 0;
+            registers[REG_A0] = 0;
             return;
         }
         
@@ -2688,13 +2944,13 @@ public class ELF {
                 
                 fileDescriptors.remove(fd);
                 fileDescriptors.remove(fd + ":path");
-                registers[REG_R0] = 0;
-            } catch (Exception e) { registers[REG_R0] = -1; }
-        } else { registers[REG_R0] = -1; }
+                registers[REG_A0] = 0;
+            } catch (Exception e) { registers[REG_A0] = -1; }
+        } else { registers[REG_A0] = -1; }
     }
     private void handleUnlink() {
-        int pathAddr = registers[REG_R0];
-        if (pathAddr < 0 || pathAddr >= memory.length) { registers[REG_R0] = -1; return; }
+        int pathAddr = registers[REG_A0];
+        if (pathAddr < 0 || pathAddr >= memory.length) { registers[REG_A0] = -1; return; }
         
         StringBuffer pathBuf = new StringBuffer();
         int i = 0;
@@ -2708,24 +2964,24 @@ public class ELF {
         
         // Converter código de retorno do OpenTTY para errno
         switch (result) {
-            case 0:  registers[REG_R0] = 0; break; // Sucesso
-            case 2:  registers[REG_R0] = -22; break; // EINVAL
-            case 5:  registers[REG_R0] = -2; break; // ENOENT
-            case 13: registers[REG_R0] = -13; break; // EACCES
-            case 127: registers[REG_R0] = -2; break; // ENOENT
-            default: registers[REG_R0] = -1; break; // EPERM
+            case 0:  registers[REG_A0] = 0; break; // Sucesso
+            case 2:  registers[REG_A0] = -22; break; // EINVAL
+            case 5:  registers[REG_A0] = -2; break; // ENOENT
+            case 13: registers[REG_A0] = -13; break; // EACCES
+            case 127: registers[REG_A0] = -2; break; // ENOENT
+            default: registers[REG_A0] = -1; break; // EPERM
         }
     }
     // |
     private void handleRead() {
-        int fd = registers[REG_R0], buf = registers[REG_R1], count = registers[REG_R2];
-        if (count <= 0 || buf < 0 || buf >= memory.length) { registers[REG_R0] = -1; return; }
+        int fd = registers[REG_A0], buf = registers[REG_A1], count = registers[REG_A2];
+        if (count <= 0 || buf < 0 || buf >= memory.length) { registers[REG_A0] = -1; return; }
         
         Integer fdKey = new Integer(fd);
         
         if (fd == 0) {
             // stdin - não implementado por enquanto
-            registers[REG_R0] = 0;
+            registers[REG_A0] = 0;
         } else if (fileDescriptors.containsKey(fdKey)) {
             Object stream = fileDescriptors.get(fdKey);
             
@@ -2739,14 +2995,14 @@ public class ELF {
                         memory[buf + i] = (byte) b;
                         bytesRead++;
                     }
-                    registers[REG_R0] = bytesRead;
-                } catch (Exception e) { registers[REG_R0] = -1; }
-            } else { registers[REG_R0] = -1; }
-        } else { registers[REG_R0] = -1; }
+                    registers[REG_A0] = bytesRead;
+                } catch (Exception e) { registers[REG_A0] = -1; }
+            } else { registers[REG_A0] = -1; }
+        } else { registers[REG_A0] = -1; }
     }
     private void handleWrite() {
-        int fd = registers[REG_R0], buf = registers[REG_R1], count = registers[REG_R2];
-        if (count <= 0 || buf < 0 || buf >= memory.length) { registers[REG_R0] = -1; return; }
+        int fd = registers[REG_A0], buf = registers[REG_A1], count = registers[REG_A2];
+        if (count <= 0 || buf < 0 || buf >= memory.length) { registers[REG_A0] = -1; return; }
         
         Integer fdKey = new Integer(fd);
         
@@ -2757,7 +3013,7 @@ public class ELF {
             
             midlet.print(sb.toString(), stdout, id, scope, false);
             
-            registers[REG_R0] = count;
+            registers[REG_A0] = count;
             
         } else if (fileDescriptors.containsKey(fdKey)) {
             Object stream = fileDescriptors.get(fdKey);
@@ -2767,20 +3023,20 @@ public class ELF {
                     OutputStream os = (OutputStream) stream;
                     for (int i = 0; i < count && buf + i < memory.length; i++) { os.write(memory[buf + i]); }
                     os.flush();
-                    registers[REG_R0] = count;
-                } catch (Exception e) { registers[REG_R0] = -1; }
+                    registers[REG_A0] = count;
+                } catch (Exception e) { registers[REG_A0] = -1; }
             } else if (stream instanceof StringBuffer) {
                 StringBuffer sb = (StringBuffer) stream;
                 for (int i = 0; i < count && buf + i < memory.length; i++) { sb.append((char)(memory[buf + i] & 0xFF)); }
-                registers[REG_R0] = count;
-            } else { registers[REG_R0] = -1; }
-        } else { registers[REG_R0] = -1; }
+                registers[REG_A0] = count;
+            } else { registers[REG_A0] = -1; }
+        } else { registers[REG_A0] = -1; }
     }
     // | (Informations)
     private void handleStat() {
-        int pathAddr = registers[REG_R0], statbufAddr = registers[REG_R1];
+        int pathAddr = registers[REG_A0], statbufAddr = registers[REG_A1];
         
-        if (pathAddr < 0 || pathAddr >= memory.length || statbufAddr < 0 || statbufAddr >= memory.length) { registers[REG_R0] = -1; return; }
+        if (pathAddr < 0 || pathAddr >= memory.length || statbufAddr < 0 || statbufAddr >= memory.length) { registers[REG_A0] = -1; return; }
         
         // Ler caminho
         StringBuffer pathBuf = new StringBuffer();
@@ -2822,14 +3078,14 @@ public class ELF {
         }
         writeIntLE(memory, statbufAddr + 44, st_size);
         
-        registers[REG_R0] = 0;
+        registers[REG_A0] = 0;
     }
     private void handleFstat() {
-        int fd = registers[REG_R0];
-        int statbufAddr = registers[REG_R1];
+        int fd = registers[REG_A0];
+        int statbufAddr = registers[REG_A1];
         
         if (statbufAddr < 0 || statbufAddr >= memory.length) {
-            registers[REG_R0] = -1; // EFAULT
+            registers[REG_A0] = -1; // EFAULT
             return;
         }
         
@@ -2860,44 +3116,44 @@ public class ELF {
                 writeIntLE(memory, statbufAddr + 16, 020000);
             }
         } else {
-            registers[REG_R0] = -9; // EBADF
+            registers[REG_A0] = -9; // EBADF
             return;
         }
         
-        registers[REG_R0] = 0; // Sucesso
+        registers[REG_A0] = 0; // Sucesso
     }
     private void handleLseek() {
-        int fd = registers[REG_R0], offset = registers[REG_R1], whence = registers[REG_R2];
+        int fd = registers[REG_A0], offset = registers[REG_A1], whence = registers[REG_A2];
         
         Integer fdKey = new Integer(fd);
         
-        if (!fileDescriptors.containsKey(fdKey) && fd != 0 && fd != 1 && fd != 2) { registers[REG_R0] = -9; return; } // EBADF
+        if (!fileDescriptors.containsKey(fdKey) && fd != 0 && fd != 1 && fd != 2) { registers[REG_A0] = -9; return; } // EBADF
         
         // Implementação simplificada - sempre retorna sucesso mas não faz nada
         // Em uma implementação real, precisaríamos controlar a posição do arquivo
-        registers[REG_R0] = 0; // Sucesso (sempre na posição 0)
+        registers[REG_A0] = 0; // Sucesso (sempre na posição 0)
     }
     private void handleFsync() {
-        int fd = registers[REG_R0];
+        int fd = registers[REG_A0];
         Integer fdKey = new Integer(fd);
         
-        if (!fileDescriptors.containsKey(fdKey) && fd != 0 && fd != 1 && fd != 2) { registers[REG_R0] = -9; return; }
+        if (!fileDescriptors.containsKey(fdKey) && fd != 0 && fd != 1 && fd != 2) { registers[REG_A0] = -9; return; }
 
         try {
             if (fileDescriptors.containsKey(fdKey)) {
                 Object stream = fileDescriptors.get(fdKey);
                 if (stream instanceof OutputStream) { ((OutputStream) stream).flush(); }
             }
-            registers[REG_R0] = 0;
-        } catch (Exception e) { registers[REG_R0] = -1; }
+            registers[REG_A0] = 0;
+        } catch (Exception e) { registers[REG_A0] = -1; }
     }
     // |
     // Network
     // | (Open and Connect)
     private void handleSocket() {
-        int domain = registers[REG_R0], type = registers[REG_R1], protocol = registers[REG_R2];
-        if (domain != AF_INET) { registers[REG_R0] = -97; return; }
-        if (type != SOCK_STREAM && type != SOCK_DGRAM) { registers[REG_R0] = -22; return; }
+        int domain = registers[REG_A0], type = registers[REG_A1], protocol = registers[REG_A2];
+        if (domain != AF_INET) { registers[REG_A0] = -97; return; }
+        if (type != SOCK_STREAM && type != SOCK_DGRAM) { registers[REG_A0] = -22; return; }
         
         try {
             String protocolStr = (type == SOCK_STREAM) ? "tcp" : "udp";
@@ -2918,25 +3174,25 @@ public class ELF {
             socketDescriptors.put(new Integer(fd), socketInfo);
             fileDescriptors.put(new Integer(fd), null); // Placeholder
             
-            registers[REG_R0] = fd;
-        } catch (Exception e) { registers[REG_R0] = -1; }
+            registers[REG_A0] = fd;
+        } catch (Exception e) { registers[REG_A0] = -1; }
     }
     private void handleConnect() {
-        int fd = registers[REG_R0], sockaddrPtr = registers[REG_R1], addrlen = registers[REG_R2];
+        int fd = registers[REG_A0], sockaddrPtr = registers[REG_A1], addrlen = registers[REG_A2];
         Integer fdKey = new Integer(fd);
         
-        if (!socketDescriptors.containsKey(fdKey)) { registers[REG_R0] = -9; return; }
+        if (!socketDescriptors.containsKey(fdKey)) { registers[REG_A0] = -9; return; }
         
         Hashtable socketInfo = (Hashtable) socketDescriptors.get(fdKey);
         int type = ((Integer) socketInfo.get("type")).intValue();
         
         // Ler estrutura sockaddr_in da memória
-        if (sockaddrPtr + 16 > memory.length) { registers[REG_R0] = -14; return; }
+        if (sockaddrPtr + 16 > memory.length) { registers[REG_A0] = -14; return; }
         
         int sin_family = readShortLE(memory, sockaddrPtr), sin_port = readShortLE(memory, sockaddrPtr + 2);
         byte[] sin_addr = new byte[4];
         for (int i = 0; i < 4; i++) { sin_addr[i] = memory[sockaddrPtr + 4 + i]; }
-        if (sin_family != AF_INET) { registers[REG_R0] = -97; return; }
+        if (sin_family != AF_INET) { registers[REG_A0] = -97; return; }
         
         String host = (sin_addr[0] & 0xFF) + "." + (sin_addr[1] & 0xFF) + "." + (sin_addr[2] & 0xFF) + "." + (sin_addr[3] & 0xFF), port = String.valueOf(sin_port & 0xFFFF);
         
@@ -2954,51 +3210,51 @@ public class ELF {
                 socketInfo.put("outputStream", os);
             }
             
-            registers[REG_R0] = 0;
-        } catch (Exception e) { socketInfo.put("error", new Integer(111)); registers[REG_R0] = -111; }
+            registers[REG_A0] = 0;
+        } catch (Exception e) { socketInfo.put("error", new Integer(111)); registers[REG_A0] = -111; }
     }
     // | (Read and Write)
     private void handleSend() {
-        int fd = registers[REG_R0], buf = registers[REG_R1], len = registers[REG_R2], flags = registers[REG_R3];
+        int fd = registers[REG_A0], buf = registers[REG_A1], len = registers[REG_A2], flags = registers[REG_A3];
         Integer fdKey = new Integer(fd);
 
-        if (!socketDescriptors.containsKey(fdKey)) { registers[REG_R0] = -9; return; }
+        if (!socketDescriptors.containsKey(fdKey)) { registers[REG_A0] = -9; return; }
         
         Hashtable socketInfo = (Hashtable) socketDescriptors.get(fdKey);
-        if (!((Boolean) socketInfo.get("connected")).booleanValue()) { registers[REG_R0] = -107; return; }
+        if (!((Boolean) socketInfo.get("connected")).booleanValue()) { registers[REG_A0] = -107; return; }
         
         try {
             OutputStream os = (OutputStream) socketInfo.get("outputStream");
-            if (os == null) { registers[REG_R0] = -9; return; }
+            if (os == null) { registers[REG_A0] = -9; return; }
             
             byte[] data = new byte[len];
             for (int i = 0; i < len && buf + i < memory.length; i++) { data[i] = memory[buf + i]; }
             
             os.write(data); os.flush();
             
-            registers[REG_R0] = len;
-        } catch (Exception e) { registers[REG_R0] = -32; }
+            registers[REG_A0] = len;
+        } catch (Exception e) { registers[REG_A0] = -32; }
     }
     private void handleRecv() {
-        int fd = registers[REG_R0], buf = registers[REG_R1], len = registers[REG_R2], flags = registers[REG_R3];
+        int fd = registers[REG_A0], buf = registers[REG_A1], len = registers[REG_A2], flags = registers[REG_A3];
         
         Integer fdKey = new Integer(fd);
         
-        if (!socketDescriptors.containsKey(fdKey)) { registers[REG_R0] = -9; return; }
+        if (!socketDescriptors.containsKey(fdKey)) { registers[REG_A0] = -9; return; }
         
         Hashtable socketInfo = (Hashtable) socketDescriptors.get(fdKey);
-        if (!((Boolean) socketInfo.get("connected")).booleanValue()) { registers[REG_R0] = -107; return; }
+        if (!((Boolean) socketInfo.get("connected")).booleanValue()) { registers[REG_A0] = -107; return; }
         
         try {
             InputStream is = (InputStream) fileDescriptors.get(fdKey);
-            if (is == null) { registers[REG_R0] = -9; return; }
+            if (is == null) { registers[REG_A0] = -9; return; }
             
             int bytesRead = 0;
             for (int i = 0; i < len && buf + i < memory.length; i++) {
                 int b = is.read();
                 if (b == -1) {
-                    if (bytesRead == 0) { registers[REG_R0] = 0; }
-                    else { registers[REG_R0] = bytesRead; }
+                    if (bytesRead == 0) { registers[REG_A0] = 0; }
+                    else { registers[REG_A0] = bytesRead; }
 
                     return;
                 }
@@ -3006,15 +3262,15 @@ public class ELF {
                 bytesRead++;
             }
             
-            registers[REG_R0] = bytesRead;
-        } catch (Exception e) { registers[REG_R0] = -104; }
+            registers[REG_A0] = bytesRead;
+        } catch (Exception e) { registers[REG_A0] = -104; }
     }
     private void handleSendto() {
         // sendto(fd, buf, len, flags, dest_addr, addrlen)
-        int fd = registers[REG_R0];
-        int buf = registers[REG_R1];
-        int len = registers[REG_R2];
-        int flags = registers[REG_R3];
+        int fd = registers[REG_A0];
+        int buf = registers[REG_A1];
+        int len = registers[REG_A2];
+        int flags = registers[REG_A3];
         
         // Parâmetros 5-6 na stack
         int dest_addr = getSyscallParam(4);
@@ -3022,12 +3278,12 @@ public class ELF {
         
         Integer fdKey = new Integer(fd);
         
-        if (!socketDescriptors.containsKey(fdKey)) { registers[REG_R0] = -ENOTSOCK; return; }
+        if (!socketDescriptors.containsKey(fdKey)) { registers[REG_A0] = -ENOTSOCK; return; }
         
         Hashtable socketInfo = (Hashtable) socketDescriptors.get(fdKey);
         int type = ((Integer) socketInfo.get("type")).intValue();
         
-        if (type == SOCK_STREAM && !((Boolean) socketInfo.get("connected")).booleanValue()) { registers[REG_R0] = -107; return; }
+        if (type == SOCK_STREAM && !((Boolean) socketInfo.get("connected")).booleanValue()) { registers[REG_A0] = -107; return; }
         
         byte[] data = new byte[len];
         for (int i = 0; i < len && buf + i < memory.length; i++) { data[i] = memory[buf + i]; }
@@ -3035,32 +3291,32 @@ public class ELF {
         try {
             if (type == SOCK_DGRAM) {
                 // Socket datagrama: enviar datagrama para o destino informado
-                if (dest_addr == 0 || dest_addr + 16 > memory.length) { registers[REG_R0] = -14; return; }
+                if (dest_addr == 0 || dest_addr + 16 > memory.length) { registers[REG_A0] = -14; return; }
                 String[] target = readSockAddr(dest_addr);
-                if (target == null) { registers[REG_R0] = -97; return; }
+                if (target == null) { registers[REG_A0] = -97; return; }
                 
                 DatagramConnection dc = (DatagramConnection) getOrCreateDatagram(socketInfo, 0);
-                if (dc == null) { registers[REG_R0] = -1; return; }
+                if (dc == null) { registers[REG_A0] = -1; return; }
                 
                 Datagram dg = dc.newDatagram(data, len, "datagram://" + target[0] + ":" + target[1]);
                 dc.send(dg);
-                registers[REG_R0] = dg.getLength();
+                registers[REG_A0] = dg.getLength();
             } else {
                 // Socket conectado (TCP): ignora o destino e envia direto
                 OutputStream os = (OutputStream) socketInfo.get("outputStream");
-                if (os == null) { registers[REG_R0] = -ENOTSOCK; return; }
+                if (os == null) { registers[REG_A0] = -ENOTSOCK; return; }
                 
                 os.write(data); os.flush();
-                registers[REG_R0] = len;
+                registers[REG_A0] = len;
             }
-        } catch (Exception e) { registers[REG_R0] = -32; }
+        } catch (Exception e) { registers[REG_A0] = -32; }
     }
     private void handleRecvfrom() {
         // recvfrom(fd, buf, len, flags, src_addr, addrlen)
-        int fd = registers[REG_R0];
-        int buf = registers[REG_R1];
-        int len = registers[REG_R2];
-        int flags = registers[REG_R3];
+        int fd = registers[REG_A0];
+        int buf = registers[REG_A1];
+        int len = registers[REG_A2];
+        int flags = registers[REG_A3];
         
         // Parâmetros 5-6 na stack
         int src_addr = getSyscallParam(4);
@@ -3068,17 +3324,17 @@ public class ELF {
         
         Integer fdKey = new Integer(fd);
         
-        if (!socketDescriptors.containsKey(fdKey)) { registers[REG_R0] = -ENOTSOCK; return; }
+        if (!socketDescriptors.containsKey(fdKey)) { registers[REG_A0] = -ENOTSOCK; return; }
         
         Hashtable socketInfo = (Hashtable) socketDescriptors.get(fdKey);
         int type = ((Integer) socketInfo.get("type")).intValue();
         
-        if (type == SOCK_STREAM && !((Boolean) socketInfo.get("connected")).booleanValue()) { registers[REG_R0] = -107; return; }
+        if (type == SOCK_STREAM && !((Boolean) socketInfo.get("connected")).booleanValue()) { registers[REG_A0] = -107; return; }
         
         try {
             if (type == SOCK_DGRAM) {
                 DatagramConnection dc = (DatagramConnection) socketInfo.get("datagram");
-                if (dc == null) { registers[REG_R0] = -ENOTSOCK; return; }
+                if (dc == null) { registers[REG_A0] = -ENOTSOCK; return; }
                 
                 Datagram dg = dc.newDatagram(len);
                 dc.receive(dg);
@@ -3093,18 +3349,18 @@ public class ELF {
                     if (addrlen != 0) { writeIntLE(memory, addrlen, 16); }
                 }
                 
-                registers[REG_R0] = n;
+                registers[REG_A0] = n;
             } else {
                 // Socket conectado (TCP): recebe no buffer e reporta o peer
                 InputStream is = (InputStream) fileDescriptors.get(fdKey);
-                if (is == null) { registers[REG_R0] = -ENOTSOCK; return; }
+                if (is == null) { registers[REG_A0] = -ENOTSOCK; return; }
                 
                 int bytesRead = 0;
                 for (int i = 0; i < len && buf + i < memory.length; i++) {
                     int b = is.read();
                     if (b == -1) {
-                        if (bytesRead == 0) { registers[REG_R0] = 0; }
-                        else { registers[REG_R0] = bytesRead; }
+                        if (bytesRead == 0) { registers[REG_A0] = 0; }
+                        else { registers[REG_A0] = bytesRead; }
                         return;
                     }
                     memory[buf + i] = (byte) b;
@@ -3117,26 +3373,26 @@ public class ELF {
                     if (addrlen != 0) { writeIntLE(memory, addrlen, 16); }
                 }
                 
-                registers[REG_R0] = bytesRead;
+                registers[REG_A0] = bytesRead;
             }
-        } catch (Exception e) { registers[REG_R0] = -104; }
+        } catch (Exception e) { registers[REG_A0] = -104; }
     }
     // | (Socket Params)
     private void handleSetsockopt() {
         // setsockopt(fd, level, optname, optval, optlen)
-        int fd = registers[REG_R0];
-        int level = registers[REG_R1];
-        int optname = registers[REG_R2];
-        int optval = registers[REG_R3];
+        int fd = registers[REG_A0];
+        int level = registers[REG_A1];
+        int optname = registers[REG_A2];
+        int optval = registers[REG_A3];
         
         // Parâmetro 5 na stack
         int optlen = getSyscallParam(4);
         
         Integer fdKey = new Integer(fd);
         
-        if (!socketDescriptors.containsKey(fdKey)) { registers[REG_R0] = -ENOTSOCK; return; }
+        if (!socketDescriptors.containsKey(fdKey)) { registers[REG_A0] = -ENOTSOCK; return; }
         
-        if (!storeSocketOption(fdKey, level, optname)) { registers[REG_R0] = -ENOPROTOOPT; return; }
+        if (!storeSocketOption(fdKey, level, optname)) { registers[REG_A0] = -ENOPROTOOPT; return; }
         
         Hashtable socketInfo = (Hashtable) socketDescriptors.get(fdKey);
         Hashtable options = (Hashtable) socketInfo.get("options");
@@ -3144,21 +3400,21 @@ public class ELF {
         int value = (optval != 0 && optval + 3 < memory.length) ? readIntLE(memory, optval) : 0;
         options.put(new Integer(level * 1000 + optname), new Integer(value));
         
-        registers[REG_R0] = 0;
+        registers[REG_A0] = 0;
     }
     private void handleGetsockopt() {
         // getsockopt(fd, level, optname, optval, optlen)
-        int fd = registers[REG_R0];
-        int level = registers[REG_R1];
-        int optname = registers[REG_R2];
-        int optval = registers[REG_R3];
+        int fd = registers[REG_A0];
+        int level = registers[REG_A1];
+        int optname = registers[REG_A2];
+        int optval = registers[REG_A3];
         
         // Parâmetro 5 na stack
         int optlen = getSyscallParam(4);
         
         Integer fdKey = new Integer(fd);
         
-        if (!socketDescriptors.containsKey(fdKey)) { registers[REG_R0] = -ENOTSOCK; return; }
+        if (!socketDescriptors.containsKey(fdKey)) { registers[REG_A0] = -ENOTSOCK; return; }
         
         Hashtable socketInfo = (Hashtable) socketDescriptors.get(fdKey);
         
@@ -3169,7 +3425,7 @@ public class ELF {
             Object err = socketInfo.get("error");
             value = (err == null) ? 0 : ((Integer) err).intValue();
             socketInfo.put("error", new Integer(0));
-        } else if (!storeSocketOption(fdKey, level, optname)) { registers[REG_R0] = -ENOPROTOOPT; return; }
+        } else if (!storeSocketOption(fdKey, level, optname)) { registers[REG_A0] = -ENOPROTOOPT; return; }
         else {
             Hashtable options = (Hashtable) socketInfo.get("options");
             Object stored = (options == null) ? null : options.get(new Integer(level * 1000 + optname));
@@ -3187,7 +3443,7 @@ public class ELF {
         if (optval != 0 && optval + 3 < memory.length) { writeIntLE(memory, optval, value); }
         if (optlen != 0 && optlen + 3 < memory.length) { writeIntLE(memory, optlen, 4); }
         
-        registers[REG_R0] = 0;
+        registers[REG_A0] = 0;
     }
     private boolean storeSocketOption(Integer fdKey, int level, int optname) {
         switch (level) {
@@ -3218,18 +3474,18 @@ public class ELF {
     // |
     private void handleBind() {
         // bind(fd, addr, addrlen)
-        int fd = registers[REG_R0];
-        int sockaddrPtr = registers[REG_R1];
-        int addrlen = registers[REG_R2];
+        int fd = registers[REG_A0];
+        int sockaddrPtr = registers[REG_A1];
+        int addrlen = registers[REG_A2];
         
         Integer fdKey = new Integer(fd);
         
-        if (!socketDescriptors.containsKey(fdKey)) { registers[REG_R0] = -ENOTSOCK; return; }
+        if (!socketDescriptors.containsKey(fdKey)) { registers[REG_A0] = -ENOTSOCK; return; }
         
-        if (sockaddrPtr == 0 || sockaddrPtr + 16 > memory.length) { registers[REG_R0] = -14; return; }
+        if (sockaddrPtr == 0 || sockaddrPtr + 16 > memory.length) { registers[REG_A0] = -14; return; }
         
         String[] local = readSockAddr(sockaddrPtr);
-        if (local == null) { registers[REG_R0] = -97; return; }
+        if (local == null) { registers[REG_A0] = -97; return; }
         int port = Integer.parseInt(local[1]);
         
         Hashtable socketInfo = (Hashtable) socketDescriptors.get(fdKey);
@@ -3255,21 +3511,21 @@ public class ELF {
             socketInfo.put("localIp", local[0]);
             socketInfo.put("error", new Integer(0));
             
-            registers[REG_R0] = 0;
-        } catch (Exception e) { registers[REG_R0] = -EADDRINUSE; }
+            registers[REG_A0] = 0;
+        } catch (Exception e) { registers[REG_A0] = -EADDRINUSE; }
     }
     private void handleListen() {
         // listen(fd, backlog)
-        int fd = registers[REG_R0];
-        int backlog = registers[REG_R1];
+        int fd = registers[REG_A0];
+        int backlog = registers[REG_A1];
         
         Integer fdKey = new Integer(fd);
         
-        if (!socketDescriptors.containsKey(fdKey)) { registers[REG_R0] = -ENOTSOCK; return; }
+        if (!socketDescriptors.containsKey(fdKey)) { registers[REG_A0] = -ENOTSOCK; return; }
         
         Hashtable socketInfo = (Hashtable) socketDescriptors.get(fdKey);
         int type = ((Integer) socketInfo.get("type")).intValue();
-        if (type != SOCK_STREAM) { registers[REG_R0] = -22; return; }
+        if (type != SOCK_STREAM) { registers[REG_A0] = -22; return; }
         
         try {
             // "listen" sem bind: vincula porta efêmera (como no Linux)
@@ -3279,25 +3535,25 @@ public class ELF {
                 socketInfo.put("server", server);
             }
             socketInfo.put("listening", Boolean.TRUE);
-            registers[REG_R0] = 0;
-        } catch (Exception e) { registers[REG_R0] = -1; }
+            registers[REG_A0] = 0;
+        } catch (Exception e) { registers[REG_A0] = -1; }
     }
     private void handleAccept() {
         // accept(fd, addr, addrlen, flags)
-        int fd = registers[REG_R0];
-        int addrPtr = registers[REG_R1];
-        int addrlenPtr = registers[REG_R2];
+        int fd = registers[REG_A0];
+        int addrPtr = registers[REG_A1];
+        int addrlenPtr = registers[REG_A2];
         
         Integer fdKey = new Integer(fd);
         
-        if (!socketDescriptors.containsKey(fdKey)) { registers[REG_R0] = -ENOTSOCK; return; }
+        if (!socketDescriptors.containsKey(fdKey)) { registers[REG_A0] = -ENOTSOCK; return; }
         
         Hashtable socketInfo = (Hashtable) socketDescriptors.get(fdKey);
         int type = ((Integer) socketInfo.get("type")).intValue();
-        if (type != SOCK_STREAM) { registers[REG_R0] = -22; return; }
+        if (type != SOCK_STREAM) { registers[REG_A0] = -22; return; }
         
         StreamConnectionNotifier server = (StreamConnectionNotifier) socketInfo.get("server");
-        if (server == null) { registers[REG_R0] = -22; return; }
+        if (server == null) { registers[REG_A0] = -22; return; }
         
         try {
             SocketConnection conn = (SocketConnection) server.acceptAndOpen();
@@ -3327,13 +3583,13 @@ public class ELF {
                 if (addrlenPtr != 0 && addrlenPtr + 3 < memory.length) { writeIntLE(memory, addrlenPtr, 16); }
             }
             
-            registers[REG_R0] = newFd;
-        } catch (Exception e) { registers[REG_R0] = -1; }
+            registers[REG_A0] = newFd;
+        } catch (Exception e) { registers[REG_A0] = -1; }
     }
-    private void handleShutdown() { registers[REG_R0] = 0; }
-    private void handleNanosleep() { registers[REG_R0] = 0; }
-    private void handleGetsockname() { registers[REG_R0] = -1; } // Não implementado
-    private void handleGetpeername() { registers[REG_R0] = -1; } // Não implementado
+    private void handleShutdown() { registers[REG_A0] = 0; }
+    private void handleNanosleep() { registers[REG_A0] = 0; }
+    private void handleGetsockname() { registers[REG_A0] = -1; } // Não implementado
+    private void handleGetpeername() { registers[REG_A0] = -1; } // Não implementado
 
     // Métodos auxiliares para estruturas sockaddr_in
     private String[] readSockAddr(int ptr) {
@@ -3382,11 +3638,11 @@ public class ELF {
     }
 
     private void handleFutex() {
-        // Parâmetros 1-4 em R0-R3
-        int uaddr = registers[REG_R0];
-        int op = registers[REG_R1];
-        int val = registers[REG_R2];
-        int timeout = registers[REG_R3];
+        // Parametros 1-4 em a0-a3
+        int uaddr = registers[REG_A0];
+        int op = registers[REG_A1];
+        int val = registers[REG_A2];
+        int timeout = registers[REG_A3];
         
         // Parâmetros 5-6 na stack
         int uaddr2 = getSyscallParam(4);
@@ -3402,7 +3658,7 @@ public class ELF {
             case 0: // FUTEX_WAIT
                 int currentVal = readIntLE(memory, uaddr);
                 if (currentVal != val) {
-                    registers[REG_R0] = -11; // EAGAIN
+                    registers[REG_A0] = -11; // EAGAIN
                 } else {
                     // Adicionar à lista de espera
                     Vector waiters = (Vector) futexWaiters.get(new Integer(uaddr));
@@ -3411,7 +3667,7 @@ public class ELF {
                         futexWaiters.put(new Integer(uaddr), waiters);
                     }
                     waiters.addElement(new Integer(id));
-                    registers[REG_R0] = 0;
+                    registers[REG_A0] = 0;
                 }
                 break;
                 
@@ -3422,24 +3678,24 @@ public class ELF {
                     for (int i = 0; i < wakeCount; i++) {
                         waiters.removeElementAt(0);
                     }
-                    registers[REG_R0] = wakeCount;
+                    registers[REG_A0] = wakeCount;
                 } else {
-                    registers[REG_R0] = 0;
+                    registers[REG_A0] = 0;
                 }
                 break;
                 
             default:
-                registers[REG_R0] = -38; // ENOSYS
+                registers[REG_A0] = -38; // ENOSYS
         }
     }
     
-    private void handleSchedYield() { registers[REG_R0] = 0; }
+    private void handleSchedYield() { registers[REG_A0] = 0; }
     
     private void handleUname() {
-        int buf = registers[REG_R0];
+        int buf = registers[REG_A0];
         
         if (buf == 0 || buf + 65 * 5 > memory.length) {
-            registers[REG_R0] = -14; // EFAULT
+            registers[REG_A0] = -14; // EFAULT
             return;
         }
 
@@ -3447,7 +3703,7 @@ public class ELF {
         String nodename = "opentty";
         String release = "3.2.0";
         String version = "#1 " + midlet.build;
-        String machine = "armv5tejl";
+        String machine = "riscv32";
         String domainname = "";
         
         writeString(memory, buf, sysname, 65);
@@ -3457,60 +3713,60 @@ public class ELF {
         writeString(memory, buf + 260, machine, 65);
         writeString(memory, buf + 325, domainname, 65);
         
-        registers[REG_R0] = 0;
+        registers[REG_A0] = 0;
     }
     
 
     
     private void handleFcntl() {
-        int fd = registers[REG_R0];
-        int cmd = registers[REG_R1];
-        int arg = registers[REG_R2];
+        int fd = registers[REG_A0];
+        int cmd = registers[REG_A1];
+        int arg = registers[REG_A2];
         
         Integer fdKey = new Integer(fd);
         
         if (!fileDescriptors.containsKey(fdKey) && fd != 0 && fd != 1 && fd != 2) {
-            registers[REG_R0] = -9; // EBADF
+            registers[REG_A0] = -9; // EBADF
             return;
         }
         
         switch (cmd) {
             case F_GETFL:
                 // Retornar flags do arquivo
-                registers[REG_R0] = 0; // Por padrão, sem flags especiais
+                registers[REG_A0] = 0; // Por padrão, sem flags especiais
                 break;
                 
             case F_SETFL:
                 // Configurar flags - ignorado por enquanto
-                registers[REG_R0] = 0;
+                registers[REG_A0] = 0;
                 break;
                 
             default:
-                registers[REG_R0] = -22; // EINVAL
+                registers[REG_A0] = -22; // EINVAL
         }
     }
     
     private void handleFtruncate() {
-        int fd = registers[REG_R0];
-        int length = registers[REG_R1];
+        int fd = registers[REG_A0];
+        int length = registers[REG_A1];
         
         // Implementação simplificada
-        registers[REG_R0] = 0;
+        registers[REG_A0] = 0;
     }
     private void handleTruncate() {
-        int path = registers[REG_R0];
-        int length = registers[REG_R1];
+        int path = registers[REG_A0];
+        int length = registers[REG_A1];
         
         // Implementação simplificada
-        registers[REG_R0] = 0;
+        registers[REG_A0] = 0;
     }
     
     private void handleGetrlimit() {
-        int resource = registers[REG_R0];
-        int rlim = registers[REG_R1];
+        int resource = registers[REG_A0];
+        int rlim = registers[REG_A1];
         
         if (rlim == 0 || rlim + 8 > memory.length) {
-            registers[REG_R0] = -14; // EFAULT
+            registers[REG_A0] = -14; // EFAULT
             return;
         }
         
@@ -3536,7 +3792,7 @@ public class ELF {
         writeIntLE(memory, rlim, (int)soft);
         writeIntLE(memory, rlim + 4, (int)hard);
         
-        registers[REG_R0] = 0;
+        registers[REG_A0] = 0;
     }
     
     private void checkPendingSignals() { }
@@ -3569,8 +3825,8 @@ public class ELF {
     }
     
 
-    private void handleSelect() { int nfds = registers[REG_R0], readfds = registers[REG_R1], writefds = registers[REG_R2], exceptfds = registers[REG_R3], timeoutPtr = getSyscallParam(4); registers[REG_R0] = 0; }
-    private void handlePoll() { int fdsPtr = registers[REG_R0], nfds = registers[REG_R1], timeout = registers[REG_R2]; registers[REG_R0] = 0; }
+    private void handleSelect() { int nfds = registers[REG_A0], readfds = registers[REG_A1], writefds = registers[REG_A2], exceptfds = registers[REG_A3], timeoutPtr = getSyscallParam(4); registers[REG_A0] = 0; }
+    private void handlePoll() { int fdsPtr = registers[REG_A0], nfds = registers[REG_A1], timeout = registers[REG_A2]; registers[REG_A0] = 0; }
 
     // Métodos auxiliares para leitura/escrita little-endian
     private int readIntLE(byte[] data, int offset) { if (offset + 3 >= data.length || offset < 0) { return 0; } return ((data[offset] & 0xFF) | ((data[offset + 1] & 0xFF) << 8) | ((data[offset + 2] & 0xFF) << 16) | ((data[offset + 3] & 0xFF) << 24)); } 
@@ -3587,11 +3843,6 @@ public class ELF {
         while (start + length > start && start + length <= stackPointer - 4096) {
             boolean free = true;
             
-            // Verificar se sobrepõe com PLT
-            if (pltBase != 0 && start < pltBase + 4096 && start + length > pltBase) { free = false; start = pltBase + 4096; }
-            
-            // Verificar se sobrepõe com resolvedor
-            if (resolverCodeAddr != 0 && start < resolverCodeAddr + 256 && start + length > resolverCodeAddr) { free = false; start = resolverCodeAddr + 256; }
             for (int i = 0; i < sharedObjectMappings.size(); i++) {
                 Hashtable mapping = (Hashtable) sharedObjectMappings.elementAt(i);
                 int addr = ((Integer) mapping.get("addr")).intValue(), size = ((Integer) mapping.get("length")).intValue();
@@ -3620,7 +3871,7 @@ public class ELF {
             return registers[10 + paramIndex];
         }
         
-        // Parâmetros 8+ estão na stack (RISC-V não tem o gap de 4 bytes do ARM)
+        // Parametros depois de a7 ficam na stack pela convencao RV32.
         int sp = registers[REG_SP];
         int offset = (paramIndex - 8) * 4;
         
