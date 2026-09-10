@@ -128,6 +128,7 @@ all remaining handles automatically.
 | `"name"` | Process name string. |
 | `"screen"` | LCDUI screen handle. Normally `lcdui_display` does this automatically. |
 | `"cmd"` | Command string displayed in process metadata. |
+| `"stdout"` | `StringItem` handle that receives output from `opentty_shell`. |
 | Any other key | String stored in the process database. Pass `0` to remove that database key. |
 
 Examples:
@@ -136,6 +137,7 @@ Examples:
 opentty_setproc("name", "contacts");
 opentty_setproc("cmd", "contacts --new");
 opentty_setproc("screen", form);
+opentty_setproc("stdout", output);
 opentty_setproc("selected", "alice");
 opentty_setproc("selected", 0);
 ```

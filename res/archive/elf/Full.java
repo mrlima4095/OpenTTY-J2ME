@@ -821,6 +821,11 @@ public class ELF implements CommandListener {
         } else if (key.equals("cmd")) {
             if (value == 0) { return -1; }
             proc.cmd = uiString(value);
+        } else if (key.equals("stdout")) {
+            Object output = uiObject(value);
+            if (!(output instanceof StringItem)) { return -1; }
+            proc.stdout = output;
+            stdout = output;
         } else if (value == 0) {
             proc.db.remove(key);
         } else {
