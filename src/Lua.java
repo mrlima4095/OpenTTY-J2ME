@@ -32,7 +32,7 @@ public class Lua {
     public int status = 0;
     public boolean silent = false;
     // | (LuaFunction)
-    public static final int PRINT = 0, ERROR = 1, PCALL = 2, REQUIRE = 3, LOADS = 4, PAIRS = 5, GC = 6, TOSTRING = 7, TONUMBER = 8, SELECT = 9, TYPE = 10, GETPROPERTY = 11, SETMETATABLE = 12, GETMETATABLE = 13, IPAIRS = 14, RANDOM = 15, ASSERT = 16, CO_CREATE = 17, CO_RESUME = 18, CO_YIELD = 19, CO_STATUS = 20, CO_RUNNING = 21, CO_WRAP = 22, DBG_TRACEBACK = 23, DBG_GETINFO = 24, DBG_GETREGISTRY = 25, DBG_GETMETATABLE = 26, DBG_SETMETATABLE = 27, DBG_GETUPVALUE = 28, DBG_SETUPVALUE = 29;
+    public static final int PRINT = 0, ERROR = 1, PCALL = 2, REQUIRE = 3, LOADS = 4, PAIRS = 5, GC = 6, TOSTRING = 7, TONUMBER = 8, SELECT = 9, TYPE = 10, GETPROPERTY = 11, SETMETATABLE = 12, GETMETATABLE = 13, IPAIRS = 14, RANDOM = 15, ASSERT = 16, CO_CREATE = 17, CO_RESUME = 18, CO_YIELD = 19, CO_STATUS = 20, CO_RUNNING = 21, CO_WRAP = 22;
     public static final int UPPER = 100, LOWER = 101, LEN = 102, FIND = 103, MATCH = 104, REVERSE = 105, SUB = 106, HASH = 107, BYTE = 108, CHAR = 109, TRIM = 110, SPLIT = 111, UUID = 112, GETCMD = 113, GETARGS = 114, ENV = 115, BASE64_ENCODE = 116, BASE64_DECODE = 117, GETPATTERN = 118, STARTSWITH = 119, ENDSWITH = 120;
     public static final int TB_INSERT = 200, TB_CONCAT = 201, TB_REMOVE = 202, TB_SORT = 203, TB_MOVE = 204, TB_UNPACK = 205, TB_PACK = 206, TB_DECODE = 207;
     public static final int EXEC = 300, GETENV = 301, SETENV = 302, CLOCK = 303, SETLOC = 304, EXIT = 305, DATE = 306, GETPID = 307, SETPROC = 308, GETPROC = 309, GETCWD = 310, GETUID = 311, CHDIR = 312, REQUEST = 313, START = 314, STOP = 315, PREQ = 316, SU = 318, REMOVE = 319, SCOPE = 320, JOIN = 321, MKDIR = 322;
@@ -74,7 +74,7 @@ public class Lua {
         this.midlet = midlet; this.id = id; this.PID = pid; this.proc = proc; this.stdout = stdout; this.father = scope;
         this.tokenIndex = 0; 
 
-        Hashtable os = new Hashtable(), io = new Hashtable(), string = new Hashtable(), table = new Hashtable(), pkg = new Hashtable(), graphics = new Hashtable(), canvas = new Hashtable(), socket = new Hashtable(), http = new Hashtable(), java = new Hashtable(), jdb = new Hashtable(), math = new Hashtable(), audio = new Hashtable(), push = new Hashtable(), base64 = new Hashtable(), coroutine = new Hashtable(), debug = new Hashtable();
+        Hashtable os = new Hashtable(), io = new Hashtable(), string = new Hashtable(), table = new Hashtable(), pkg = new Hashtable(), graphics = new Hashtable(), socket = new Hashtable(), http = new Hashtable(), java = new Hashtable(), jdb = new Hashtable(), math = new Hashtable(), audio = new Hashtable(), push = new Hashtable(), base64 = new Hashtable(), coroutine = new Hashtable();
         String[] funcs = new String[] { "getenv", "setenv", "clock", "setlocale", "exit", "date", "getpid", "setproc", "getproc", "getcwd", "request", "getuid", "chdir", "open", "su", "remove", "scope", "join", "mkdir" }; 
         int[] loaders = new int[] { GETENV, SETENV, CLOCK, SETLOC, EXIT, DATE, GETPID, SETPROC, GETPROC, GETCWD, REQUEST, GETUID, CHDIR, PREQ, SU, REMOVE, SCOPE, JOIN, MKDIR };
         for (int i = 0; i < funcs.length; i++) { os.put(funcs[i], new LuaFunction(loaders[i])); } os.put("execute", midlet.shell instanceof LuaFunction ? midlet.shell : new LuaFunction(EXEC)); globals.put("os", os);
@@ -125,10 +125,6 @@ public class Lua {
         funcs = new String[] { "create", "resume", "yield", "status", "running", "wrap" };
         loaders = new int[] { CO_CREATE, CO_RESUME, CO_YIELD, CO_STATUS, CO_RUNNING, CO_WRAP };
         for (int i = 0; i < funcs.length; i++) { coroutine.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("coroutine", coroutine);
-
-        funcs = new String[] { "traceback", "getinfo", "getregistry", "getmetatable", "setmetatable", "getupvalue", "setupvalue" };
-        loaders = new int[] { DBG_TRACEBACK, DBG_GETINFO, DBG_GETREGISTRY, DBG_GETMETATABLE, DBG_SETMETATABLE, DBG_GETUPVALUE, DBG_SETUPVALUE };
-        for (int i = 0; i < funcs.length; i++) { debug.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("debug", debug);
 
         pkg.put("loaded", requireCache); pkg.put("loadlib", new LuaFunction(REQUIRE)); globals.put("package", pkg);
         math.put("random", new LuaFunction(RANDOM)); globals.put("math", math);
@@ -240,19 +236,6 @@ public class Lua {
             }
         }
         clearThrown();
-        return sb.toString();
-    }
-    public String getDebugTraceback(Vector frames, Object message, int level) {
-        StringBuffer sb = new StringBuffer();
-        if (message != null && message != LUA_NIL) { sb.append(toLuaString(message)).append('\n'); }
-        sb.append("stack traceback:");
-        int skip = Math.max(0, level - 1);
-        for (int i = frames.size() - 1 - skip; i >= 0; i--) {
-            Frame f = (Frame) frames.elementAt(i);
-            sb.append("\n\t").append(f.source != null && f.source.length() > 0 ? f.source : "?");
-            if (f.line > 0) { sb.append(':').append(f.line); }
-            sb.append(": in function '").append(f.name == null ? "[anonymous]" : f.name).append("'");
-        }
         return sb.toString();
     }
     // |
@@ -1569,48 +1552,6 @@ public class Lua {
                 return active.copyValues(active.coroutineResumeArgs);
             }
         }
-        private Hashtable debugFunctionInfo(LuaFunction function) {
-            Hashtable info = new Hashtable();
-            boolean nativeFunction = function.MOD != -1;
-            String source = nativeFunction ? "=[C]" : function.defSource == null ? "?" : function.defSource;
-            info.put("source", source); info.put("short_src", source); info.put("what", nativeFunction ? "C" : "Lua");
-            info.put("linedefined", luaNumber(nativeFunction ? -1 : function.defLine)); info.put("lastlinedefined", luaNumber(nativeFunction ? -1 : function.defLine));
-            info.put("name", function.name == null ? LUA_NIL : function.name); info.put("namewhat", function.name == null ? "" : "global");
-            int paramCount = nativeFunction || function.params == null ? 0 : function.params.size();
-            boolean vararg = paramCount > 0 && function.params.elementAt(paramCount - 1).equals("...");
-            info.put("nparams", luaNumber(vararg ? paramCount - 1 : paramCount)); info.put("isvararg", vararg ? TRUE : FALSE);
-            info.put("nups", luaNumber(function.closureScope == null || function.closureScope == globals ? 0 : function.closureScope.size()));
-            return info;
-        }
-        private Hashtable debugFrameInfo(Frame frame) {
-            Hashtable info = new Hashtable();
-            String source = frame.source == null || frame.source.length() == 0 ? "?" : frame.source;
-            info.put("source", source); info.put("short_src", source); info.put("what", "Lua");
-            info.put("linedefined", luaNumber(frame.line)); info.put("lastlinedefined", luaNumber(frame.line)); info.put("currentline", luaNumber(frame.line));
-            info.put("name", frame.name == null ? LUA_NIL : frame.name); info.put("namewhat", frame.name == null ? "" : "global");
-            return info;
-        }
-        private String debugUpvalueName(LuaFunction function, int index) {
-            if (function.closureScope == null || function.closureScope == globals || index < 1) { return null; }
-            int current = 1;
-            for (Enumeration keys = function.closureScope.keys(); keys.hasMoreElements();) {
-                String name = (String) keys.nextElement();
-                if (current++ == index) { return name; }
-            }
-            return null;
-        }
-        private LuaCanvas canvas(Vector args, String name) throws Exception {
-            if (args.isEmpty() || !(args.elementAt(0) instanceof LuaCanvas)) { return (LuaCanvas) gotbad(1, name, "canvas expected, got " + (args.isEmpty() ? "no value" : type(args.elementAt(0)))); }
-            return (LuaCanvas) args.elementAt(0);
-        }
-        private int canvasNumber(Vector args, int index, String name) throws Exception {
-            if (index >= args.size() || !(args.elementAt(index) instanceof Double)) { return ((Double) gotbad(index + 1, name, "number expected, got " + (index >= args.size() ? "no value" : type(args.elementAt(index))))).intValue(); }
-            return ((Double) args.elementAt(index)).intValue();
-        }
-        private void canvasColor(LuaCanvas canvas, Vector args, int index, String name) throws Exception {
-            if (args.size() >= index + 3) { canvas.setColor(canvasNumber(args, index, name), canvasNumber(args, index + 1, name), canvasNumber(args, index + 2, name)); }
-            else { canvas.setColor(canvasNumber(args, index, name)); }
-        }
         public Object internals(Vector args) throws Exception {
             Object arg;
 
@@ -1656,52 +1597,6 @@ public class Lua {
                 case CO_WRAP:
                     if (args.isEmpty() || !(args.elementAt(0) instanceof LuaFunction) || ((LuaFunction) args.elementAt(0)).coroutine) { return gotbad(1, "wrap", "function expected, got " + (args.isEmpty() ? "no value" : type(args.elementAt(0)))); }
                     return new LuaFunction(new LuaFunction((LuaFunction) args.elementAt(0), true, false), false, true);
-                case DBG_TRACEBACK: {
-                    Vector frames = frameStack; Object message = null; int level = 1, index = 0;
-                    if (!args.isEmpty() && args.elementAt(0) instanceof LuaFunction && ((LuaFunction) args.elementAt(0)).coroutine) {
-                        LuaFunction thread = (LuaFunction) args.elementAt(0);
-                        frames = thread.coroutineState == 0 && thread.coroutineFrames != null ? thread.coroutineFrames : new Vector();
-                        index = 1;
-                    }
-                    if (args.size() > index) { message = args.elementAt(index++); }
-                    if (args.size() > index && args.elementAt(index) instanceof Double) { level = ((Double) args.elementAt(index)).intValue(); }
-                    return getDebugTraceback(frames, message, level);
-                }
-                case DBG_GETINFO: {
-                    if (args.isEmpty()) { return gotbad(1, "getinfo", "function or level expected"); }
-                    Object target = args.elementAt(0);
-                    if (target instanceof LuaFunction) { return debugFunctionInfo((LuaFunction) target); }
-                    if (target instanceof Double) {
-                        int level = ((Double) target).intValue(); int frame = frameStack.size() - level;
-                        return frame < 0 || frame >= frameStack.size() ? null : debugFrameInfo((Frame) frameStack.elementAt(frame));
-                    }
-                    return gotbad(1, "getinfo", "function or level expected, got " + type(target));
-                }
-                case DBG_GETREGISTRY: return globals;
-                case DBG_GETMETATABLE: {
-                    if (args.isEmpty() || !(args.elementAt(0) instanceof Hashtable)) { return args.isEmpty() ? gotbad(1, "getmetatable", "table expected") : null; }
-                    Object metatable = ((Hashtable) args.elementAt(0)).get("__metatable");
-                    return metatable == null || metatable == LUA_NIL ? null : metatable;
-                }
-                case DBG_SETMETATABLE: {
-                    if (args.size() < 2 || !(args.elementAt(0) instanceof Hashtable)) { return gotbad(1, "setmetatable", "table expected"); }
-                    Object metatable = unwrap(args.elementAt(1));
-                    if (metatable != null && !(metatable instanceof Hashtable)) { return gotbad(2, "setmetatable", "nil or table expected, got " + type(metatable)); }
-                    ((Hashtable) args.elementAt(0)).put("__metatable", metatable == null ? LUA_NIL : metatable);
-                    return args.elementAt(0);
-                }
-                case DBG_GETUPVALUE: {
-                    if (args.size() < 2 || !(args.elementAt(0) instanceof LuaFunction) || !(args.elementAt(1) instanceof Double)) { return gotbad(1, "getupvalue", "function and index expected"); }
-                    LuaFunction function = (LuaFunction) args.elementAt(0); String name = debugUpvalueName(function, ((Double) args.elementAt(1)).intValue());
-                    if (name == null) { return null; }
-                    Vector result = new Vector(); result.addElement(name); Object value = function.closureScope.get(name); result.addElement(value == LUA_NIL ? null : value); return result;
-                }
-                case DBG_SETUPVALUE: {
-                    if (args.size() < 3 || !(args.elementAt(0) instanceof LuaFunction) || !(args.elementAt(1) instanceof Double)) { return gotbad(1, "setupvalue", "function, index and value expected"); }
-                    LuaFunction function = (LuaFunction) args.elementAt(0); String name = debugUpvalueName(function, ((Double) args.elementAt(1)).intValue());
-                    if (name == null) { return null; }
-                    function.closureScope.put(name, args.elementAt(2) == null ? LUA_NIL : args.elementAt(2)); return name;
-                }
                 case PCALL:
                     if (args.isEmpty()) { return gotbad(1, "pcall", "function expected"); }
                     else {

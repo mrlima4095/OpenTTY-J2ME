@@ -206,5 +206,3 @@
 [2026-1.18.2-03x36]	ELF emulator: imports dinamicos reais - load .so via DT_NEEDED, eager JUMP_SLOT no GOT, R_ARM_COPY, dynsym/nchain; build-elf.sh -shared; samples importdemo/libgeo
 [2026-1.18.2-03x37]	ELF emulator: fix LDR/STR/byte com offset por registro (bit 25); apps C de teste: libutil/dcalc/flags/sum/base64/collatz
 [2026-1.18.2-03x38]	Lua coroutine library: create/resume/yield/status/running/wrap
-[2026-1.18.2-03x39]	Lua debug library: traceback, getinfo, registry, metatables and upvalues
-[2026-1.18.2-03x40]	Lua Canvas: graphics.canvas drawing, input callbacks and UI primitives
