@@ -65,6 +65,7 @@ return {
         ["useradd"] = { remote = "sys/users/useradd.lua", here = "/bin/useradd", description = "Add users" },
         ["userdel"] = { remote = "sys/users/userdel.lua", here = "/bin/userdel", description = "Remove users" },
         ["viewer"] = { remote = "file/img.lua", here = "/bin/imgview", description = "View Images" },
+        ["vnt"] = { remote = "file/vnt.lua", here = "/bin/vnt", description = "Convert text files to VNote" },
         ["webproxy"] = { remote = "net/proxy.lua", here = "/bin/shprxy", description = "Access OpenTTY on WebProxy" },
         ["wget"] = { remote = "net/wget", here = "/bin/wget", description = "Download files from Network" },
         ["xterm"] = { remote = "sys/x11/xterm.lua", here = "/bin/xterm", description = "MIDlet Terminal" },
