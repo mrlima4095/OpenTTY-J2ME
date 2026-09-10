@@ -24,7 +24,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Object shell;
     // |
     public Hashtable attributes = new Hashtable(), fs = new Hashtable(), sys = new Hashtable(), exited = new Hashtable(), tmp = new Hashtable(), cache = new Hashtable(), cacheLua = new Hashtable(), graphics = new Hashtable(), servers = new Hashtable(), globals = new Hashtable(), userID = new Hashtable();
-    public String username = read("/home/OpenRMS", globals), build = "2026-1.18.2-03x37";
+    private Hashtable vfsFiles = new Hashtable();
+    private boolean vfsReady = false;
+    public String username = read("/home/OpenRMS", globals), build = "2026-1.18.2-04x38";
     // |
     // Graphics
     public Display display = Display.getDisplay(this);
@@ -290,11 +292,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 int slash = filename.lastIndexOf('/');
                 String dir = slash < 0 ? filename : filename.substring(0, slash + 1);
                 String name = slash < 0 ? filename : filename.substring(slash + 1);
-                int idx = vfsDirIndex(dir);
-                if (idx != -1) {
+                if (vfsDirIndex(dir) != -1) {
                     if (useCache && cache.containsKey(full)) { return new ByteArrayInputStream((byte[]) cache.get(full)); }
 
-                    byte[] content = read(name, loadRMS("OpenRMS", idx));
+                    byte[] content = readVfsFile(full);
                     if (content != null) { if (useCache) { cache.put(full, content); } return new ByteArrayInputStream(content); }
                 }
                 filename = full;
@@ -364,7 +365,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else if (id != 0) { return 13; }
             else {
                 if (index >= 6) { registerVfsDir(dir); }
-                if (useCache) { cache.put(full, data); } return addFile(name, data, loadRMS("OpenRMS", index), index);
+                int result = writeVfsFile(full, data);
+                if (result == 0 && useCache) { cache.put(full, data); }
+                return result;
             }
         }
         else if (filename.startsWith("/dev/")) { if ((filename = filename.substring(5)).equals("")) { return 2; } else if (filename.equals("null")) { } else { return 5; } }
@@ -407,8 +410,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             String subdir = dir + name + "/";
             if (fs.containsKey(subdir)) {
-                int sidx = vfsDirIndex(subdir);
-                if (sidx != -1) { writeRMS("OpenRMS", new byte[0], sidx); }
+                clearVfsDirectory(subdir);
                 fs.remove(subdir);
                 Vector struct = (Vector) fs.get(dir);
                 if (struct != null) { struct.removeElement(name + "/"); }
@@ -419,11 +421,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
             int index = vfsDirIndex(dir);
             if (index == -1) { return 5; }
-            String content = loadRMS("OpenRMS", index);
-            if (content.indexOf("[\1BEGIN:" + name + "\1]") == -1) { return 5; }
-
-            if (useCache) { cache.remove(full); }
-            return writeRMS("OpenRMS", delFile(name, content).getBytes(), index);
+            int result = deleteVfsFile(full);
+            if (result == 0 && useCache) { cache.remove(full); }
+            return result;
         }
         else if (filename.startsWith("/tmp/")) {
             filename = filename.substring(5);
@@ -452,6 +452,65 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
         return -1;
     }
+    private void loadVfs() {
+        if (vfsReady) { return; }
+        RecordStore rs = null;
+        try {
+            rs = RecordStore.openRecordStore("OpenRMS", true);
+            while (rs.getNumRecords() < 3) { rs.addRecord(new byte[0], 0, 0); }
+            String index = new String(rs.getRecord(3));
+            if (!index.startsWith("VFS2\n")) { migrateVfs(rs, rs.getNumRecords()); }
+            else {
+                String[] lines = split(index, '\n');
+                for (int i = 1; i < lines.length; i++) {
+                    int tab = lines[i].lastIndexOf('\t');
+                    if (tab > 0) { try { vfsFiles.put(lines[i].substring(0, tab), new Integer(Integer.parseInt(lines[i].substring(tab + 1)))); } catch (Exception e) { } }
+                }
+            }
+            vfsReady = true;
+        } catch (Exception e) { }
+        finally { try { if (rs != null) { rs.closeRecordStore(); } } catch (Exception e) { } }
+    }
+    private void migrateVfs(RecordStore rs, int oldCount) throws Exception {
+        String[] dirs = { "/bin/", "/lib/", "/etc/", "/root/", "/boot/" };
+        int[] records = { 3, 4, 5, 6, 7 };
+        for (int i = 0; i < dirs.length; i++) { migrateVfsPage(rs, dirs[i], records[i]); }
+        String cfg = readVfsRecord(rs, "/etc/vfs.conf");
+        if (cfg != null) {
+            String[] mounts = split(cfg, '\n');
+            for (int i = 0; i < mounts.length; i++) { String dir = mounts[i].trim(); if (dir.length() > 0) { if (!dir.endsWith("/")) { dir += "/"; } migrateVfsPage(rs, dir, vfsDirIndex(dir)); } }
+        }
+        saveVfsIndex(rs);
+        for (int i = 4; i <= oldCount; i++) { rs.setRecord(i, new byte[0], 0, 0); }
+    }
+    private void migrateVfsPage(RecordStore rs, String dir, int record) throws Exception {
+        if (record < 3 || record > rs.getNumRecords()) { return; }
+        String page = new String(rs.getRecord(record)); int at = 0;
+        while ((at = page.indexOf("[\1BEGIN:", at)) >= 0) {
+            int nameEnd = page.indexOf("\1]", at); if (nameEnd < 0) { break; }
+            int dataStart = page.indexOf('\n', nameEnd); int dataEnd = page.indexOf("[\1END\1]", nameEnd);
+            if (dataStart < 0 || dataEnd < 0) { break; }
+            String name = page.substring(at + 8, nameEnd), body = page.substring(dataStart + 1, dataEnd).trim();
+            byte[] data = body.startsWith("[B64]") ? decodeBase64(body.substring(5)) : body.getBytes();
+            if (data != null) { int id = rs.addRecord(data, 0, data.length); vfsFiles.put(dir + name, new Integer(id)); }
+            at = dataEnd + 8;
+        }
+    }
+    private String readVfsRecord(RecordStore rs, String path) throws Exception { Integer id = (Integer) vfsFiles.get(path); return id == null ? null : new String(rs.getRecord(id.intValue())); }
+    private void saveVfsIndex(RecordStore rs) throws Exception { StringBuffer out = new StringBuffer("VFS2\n"); for (Enumeration e = vfsFiles.keys(); e.hasMoreElements();) { String path = (String) e.nextElement(); out.append(path).append('\t').append(vfsFiles.get(path)).append('\n'); } byte[] data = out.toString().getBytes(); rs.setRecord(3, data, 0, data.length); }
+    public byte[] readVfsFile(String path) {
+        loadVfs(); Integer id = (Integer) vfsFiles.get(path); if (id == null) { return null; }
+        RecordStore rs = null; try { rs = RecordStore.openRecordStore("OpenRMS", true); return rs.getRecord(id.intValue()); } catch (Exception e) { return null; } finally { try { if (rs != null) { rs.closeRecordStore(); } } catch (Exception e) { } }
+    }
+    public int writeVfsFile(String path, byte[] data) {
+        loadVfs(); RecordStore rs = null; try { rs = RecordStore.openRecordStore("OpenRMS", true); Integer id = (Integer) vfsFiles.get(path); if (id == null) { id = new Integer(rs.addRecord(data, 0, data.length)); vfsFiles.put(path, id); } else { rs.setRecord(id.intValue(), data, 0, data.length); } saveVfsIndex(rs); return 0; } catch (Exception e) { return 1; } finally { try { if (rs != null) { rs.closeRecordStore(); } } catch (Exception e) { } }
+    }
+    public int deleteVfsFile(String path) {
+        loadVfs(); Integer id = (Integer) vfsFiles.remove(path); if (id == null) { return 5; }
+        RecordStore rs = null; try { rs = RecordStore.openRecordStore("OpenRMS", true); rs.setRecord(id.intValue(), new byte[0], 0, 0); saveVfsIndex(rs); return 0; } catch (Exception e) { return 1; } finally { try { if (rs != null) { rs.closeRecordStore(); } } catch (Exception e) { } }
+    }
+    public void clearVfsDirectory(String dir) { loadVfs(); Vector paths = new Vector(); for (Enumeration e = vfsFiles.keys(); e.hasMoreElements();) { String path = (String) e.nextElement(); if (path.startsWith(dir)) { paths.addElement(path); } } for (int i = 0; i < paths.size(); i++) { deleteVfsFile((String) paths.elementAt(i)); } }
+    public Vector listVfsFiles(String dir) { loadVfs(); Vector out = new Vector(); for (Enumeration e = vfsFiles.keys(); e.hasMoreElements();) { String path = (String) e.nextElement(); if (path.startsWith(dir)) { String rest = path.substring(dir.length()); if (rest.indexOf('/') < 0) { out.addElement(rest); } } } return out; }
     public void registerVfsDir(String dir) {
         mountVfsDir(dir);
         if (dir != null && dir.startsWith("/") && dir.endsWith("/") && dir.lastIndexOf('/', dir.length() - 2) > 0) { persistVfsMount(dir); }

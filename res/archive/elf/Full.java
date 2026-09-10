@@ -2750,25 +2750,7 @@ public class ELF implements CommandListener {
                     for (int i2 = 0; i2 < pe.size(); i2++) { fileList.addElement(pe.elementAt(i2)); }
                 }
             }
-            else if (midlet.vfsDirIndex(pwd) != -1) {
-                String content = midlet.loadRMS("OpenRMS", midlet.vfsDirIndex(pwd));
-                int i = 0;
-
-                while (true) {
-                    int start = content.indexOf("[\1BEGIN:", i);
-                    if (start == -1) { break; }
-
-                    int end = content.indexOf("\1]", start);
-                    if (end == -1) { break; }
-
-                    fileList.addElement(content.substring(start + "[\1BEGIN:".length(), end));
-
-                    i = content.indexOf("[\1END\1]", end);
-                    if (i == -1) { break; }
-
-                    i += "[\1END\1]".length();
-                }
-            }
+            else if (midlet.vfsDirIndex(pwd) != -1) { Vector files = midlet.listVfsFiles(pwd); for (int i = 0; i < files.size(); i++) { fileList.addElement(files.elementAt(i)); } }
             else if (pwd.equals("/home/")) { String[] files = RecordStore.listRecordStores(); if (files != null) { for (int i = 0; i < files.length; i++) { fileList.addElement(files[i]); } } }
             
             if (midlet.fs.containsKey(pwd)) {

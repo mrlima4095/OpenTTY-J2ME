@@ -2832,11 +2832,8 @@ public class Lua {
                         else if (payload.equals("rms")) {
                             if (uid == 0) {
                                 if (arg == null || arg.equals("")) { return new Double(2); }
-                                else if (arg.equals("/bin/")) { midlet.writeRMS("OpenRMS", new byte[0], 3); }
-                                else if (arg.equals("/etc/")) { midlet.writeRMS("OpenRMS", new byte[0], 5); }
-                                else if (arg.equals("/lib/")) { midlet.writeRMS("OpenRMS", new byte[0], 4); }
-                                else if (arg.equals("/boot/")) { midlet.writeRMS("OpenRMS", new byte[0], 7); }
-                                else { String r = toLuaString(arg); int rmi = midlet.vfsDirIndex(r); if (rmi != -1 && rmi >= 6) { midlet.writeRMS("OpenRMS", new byte[0], rmi); if (midlet.fs.containsKey(r.endsWith("/") ? r : r + "/")) { String sd = r.endsWith("/") ? r : r + "/"; int base = sd.lastIndexOf('/', sd.length() - 2); String parent = sd.substring(0, base + 1); String entry = sd.substring(base + 1, sd.length() - 1) + "/"; Vector struct = (Vector) midlet.fs.get(parent); if (struct != null) { struct.removeElement(entry); } midlet.fs.remove(sd); midlet.unpersistVfsMount(sd); } } else { return new Double(5); } }
+                                else if (arg.equals("/bin/") || arg.equals("/etc/") || arg.equals("/lib/") || arg.equals("/boot/")) { midlet.clearVfsDirectory(arg); }
+                                else { String r = toLuaString(arg); int rmi = midlet.vfsDirIndex(r); if (rmi != -1 && rmi >= 6) { String sd = r.endsWith("/") ? r : r + "/"; midlet.clearVfsDirectory(sd); if (midlet.fs.containsKey(sd)) { int base = sd.lastIndexOf('/', sd.length() - 2); String parent = sd.substring(0, base + 1); String entry = sd.substring(base + 1, sd.length() - 1) + "/"; Vector struct = (Vector) midlet.fs.get(parent); if (struct != null) { struct.removeElement(entry); } midlet.fs.remove(sd); midlet.unpersistVfsMount(sd); } } else { return new Double(5); } }
                             } else { return new Double(13); }
                         }
                         else if (payload.equals("useradd")) {
@@ -3297,25 +3294,7 @@ public class Lua {
                     for (int j = 0; j < pe.size(); j++) { list.put(new Double(index), pe.elementAt(j)); index++; }
                 }
             }
-            else if (midlet.vfsDirIndex(pwd) != -1) {
-                String content = midlet.loadRMS("OpenRMS", midlet.vfsDirIndex(pwd));
-                int i = 0;
-
-                while (true) {
-                    int start = content.indexOf("[\1BEGIN:", i);
-                    if (start == -1) { break; }
-
-                    int end = content.indexOf("\1]", start);
-                    if (end == -1) { break; }
-
-                    list.put(new Double(index), content.substring(start + "[\1BEGIN:".length(), end)); index++;
-
-                    i = content.indexOf("[\1END\1]", end);
-                    if (i == -1) { break; }
-
-                    i += "[\1END\1]".length();
-                }
-            }
+            else if (midlet.vfsDirIndex(pwd) != -1) { Vector files = midlet.listVfsFiles(pwd); for (int i = 0; i < files.size(); i++) { list.put(new Double(index++), files.elementAt(i)); } }
             else if (pwd.equals("/home/")) { 
                 String[] files = RecordStore.listRecordStores(); 
                 if (files != null) { 
