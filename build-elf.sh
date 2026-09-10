@@ -1,33 +1,27 @@
 #!/bin/bash
-# build-elf.sh — Monta .s/.S (e opcionalmente .c) em ELF ARM32 para o emulador do OpenTTY.
+# build-elf.sh — Monta .s/.S (e opcionalmente .c) em ELF RISC-V RV32IM para o
+# emulador do OpenTTY (src/ELF.java, EM_RISCV 243).
 #
-# O emulador exige ET_EXEC, ELFCLASS32, little-endian, EM_ARM (40), sem Thumb,
-# static, e com o entry (e_entry) dentro de 1 MB (a RAM virtual e' um byte[1MB]).
+# O emulador exige ET_EXEC, ELFCLASS32, little-endian, EM_RISCV (243), sem
+# extensao C, static, e com o entry (e_entry) dentro de 1 MB (a RAM virtual e'
+# um byte[1MB]). O core do emulador implementa RV32I + extensao M (mul/div).
 #
 # Uso:
 #   ./build-elf.sh programa.s                 -> ./programa
 #   ./build-elf.sh a.s b.s -o app             -> ./app
-#   ./build-elf.sh app.s -lib                 -> linka com res/lib/lib32.s
-#                                              (programa define main; a lib
-#                                              fornece _start/puts/printf/...)
-#   ./build-elf.sh demo.c -stdlib             -> linka com res/lib/libc.s: libc
-#                                              no EMULADOR (svc #LIB_*). Suporta
-#                                              .c: printf/sprintf/malloc/free/
-#                                              memcpy/divisao AEABI/etc.
-#   ./build-elf.sh app.s -T 0x8000            -> texto comeca em 0x8000
-#   CROSS=arm-linux-gnueabi- ./build-elf.sh x.s
+#   ./build-elf.sh app.c -T 0x8000            -> texto comeca em 0x8000
+#   CROSS=riscv64-unknown-elf- ./build-elf.sh x.s
 #
-# Imports dinamicos (.so):
-#   ./build-elf.sh libgeo.c -shared            -> libutil.so (ET_DYN), texto em 0x20000
-#   ./build-elf.sh app.c -stdlib libutil.so    -> app linkada a .so (DT_NEEDED + PLT/GOT
-#                                              -> e resolvida em runtime pelo emulador)
-#   ./build-elf.sh libgeo.c -shared -T 0x30000 -> lib abaixo do heap (0x40000)
+# ATENCAO: -lib e -stdlib ainda nao estao disponiveis para RISC-V: os fontes
+# res/lib/lib32.s e res/lib/libc.s sao ARM32 e a porta esta pendente. Por ora
+# escreva o assembly RV32I direto (syscall: a7=numero + ecall; LIB: estubes
+# do emulador em res/lib, porta futura).
 #
 # Opcoes:
 #   -o <arquivo>   nome do ELF final (default: basename do 1o fonte)
-#   -T <addr>      endereco do inicio do .text (default 0x10000; com -shared: 0x20000)
-#   -lib           inclui a runtime res/lib/lib32.s (stdlib em asm)
-#   -stdlib        inclui res/lib/libc.s (stdlib no emulador, svc #LIB_*)
+#   -T <addr>      endereco do inicio do .text (default 0x10000)
+#   -lib           inclui a runtime res/lib/lib32.s (PENDENTE para RISC-V)
+#   -stdlib        inclui res/lib/libc.s (PENDENTE para RISC-V)
 #   -shared        gera um shared object (ET_DYN, .so) em vez de executavel
 #   -entry <sym>   simbolo de entrada (default _start)
 #   -keep          mantem os .o intermediarios
@@ -48,21 +42,23 @@ KEEP=0
 OUTPUT=""
 INPUTS=()
 
-usage() { sed -n '2,14p' "$0"; exit 0; }
+usage() { sed -n '2,16p' "$0"; exit 0; }
 
-# --- localiza o toolchain ARM (binutils) ---------------------------------
+# --- localiza o toolchain RISC-V (binutils) --------------------------------
 pick_toolchain() {
-    for p in "${CROSS:-}" arm-none-eabi- arm-linux-gnueabi- arm-linux-gnueabihf-; do
+    for p in "${CROSS:-}" riscv64-unknown-elf- riscv64-unknown-linux-gnu- riscv64-linux-gnu- riscv32-unknown-elf-; do
         [ -z "$p" ] && continue
         if command -v "${p}as" >/dev/null 2>&1; then
             AS="${p}as"; LD="${p}ld"
             GCC=""; command -v "${p}gcc" >/dev/null 2>&1 && GCC="${p}gcc"
             READELF="${p}readelf"; command -v "$READELF" >/dev/null 2>&1 || READELF=""
+            AS="$AS -march=rv32im -mabi=ilp32"
+            LD="$LD -m elf32lriscv"
             return 0
         fi
     done
-    echo "Erro: toolchain ARM nao encontrado." >&2
-    echo "Instale os binutils:  sudo apt install binutils-arm-none-eabi" >&2
+    echo "Erro: toolchain RISC-V nao encontrado." >&2
+    echo "Instale:  sudo apt install gcc-riscv64-unknown-elf  (ou riscv64-linux-gnu)" >&2
     exit 1
 }
 
@@ -79,11 +75,11 @@ if b[0:4] != b'\x7fELF':  err.append("magic nao-ELF")
 if b[4] != 1:             err.append("ei_class!=ELFCLASS32")
 if b[5] != 1:             err.append("ei_data!=LSB (little-endian)")
 if struct.unpack('<H', b[16:18])[0] != want: err.append("e_type!=ET_%s" % ("DYN" if want == 3 else "EXEC"))
-if struct.unpack('<H', b[18:20])[0] != 40: err.append("e_machine!=EM_ARM (40)")
+if struct.unpack('<H', b[18:20])[0] != 243: err.append("e_machine!=EM_RISCV (243)")
 entry = struct.unpack('<I', b[24:28])[0]
 if err:
     print("FALHA na validacao:", ", ".join(err)); sys.exit(1)
-print("OK: ELF32 LE, ET_%s, EM_ARM" % ("DYN" if want == 3 else "EXEC"))
+print("OK: ELF32 LE, ET_%s, EM_RISCV (243)" % ("DYN" if want == 3 else "EXEC"))
 print("e_entry (PC inicial): 0x%.8x" % entry)
 if want == 2 and entry >= 0x100000:
     print("AVISO: entry fora da RAM de 1MB do emulador (>=0x100000), nao vai executar."); sys.exit(1)
@@ -110,6 +106,14 @@ done
 [ ${#INPUTS[@]} -eq 0 ] && { echo "Uso: $0 <programa.s> [outros.s ...] [-o saida] [-T addr] [-lib]" >&2; exit 2; }
 
 pick_toolchain
+
+# assembler runtime ainda sao ARM32 (porta RISC-V pendente)
+if [ "$USE_STDLIB" -eq 1 ] || [ "$USE_LIB" -eq 1 ]; then
+    echo "Erro: -lib/-stdlib ainda nao disponiveis para RISC-V (res/lib/*.s sao ARM32)." >&2
+    echo "Escreva RV32I puro (syscall a7 + ecall) por enquanto." >&2
+    exit 1
+fi
+
 [ -z "$OUTPUT" ] && OUTPUT="$(basename "${INPUTS[0]}")"
 case "$OUTPUT" in
     *.s|*.S|*.c|*.o) OUTPUT="${OUTPUT%.*}" ;;
@@ -120,22 +124,6 @@ trap 'rm -rf "$WORK"' EXIT
 
 OBJS=()
 LIBFLAGS=()
-
-# runtime libc.s do emulador (stdlib via svc #LIB_*) antes dos fontes
-if [ "$USE_STDLIB" -eq 1 ]; then
-    [ "$USE_LIB" -eq 1 ] && { echo "Erro: -lib e -stdlib sao mutuamente exclusivos." >&2; exit 1; }
-    [ -f "$LIBC" ] || { echo "Erro: $LIBC nao existe (o -stdlib precisa dela)." >&2; exit 1; }
-    "$AS" -o "$WORK/0.o" "$LIBC"
-    OBJS+=("$WORK/0.o")
-fi
-
-# runtime lib32.s antes dos fontes do programa (o entry _start dela chama main)
-if [ "$USE_LIB" -eq 1 ]; then
-    [ -f "$LIB32" ] || { echo "Erro: $LIB32 nao existe (o -lib precisa dela)." >&2; exit 1; }
-    awk 'BEGIN{drop=0} /^main:/{drop=1} !drop{print}' "$LIB32" > "$WORK/lib32.lib.s"
-    "$AS" -o "$WORK/0.o" "$WORK/lib32.lib.s"
-    OBJS+=("$WORK/0.o")
-fi
 
 n=1
 for src in "${INPUTS[@]}"; do
@@ -149,7 +137,7 @@ for src in "${INPUTS[@]}"; do
             n=$((n + 1)); continue ;;
         *.S|*.sx)
             if [ -n "$GCC" ]; then
-                "$GCC" -x assembler-with-cpp -c -o "$WORK/$n.o" "$src"
+                "$GCC" -march=rv32im -mabi=ilp32 -x assembler-with-cpp -c -o "$WORK/$n.o" "$src"
             else
                 cpp -P "$src" | "$AS" -o "$WORK/$n.o" -
             fi ;;
@@ -158,9 +146,9 @@ for src in "${INPUTS[@]}"; do
         *.c)
             [ -n "$GCC" ] || { echo "Erro: preciso de ${AS%as}gcc para compilar .c." >&2; exit 1; }
             if [ "$SHARED" -eq 1 ]; then
-                "$GCC" -fPIC -nostdlib -static -marm -march=armv5te -mfloat-abi=soft -fno-builtin -c -o "$WORK/$n.o" "$src"
+                "$GCC" -march=rv32im -mabi=ilp32 -fPIC -nostdlib -static -fno-builtin -c -o "$WORK/$n.o" "$src"
             else
-                "$GCC" -nostdlib -static -marm -march=armv5te -mfloat-abi=soft -fno-builtin -c -o "$WORK/$n.o" "$src"
+                "$GCC" -march=rv32im -mabi=ilp32 -nostdlib -static -fno-builtin -c -o "$WORK/$n.o" "$src"
             fi ;;
         *) echo "Erro: extensao nao suportada em '$src' (use .s/.S/.sx/.c)." >&2; exit 1 ;;
     esac
