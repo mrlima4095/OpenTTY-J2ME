@@ -205,4 +205,3 @@
 [2026-1.18.2-03x35]	ELF emulator: fix B/BL +8, bx/blx, LDM/STM addressing, pc-sync em Rd15, LDRD/STRD imm decode
 [2026-1.18.2-03x36]	ELF emulator: imports dinamicos reais - load .so via DT_NEEDED, eager JUMP_SLOT no GOT, R_ARM_COPY, dynsym/nchain; build-elf.sh -shared; samples importdemo/libgeo
 [2026-1.18.2-03x37]	ELF emulator: fix LDR/STR/byte com offset por registro (bit 25); apps C de teste: libutil/dcalc/flags/sum/base64/collatz
-[2026-1.18.2-03x38]	Lua coroutine library: create/resume/yield/status/running/wrap
