@@ -499,15 +499,53 @@ public class OpenTTY extends MIDlet implements CommandListener {
     private String readVfsRecord(RecordStore rs, String path) throws Exception { Integer id = (Integer) vfsFiles.get(path); return id == null ? null : new String(rs.getRecord(id.intValue())); }
     private void saveVfsIndex(RecordStore rs) throws Exception { StringBuffer out = new StringBuffer("VFS2\n"); for (Enumeration e = vfsFiles.keys(); e.hasMoreElements();) { String path = (String) e.nextElement(); out.append(path).append('\t').append(vfsFiles.get(path)).append('\n'); } byte[] data = out.toString().getBytes(); rs.setRecord(3, data, 0, data.length); }
     public byte[] readVfsFile(String path) {
-        loadVfs(); Integer id = (Integer) vfsFiles.get(path); if (id == null) { return null; }
-        RecordStore rs = null; try { rs = RecordStore.openRecordStore("OpenRMS", true); return rs.getRecord(id.intValue()); } catch (Exception e) { return null; } finally { try { if (rs != null) { rs.closeRecordStore(); } } catch (Exception e) { } }
+        RecordStore rs = null;
+        try {
+            loadVfs();
+            Integer id = (Integer) vfsFiles.get(path);
+            if (id == null) { return null; }
+            rs = RecordStore.openRecordStore("OpenRMS", true);
+            byte[] data = rs.getRecord(id.intValue());
+            rs.closeRecordStore();
+            return data;
+        } catch (Exception e) {
+            try { if (rs != null) { rs.closeRecordStore(); } } catch (Exception ignored) { }
+            return null;
+        }
     }
     public int writeVfsFile(String path, byte[] data) {
-        loadVfs(); RecordStore rs = null; try { rs = RecordStore.openRecordStore("OpenRMS", true); Integer id = (Integer) vfsFiles.get(path); if (id == null) { id = new Integer(rs.addRecord(data, 0, data.length)); vfsFiles.put(path, id); } else { rs.setRecord(id.intValue(), data, 0, data.length); } saveVfsIndex(rs); return 0; } catch (Exception e) { return 1; } finally { try { if (rs != null) { rs.closeRecordStore(); } } catch (Exception e) { } }
+        RecordStore rs = null;
+        try {
+            loadVfs();
+            rs = RecordStore.openRecordStore("OpenRMS", true);
+            Integer id = (Integer) vfsFiles.get(path);
+            if (id == null) {
+                int recordId = rs.addRecord(data, 0, data.length);
+                vfsFiles.put(path, new Integer(recordId));
+            } else { rs.setRecord(id.intValue(), data, 0, data.length); }
+            saveVfsIndex(rs);
+            rs.closeRecordStore();
+            return 0;
+        } catch (Exception e) {
+            try { if (rs != null) { rs.closeRecordStore(); } } catch (Exception ignored) { }
+            return 1;
+        }
     }
     public int deleteVfsFile(String path) {
-        loadVfs(); Integer id = (Integer) vfsFiles.remove(path); if (id == null) { return 5; }
-        RecordStore rs = null; try { rs = RecordStore.openRecordStore("OpenRMS", true); rs.setRecord(id.intValue(), new byte[0], 0, 0); saveVfsIndex(rs); return 0; } catch (Exception e) { return 1; } finally { try { if (rs != null) { rs.closeRecordStore(); } } catch (Exception e) { } }
+        RecordStore rs = null;
+        try {
+            loadVfs();
+            Integer id = (Integer) vfsFiles.remove(path);
+            if (id == null) { return 5; }
+            rs = RecordStore.openRecordStore("OpenRMS", true);
+            rs.setRecord(id.intValue(), new byte[0], 0, 0);
+            saveVfsIndex(rs);
+            rs.closeRecordStore();
+            return 0;
+        } catch (Exception e) {
+            try { if (rs != null) { rs.closeRecordStore(); } } catch (Exception ignored) { }
+            return 1;
+        }
     }
     public void clearVfsDirectory(String dir) { loadVfs(); Vector paths = new Vector(); for (Enumeration e = vfsFiles.keys(); e.hasMoreElements();) { String path = (String) e.nextElement(); if (path.startsWith(dir)) { paths.addElement(path); } } for (int i = 0; i < paths.size(); i++) { deleteVfsFile((String) paths.elementAt(i)); } }
     public Vector listVfsFiles(String dir) { loadVfs(); Vector out = new Vector(); for (Enumeration e = vfsFiles.keys(); e.hasMoreElements();) { String path = (String) e.nextElement(); if (path.startsWith(dir)) { String rest = path.substring(dir.length()); if (rest.indexOf('/') < 0) { out.addElement(rest); } } } return out; }

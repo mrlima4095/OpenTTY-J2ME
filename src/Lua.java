@@ -2832,7 +2832,7 @@ public class Lua {
                         else if (payload.equals("rms")) {
                             if (uid == 0) {
                                 if (arg == null || arg.equals("")) { return new Double(2); }
-                                else if (arg.equals("/bin/") || arg.equals("/etc/") || arg.equals("/lib/") || arg.equals("/boot/")) { midlet.clearVfsDirectory(arg); }
+                                else if (arg.equals("/bin/") || arg.equals("/etc/") || arg.equals("/lib/") || arg.equals("/boot/")) { midlet.clearVfsDirectory(toLuaString(arg)); }
                                 else { String r = toLuaString(arg); int rmi = midlet.vfsDirIndex(r); if (rmi != -1 && rmi >= 6) { String sd = r.endsWith("/") ? r : r + "/"; midlet.clearVfsDirectory(sd); if (midlet.fs.containsKey(sd)) { int base = sd.lastIndexOf('/', sd.length() - 2); String parent = sd.substring(0, base + 1); String entry = sd.substring(base + 1, sd.length() - 1) + "/"; Vector struct = (Vector) midlet.fs.get(parent); if (struct != null) { struct.removeElement(entry); } midlet.fs.remove(sd); midlet.unpersistVfsMount(sd); } } else { return new Double(5); } }
                             } else { return new Double(13); }
                         }
