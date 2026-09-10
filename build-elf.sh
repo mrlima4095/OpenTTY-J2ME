@@ -12,16 +12,20 @@
 #   ./build-elf.sh app.c -T 0x8000            -> texto comeca em 0x8000
 #   CROSS=riscv64-unknown-elf- ./build-elf.sh x.s
 #
-# ATENCAO: -lib e -stdlib ainda nao estao disponiveis para RISC-V: os fontes
-# res/lib/lib32.s e res/lib/libc.s sao ARM32 e a porta esta pendente. Por ora
-# escreva o assembly RV32I direto (syscall: a7=numero + ecall; LIB: estubes
-# do emulador em res/lib, porta futura).
+#   ./build-elf.sh app.s -lib                   -> linka com res/lib/lib32.s
+#                                              (programa define main; a lib
+#                                              fornece _start/puts/printf/...)
+#   ./build-elf.sh demo.c -stdlib               -> linka com res/lib/libc.s:
+#                                              wrappers RISC-V (li a7,#LIB; ecall
+#                                              -> LIB no EMULADOR). Suporta .c:
+#                                              printf/sprintf/malloc/free/
+#                                              memcpy/divisao AEABI/etc.
 #
 # Opcoes:
 #   -o <arquivo>   nome do ELF final (default: basename do 1o fonte)
 #   -T <addr>      endereco do inicio do .text (default 0x10000)
-#   -lib           inclui a runtime res/lib/lib32.s (PENDENTE para RISC-V)
-#   -stdlib        inclui res/lib/libc.s (PENDENTE para RISC-V)
+#   -lib           inclui a runtime res/lib/lib32.s (stdlib em asm RV32I + syscalls)
+#   -stdlib        inclui res/lib/libc.s (stdlib no emulador, wrappers LIB_* via ecall)
 #   -shared        gera um shared object (ET_DYN, .so) em vez de executavel
 #   -entry <sym>   simbolo de entrada (default _start)
 #   -keep          mantem os .o intermediarios
@@ -52,8 +56,8 @@ pick_toolchain() {
             AS="${p}as"; LD="${p}ld"
             GCC=""; command -v "${p}gcc" >/dev/null 2>&1 && GCC="${p}gcc"
             READELF="${p}readelf"; command -v "$READELF" >/dev/null 2>&1 || READELF=""
-            AS="$AS -march=rv32im -mabi=ilp32"
-            LD="$LD -m elf32lriscv"
+            ASFLAGS=(-march=rv32im -mabi=ilp32)
+            LDFLAGS=(-m elf32lriscv)
             return 0
         fi
     done
@@ -107,13 +111,6 @@ done
 
 pick_toolchain
 
-# assembler runtime ainda sao ARM32 (porta RISC-V pendente)
-if [ "$USE_STDLIB" -eq 1 ] || [ "$USE_LIB" -eq 1 ]; then
-    echo "Erro: -lib/-stdlib ainda nao disponiveis para RISC-V (res/lib/*.s sao ARM32)." >&2
-    echo "Escreva RV32I puro (syscall a7 + ecall) por enquanto." >&2
-    exit 1
-fi
-
 [ -z "$OUTPUT" ] && OUTPUT="$(basename "${INPUTS[0]}")"
 case "$OUTPUT" in
     *.s|*.S|*.c|*.o) OUTPUT="${OUTPUT%.*}" ;;
@@ -124,6 +121,22 @@ trap 'rm -rf "$WORK"' EXIT
 
 OBJS=()
 LIBFLAGS=()
+
+# runtime libc.s do emulador (stdlib via LIB_* + ecall) antes dos fontes
+if [ "$USE_STDLIB" -eq 1 ]; then
+    [ "$USE_LIB" -eq 1 ] && { echo "Erro: -lib e -stdlib sao mutuamente exclusivos." >&2; exit 1; }
+    [ -f "$LIBC" ] || { echo "Erro: $LIBC nao existe (o -stdlib precisa dela)." >&2; exit 1; }
+    "$AS" "${ASFLAGS[@]}" -o "$WORK/0.o" "$LIBC"
+    OBJS+=("$WORK/0.o")
+fi
+
+# runtime lib32.s antes dos fontes do programa (o entry _start dela chama main)
+if [ "$USE_LIB" -eq 1 ]; then
+    [ -f "$LIB32" ] || { echo "Erro: $LIB32 nao existe (o -lib precisa dela)." >&2; exit 1; }
+    awk 'BEGIN{drop=0} /^main:/{drop=1} !drop{print}' "$LIB32" > "$WORK/lib32.lib.s"
+    "$AS" "${ASFLAGS[@]}" -o "$WORK/0.o" "$WORK/lib32.lib.s"
+    OBJS+=("$WORK/0.o")
+fi
 
 n=1
 for src in "${INPUTS[@]}"; do
@@ -139,10 +152,10 @@ for src in "${INPUTS[@]}"; do
             if [ -n "$GCC" ]; then
                 "$GCC" -march=rv32im -mabi=ilp32 -x assembler-with-cpp -c -o "$WORK/$n.o" "$src"
             else
-                cpp -P "$src" | "$AS" -o "$WORK/$n.o" -
+                cpp -P "$src" | "$AS" "${ASFLAGS[@]}" -o "$WORK/$n.o" -
             fi ;;
         *.s)
-            "$AS" -o "$WORK/$n.o" "$src" ;;
+            "$AS" "${ASFLAGS[@]}" -o "$WORK/$n.o" "$src" ;;
         *.c)
             [ -n "$GCC" ] || { echo "Erro: preciso de ${AS%as}gcc para compilar .c." >&2; exit 1; }
             if [ "$SHARED" -eq 1 ]; then
@@ -161,11 +174,11 @@ if [ -z "$TEXT" ]; then
 fi
 
 if [ "$SHARED" -eq 1 ]; then
-    "$LD" -shared --hash-style=sysv --no-as-needed -Ttext="$TEXT" -o "$OUTPUT" "${OBJS[@]}" "${LIBFLAGS[@]}"
+    "$LD" "${LDFLAGS[@]}" -shared --hash-style=sysv --no-as-needed -Ttext="$TEXT" -o "$OUTPUT" "${OBJS[@]}" "${LIBFLAGS[@]}"
 else
     # The emulator resolves DT_NEEDED itself; an ELF interpreter is neither
     # available nor useful and would overlap .text at the fixed guest address.
-    "$LD" --hash-style=sysv -Ttext="$TEXT" --no-dynamic-linker --no-as-needed --allow-shlib-undefined --entry="$ENTRY" -o "$OUTPUT" "${OBJS[@]}" "${LIBFLAGS[@]}"
+    "$LD" "${LDFLAGS[@]}" --hash-style=sysv -Ttext="$TEXT" --no-dynamic-linker --no-as-needed --allow-shlib-undefined --entry="$ENTRY" -o "$OUTPUT" "${OBJS[@]}" "${LIBFLAGS[@]}"
 fi
 
 if [ "$KEEP" -eq 1 ]; then cp "$WORK"/*.o "$(dirname "$OUTPUT")/" && echo "Objetos .o preservados em: $(dirname "$OUTPUT")/"; fi

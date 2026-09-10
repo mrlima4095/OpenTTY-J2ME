@@ -1,16 +1,19 @@
-@ libc.s - Bibilhoteca C para o emulador ELF ARM 32 do OpenTTY
-@
-@ Estas funcoes NAO implementam a logica em asm: cada uma e um wrapper de
-@ 2 instrucoes (svc #LIB_*; bx lr) que entrega o trabalho ao emulador
-@ (src/ELF.java -> handleLibraryCall). O emulador conhece strings, printf,
-@ mem*, o alocador de heap, atoi/abs, divisao AEABI, etc.
-@
-@ LINKAR:  ./build-elf.sh demo.c -stdlib
-@ (o -stdlib linka este arquivo antes do programa; o programa define main;
-@  o _start aqui le argc/argv/envp da stack do CRT do emulador e chama main.)
-@
-@ Constantes de syscall do emulador (src/ELF.java):
-@   svc #N  (N != 0) -> handleSyscall(N), ou handleLibraryCall(N-1000) se N>=1000
+# libc.s (RISC-V RV32IM) - Biblioteca C para o emulador ELF do OpenTTY
+#
+# Estas funcoes NAO implementam a logica em asm: cada uma e um wrapper de 3
+# instrucoes (li a7, #LIB_*; ecall; ret) que entrega o trabalho ao emulador
+# (src/ELF.java -> handleLibraryCall). O emulador conhece strings, printf,
+# mem*, o alocador de heap, atoi/abs, divisao AEABI, etc.
+#
+# LINKAR:  ./build-elf.sh demo.c -stdlib
+# (o -stdlib linka este arquivo antes do programa; o programa define main;
+#  o _start aqui le argc/argv/envp da stack do CRT do emulador e chama main.)
+#
+# Constantes de syscall do emulador (src/ELF.java):
+#   ecall com a7 = N (N != 0) -> handleSyscall(N), ou if N >= LIB_BASE
+#   handleLibraryCall(N - LIB_BASE).
+#
+# ABI RISC-V: args a0-a7 (x10-x17), retorno a0, syscall number em a7.
 .equ LIB_BASE,         1000
 .equ LIB_STRLEN,       LIB_BASE + 1
 .equ LIB_STRCPY,       LIB_BASE + 2
@@ -51,38 +54,39 @@
 .equ LIB_AEABI_MEMCPY,     LIB_BASE + 37
 .equ LIB_AEABI_MEMSET,     LIB_BASE + 38
 
-@ ============================================================
-@ _start - Entry point (compatible com o CRT do emulador):
-@   [sp]     = argc
-@   [sp,#4]  = argv[] (ponteiros), NULL no fim
-@   apos argv vem envp[]
-@ ============================================================
-.syntax unified
-.arm
+# ============================================================
+# _start - Entry point (compativel com o CRT do emulador):
+#   [sp]     = argc
+#   [sp,4]   = argv[] (ponteiros), NULL no fim
+#   apos argv vem envp[]
+# ============================================================
 .text
 
 .globl _start
 _start:
-    ldr     r0, [sp]            @ argc
-    add     r1, sp, #4          @ argv
-    add     r2, r1, r0, lsl #2  @ argv + argc
-    add     r2, r2, #4          @ envp (apos o NULL do argv)
-    bl      main
-    @ main retornou; exit(r0)
-    svc     #1                  @ SYS_EXIT
+    lw      a0, 0(sp)            # argc
+    addi    a1, sp, 4            # argv
+    slli    a2, a0, 2            # argv + argc*4
+    add     a2, a1, a2           # aponta pro NULL do argv
+    addi    a2, a2, 4            # envp (apos o NULL do argv)
+    jal     main
+    # main retornou; exit(r0)
+    li      a7, 1                # SYS_EXIT
+    ecall
 
-@ ============================================================
-@ Gerador de wrapper: svc #LIB_*; bx lr
-@ ============================================================
+# ============================================================
+# Gerador de wrapper: li a7, #LIB_*; ecall; ret
+# ============================================================
 .macro LIBWRAP id, name
     .globl \name
     .type \name, %function
 \name:
-    svc     #\id
-    bx      lr
+    li      a7, \id
+    ecall
+    ret
 .endm
 
-@ ---- strings -------------------------------------------------
+# ---- strings -------------------------------------------------
 LIBWRAP LIB_STRLEN,      strlen
 LIBWRAP LIB_STRCPY,      strcpy
 LIBWRAP LIB_STRNCPY,     strncpy
@@ -97,30 +101,31 @@ LIBWRAP LIB_ABS,         abs
 LIBWRAP LIB_TOUPPER,     toupper
 LIBWRAP LIB_TOLOWER,     tolower
 
-@ ---- memoria -------------------------------------------------
+# ---- memoria -------------------------------------------------
 LIBWRAP LIB_MEMCPY,      memcpy
 LIBWRAP LIB_MEMMOVE,     memmove
 LIBWRAP LIB_MEMSET,      memset
 LIBWRAP LIB_MEMCMP,      memcmp
 LIBWRAP LIB_MEMCHR,      memchr
 
-@ ---- io ------------------------------------------------------
+# ---- io ------------------------------------------------------
 LIBWRAP LIB_PUTCHAR,     putchar
 LIBWRAP LIB_PUTS,        puts
 LIBWRAP LIB_PRINTF,      printf
 LIBWRAP LIB_SPRINTF,     sprintf
 LIBWRAP LIB_SNPRINTF,    snprintf
 
-@ ---- heap ----------------------------------------------------
+# ---- heap ----------------------------------------------------
 LIBWRAP LIB_MALLOC,      malloc
 LIBWRAP LIB_CALLOC,      calloc
 LIBWRAP LIB_REALLOC,     realloc
 LIBWRAP LIB_FREE,        free
 
-@ ---- misc ----------------------------------------------------
+# ---- misc ----------------------------------------------------
 LIBWRAP LIB_GETPID,      getpid
 
-@ ---- AEABI (emitidos pelo gcc) --------------------------------
+# ---- AEABI (mantidos para compat; RV32IM so usa __muldi3/divdi3
+#       para 64-bit, ainda sem implementacao) -------------------
 LIBWRAP LIB_AEABI_UIDIV,      __aeabi_uidiv
 LIBWRAP LIB_AEABI_IDIV,       __aeabi_idiv
 LIBWRAP LIB_AEABI_UIDIVMOD,   __aeabi_uidivmod
@@ -131,7 +136,7 @@ LIBWRAP LIB_AEABI_MEMCLR,     __aeabi_memclr
 LIBWRAP LIB_AEABI_MEMCPY,     __aeabi_memcpy
 LIBWRAP LIB_AEABI_MEMSET,     __aeabi_memset
 
-@ variantes alinhadas/tipadas usadas pelos builtins do gcc ------
+# variantes alinhadas/tipadas usadas pelos builtins do gcc ------
 LIBWRAP LIB_AEABI_MEMCLR,     __aeabi_memclr4
 LIBWRAP LIB_AEABI_MEMCLR,     __aeabi_memclr8
 LIBWRAP LIB_AEABI_MEMCPY,     __aeabi_memcpy4
@@ -142,48 +147,51 @@ LIBWRAP LIB_MEMMOVE,          __aeabi_memmove
 LIBWRAP LIB_MEMMOVE,          __aeabi_memmove4
 LIBWRAP LIB_MEMMOVE,          __aeabi_memmove8
 
-@ ---- saida ---------------------------------------------------
+# ---- saida ---------------------------------------------------
 .globl exit
 exit:
-    svc     #1                  @ SYS_EXIT (nao retorna; r0 = status)
+    li      a7, 1                # SYS_EXIT (nao retorna; a0 = status)
+    ecall
 
 .globl _exit
 _exit:
-    svc     #1
+    li      a7, 1
+    ecall
 
 .globl abort
 abort:
-    svc     #1
+    li      a7, 1
+    ecall
 
-@ ---- wrappers de syscall uteis ---------------------------------
+# ---- wrappers de syscall uteis ---------------------------------
 .globl write
 write:
-    mov     r7, #4              @ SYS_WRITE
-    svc     #0
-    bx      lr
+    li      a7, 4                # SYS_WRITE
+    ecall
+    ret
 
 .globl read
 read:
-    mov     r7, #3              @ SYS_READ
-    svc     #0
-    bx      lr
+    li      a7, 3                # SYS_READ
+    ecall
+    ret
 
 .globl open
 open:
-    mov     r7, #5              @ SYS_OPEN
-    svc     #0
-    bx      lr
+    li      a7, 5                # SYS_OPEN
+    ecall
+    ret
 
 .globl close
 close:
-    mov     r7, #6              @ SYS_CLOSE
-    svc     #0
-    bx      lr
+    li      a7, 6                # SYS_CLOSE
+    ecall
+    ret
 
 .globl brk
 brk:
-    mov     r7, #45             @ SYS_BRK
-    svc     #0
-    bx      lr
+    li      a7, 45               # SYS_BRK
+    ecall
+    ret
 
 .end

@@ -1,15 +1,13 @@
-@ libc_arm32.s - Biblioteca básica C para OpenTTY ELF ARM 32 emulator
-@ Compatível com as syscalls do emulador
-@ Compilar: arm-none-eabi-as -o libc.o libc_arm32.s
-@ Linkar: arm-none-eabi-ld -Ttext=0x8000 -o programa libc.o programa.o
+# lib32.s (RISC-V RV32IM) - Biblioteca basica C para o emulador ELF do OpenTTY
+# Port do antigo libc_arm32.s. Compativel com as syscalls do emulador.
+# Compilar: riscv64-unknown-elf-as -march=rv32im -mabi=ilp32 -o libc.o lib32.s
+# Linkar:  riscv64-unknown-elf-ld -m elf32lriscv -Ttext=0x8000 -o programa libc.o programa.o
+#
+# ABI RISC-V: args a0-a7 (x10-x17), retorno a0, syscall number em a7, ecall.
 
-.syntax unified
-.arm
-.text
-
-@ ============================================================
-@ Constantes de syscall (do emulador)
-@ ============================================================
+# ============================================================
+# Constantes de syscall (do emulador)
+# ============================================================
 .equ SYS_EXIT,      1
 .equ SYS_READ,      3
 .equ SYS_WRITE,     4
@@ -18,9 +16,9 @@
 .equ SYS_BRK,       45
 .equ SYS_GETPID,    20
 
-@ ============================================================
-@ Flags de open
-@ ============================================================
+# ============================================================
+# Flags de open
+# ============================================================
 .equ O_RDONLY,      0
 .equ O_WRONLY,      1
 .equ O_RDWR,        2
@@ -28,445 +26,525 @@
 .equ O_TRUNC,       512
 .equ O_APPEND,      1024
 
-@ ============================================================
-@ Seção de dados
-@ ============================================================
+# ============================================================
+# Secao de dados
+# ============================================================
 .section .rodata
 stdin_path:  .asciz "/dev/stdin"
 stdout_path: .asciz "/dev/stdout"
 stderr_path: .asciz "/dev/stderr"
 
 .section .bss
-.lcomm heap_start, 4      @ Ponteiro inicial do heap
-.lcomm heap_end, 4        @ Ponteiro final do heap
-.lcomm errno_var, 4       @ Variável errno
+.lcomm heap_start, 4      # Ponteiro inicial do heap
+.lcomm heap_end, 4        # Ponteiro final do heap
+.lcomm errno_var, 4       # Variavel errno
 
 .section .text
 
-@ ============================================================
-@ _start - Entry point
-@ ============================================================
+# ============================================================
+# _start - Entry point
+#   [sp]=argc, [sp+4]=argv (ponteiros, NULL no fim), envp apos argv
+# ============================================================
 .globl _start
 _start:
-    @ r0 = argc, r1 = argv, r2 = envp
-    mov     r4, r0          @ salva argc
-    mov     r5, r1          @ salva argv
-    mov     r6, r2          @ salva envp
-    
-    @ Inicializa heap
-    mov     r0, #0
-    mov     r7, #SYS_BRK
-    svc     #0
-    ldr     r1, =heap_start
-    str     r0, [r1]        @ heap_start = current break
-    str     r0, [r1, #4]    @ heap_end = current break
-    
-    @ Chama main
-    mov     r0, r4
-    mov     r1, r5
-    mov     r2, r6
-    bl      main
-    
-    @ Exit com retorno de main
-    mov     r1, r0
-    mov     r0, #0
-    mov     r7, #SYS_EXIT
-    svc     #0
-    
-@ ============================================================
-@ System call wrapper
-@ ============================================================
+    lw      a0, 0(sp)          # argc
+    addi    a1, sp, 4          # argv
+    slli    a2, a0, 2          # argv + argc*4
+    add     a2, a1, a2         # aponta pro NULL do argv
+    addi    a2, a2, 4          # envp (apos o NULL do argv)
+
+    # Inicializa heap
+    li      a0, 0
+    li      a7, SYS_BRK
+    ecall
+    la      t0, heap_start
+    sw      a0, 0(t0)          # heap_start = current break
+    sw      a0, 4(t0)          # heap_end = current break
+
+    # Chama main(argc, argv, envp)
+    lw      a0, 0(sp)          # argc
+    addi    a1, sp, 4          # argv
+    jal     main
+
+    # Exit com o retorno de main
+    li      a7, SYS_EXIT
+    ecall
+
+# ============================================================
+# System call wrapper: syscall(num, a1, a2, a3, arg4..arg6 na stack)
+# ============================================================
 .globl syscall
 syscall:
-    mov     r7, r0          @ syscall number
-    mov     r0, r1          @ arg1
-    mov     r1, r2          @ arg2
-    mov     r2, r3          @ arg3
-    ldr     r3, [sp, #0]    @ arg4 da stack
-    ldr     r4, [sp, #4]    @ arg5 da stack
-    ldr     r5, [sp, #8]    @ arg6 da stack
-    svc     #0
-    bx      lr
+    mv      a7, a0             # syscall number
+    mv      a0, a1             # arg1
+    mv      a1, a2             # arg2
+    mv      a2, a3             # arg3
+    lw      a3, 0(sp)          # arg4 da stack
+    lw      a4, 4(sp)          # arg5 da stack
+    lw      a5, 8(sp)          # arg6 da stack
+    ecall
+    ret
 
-@ ============================================================
-@ write(fd, buf, count)
-@ ============================================================
+# ============================================================
+# write(fd, buf, count)
+# ============================================================
 .globl write
 write:
-    mov     r7, #SYS_WRITE
-    svc     #0
-    cmp     r0, #0
-    movlt   r0, #-1
-    bx      lr
+    li      a7, SYS_WRITE
+    ecall
+    bge     a0, zero, 1f
+    li      a0, -1
+1:
+    ret
 
-@ ============================================================
-@ write_string - Escreve string terminada em null
-@ ============================================================
+# ============================================================
+# write_string - Escreve string terminada em null no stdout
+# ============================================================
 .globl write_string
 write_string:
-    push    {lr}
-    mov     r2, r0          @ guarda fd
-    mov     r1, r0          @ str
+    addi    sp, sp, -16
+    sw      ra, 12(sp)
+    sw      s1, 8(sp)
+    mv      s1, a0             # inicio da string
+    mv      a1, a0
 1:
-    ldrb    r3, [r1], #1
-    cmp     r3, #0
-    bne     1b
-    sub     r1, r1, #1
-    sub     r0, r1, r0      @ r0 = length
-    mov     r1, r2          @ str
-    mov     r2, r0          @ count
-    bl      write
-    pop     {pc}
-    
-@ ============================================================
-@ puts(str) - Escreve string + newline
-@ ============================================================
+    lbu     t0, 0(a1)
+    addi    a1, a1, 1
+    bnez    t0, 1b
+    addi    a1, a1, -1
+    sub     a2, a1, s1         # count = fim - inicio
+    li      a0, 1              # stdout
+    mv      a1, s1
+    jal     write
+    lw      s1, 8(sp)
+    lw      ra, 12(sp)
+    addi    sp, sp, 16
+    ret
+
+# ============================================================
+# puts(str) - Escreve string + newline
+# ============================================================
 .globl puts
 puts:
-    push    {lr}
-    mov     r4, r0          @ salva str
-    bl      write_string
-    mov     r0, #'\n'
-    mov     r1, #1
-    bl      putchar
-    pop     {pc}
+    addi    sp, sp, -16
+    sw      ra, 12(sp)
+    jal     write_string
+    li      a0, 10             # '\n'
+    jal     putchar
+    lw      ra, 12(sp)
+    addi    sp, sp, 16
+    ret
 
-@ ============================================================
-@ putchar(c)
-@ ============================================================
+# ============================================================
+# putchar(c)
+# ============================================================
 .globl putchar
 putchar:
-    push    {lr}
-    mov     r4, r0
-    sub     sp, sp, #4
-    strb    r4, [sp, #0]
-    mov     r0, #1          @ stdout
-    mov     r1, sp
-    mov     r2, #1
-    bl      write
-    add     sp, sp, #4
-    pop     {pc}
+    addi    sp, sp, -16
+    sw      ra, 12(sp)
+    sw      a0, 8(sp)          # c na stack
+    li      a0, 1              # stdout
+    addi    a1, sp, 8
+    li      a2, 1
+    jal     write
+    lw      ra, 12(sp)
+    addi    sp, sp, 16
+    ret
 
-@ ============================================================
-@ read(fd, buf, count)
-@ ============================================================
+# ============================================================
+# read(fd, buf, count)
+# ============================================================
 .globl read
 read:
-    mov     r7, #SYS_READ
-    svc     #0
-    cmp     r0, #0
-    movlt   r0, #-1
-    bx      lr
+    li      a7, SYS_READ
+    ecall
+    bge     a0, zero, 1f
+    li      a0, -1
+1:
+    ret
 
-@ ============================================================
-@ read_line - Lê linha do stdin (máx 255 bytes)
-@ ============================================================
+# ============================================================
+# read_line - Le linha do stdin (max 255 bytes)
+# ============================================================
 .globl read_line
 read_line:
-    push    {r4, lr}
-    mov     r4, r0          @ buffer
-    mov     r1, #0          @ pos
+    addi    sp, sp, -32
+    sw      ra, 28(sp)
+    sw      s1, 24(sp)
+    sw      s2, 20(sp)
+    mv      s1, a0             # buffer
+    li      s2, 0              # pos
 1:
-    mov     r0, #0          @ stdin
-    add     r1, r4, r1
-    mov     r2, #1
-    bl      read
-    cmp     r0, #1
-    bne     2f
-    ldrb    r0, [r4, r1]
-    cmp     r0, #'\n'
-    beq     2f
-    add     r1, r1, #1
-    cmp     r1, #255
-    blt     1b
+    li      a0, 0              # stdin
+    add     a1, s1, s2
+    li      a2, 1
+    jal     read
+    li      t0, 1
+    bne     a0, t0, 2f
+    add     t0, s1, s2
+    lbu     t0, 0(t0)
+    li      t1, 10             # '\n'
+    beq     t0, t1, 2f
+    addi    s2, s2, 1
+    li      t1, 255
+    blt     s2, t1, 1b
 2:
-    mov     r0, #0
-    strb    r0, [r4, r1]    @ null terminator
-    pop     {r4, pc}
+    li      t0, 0
+    add     t1, s1, s2
+    sb      t0, 0(t1)          # null terminator
+    lw      s2, 20(sp)
+    lw      s1, 24(sp)
+    lw      ra, 28(sp)
+    addi    sp, sp, 32
+    ret
 
-@ ============================================================
-@ open(path, flags, mode)
-@ ============================================================
+# ============================================================
+# open(path, flags, mode)
+# ============================================================
 .globl open
 open:
-    mov     r7, #SYS_OPEN
-    svc     #0
-    cmp     r0, #0
-    movlt   r0, #-1
-    bx      lr
+    li      a7, SYS_OPEN
+    ecall
+    bge     a0, zero, 1f
+    li      a0, -1
+1:
+    ret
 
-@ ============================================================
-@ close(fd)
-@ ============================================================
+# ============================================================
+# close(fd)
+# ============================================================
 .globl close
 close:
-    mov     r7, #SYS_CLOSE
-    svc     #0
-    bx      lr
+    li      a7, SYS_CLOSE
+    ecall
+    ret
 
-@ ============================================================
-@ sbrk(increment) - Aumenta heap
-@ ============================================================
+# ============================================================
+# sbrk(increment) - Aumenta o heap
+#   O handleBrk do emulador arredonda o break pra cima (4K); por isso
+#   comparamos o break real devolvido (>= pedido) e guardamos ele.
+# ============================================================
 .globl sbrk
 sbrk:
-    push    {r4, lr}
-    ldr     r3, =heap_end
-    ldr     r4, [r3]        @ current heap_end
-    mov     r1, r4
-    add     r1, r1, r0      @ new break
-    mov     r0, r1
-    mov     r7, #SYS_BRK
-    svc     #0
-    cmp     r0, r1
-    bne     1f
-    str     r1, [r3]        @ atualiza heap_end
-    mov     r0, r4          @ retorna ponteiro antigo
-    pop     {r4, pc}
+    addi    sp, sp, -16
+    sw      ra, 12(sp)
+    sw      s1, 8(sp)
+    la      t0, heap_end
+    lw      s1, 0(t0)          # heap_end atual
+    add     t1, s1, a0         # novo break
+    mv      a0, t1
+    li      a7, SYS_BRK
+    ecall
+    blt     a0, t1, 1f          # kernel nao alcancou o pedido -> falhou
+    la      t0, heap_end
+    sw      a0, 0(t0)          # guarda o break real (arredondado)
+    mv      a0, s1             # retorna o break antigo
+    lw      s1, 8(sp)
+    lw      ra, 12(sp)
+    addi    sp, sp, 16
+    ret
 1:
-    mov     r0, #-1
-    pop     {r4, pc}
+    li      a0, -1
+    lw      s1, 8(sp)
+    lw      ra, 12(sp)
+    addi    sp, sp, 16
+    ret
 
-@ ============================================================
-@ malloc(size)
-@ ============================================================
+# ============================================================
+# malloc(size)
+# ============================================================
 .globl malloc
 malloc:
-    push    {lr}
-    add     r0, r0, #4      @ espaço para header
-    bl      sbrk
-    cmp     r0, #-1
-    beq     1f
-    str     r0, [r0]        @ guarda tamanho no header
-    add     r0, r0, #4      @ retorna após header
-    pop     {pc}
+    addi    sp, sp, -16
+    sw      ra, 12(sp)
+    addi    a0, a0, 4          # espaco para header
+    jal     sbrk
+    li      t0, -1
+    beq     a0, t0, 1f
+    sw      a0, 0(a0)          # guarda tamanho no header
+    addi    a0, a0, 4          # retorna apos o header
+    lw      ra, 12(sp)
+    addi    sp, sp, 16
+    ret
 1:
-    mov     r0, #0
-    pop     {pc}
+    li      a0, 0
+    lw      ra, 12(sp)
+    addi    sp, sp, 16
+    ret
 
-@ ============================================================
-@ free(ptr)
-@ ============================================================
+# ============================================================
+# free(ptr)
+# ============================================================
 .globl free
 free:
-    @ No sbrk simples, não implementamos free
-    @ Mas mantemos stub para compatibilidade
-    bx      lr
+    # No sbrk simples, nao implementamos free
+    # Mas mantemos stub para compatibilidade
+    ret
 
-@ ============================================================
-@ getpid()
-@ ============================================================
+# ============================================================
+# getpid()
+# ============================================================
 .globl getpid
 getpid:
-    mov     r7, #SYS_GETPID
-    svc     #0
-    bx      lr
+    li      a7, SYS_GETPID
+    ecall
+    ret
 
-@ ============================================================
-@ exit(status)
-@ ============================================================
+# ============================================================
+# exit(status)
+# ============================================================
 .globl exit
 exit:
-    mov     r7, #SYS_EXIT
-    svc     #0
+    li      a7, SYS_EXIT
+    ecall
 
-@ ============================================================
-@ strcpy(dest, src)
-@ ============================================================
+# ============================================================
+# strcpy(dest, src)
+# ============================================================
 .globl strcpy
 strcpy:
-    mov     r2, r0
+    mv      t0, a0
 1:
-    ldrb    r3, [r1], #1
-    strb    r3, [r2], #1
-    cmp     r3, #0
-    bne     1b
-    bx      lr
+    lbu     t1, 0(a1)
+    addi    a1, a1, 1
+    sb      t1, 0(t0)
+    addi    t0, t0, 1
+    bnez    t1, 1b
+    ret
 
-@ ============================================================
-@ strlen(str)
-@ ============================================================
+# ============================================================
+# strlen(str)
+# ============================================================
 .globl strlen
 strlen:
-    mov     r1, r0
+    mv      t0, a0
 1:
-    ldrb    r2, [r1], #1
-    cmp     r2, #0
-    bne     1b
-    sub     r0, r1, r0
-    sub     r0, r0, #1
-    bx      lr
+    lbu     t1, 0(t0)
+    addi    t0, t0, 1
+    bnez    t1, 1b
+    sub     a0, t0, a0
+    addi    a0, a0, -1
+    ret
 
-@ ============================================================
-@ strcmp(a, b)
-@ ============================================================
+# ============================================================
+# strcmp(a, b)
+# ============================================================
 .globl strcmp
 strcmp:
 1:
-    ldrb    r2, [r0], #1
-    ldrb    r3, [r1], #1
-    cmp     r2, r3
-    bne     2f
-    cmp     r2, #0
-    bne     1b
-    mov     r0, #0
-    bx      lr
+    lbu     t0, 0(a0)
+    lbu     t1, 0(a1)
+    addi    a0, a0, 1
+    addi    a1, a1, 1
+    bne     t0, t1, 2f
+    bnez    t0, 1b
+    li      a0, 0
+    ret
 2:
-    sub     r0, r2, r3
-    bx      lr
+    sub     a0, t0, t1
+    ret
 
-@ ============================================================
-@ memset(ptr, value, size)
-@ ============================================================
+# ============================================================
+# memset(ptr, value, size)
+# ============================================================
 .globl memset
 memset:
-    mov     r3, r0
+    mv      t0, a0
 1:
-    subs    r2, r2, #1
-    strbpl  r1, [r3], #1
-    bpl     1b
-    bx      lr
+    beqz    a2, 2f
+    sb      a1, 0(t0)
+    addi    t0, t0, 1
+    addi    a2, a2, -1
+    j       1b
+2:
+    ret
 
-@ ============================================================
-@ memcpy(dest, src, size)
-@ ============================================================
+# ============================================================
+# memcpy(dest, src, size)
+# ============================================================
 .globl memcpy
 memcpy:
-    mov     r3, r0
+    mv      t0, a0
 1:
-    subs    r2, r2, #1
-    ldrbpl  r4, [r1], #1
-    strbpl  r4, [r3], #1
-    bpl     1b
-    bx      lr
+    beqz    a2, 2f
+    lbu     t1, 0(a1)
+    sb      t1, 0(t0)
+    addi    a1, a1, 1
+    addi    t0, t0, 1
+    addi    a2, a2, -1
+    j       1b
+2:
+    ret
 
-@ ============================================================
-@ printf - Formatação simplificada
-@ ============================================================
+# ============================================================
+# printf - Formatacao simplificada (%s, %d, %c)
+#   Varargs RISC-V: a1..a7 em registradores, depois na stack.
+#   Copiamos a1..a7 num buffer local e andamos com um ponteiro.
+# ============================================================
 .globl printf
 printf:
-    push    {r4, r5, r6, lr}
-    mov     r4, r0          @ format string
-    add     r5, sp, #16     @ argumentos (após 4 registradores)
-    
-1:
-    ldrb    r0, [r4], #1
-    cmp     r0, #0
-    beq     4f
-    
-    cmp     r0, #'%'
-    bne     3f
-    
-    @ Processa % format
-    ldrb    r0, [r4], #1
-    cmp     r0, #'s'
-    beq     2f
-    cmp     r0, #'d'
-    beq     2f
-    cmp     r0, #'c'
-    beq     2f
-    b       1b
-    
-2:
-    @ Pega argumento
-    ldr     r1, [r5], #4
-    
-    cmp     r0, #'s'
-    moveq   r0, r1
-    bleq    write_string
-    
-    cmp     r0, #'c'
-    moveq   r0, r1
-    bleq    putchar
-    
-    cmp     r0, #'d'
-    beq     print_decimal
-    
-    b       1b
-    
-3:
-    @ Caractere normal
-    bl      putchar
-    b       1b
-    
-4:
-    pop     {r4, r5, r6, pc}
+    addi    sp, sp, -80
+    sw      ra, 76(sp)
+    sw      s0, 72(sp)
+    sw      s1, 68(sp)
+    sw      s2, 64(sp)
+    sw      a1, 0(sp)
+    sw      a2, 4(sp)
+    sw      a3, 8(sp)
+    sw      a4, 12(sp)
+    sw      a5, 16(sp)
+    sw      a6, 20(sp)
+    sw      a7, 24(sp)
+    mv      s0, a0             # format string
+    addi    s1, sp, 0          # ponteiro de args
+    li      s2, 7              # args ainda em registradores
 
-@ ============================================================
-@ print_decimal - Imprime número decimal
-@ ============================================================
+1:
+    lbu     t0, 0(s0)
+    addi    s0, s0, 1
+    beqz    t0, 9f
+
+    li      t1, 37             # '%'
+    bne     t0, t1, 3f
+
+    # Processa % format
+    lbu     t0, 0(s0)
+    addi    s0, s0, 1
+    li      t1, 115            # 's'
+    beq     t0, t1, 4f
+    li      t1, 100            # 'd'
+    beq     t0, t1, 5f
+    li      t1, 99             # 'c'
+    beq     t0, t1, 6f
+    j       1b
+
+4:  # %s
+    bnez    s2, 7f
+    addi    s1, sp, 80         # esgotou os regs: le da stack do chamador
+7:
+    lw      a0, 0(s1)
+    addi    s1, s1, 4
+    addi    s2, s2, -1
+    jal     write_string
+    j       1b
+
+5:  # %d
+    bnez    s2, 7f
+    addi    s1, sp, 80
+7:
+    lw      a0, 0(s1)
+    addi    s1, s1, 4
+    addi    s2, s2, -1
+    jal     print_decimal
+    j       1b
+
+6:  # %c
+    bnez    s2, 7f
+    addi    s1, sp, 80
+7:
+    lw      a0, 0(s1)
+    addi    s1, s1, 4
+    addi    s2, s2, -1
+    jal     putchar
+    j       1b
+
+3:
+    # Caractere normal
+    mv      a0, t0
+    jal     putchar
+    j       1b
+
+9:
+    lw      s2, 64(sp)
+    lw      s1, 68(sp)
+    lw      s0, 72(sp)
+    lw      ra, 76(sp)
+    addi    sp, sp, 80
+    ret
+
+# ============================================================
+# print_decimal - Imprime numero decimal (entrada em a0)
+# ============================================================
 print_decimal:
-    push    {r4, r5, lr}
-    mov     r4, r1          @ número a imprimir
-    cmp     r4, #0
-    bge     1f
-    mov     r0, #'-'
-    bl      putchar
-    neg     r4, r4
-    
+    addi    sp, sp, -48
+    sw      ra, 44(sp)
+    sw      s1, 40(sp)
+    sw      s2, 36(sp)
+    mv      s1, a0             # numero a imprimir
+    bge     s1, zero, 1f
+    li      a0, 45             # '-'
+    jal     putchar
+    neg     s1, s1
+
 1:
-    mov     r5, #10
-    sub     sp, sp, #12
-    mov     r2, sp
-    mov     r3, #10
-    add     r2, r2, #9
-    mov     r1, #0
-    strb    r1, [r2], #1
-    
+    addi    s2, sp, 26         # buffer de digitos (terminator no fundo)
+    li      t0, 0
+    sb      t0, 0(s2)
+
 2:
-    mov     r0, r4
-    bl      udiv10
-    mov     r4, r0
-    add     r1, r1, #'0'
-    strb    r1, [r2], #1
-    mov     r1, r3
-    cmp     r4, #0
-    bne     2b
-    
+    mv      a0, s1
+    jal     udiv10
+    mv      s1, a0             # quociente
+    addi    t0, a1, 48         # '0' + resto
+    addi    s2, s2, -1
+    sb      t0, 0(s2)
+    bnez    s1, 2b
+
 3:
-    subs    r2, r2, #1
-    ldrb    r0, [r2]
-    cmp     r0, #0
-    beq     3b
-    bl      putchar
-    cmp     r2, sp
-    bgt     3b
-    
-    add     sp, sp, #12
-    pop     {r4, r5, pc}
+    lbu     a0, 0(s2)
+    beqz    a0, 9f
+    jal     putchar
+    addi    s2, s2, 1
+    j       3b
 
-@ ============================================================
-@ udiv10 - Divide por 10 (resto em r1)
-@ ============================================================
+9:
+    lw      s2, 36(sp)
+    lw      s1, 40(sp)
+    lw      ra, 44(sp)
+    addi    sp, sp, 48
+    ret
+
+# ============================================================
+# udiv10 - Divide por 10 (quociente em a0, resto em a1)
+# ============================================================
 udiv10:
-    mov     r1, #0
+    li      a1, 0            # quociente = 0
+    li      t0, 10
 1:
-    cmp     r0, #10
-    blt     2f
-    sub     r0, r0, #10
-    add     r1, r1, #1
-    b       1b
+    blt     a0, t0, 2f       # a0 < 10 -> a0 e' o resto
+    addi    a0, a0, -10
+    addi    a1, a1, 1
+    j       1b
 2:
-    mov     pc, lr
+    mv      t0, a1           # t0 = quociente
+    mv      a1, a0           # a1 = resto
+    mv      a0, t0           # a0 = quociente
+    ret
 
-@ ============================================================
-@ perror(str)
-@ ============================================================
+# ============================================================
+# perror(str)
+# ============================================================
 .globl perror
 perror:
-    push    {lr}
-    bl      write_string
-    mov     r0, #':'
-    bl      putchar
-    mov     r0, #' '
-    bl      putchar
-    ldr     r0, =errno_strings
-    ldr     r1, =errno_var
-    ldr     r2, [r1]
-    lsl     r2, r2, #2
-    ldr     r0, [r0, r2]
-    bl      write_string
-    pop     {pc}
+    addi    sp, sp, -16
+    sw      ra, 12(sp)
+    jal     write_string
+    li      a0, ':'            # 58
+    jal     putchar
+    li      a0, ' '            # 32
+    jal     putchar
+    la      t0, errno_var
+    lw      t1, 0(t0)
+    la      t0, errno_strings
+    slli    t1, t1, 2
+    add     t0, t0, t1
+    lw      a0, 0(t0)
+    jal     write_string
+    lw      ra, 12(sp)
+    addi    sp, sp, 16
+    ret
 
+.section .rodata
 errno_strings:
     .word   err_ok
     .word   err_eperm
@@ -481,9 +559,9 @@ err_esrch:  .asciz "No such process"
 err_eintr:  .asciz "Interrupted system call"
 err_eio:    .asciz "I/O error"
 
-@ ============================================================
-@ Exemplo de programa para testar
-@ ============================================================
+# ============================================================
+# Exemplo de programa para testar
+# ============================================================
 .section .rodata
 hello_msg:  .asciz "Hello, World!\n"
 prompt_msg: .asciz "Enter your name: "
@@ -498,104 +576,115 @@ file_buf:   .space 1024
 .section .text
 .globl main
 main:
-    push    {lr}
-    
-    @ Teste 1: printf
-    ldr     r0, =hello_msg
-    bl      write_string
-    
-    @ Teste 2: puts
-    ldr     r0, =prompt_msg
-    bl      write_string
-    
-    @ Teste 3: read_line
-    ldr     r0, =name_buf
-    bl      read_line
-    
-    @ Teste 4: print nome
-    ldr     r0, =reply_msg
-    bl      write_string
-    ldr     r0, =name_buf
-    bl      write_string
-    mov     r0, #'\n'
-    bl      putchar
-    
-    @ Teste 5: arquivo
-    ldr     r0, =test_file
-    mov     r1, #O_CREAT | O_WRONLY | O_TRUNC
-    mov     r2, #0644
-    bl      open
-    
-    cmp     r0, #0
-    blt     file_error
-    mov     r4, r0          @ salva fd
-    
-    ldr     r1, =write_msg
-    ldr     r0, =write_msg
-    bl      strlen
-    mov     r2, r0
-    mov     r0, r4
-    ldr     r1, =write_msg
-    bl      write
-    
-    mov     r0, r4
-    bl      close
-    
-    @ Teste 6: leitura do arquivo
-    ldr     r0, =test_file
-    mov     r1, #O_RDONLY
-    mov     r2, #0
-    bl      open
-    
-    mov     r4, r0
-    ldr     r1, =file_buf
-    mov     r2, #1024
-    bl      read
-    
-    mov     r0, r4
-    bl      close
-    
-    ldr     r0, =file_buf
-    bl      write_string
-    
-    @ Teste 7: malloc
-    mov     r0, #100
-    bl      malloc
-    cmp     r0, #0
-    beq     malloc_error
-    mov     r4, r0
-    
-    @ Usa memória alocada
-    mov     r0, #'*'
-    mov     r1, r4
-    mov     r2, #100
-    bl      memset
-    
-    ldr     r0, =file_buf
-    mov     r1, r4
-    mov     r2, #100
-    bl      memcpy
-    
-    @ Teste 8: getpid
-    bl      getpid
-    mov     r1, r0
-    ldr     r0, =pid_msg
-    bl      printf
-    
-    mov     r0, #0          @ return 0
-    pop     {pc}
+    addi    sp, sp, -48
+    sw      ra, 44(sp)
+    sw      s0, 40(sp)
+    sw      s1, 36(sp)
+
+    # Teste 1: printf
+    la      a0, hello_msg
+    jal     write_string
+
+    # Teste 2: prompt
+    la      a0, prompt_msg
+    jal     write_string
+
+    # Teste 3: read_line
+    la      a0, name_buf
+    jal     read_line
+
+    # Teste 4: print do nome
+    la      a0, reply_msg
+    jal     write_string
+    la      a0, name_buf
+    jal     write_string
+    li      a0, 10             # '\n'
+    jal     putchar
+
+    # Teste 5: arquivo
+    la      a0, test_file
+    li      a1, 577            # O_CREAT | O_WRONLY | O_TRUNC
+    li      a2, 0644
+    jal     open
+    blt     a0, zero, file_error
+    mv      s0, a0             # salva fd
+
+    la      s1, write_msg
+    mv      a0, s1
+    jal     strlen
+    mv      a2, a0             # count
+    mv      a0, s0             # fd
+    mv      a1, s1             # buf
+    jal     write
+
+    mv      a0, s0
+    jal     close
+
+    # Teste 6: leitura do arquivo
+    la      a0, test_file
+    li      a1, O_RDONLY
+    li      a2, 0
+    jal     open
+    mv      s0, a0
+    la      a1, file_buf
+    li      a2, 1024
+    mv      a0, s0
+    jal     read
+    mv      a0, s0
+    jal     close
+
+    la      a0, file_buf
+    jal     write_string
+
+    # Teste 7: malloc
+    li      a0, 100
+    jal     malloc
+    beqz    a0, malloc_error
+    mv      s0, a0
+
+    # Usa memoria alocada
+    li      a0, 42             # '*'
+    mv      a1, s0
+    li      a2, 100
+    jal     memset
+
+    la      a0, file_buf
+    mv      a1, s0
+    li      a2, 100
+    jal     memcpy
+
+    # Teste 8: getpid
+    jal     getpid
+    mv      a1, a0
+    la      a0, pid_msg
+    jal     printf
+
+    li      a0, 0              # return 0
+    lw      s1, 36(sp)
+    lw      s0, 40(sp)
+    lw      ra, 44(sp)
+    addi    sp, sp, 48
+    ret
 
 file_error:
-    ldr     r0, =test_file
-    bl      perror
-    mov     r0, #1
-    pop     {pc}
-    
+    la      a0, test_file
+    jal     perror
+    li      a0, 1
+    lw      s1, 36(sp)
+    lw      s0, 40(sp)
+    lw      ra, 44(sp)
+    addi    sp, sp, 48
+    ret
+
 malloc_error:
-    ldr     r0, =malloc_err
-    bl      write_string
-    mov     r0, #1
-    pop     {pc}
+    la      a0, malloc_err
+    jal     write_string
+    li      a0, 1
+    lw      s1, 36(sp)
+    lw      s0, 40(sp)
+    lw      ra, 44(sp)
+    addi    sp, sp, 48
+    ret
 
 .section .rodata
 pid_msg:    .asciz "PID: %d\n"
