@@ -2813,6 +2813,7 @@ public class Lua {
 
                                 Hashtable childScope = midlet.cloneScope(father);
                                 Process process = new Process(midlet, program, "/bin/init --serve=" + program, midlet.getUser(uid), uid, midlet.genpid(), stdout, childScope);
+                                process.parentPid = PID;
                                 process.lua.kill = false;
 
                                 Hashtable arg = new Hashtable(); arg.put(new Double(0), program); arg.put(new Double(1), "--deamon");
@@ -3394,6 +3395,7 @@ public class Lua {
                         Hashtable childScope = midlet.cloneScope(scope);
                         childScope.put("USER", midlet.getUser(owner));
                         Process process = new Process(midlet, ("lua " + program).trim(), midlet.joinpath(program, scope), midlet.getUser(owner), owner, pid, out, childScope);
+                        process.parentPid = PID;
                         midlet.sys.put(pid, process);
                         Hashtable digest = process.lua.run(program, code, arg);
                         
@@ -3404,6 +3406,7 @@ public class Lua {
                     Hashtable elfScope = midlet.cloneScope(scope);
                     elfScope.put("USER", midlet.getUser(owner));
                     Process process = new Process(midlet, "elf", midlet.joinpath(program, scope), midlet.getUser(owner), owner, pid, out, arg, elfScope);
+                    process.parentPid = PID;
                     midlet.sys.put(pid, process);
                     
                     if (process.elf.load(elfStream)) {
@@ -3472,6 +3475,9 @@ public class Lua {
             if (PID.equals("1")) { midlet.destroyApp(true); }
             else {
                 boolean hadScreen = proc.screen != null;
+                proc.exitStatus = args.isEmpty() ? 1 : getNumber(toLuaString(args.elementAt(0)), 1);
+                proc.exited = true;
+                midlet.exited.put(PID, proc);
                 midlet.sys.remove(PID);
                 if (hadScreen) {
                     Displayable target = null;

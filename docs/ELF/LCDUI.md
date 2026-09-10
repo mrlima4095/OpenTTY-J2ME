@@ -152,3 +152,11 @@ if (event.type == LCDUI_EVENT_COMMAND && event.command == tasks) {
 
 The process remains registered with its current screen. Selecting it in the
 task manager displays that screen again. Interrupting it performs ELF cleanup.
+
+## Process Lifecycle
+
+Every OpenTTY process records its parent PID when it is launched. When a Lua or
+ELF process terminates, its PID, parent PID, exit status and process metadata
+are retained in the system's completed-process table for parent-side reaping.
+This is the basis for the ELF `spawn` and `waitpid` ABI; a completed process is
+not considered runnable and its LCDUI handles have already been destroyed.
