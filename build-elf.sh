@@ -19,7 +19,7 @@
 #                                              wrappers RISC-V (li a7,#LIB; ecall
 #                                              -> LIB no EMULADOR). Suporta .c:
 #                                              printf/sprintf/malloc/free/
-#                                              memcpy/divisao AEABI/etc.
+#                                              memcpy/divisao 64-bit/etc.
 #
 # Opcoes:
 #   -o <arquivo>   nome do ELF final (default: basename do 1o fonte)

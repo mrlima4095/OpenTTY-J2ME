@@ -1,5 +1,5 @@
 # lib32.s (RISC-V RV32IM) - Biblioteca basica C para o emulador ELF do OpenTTY
-# Port do antigo libc_arm32.s. Compativel com as syscalls do emulador.
+# Porte RISC-V da stdlib do emulador. Compativel com as library syscalls.
 # Compilar: riscv64-unknown-elf-as -march=rv32im -mabi=ilp32 -o libc.o lib32.s
 # Linkar:  riscv64-unknown-elf-ld -m elf32lriscv -Ttext=0x8000 -o programa libc.o programa.o
 #

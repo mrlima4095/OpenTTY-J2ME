@@ -1,8 +1,8 @@
 /* math.c - Matematica basica (div mod % 64-bit, abs, casos aritmeticos).
  *
- * CUIDADO: nao fazer multiplicacao de long long (precisa de __aeabi_lmul,
+ * CUIDADO: nao fazer multiplicacao de long long (precisa de __muldi3,
  * que nao existe na lib). Usamos so soma/multiplicacao int (mul nativo) e
- * divisao 64-bit (__aeabi_ldivmod, suportada).
+ * divisao 64-bit (__divdi3, suportada).
  * Compilar:
  *   ./build-elf.sh res/apps/src/math.c -stdlib -o res/apps/dist/math
  */
@@ -32,7 +32,7 @@ int main(int argc, char **argv)
     for (i = 2; i <= n; i++) { f = f * i; }
     printf("%d!=%d is_even(%d)=%d\n", n, f, n, is_even(n));
 
-    /* divisao 64-bit: __aeabi_ldivmod / __aeabi_uldivmod */
+    /* divisao 64-bit: __divdi3 / __udivdi3 */
     long long big = (long long) 1000000000 * 3;   /* int*int -> ll (sem lmul) */
     long long q = big / 7ll, r = big % 13ll;
     printf("64bit %d*3=%lld /7=%lld %%13=%lld\n", 1000000000,

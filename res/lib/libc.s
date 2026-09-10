@@ -3,7 +3,7 @@
 # Estas funcoes NAO implementam a logica em asm: cada uma e um wrapper de 3
 # instrucoes (li a7, #LIB_*; ecall; ret) que entrega o trabalho ao emulador
 # (src/ELF.java -> handleLibraryCall). O emulador conhece strings, printf,
-# mem*, o alocador de heap, atoi/abs, divisao AEABI, etc.
+# mem*, o alocador de heap, atoi/abs e helpers de divisao, etc.
 #
 # LINKAR:  ./build-elf.sh demo.c -stdlib
 # (o -stdlib linka este arquivo antes do programa; o programa define main;
@@ -44,15 +44,15 @@
 .equ LIB_TOUPPER,      LIB_BASE + 27
 .equ LIB_TOLOWER,      LIB_BASE + 28
 .equ LIB_GETPID,       LIB_BASE + 29
-.equ LIB_AEABI_UIDIV,      LIB_BASE + 30
-.equ LIB_AEABI_IDIV,       LIB_BASE + 31
-.equ LIB_AEABI_UIDIVMOD,   LIB_BASE + 32
-.equ LIB_AEABI_IDIVMOD,    LIB_BASE + 33
-.equ LIB_AEABI_ULDIVMOD,   LIB_BASE + 34
-.equ LIB_AEABI_LDIVMOD,    LIB_BASE + 35
-.equ LIB_AEABI_MEMCLR,     LIB_BASE + 36
-.equ LIB_AEABI_MEMCPY,     LIB_BASE + 37
-.equ LIB_AEABI_MEMSET,     LIB_BASE + 38
+.equ LIB_UDIV32,           LIB_BASE + 30
+.equ LIB_SDIV32,           LIB_BASE + 31
+.equ LIB_UDIVMOD32,        LIB_BASE + 32
+.equ LIB_SDIVMOD32,        LIB_BASE + 33
+.equ LIB_UDIVMOD64,        LIB_BASE + 34
+.equ LIB_SDIVMOD64,        LIB_BASE + 35
+.equ LIB_MEMCLR,           LIB_BASE + 36
+.equ LIB_MEMCPY_ALIGN,     LIB_BASE + 37
+.equ LIB_MEMSET_ALIGN,     LIB_BASE + 38
 
 # ============================================================
 # _start - Entry point (compativel com o CRT do emulador):
@@ -124,52 +124,52 @@ LIBWRAP LIB_FREE,        free
 # ---- misc ----------------------------------------------------
 LIBWRAP LIB_GETPID,      getpid
 
-# ---- AEABI (mantidos para compat; o emulador implementa a divisao) ---
-LIBWRAP LIB_AEABI_UIDIV,      __aeabi_uidiv
-LIBWRAP LIB_AEABI_IDIV,       __aeabi_idiv
-LIBWRAP LIB_AEABI_UIDIVMOD,   __aeabi_uidivmod
-LIBWRAP LIB_AEABI_IDIVMOD,    __aeabi_idivmod
-LIBWRAP LIB_AEABI_ULDIVMOD,   __aeabi_uldivmod
-LIBWRAP LIB_AEABI_LDIVMOD,    __aeabi_ldivmod
-LIBWRAP LIB_AEABI_MEMCLR,     __aeabi_memclr
-LIBWRAP LIB_AEABI_MEMCPY,     __aeabi_memcpy
-LIBWRAP LIB_AEABI_MEMSET,     __aeabi_memset
+# ---- Helpers de runtime RISC-V ---------------------------------
+LIBWRAP LIB_UDIV32,           __udivsi3
+LIBWRAP LIB_SDIV32,           __divsi3
+LIBWRAP LIB_UDIVMOD32,        __udivmodsi4
+LIBWRAP LIB_SDIVMOD32,        __divmodsi4
+LIBWRAP LIB_UDIVMOD64,        __udivmoddi4
+LIBWRAP LIB_SDIVMOD64,        __divmoddi4
+LIBWRAP LIB_MEMCLR,           __memclr
+LIBWRAP LIB_MEMCPY_ALIGN,     __memcpy
+LIBWRAP LIB_MEMSET_ALIGN,     __memset
 
-# variantes alinhadas/tipadas usadas pelos builtins do gcc ------
-LIBWRAP LIB_AEABI_MEMCLR,     __aeabi_memclr4
-LIBWRAP LIB_AEABI_MEMCLR,     __aeabi_memclr8
-LIBWRAP LIB_AEABI_MEMCPY,     __aeabi_memcpy4
-LIBWRAP LIB_AEABI_MEMCPY,     __aeabi_memcpy8
-LIBWRAP LIB_AEABI_MEMSET,     __aeabi_memset4
-LIBWRAP LIB_AEABI_MEMSET,     __aeabi_memset8
-LIBWRAP LIB_MEMMOVE,          __aeabi_memmove
-LIBWRAP LIB_MEMMOVE,          __aeabi_memmove4
-LIBWRAP LIB_MEMMOVE,          __aeabi_memmove8
+# variantes alinhadas/tipadas para rotinas de memoria ------------
+LIBWRAP LIB_MEMCLR,           __memclr4
+LIBWRAP LIB_MEMCLR,           __memclr8
+LIBWRAP LIB_MEMCPY_ALIGN,     __memcpy4
+LIBWRAP LIB_MEMCPY_ALIGN,     __memcpy8
+LIBWRAP LIB_MEMSET_ALIGN,     __memset4
+LIBWRAP LIB_MEMSET_ALIGN,     __memset8
+LIBWRAP LIB_MEMMOVE,          __memmove
+LIBWRAP LIB_MEMMOVE,          __memmove4
+LIBWRAP LIB_MEMMOVE,          __memmove8
 
 # ---- RISC-V 64-bit helpers (gerados pelo compilador) ------------------
 # clang/gcc RV32IM usa __muldi3/__divdi3/__moddi3/__udivdi3/__umoddi3 para
-# aritmetica de long long. Layout dos args (igual ao AEABI do emulador):
+# aritmetica de long long. Layout dos args:
 #   a0:a1 = dividendo/destino, a2:a3 = divisor/fonte.
 # LIB_*LDIVMOD retorna quociente em a0:a1 E resto em a2:a3 (ver libcLdivmod
 # em src/ELF.java); as funcoes abaixo selecionam a metade certa.
 .globl __udivdi3
 .type __udivdi3, %function
 __udivdi3:
-    li      a7, LIB_AEABI_ULDIVMOD
+    li      a7, LIB_UDIVMOD64
     ecall
     ret
 
 .globl __divdi3
 .type __divdi3, %function
 __divdi3:
-    li      a7, LIB_AEABI_LDIVMOD
+    li      a7, LIB_SDIVMOD64
     ecall
     ret
 
 .globl __umoddi3
 .type __umoddi3, %function
 __umoddi3:
-    li      a7, LIB_AEABI_ULDIVMOD
+    li      a7, LIB_UDIVMOD64
     ecall
     mv      a0, a2               # resto a2:a3 -> a0:a1
     mv      a1, a3
@@ -178,7 +178,7 @@ __umoddi3:
 .globl __moddi3
 .type __moddi3, %function
 __moddi3:
-    li      a7, LIB_AEABI_LDIVMOD
+    li      a7, LIB_SDIVMOD64
     ecall
     mv      a0, a2               # resto a2:a3 -> a0:a1
     mv      a1, a3

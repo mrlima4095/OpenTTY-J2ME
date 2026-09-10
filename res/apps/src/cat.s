@@ -1,6 +1,6 @@
 # cat.s (RISC-V RV32IM) - cat <arquivo>: imprime um arquivo no stdout.
 #
-# Usa syscalls crus do emulador (mesmos numeros do ARM-EABI, ecall com a7):
+# Usa syscalls crus do emulador (numeros EABI, ecall com a7):
 #   open (5), read (3), write (4), close (6), exit (1).
 # CRT do emulador: [sp]=argc, [sp+4]=argv[0], [sp+8]=argv[1], ...
 #

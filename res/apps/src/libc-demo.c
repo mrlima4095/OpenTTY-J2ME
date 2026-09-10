@@ -83,14 +83,14 @@ int main(int argc, char **argv) {
     /* case */
     printf("case %c%c%c\n", toupper('a'), tolower('Z'), toupper('x'));
 
-    /* divisao 32-bit (usando argc p/ forcar chamada __aeabi_*divmod) */
+    /* divisao 32-bit (usando argc para forcar o caminho de divisao) */
     unsigned int ux = 0xFFFFFFF5U + (unsigned int) argc;
     unsigned int uq = ux / 7u, ur = ux % 7u;
     int sx = -123456 + argc;
     int sq = sx / 7, sr = sx % 7;
     printf("udiv ux=%u q=%u r=%u | sdiv sx=%d q=%d r=%d\n", ux, uq, ur, sx, sq, sr);
 
-    /* long long (__aeabi_uldivmod/ldivmod, pares alinhados) */
+    /* long long (__udivmoddi4/__divmoddi4, pares alinhados) */
     long long a64 = (long long) 1000000 * 49000;
     long long q64 = a64 / 7ll;
     long long r64 = a64 % 7ll;
