@@ -124,7 +124,7 @@ public class ELF implements CommandListener {
         LIB_UI_DISPLAY = LIB_BASE + 45, LIB_UI_SET_TEXT = LIB_BASE + 46, LIB_UI_GET_TEXT = LIB_BASE + 47,
         LIB_UI_SET_TITLE = LIB_BASE + 48, LIB_UI_CLEAR = LIB_BASE + 49, LIB_UI_WAIT_EVENT = LIB_BASE + 50,
         LIB_UI_DESTROY = LIB_BASE + 51, LIB_UI_TASKMNGR = LIB_BASE + 52,
-        LIB_PROC_SET_NAME = LIB_BASE + 53, LIB_PROC_SET_SCREEN = LIB_BASE + 54;
+        LIB_PROC_SET = LIB_BASE + 53;
 
     // Relocation types
     private static final int R_RISCV_NONE = 0, R_RISCV_32 = 1, R_RISCV_RELATIVE = 3, R_RISCV_COPY = 4, R_RISCV_JUMP_SLOT = 5, R_RISCV_GLOB_DAT = 6;
@@ -647,8 +647,7 @@ public class ELF implements CommandListener {
         libc.put("lcdui_wait_event",   new Integer(createLibraryStub(LIB_UI_WAIT_EVENT)));
         libc.put("lcdui_destroy",      new Integer(createLibraryStub(LIB_UI_DESTROY)));
         libc.put("graphics_taskmngr",  new Integer(createLibraryStub(LIB_UI_TASKMNGR)));
-        libc.put("opentty_setproc_name", new Integer(createLibraryStub(LIB_PROC_SET_NAME)));
-        libc.put("opentty_setproc_screen", new Integer(createLibraryStub(LIB_PROC_SET_SCREEN)));
+        libc.put("opentty_setproc", new Integer(createLibraryStub(LIB_PROC_SET)));
 
         // syscalls diretas (open/read/write/close/exit/brk) como antes
         libc.put("exit",  new Integer(createSyscallStub("exit")));
@@ -728,8 +727,7 @@ public class ELF implements CommandListener {
             case LIB_UI_WAIT_EVENT - LIB_BASE: registers[REG_A0] = uiWaitEvent(registers[REG_A0]); break;
             case LIB_UI_DESTROY - LIB_BASE: registers[REG_A0] = uiDestroy(registers[REG_A0]); break;
             case LIB_UI_TASKMNGR - LIB_BASE: midlet.showTaskManager(); registers[REG_A0] = 0; break;
-            case LIB_PROC_SET_NAME - LIB_BASE: registers[REG_A0] = procSetName(registers[REG_A0]); break;
-            case LIB_PROC_SET_SCREEN - LIB_BASE: registers[REG_A0] = procSetScreen(registers[REG_A0]); break;
+            case LIB_PROC_SET - LIB_BASE: registers[REG_A0] = procSet(registers[REG_A0], registers[REG_A1]); break;
             default: registers[REG_A0] = -1; break;
         }
     }
@@ -803,15 +801,24 @@ public class ELF implements CommandListener {
         midlet.display.setCurrent(displayable);
         return 0;
     }
-    private int procSetName(int namePtr) {
-        if (proc == null || namePtr == 0) { return -1; }
-        proc.name = uiString(namePtr);
-        return 0;
-    }
-    private int procSetScreen(int screenHandle) {
-        Object screen = uiObject(screenHandle);
-        if (proc == null || !(screen instanceof Displayable)) { return -1; }
-        proc.screen = (Displayable) screen;
+    private int procSet(int keyPtr, int value) {
+        if (proc == null || keyPtr == 0) { return -1; }
+        String key = uiString(keyPtr).trim().toLowerCase();
+        if (key.equals("name")) {
+            if (value == 0) { return -1; }
+            proc.name = uiString(value);
+        } else if (key.equals("screen")) {
+            Object screen = uiObject(value);
+            if (!(screen instanceof Displayable)) { return -1; }
+            proc.screen = (Displayable) screen;
+        } else if (key.equals("cmd")) {
+            if (value == 0) { return -1; }
+            proc.cmd = uiString(value);
+        } else if (value == 0) {
+            proc.db.remove(key);
+        } else {
+            proc.db.put(key, uiString(value));
+        }
         return 0;
     }
     private int uiSetText(int handle, int textPtr) {

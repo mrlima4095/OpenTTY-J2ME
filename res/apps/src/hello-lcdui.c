@@ -8,7 +8,7 @@ int main(void)
     int greet = lcdui_command("Say hello", LCDUI_COMMAND_OK, 1);
     int tasks = lcdui_command("Tasks", LCDUI_COMMAND_SCREEN, 2);
 
-    opentty_setproc_name("hello");
+    opentty_setproc("name", "hello");
     lcdui_append_text(form, 0, "What is your name?");
     lcdui_add_command(form, greet);
     lcdui_add_command(form, tasks);
