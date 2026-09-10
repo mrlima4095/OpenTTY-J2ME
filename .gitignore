@@ -5,6 +5,7 @@ server.properties
 OpenRMS
 
 java/*.class
+/build/**/*.class
 __pycache__/
 *.pyc
 
