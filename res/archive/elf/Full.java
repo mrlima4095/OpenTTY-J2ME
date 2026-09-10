@@ -863,7 +863,7 @@ public class ELF implements CommandListener {
         new Thread(new Runnable() { public void run() {
             try {
                 if (child.lua != null) { child.lua.run(path, new String(data, "UTF-8"), childArgs); }
-                else if (child.elf.load(new ByteArrayInputStream(data))) { child.elf.run(); }
+                else if (child.getELF().load(new ByteArrayInputStream(data))) { child.getELF().run(); }
                 else { child.exitStatus = 8; }
             } catch (Throwable e) { child.exitStatus = 1; }
             if (midlet.sys.containsKey(childPid)) {
@@ -2272,7 +2272,7 @@ public class ELF implements CommandListener {
                 InputStream elfStream = new ByteArrayInputStream(data);
                 Process process = new Process(midlet, "elf", midlet.joinpath(path, scope), midlet.getUser(id), id, midlet.genpid(), stdout, arg, scope);
                 
-                if (process.elf.load(elfStream)) { process.elf.run(); registers[REG_A0] = 0; } else { registers[REG_A0] = -8; }
+                if (process.getELF().load(elfStream)) { process.getELF().run(); registers[REG_A0] = 0; } else { registers[REG_A0] = -8; }
             }
         } catch (Exception e) { registers[REG_A0] = -1; }
     }

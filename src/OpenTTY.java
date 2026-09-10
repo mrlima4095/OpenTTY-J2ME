@@ -727,6 +727,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
 // Process
 class Process {
     private OpenTTY midlet = null;
+    private Hashtable elfArgs;
     public String name, owner, pid, parentPid, cmd;
     public Hashtable scope, db = new Hashtable(), net = new Hashtable();
     public final long startTime;
@@ -742,7 +743,10 @@ class Process {
     public ELF elf = null;
 
     public Process(OpenTTY midlet, String name, String command, String owner, int uid, String pid, Object stdout, Hashtable scope) { this.lua = new Lua(midlet, uid, pid, this, stdout, scope); this.name = name; this.owner = owner; this.uid = uid; this.pid = pid; this.stdout = stdout; this.stderr = stdout; this.scope = scope; this.startTime = System.currentTimeMillis(); }
-    public Process(OpenTTY midlet, String name, String command, String owner, int uid, String pid, Object stdout, Hashtable args, Hashtable scope) { this.elf = new ELF(midlet, args, stdout, scope, uid, pid, this); this.name = name; this.owner = owner; this.uid = uid; this.pid = pid; this.stdout = stdout; this.stderr = stdout; this.scope = scope; this.startTime = System.currentTimeMillis(); }
+    public Process(OpenTTY midlet, String name, String command, String owner, int uid, String pid, Object stdout, Hashtable args, Hashtable scope) { this.midlet = midlet; this.elfArgs = args; this.name = name; this.owner = owner; this.uid = uid; this.pid = pid; this.stdout = stdout; this.stderr = stdout; this.scope = scope; this.startTime = System.currentTimeMillis(); }
+
+    // ELF owns a 1 MB guest memory buffer, so do not allocate it for Lua processes.
+    public ELF getELF() { if (elf == null) { elf = new ELF(midlet, elfArgs, stdout, scope, uid, pid, this); } return elf; }
 
     public String toString() { return "{ name=" + name + ", owner=" + owner + ", uid=" + uid + ", pid=" + pid + ", ppid=" + parentPid + ", " + (lua != null ? "lua=" + lua + ", " : elf != null ? "elf=" + elf + ", " : "") + (handler != null ? "handler=" + handler + ", " : "") + "priority=" + priority + ", scope=" + scope + ", db=" + db + " }"; }
 }
