@@ -13,6 +13,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 FULL="$ROOT/src/ELF.java"
 STUB="$ROOT/res/archive/elf/Lite.java"      # versao lite (stub)
 SAVE="$ROOT/res/archive/elf/Full.java"      # backup do emulador completo
+MIDLET="$ROOT/src/OpenTTY.java"
 
 [ -f "$FULL" ] || { echo "swap_lite: $FULL nao encontrado"; exit 1; }
 [ -f "$STUB" ] || { echo "swap_lite: $STUB nao encontrado"; exit 1; }
@@ -22,10 +23,12 @@ if grep -q "ELF Lite" "$FULL"; then
     # src/ELF.java atual e o stub -> restaurar o emulador completo
     [ -f "$SAVE" ] || { echo "swap_lite: backup do emulador nao existe ($SAVE). Copie o ELF.java completo para ele."; exit 1; }
     cp -f "$SAVE" "$FULL"
+    sed -i 's/public static final boolean ELF_LITE = true;/public static final boolean ELF_LITE = false;/' "$MIDLET"
     echo "swap_lite: emulador RISC-V completo restaurado em src/ELF.java"
 else
     # src/ELF.java atual e o emulador -> trocar para o stub lite
     cp -f "$FULL" "$SAVE"
     cp -f "$STUB" "$FULL"
+    sed -i 's/public static final boolean ELF_LITE = false;/public static final boolean ELF_LITE = true;/' "$MIDLET"
     echo "swap_lite: stub lite ativo em src/ELF.java (emulador salvo em $SAVE)"
 fi
