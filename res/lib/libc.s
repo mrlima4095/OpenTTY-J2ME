@@ -53,6 +53,19 @@
 .equ LIB_MEMCLR,           LIB_BASE + 36
 .equ LIB_MEMCPY_ALIGN,     LIB_BASE + 37
 .equ LIB_MEMSET_ALIGN,     LIB_BASE + 38
+.equ LIB_UI_NEW,           LIB_BASE + 39
+.equ LIB_UI_APPEND_TEXT,   LIB_BASE + 40
+.equ LIB_UI_APPEND_FIELD,  LIB_BASE + 41
+.equ LIB_UI_LIST_APPEND,   LIB_BASE + 42
+.equ LIB_UI_COMMAND,       LIB_BASE + 43
+.equ LIB_UI_ADD_COMMAND,   LIB_BASE + 44
+.equ LIB_UI_DISPLAY,       LIB_BASE + 45
+.equ LIB_UI_SET_TEXT,      LIB_BASE + 46
+.equ LIB_UI_GET_TEXT,      LIB_BASE + 47
+.equ LIB_UI_SET_TITLE,     LIB_BASE + 48
+.equ LIB_UI_CLEAR,         LIB_BASE + 49
+.equ LIB_UI_WAIT_EVENT,    LIB_BASE + 50
+.equ LIB_UI_DESTROY,       LIB_BASE + 51
 
 # ============================================================
 # _start - Entry point (compativel com o CRT do emulador):
@@ -123,6 +136,21 @@ LIBWRAP LIB_FREE,        free
 
 # ---- misc ----------------------------------------------------
 LIBWRAP LIB_GETPID,      getpid
+
+# ---- LCDUI ---------------------------------------------------
+LIBWRAP LIB_UI_NEW,          lcdui_new
+LIBWRAP LIB_UI_APPEND_TEXT,  lcdui_append_text
+LIBWRAP LIB_UI_APPEND_FIELD, lcdui_append_field
+LIBWRAP LIB_UI_LIST_APPEND,  lcdui_list_append
+LIBWRAP LIB_UI_COMMAND,      lcdui_command
+LIBWRAP LIB_UI_ADD_COMMAND,  lcdui_add_command
+LIBWRAP LIB_UI_DISPLAY,      lcdui_display
+LIBWRAP LIB_UI_SET_TEXT,     lcdui_set_text
+LIBWRAP LIB_UI_GET_TEXT,     lcdui_get_text
+LIBWRAP LIB_UI_SET_TITLE,    lcdui_set_title
+LIBWRAP LIB_UI_CLEAR,        lcdui_clear
+LIBWRAP LIB_UI_WAIT_EVENT,   lcdui_wait_event
+LIBWRAP LIB_UI_DESTROY,      lcdui_destroy
 
 # ---- Helpers de runtime RISC-V ---------------------------------
 LIBWRAP LIB_UDIV32,           __udivsi3

@@ -181,6 +181,7 @@ graphics.display(form)
 - RV32IM ELF executable loading (`ET_EXEC`, `EM_RISCV`, entry ≤ 1 MB)
 - RV32I instruction emulation plus M extension (`mul`/`mulh`/`div`/`rem`)
 - Linux EABI syscalls + library syscalls (`LIB_BASE` 1000: string/memory/printf/sprintf/malloc/RISC-V runtime helpers)
+- LCDUI guest ABI (`res/lib/lcdui.h`): `Form`, `List`, `TextBox`, `Alert`, fields, text items and commands with queued events
 - 1 MB virtual memory with segment management
 - Shared-library loading (`.so`): `DT_NEEDED`, RELA relocations, PLT/GOT
 - File descriptors and I/O

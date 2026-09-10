@@ -1,11 +1,13 @@
 import javax.microedition.io.*;
 import javax.microedition.io.file.*;
+import javax.microedition.lcdui.*;
+import javax.microedition.lcdui.List;
 import javax.microedition.rms.*;
 import java.util.*;
 import java.io.*;
 // |
 // ELF RISC-V 32 Emulator (RV32IM)
-public class ELF {
+public class ELF implements CommandListener {
     private static final boolean LITE_EDITION = false;
 
     public static boolean isLiteEdition() { return LITE_EDITION; }
@@ -46,6 +48,12 @@ public class ELF {
     // heap do stdlib (malloc/calloc/realloc/free): allocador first-fit com
     // blocos escritos na RAM do guest: { int size; int next; ...payload }
     private int libcHeapFree, libcHeapTop, libcHeapRegionEnd;
+
+    // LCDUI guest objects live in Java; the guest accesses them through handles.
+    private Hashtable uiObjects, uiHandles;
+    private Vector uiEvents;
+    private int nextUiHandle;
+    private boolean uiWaiting;
 
     
     // Constantes ELF
@@ -110,7 +118,12 @@ public class ELF {
         LIB_TOUPPER = LIB_BASE + 27, LIB_TOLOWER = LIB_BASE + 28, LIB_GETPID = LIB_BASE + 29,
         LIB_UDIV32 = LIB_BASE + 30, LIB_SDIV32 = LIB_BASE + 31, LIB_UDIVMOD32 = LIB_BASE + 32,
         LIB_SDIVMOD32 = LIB_BASE + 33, LIB_UDIVMOD64 = LIB_BASE + 34, LIB_SDIVMOD64 = LIB_BASE + 35,
-        LIB_MEMCLR = LIB_BASE + 36, LIB_MEMCPY_ALIGN = LIB_BASE + 37, LIB_MEMSET_ALIGN = LIB_BASE + 38;
+        LIB_MEMCLR = LIB_BASE + 36, LIB_MEMCPY_ALIGN = LIB_BASE + 37, LIB_MEMSET_ALIGN = LIB_BASE + 38,
+        LIB_UI_NEW = LIB_BASE + 39, LIB_UI_APPEND_TEXT = LIB_BASE + 40, LIB_UI_APPEND_FIELD = LIB_BASE + 41,
+        LIB_UI_LIST_APPEND = LIB_BASE + 42, LIB_UI_COMMAND = LIB_BASE + 43, LIB_UI_ADD_COMMAND = LIB_BASE + 44,
+        LIB_UI_DISPLAY = LIB_BASE + 45, LIB_UI_SET_TEXT = LIB_BASE + 46, LIB_UI_GET_TEXT = LIB_BASE + 47,
+        LIB_UI_SET_TITLE = LIB_BASE + 48, LIB_UI_CLEAR = LIB_BASE + 49, LIB_UI_WAIT_EVENT = LIB_BASE + 50,
+        LIB_UI_DESTROY = LIB_BASE + 51;
 
     // Relocation types
     private static final int R_RISCV_NONE = 0, R_RISCV_32 = 1, R_RISCV_RELATIVE = 3, R_RISCV_COPY = 4, R_RISCV_JUMP_SLOT = 5, R_RISCV_GLOB_DAT = 6;
@@ -162,6 +175,11 @@ public class ELF {
         this.libcHeapFree = 0;
         this.libcHeapTop = 0;
         this.libcHeapRegionEnd = 0;
+        this.uiObjects = new Hashtable();
+        this.uiHandles = new Hashtable();
+        this.uiEvents = new Vector();
+        this.nextUiHandle = 1;
+        this.uiWaiting = false;
 
         // Carregar bibliotecas padrão
         loadDefaultLibraries();
@@ -613,6 +631,20 @@ public class ELF {
         libc.put("__memcpy",      new Integer(createLibraryStub(LIB_MEMCPY_ALIGN)));
         libc.put("__memset",      new Integer(createLibraryStub(LIB_MEMSET_ALIGN)));
 
+        libc.put("lcdui_new",          new Integer(createLibraryStub(LIB_UI_NEW)));
+        libc.put("lcdui_append_text",  new Integer(createLibraryStub(LIB_UI_APPEND_TEXT)));
+        libc.put("lcdui_append_field", new Integer(createLibraryStub(LIB_UI_APPEND_FIELD)));
+        libc.put("lcdui_list_append",  new Integer(createLibraryStub(LIB_UI_LIST_APPEND)));
+        libc.put("lcdui_command",      new Integer(createLibraryStub(LIB_UI_COMMAND)));
+        libc.put("lcdui_add_command",  new Integer(createLibraryStub(LIB_UI_ADD_COMMAND)));
+        libc.put("lcdui_display",      new Integer(createLibraryStub(LIB_UI_DISPLAY)));
+        libc.put("lcdui_set_text",     new Integer(createLibraryStub(LIB_UI_SET_TEXT)));
+        libc.put("lcdui_get_text",     new Integer(createLibraryStub(LIB_UI_GET_TEXT)));
+        libc.put("lcdui_set_title",    new Integer(createLibraryStub(LIB_UI_SET_TITLE)));
+        libc.put("lcdui_clear",        new Integer(createLibraryStub(LIB_UI_CLEAR)));
+        libc.put("lcdui_wait_event",   new Integer(createLibraryStub(LIB_UI_WAIT_EVENT)));
+        libc.put("lcdui_destroy",      new Integer(createLibraryStub(LIB_UI_DESTROY)));
+
         // syscalls diretas (open/read/write/close/exit/brk) como antes
         libc.put("exit",  new Integer(createSyscallStub("exit")));
         libc.put("open",  new Integer(createSyscallStub("open")));
@@ -677,7 +709,147 @@ public class ELF {
             case LIB_MEMCLR - LIB_BASE: registers[REG_A0] = libcMemset(registers[REG_A0], 0, registers[REG_A1]); break;
             case LIB_MEMCPY_ALIGN - LIB_BASE: registers[REG_A0] = libcMemcpy(registers[REG_A0], registers[REG_A1], registers[REG_A2]); break;
             case LIB_MEMSET_ALIGN - LIB_BASE: registers[REG_A0] = libcMemset(registers[REG_A0], registers[REG_A1], registers[REG_A2]); break;
+            case LIB_UI_NEW - LIB_BASE: registers[REG_A0] = uiNew(registers[REG_A0], registers[REG_A1], registers[REG_A2], registers[REG_A3]); break;
+            case LIB_UI_APPEND_TEXT - LIB_BASE: registers[REG_A0] = uiAppendText(registers[REG_A0], registers[REG_A1], registers[REG_A2]); break;
+            case LIB_UI_APPEND_FIELD - LIB_BASE: registers[REG_A0] = uiAppendField(registers[REG_A0], registers[REG_A1], registers[REG_A2], registers[REG_A3], getSyscallParam(4)); break;
+            case LIB_UI_LIST_APPEND - LIB_BASE: registers[REG_A0] = uiListAppend(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_UI_COMMAND - LIB_BASE: registers[REG_A0] = uiCommand(registers[REG_A0], registers[REG_A1], registers[REG_A2]); break;
+            case LIB_UI_ADD_COMMAND - LIB_BASE: registers[REG_A0] = uiAddCommand(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_UI_DISPLAY - LIB_BASE: registers[REG_A0] = uiDisplay(registers[REG_A0]); break;
+            case LIB_UI_SET_TEXT - LIB_BASE: registers[REG_A0] = uiSetText(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_UI_GET_TEXT - LIB_BASE: registers[REG_A0] = uiGetText(registers[REG_A0], registers[REG_A1], registers[REG_A2]); break;
+            case LIB_UI_SET_TITLE - LIB_BASE: registers[REG_A0] = uiSetTitle(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_UI_CLEAR - LIB_BASE: registers[REG_A0] = uiClear(registers[REG_A0]); break;
+            case LIB_UI_WAIT_EVENT - LIB_BASE: registers[REG_A0] = uiWaitEvent(registers[REG_A0]); break;
+            case LIB_UI_DESTROY - LIB_BASE: registers[REG_A0] = uiDestroy(registers[REG_A0]); break;
             default: registers[REG_A0] = -1; break;
+        }
+    }
+
+    private String uiString(int ptr) { return ptr == 0 ? "" : libcReadCString(ptr); }
+    private Object uiObject(int handle) { return uiObjects.get(new Integer(handle)); }
+    private int uiStore(Object object) {
+        Integer handle = new Integer(nextUiHandle++);
+        uiObjects.put(handle, object);
+        uiHandles.put(object, handle);
+        return handle.intValue();
+    }
+    private int uiHandle(Object object) {
+        Object handle = uiHandles.get(object);
+        return handle instanceof Integer ? ((Integer) handle).intValue() : 0;
+    }
+    private int uiListMode(int mode) { return mode == 1 ? List.EXCLUSIVE : mode == 2 ? List.MULTIPLE : List.IMPLICIT; }
+    private int uiCommandType(int type) {
+        switch (type) {
+            case 1: return Command.BACK;
+            case 2: return Command.OK;
+            case 3: return Command.CANCEL;
+            case 4: return Command.HELP;
+            case 5: return Command.STOP;
+            case 6: return Command.EXIT;
+            case 7: return Command.ITEM;
+            default: return Command.SCREEN;
+        }
+    }
+    private int uiNew(int kind, int titlePtr, int contentPtr, int mode) {
+        String title = uiString(titlePtr), content = uiString(contentPtr);
+        Object object;
+        if (kind == 1) { object = new Form(title); }
+        else if (kind == 2) { object = new List(title, uiListMode(mode)); }
+        else if (kind == 3) { object = new TextBox(title, content, 256, mode == 1 ? TextField.ANY | TextField.PASSWORD : TextField.ANY); }
+        else if (kind == 4) { Alert alert = new Alert(title, content, null, AlertType.INFO); alert.setTimeout(Alert.FOREVER); object = alert; }
+        else { return -1; }
+        return uiStore(object);
+    }
+    private int uiAppendText(int formHandle, int labelPtr, int textPtr) {
+        Object object = uiObject(formHandle);
+        if (!(object instanceof Form)) { return -1; }
+        StringItem item = new StringItem(uiString(labelPtr), uiString(textPtr));
+        ((Form) object).append(item);
+        return uiStore(item);
+    }
+    private int uiAppendField(int formHandle, int labelPtr, int valuePtr, int maxLength, int mode) {
+        Object object = uiObject(formHandle);
+        if (!(object instanceof Form) || maxLength < 1) { return -1; }
+        TextField item = new TextField(uiString(labelPtr), uiString(valuePtr), maxLength, mode == 1 ? TextField.ANY | TextField.PASSWORD : TextField.ANY);
+        ((Form) object).append(item);
+        return uiStore(item);
+    }
+    private int uiListAppend(int listHandle, int textPtr) {
+        Object object = uiObject(listHandle);
+        return object instanceof List ? ((List) object).append(uiString(textPtr), null) : -1;
+    }
+    private int uiCommand(int labelPtr, int type, int priority) { return uiStore(new Command(uiString(labelPtr), uiCommandType(type), priority)); }
+    private int uiAddCommand(int screenHandle, int commandHandle) {
+        Object screen = uiObject(screenHandle), command = uiObject(commandHandle);
+        if (!(screen instanceof Displayable) || !(command instanceof Command)) { return -1; }
+        ((Displayable) screen).addCommand((Command) command);
+        return 0;
+    }
+    private int uiDisplay(int screenHandle) {
+        Object screen = uiObject(screenHandle);
+        if (!(screen instanceof Displayable)) { return -1; }
+        Displayable displayable = (Displayable) screen;
+        displayable.setCommandListener(this);
+        if (proc != null) { proc.screen = displayable; }
+        midlet.display.setCurrent(displayable);
+        return 0;
+    }
+    private int uiSetText(int handle, int textPtr) {
+        Object object = uiObject(handle);
+        String text = uiString(textPtr);
+        if (object instanceof StringItem) { ((StringItem) object).setText(text); }
+        else if (object instanceof TextField) { ((TextField) object).setString(text); }
+        else if (object instanceof TextBox) { ((TextBox) object).setString(text); }
+        else { return -1; }
+        return 0;
+    }
+    private int uiGetText(int handle, int buffer, int size) {
+        Object object = uiObject(handle);
+        String text = object instanceof StringItem ? ((StringItem) object).getText() : object instanceof TextField ? ((TextField) object).getString() : object instanceof TextBox ? ((TextBox) object).getString() : null;
+        if (text == null || size < 1) { return -1; }
+        libcWriteCStringN(buffer, text, size);
+        return text.length();
+    }
+    private int uiSetTitle(int handle, int titlePtr) {
+        Object object = uiObject(handle);
+        if (!(object instanceof Displayable)) { return -1; }
+        ((Displayable) object).setTitle(uiString(titlePtr));
+        return 0;
+    }
+    private int uiClear(int handle) {
+        Object object = uiObject(handle);
+        if (object instanceof Form) { ((Form) object).deleteAll(); }
+        else if (object instanceof List) { ((List) object).deleteAll(); }
+        else { return -1; }
+        return 0;
+    }
+    private int uiWaitEvent(int buffer) {
+        if (uiEvents.size() == 0) {
+            uiWaiting = true;
+            running = false;
+            return 0;
+        }
+        int[] event = (int[]) uiEvents.elementAt(0);
+        uiEvents.removeElementAt(0);
+        if (buffer < 0 || buffer + 15 >= memory.length) { return -1; }
+        for (int i = 0; i < 4; i++) { writeIntLE(memory, buffer + i * 4, event[i]); }
+        return 1;
+    }
+    private int uiDestroy(int handle) {
+        Integer key = new Integer(handle);
+        Object object = uiObjects.remove(key);
+        if (object == null) { return -1; }
+        uiHandles.remove(object);
+        return 0;
+    }
+    public void commandAction(Command command, Displayable screen) {
+        int type = command == List.SELECT_COMMAND ? 2 : 1;
+        int selected = screen instanceof List ? ((List) screen).getSelectedIndex() : -1;
+        uiEvents.addElement(new int[] { type, uiHandle(screen), uiHandle(command), selected });
+        if (uiWaiting) {
+            uiWaiting = false;
+            run();
         }
     }
 
@@ -1170,8 +1342,10 @@ public class ELF {
         } 
         finally { 
             if (midlet.debug) midlet.print("=== ELF FINALLY DEBUG ===", stdout, id, scope);
-            executeFiniFunctions();
-            if (midlet.sys.containsKey(pid)) { midlet.sys.remove(pid); } 
+            if (!uiWaiting) {
+                executeFiniFunctions();
+                if (midlet.sys.containsKey(pid)) { midlet.sys.remove(pid); }
+            }
         }
 
         ITEM.put("status", new Double(0));
@@ -2095,6 +2269,8 @@ public class ELF {
         }
 
         fileDescriptors.clear(); socketDescriptors.clear(); allocatedBlocks.clear(); jmpBufs.clear();
+        uiObjects.clear(); uiHandles.clear(); uiEvents.removeAllElements(); uiWaiting = false;
+        if (proc != null) { proc.screen = null; }
         memoryMappings.removeAllElements();
     }
     // |
