@@ -72,7 +72,6 @@
 .equ LIB_PROC_WAITPID,     LIB_BASE + 55
 .equ LIB_PROC_SHELL,       LIB_BASE + 56
 .equ LIB_PROC_GETENV,      LIB_BASE + 57
-.equ LIB_PROC_EXPAND_ENV,  LIB_BASE + 59
 .equ LIB_UI_SET_LABEL,     LIB_BASE + 58
 
 # ============================================================
@@ -165,7 +164,6 @@ LIBWRAP LIB_PROC_SPAWN,      opentty_spawn
 LIBWRAP LIB_PROC_WAITPID,    opentty_waitpid
 LIBWRAP LIB_PROC_SHELL,      opentty_shell
 LIBWRAP LIB_PROC_GETENV,     opentty_getenv
-LIBWRAP LIB_PROC_EXPAND_ENV, opentty_expand_env
 LIBWRAP LIB_UI_SET_LABEL,    lcdui_set_label
 
 # ---- Helpers de runtime RISC-V ---------------------------------

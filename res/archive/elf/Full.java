@@ -126,8 +126,7 @@ public class ELF implements CommandListener {
         LIB_UI_DESTROY = LIB_BASE + 51, LIB_UI_TASKMNGR = LIB_BASE + 52,
         LIB_PROC_SET = LIB_BASE + 53, LIB_PROC_SPAWN = LIB_BASE + 54,
         LIB_PROC_WAITPID = LIB_BASE + 55, LIB_PROC_SHELL = LIB_BASE + 56,
-        LIB_PROC_GETENV = LIB_BASE + 57, LIB_UI_SET_LABEL = LIB_BASE + 58,
-        LIB_PROC_EXPAND_ENV = LIB_BASE + 59;
+        LIB_PROC_GETENV = LIB_BASE + 57, LIB_UI_SET_LABEL = LIB_BASE + 58;
 
     // Relocation types
     private static final int R_RISCV_NONE = 0, R_RISCV_32 = 1, R_RISCV_RELATIVE = 3, R_RISCV_COPY = 4, R_RISCV_JUMP_SLOT = 5, R_RISCV_GLOB_DAT = 6;
@@ -656,7 +655,6 @@ public class ELF implements CommandListener {
         libc.put("opentty_shell", new Integer(createLibraryStub(LIB_PROC_SHELL)));
         libc.put("opentty_getenv", new Integer(createLibraryStub(LIB_PROC_GETENV)));
         libc.put("lcdui_set_label", new Integer(createLibraryStub(LIB_UI_SET_LABEL)));
-        libc.put("opentty_expand_env", new Integer(createLibraryStub(LIB_PROC_EXPAND_ENV)));
 
         // syscalls diretas (open/read/write/close/exit/brk) como antes
         libc.put("exit",  new Integer(createSyscallStub("exit")));
@@ -742,7 +740,6 @@ public class ELF implements CommandListener {
             case LIB_PROC_SHELL - LIB_BASE: registers[REG_A0] = procShell(registers[REG_A0]); break;
             case LIB_PROC_GETENV - LIB_BASE: registers[REG_A0] = procGetenv(registers[REG_A0], registers[REG_A1], registers[REG_A2]); break;
             case LIB_UI_SET_LABEL - LIB_BASE: registers[REG_A0] = uiSetLabel(registers[REG_A0], registers[REG_A1]); break;
-            case LIB_PROC_EXPAND_ENV - LIB_BASE: registers[REG_A0] = procExpandEnv(registers[REG_A0], registers[REG_A1], registers[REG_A2]); break;
             default: registers[REG_A0] = -1; break;
         }
     }
@@ -900,25 +897,12 @@ public class ELF implements CommandListener {
         } catch (Exception e) { return -1; }
     }
     private int procGetenv(int keyPtr, int buffer, int size) {
-        if (keyPtr == 0 || buffer == 0 || size <= 0) { return -22; }
-        Object value = scope == null ? null : scope.get(uiString(keyPtr));
-        String text = value == null ? "" : String.valueOf(value);
+        if (keyPtr == 0 || buffer < 0 || size < 1) { return -22; }
+        Object value = scope.get(uiString(keyPtr));
+        if (value == null) { return -2; }
+        String text = String.valueOf(value);
         libcWriteCStringN(buffer, text, size);
         return text.length();
-    }
-    private int procExpandEnv(int textPtr, int buffer, int size) {
-        if (textPtr == 0 || buffer == 0 || size <= 0) { return -22; }
-        String text = uiString(textPtr); StringBuffer out = new StringBuffer();
-        for (int i = 0; i < text.length(); i++) {
-            if (text.charAt(i) != '$') { out.append(text.charAt(i)); continue; }
-            int start = ++i;
-            while (i < text.length() && ((text.charAt(i) >= 'A' && text.charAt(i) <= 'Z') || (text.charAt(i) >= 'a' && text.charAt(i) <= 'z') || (text.charAt(i) >= '0' && text.charAt(i) <= '9') || text.charAt(i) == '_')) { i++; }
-            if (start == i) { out.append('$'); i--; continue; }
-            Object value = scope == null ? null : scope.get(text.substring(start, i));
-            if (value != null) { out.append(String.valueOf(value)); }
-            i--;
-        }
-        String expanded = out.toString(); libcWriteCStringN(buffer, expanded, size); return expanded.length();
     }
     private int uiSetLabel(int handle, int labelPtr) {
         Object object = uiObject(handle);
