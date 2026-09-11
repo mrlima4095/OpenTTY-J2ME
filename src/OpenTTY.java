@@ -517,20 +517,25 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (rs.getNumRecords() == 0) { byte[] marker = VFS_PROTECTED_RECORD.getBytes(); rs.addRecord(marker, 0, marker.length); }
     }
     private boolean addVfsFile(String path, byte[] data) {
-        for (int store = vfsWriteStore; ; store++) {
+        int store = vfsWriteStore;
+        while (true) {
             RecordStore rs = null;
-            boolean newStore = false;
+            int records = -1;
             try {
                 rs = RecordStore.openRecordStore(VFS_STORE_PREFIX + store, true);
-                newStore = rs.getNumRecords() == 0;
+                records = rs.getNumRecords();
                 prepareVfsStore(rs);
                 int record = rs.addRecord(data, 0, data.length);
                 vfsFiles.put(path, VFS_STORE_PREFIX + store + "\t" + record);
                 vfsWriteStore = store;
+                rs.closeRecordStore();
                 return true;
-            } catch (RecordStoreFullException e) { if (newStore) { return false; } vfsWriteStore = store + 1; }
-            catch (Exception e) { return false; }
-            finally { try { if (rs != null) { rs.closeRecordStore(); } } catch (Exception e) { } }
+            } catch (Exception e) {
+                try { if (rs != null) { rs.closeRecordStore(); } } catch (Exception ignored) { }
+                if (!(e instanceof RecordStoreFullException) || records == 0) { return false; }
+                store++;
+                vfsWriteStore = store;
+            }
         }
     }
     private String[] vfsLocation(String path) { String location = (String) vfsFiles.get(path); return location == null ? null : split(location, '\t'); }
