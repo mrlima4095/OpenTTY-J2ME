@@ -125,7 +125,9 @@ public class ELF implements CommandListener {
         LIB_UI_SET_TITLE = LIB_BASE + 48, LIB_UI_CLEAR = LIB_BASE + 49, LIB_UI_WAIT_EVENT = LIB_BASE + 50,
         LIB_UI_DESTROY = LIB_BASE + 51, LIB_UI_TASKMNGR = LIB_BASE + 52,
         LIB_PROC_SET = LIB_BASE + 53, LIB_PROC_SPAWN = LIB_BASE + 54,
-        LIB_PROC_WAITPID = LIB_BASE + 55;
+        LIB_PROC_WAITPID = LIB_BASE + 55, LIB_PROC_SHELL = LIB_BASE + 56,
+        LIB_PROC_GETENV = LIB_BASE + 57, LIB_UI_SET_LABEL = LIB_BASE + 58,
+        LIB_PROC_EXPAND_ENV = LIB_BASE + 59;
 
     // Relocation types
     private static final int R_RISCV_NONE = 0, R_RISCV_32 = 1, R_RISCV_RELATIVE = 3, R_RISCV_COPY = 4, R_RISCV_JUMP_SLOT = 5, R_RISCV_GLOB_DAT = 6;
@@ -651,6 +653,10 @@ public class ELF implements CommandListener {
         libc.put("opentty_setproc", new Integer(createLibraryStub(LIB_PROC_SET)));
         libc.put("opentty_spawn", new Integer(createLibraryStub(LIB_PROC_SPAWN)));
         libc.put("opentty_waitpid", new Integer(createLibraryStub(LIB_PROC_WAITPID)));
+        libc.put("opentty_shell", new Integer(createLibraryStub(LIB_PROC_SHELL)));
+        libc.put("opentty_getenv", new Integer(createLibraryStub(LIB_PROC_GETENV)));
+        libc.put("lcdui_set_label", new Integer(createLibraryStub(LIB_UI_SET_LABEL)));
+        libc.put("opentty_expand_env", new Integer(createLibraryStub(LIB_PROC_EXPAND_ENV)));
 
         // syscalls diretas (open/read/write/close/exit/brk) como antes
         libc.put("exit",  new Integer(createSyscallStub("exit")));
@@ -733,6 +739,10 @@ public class ELF implements CommandListener {
             case LIB_PROC_SET - LIB_BASE: registers[REG_A0] = procSet(registers[REG_A0], registers[REG_A1]); break;
             case LIB_PROC_SPAWN - LIB_BASE: registers[REG_A0] = procSpawn(registers[REG_A0], registers[REG_A1]); break;
             case LIB_PROC_WAITPID - LIB_BASE: registers[REG_A0] = procWaitpid(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_PROC_SHELL - LIB_BASE: registers[REG_A0] = procShell(registers[REG_A0]); break;
+            case LIB_PROC_GETENV - LIB_BASE: registers[REG_A0] = procGetenv(registers[REG_A0], registers[REG_A1], registers[REG_A2]); break;
+            case LIB_UI_SET_LABEL - LIB_BASE: registers[REG_A0] = uiSetLabel(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_PROC_EXPAND_ENV - LIB_BASE: registers[REG_A0] = procExpandEnv(registers[REG_A0], registers[REG_A1], registers[REG_A2]); break;
             default: registers[REG_A0] = -1; break;
         }
     }
@@ -819,6 +829,11 @@ public class ELF implements CommandListener {
         } else if (key.equals("cmd")) {
             if (value == 0) { return -1; }
             proc.cmd = uiString(value);
+        } else if (key.equals("stdout")) {
+            Object output = uiObject(value);
+            if (!(output instanceof StringItem)) { return -1; }
+            proc.stdout = output;
+            stdout = output;
         } else if (value == 0) {
             proc.db.remove(key);
         } else {
@@ -851,7 +866,7 @@ public class ELF implements CommandListener {
         new Thread(new Runnable() { public void run() {
             try {
                 if (child.lua != null) { child.lua.run(path, new String(data, "UTF-8"), childArgs); }
-                else if (child.elf.load(new ByteArrayInputStream(data))) { child.elf.run(); }
+                else if (child.getELF().load(new ByteArrayInputStream(data))) { child.getELF().run(); }
                 else { child.exitStatus = 8; }
             } catch (Throwable e) { child.exitStatus = 1; }
             if (midlet.sys.containsKey(childPid)) {
@@ -871,6 +886,46 @@ public class ELF implements CommandListener {
         if (statusPtr != 0 && statusPtr >= 0 && statusPtr + 3 < memory.length) { writeIntLE(memory, statusPtr, child.exitStatus); }
         midlet.exited.remove(key);
         return childPid;
+    }
+    private int procShell(int commandPtr) {
+        if (commandPtr == 0) { return -22; }
+        Vector args = new Vector();
+        args.addElement(uiString(commandPtr));
+        try {
+            Lua shellLua = new Lua(midlet, id, pid, proc, stdout, scope);
+            Lua.LuaFunction shell = midlet.shell instanceof Lua.LuaFunction
+                ? (Lua.LuaFunction) midlet.shell : shellLua.new LuaFunction(Lua.EXEC);
+            Object result = shell.call(args);
+            return result instanceof Double ? ((Double) result).intValue() : 0;
+        } catch (Exception e) { return -1; }
+    }
+    private int procGetenv(int keyPtr, int buffer, int size) {
+        if (keyPtr == 0 || buffer == 0 || size <= 0) { return -22; }
+        Object value = scope == null ? null : scope.get(uiString(keyPtr));
+        String text = value == null ? "" : String.valueOf(value);
+        libcWriteCStringN(buffer, text, size);
+        return text.length();
+    }
+    private int procExpandEnv(int textPtr, int buffer, int size) {
+        if (textPtr == 0 || buffer == 0 || size <= 0) { return -22; }
+        String text = uiString(textPtr); StringBuffer out = new StringBuffer();
+        for (int i = 0; i < text.length(); i++) {
+            if (text.charAt(i) != '$') { out.append(text.charAt(i)); continue; }
+            int start = ++i;
+            while (i < text.length() && ((text.charAt(i) >= 'A' && text.charAt(i) <= 'Z') || (text.charAt(i) >= 'a' && text.charAt(i) <= 'z') || (text.charAt(i) >= '0' && text.charAt(i) <= '9') || text.charAt(i) == '_')) { i++; }
+            if (start == i) { out.append('$'); i--; continue; }
+            Object value = scope == null ? null : scope.get(text.substring(start, i));
+            if (value != null) { out.append(String.valueOf(value)); }
+            i--;
+        }
+        String expanded = out.toString(); libcWriteCStringN(buffer, expanded, size); return expanded.length();
+    }
+    private int uiSetLabel(int handle, int labelPtr) {
+        Object object = uiObject(handle);
+        if (object instanceof StringItem) { ((StringItem) object).setLabel(uiString(labelPtr)); }
+        else if (object instanceof TextField) { ((TextField) object).setLabel(uiString(labelPtr)); }
+        else { return -1; }
+        return 0;
     }
     private int uiSetText(int handle, int textPtr) {
         Object object = uiObject(handle);
@@ -2233,7 +2288,7 @@ public class ELF implements CommandListener {
                 InputStream elfStream = new ByteArrayInputStream(data);
                 Process process = new Process(midlet, "elf", midlet.joinpath(path, scope), midlet.getUser(id), id, midlet.genpid(), stdout, arg, scope);
                 
-                if (process.elf.load(elfStream)) { process.elf.run(); registers[REG_A0] = 0; } else { registers[REG_A0] = -8; }
+                if (process.getELF().load(elfStream)) { process.getELF().run(); registers[REG_A0] = 0; } else { registers[REG_A0] = -8; }
             }
         } catch (Exception e) { registers[REG_A0] = -1; }
     }

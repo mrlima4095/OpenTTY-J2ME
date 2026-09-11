@@ -43,7 +43,7 @@ if [ "$LITE" -eq 0 ] && [ "$WAS_LITE" -eq 1 ]; then
 fi
 
 java -jar "$ROOT/sdkcli.jar" "$ROOT/" OpenTTY.jar OpenTTY.jad
-mv "$ROOT"/dist/OpenTTY.* /var/www/opentty/dist
+cp -f "$ROOT"/dist/OpenTTY.* /var/www/opentty/dist
 echo "=> dist copiado para /var/www/opentty/dist"
 
 # Nunca deixa a arvore em modo lite sem pedido explicito futuro.

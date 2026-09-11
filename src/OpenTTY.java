@@ -12,7 +12,7 @@ import java.io.*;
 // OpenTTY MIDlet
 public class OpenTTY extends MIDlet implements CommandListener {
     // Kept in sync by res/swap_lite.sh so Lua need not load ELF at startup.
-    public static final boolean ELF_LITE = true;
+    public static final boolean ELF_LITE = false;
     // Behavior Settings
     public long uptime = System.currentTimeMillis();
     public boolean useCache = true, debug = false;
