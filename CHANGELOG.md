@@ -15,6 +15,8 @@ Copyright (C) 2026 - Mr. Lima
 [ VFS ]
 
 - `/boot/` partition
+- improved filesystem mounting 
+- file caching disabled
 
 [ ELF ]
 
