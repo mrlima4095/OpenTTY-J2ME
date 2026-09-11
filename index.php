@@ -278,14 +278,14 @@ else {
       <div class="col-lg-6">
         <div class="mb-3">
           <span class="badge bg-dark text-cyan border border-cyan px-3 py-2 rounded-pill" style="border-color:#2dd4bf80 !important;">
-            <i class="bi bi-terminal-fill me-1"></i> J2ME · ARM32 Emulation
+            <i class="bi bi-terminal-fill me-1"></i> J2ME · RISC-V RV32IM Emulation
           </span>
         </div>
         <h1 class="display-4 fw-bold mb-3" style="letter-spacing: -0.02em;">
           Run ELF & Lua<br> inside <span class="text-gradient" style="color:#2dd4bf;">retro terminals</span>
         </h1>
         <p class="lead text-light-emphasis opacity-75 mb-4">
-          OpenTTY brings a full Unix-like environment to J2ME feature phones. Execute ARM32 binaries, Lua scripts, manage processes, and experience modern CLI on old devices.
+          OpenTTY brings a full Unix-like environment to J2ME feature phones. Execute RISC-V binaries, Lua scripts, manage processes, and experience modern CLI on old devices.
         </p>
         <div class="btn-icon-group mb-4">
           <a class="btn btn-outline-terminal" href="/dist/"><i class="bi bi-download"></i><span>Downloads</span></a>
@@ -312,7 +312,7 @@ else {
 Nokia 6233 (OpenTTY 1.18.1) main/mod 2026-1.18.1-03x27 - CLDC-1.1 MIDP-2.0
 
 <span style="color:#2dd4bf;">$</span> ./hello.elf
-Hello from ARM ELF on J2ME!
+Hello from RISC-V ELF on J2ME!
 
 <span style="color:#2dd4bf;">$</span> lua -e 'print(os.date())'
 Tue Apr 30 16:20:01 2026
@@ -340,8 +340,8 @@ PID  PROCESS
       <div class="col-md-6 col-lg-4">
         <div class="feature-card p-4">
           <i class="bi bi-file-binary fs-1 text-cyan" style="color:#2dd4bf;"></i>
-          <h4 class="mt-3 fw-semibold">ARM32 ELF Loader</h4>
-          <p class="text-secondary">Full ELF interpreter for ARM executables. Support for PT_LOAD, dynamic sections, GOT/PLT lazy binding, and syscall translation layer.</p>
+          <h4 class="mt-3 fw-semibold">RISC-V ELF Loader</h4>
+          <p class="text-secondary">Full RV32IM ELF interpreter. Support for PT_LOAD, dynamic sections, GOT/PLT relocation, and syscall translation layer.</p>
         </div>
       </div>
       <div class="col-md-6 col-lg-4">
@@ -389,10 +389,10 @@ PID  PROCESS
     <div class="row align-items-center">
       <div class="col-lg-6 mb-4 mb-lg-0">
         <h2 class="fw-bold mb-3"><i class="bi bi-layers me-2" style="color:#2dd4bf;"></i> Hybrid execution engine</h2>
-        <p>The core of OpenTTY includes a lightweight ARM32 interpreter that reads ELF binaries, relocates symbols, resolves dynamic libraries, and traps syscalls. Combined with the Lua runtime, it offers both compiled C applications and scripting.</p>
+        <p>The core of OpenTTY includes a lightweight RISC-V RV32IM interpreter that reads ELF binaries, relocates symbols, resolves dynamic libraries, and traps syscalls. Combined with the Lua runtime, it offers both compiled C applications and scripting.</p>
         <ul class="list-unstyled mt-3">
-          <li class="mb-2"><i class="bi bi-check-lg text-cyan me-2"></i> <strong>Dynamic Linking:</strong> DT_NEEDED, GOT/PLT, lazy resolution, R_ARM_JUMP_SLOT</li>
-          <li class="mb-2"><i class="bi bi-check-lg text-cyan me-2"></i> <strong>Full ARM Thumb/ARM mode:</strong> Data processing, load/store, branch, SWI syscalls</li>
+          <li class="mb-2"><i class="bi bi-check-lg text-cyan me-2"></i> <strong>Dynamic Linking:</strong> DT_NEEDED, GOT/PLT, R_RISCV_JUMP_SLOT and R_RISCV_GLOB_DAT</li>
+          <li class="mb-2"><i class="bi bi-check-lg text-cyan me-2"></i> <strong>RV32IM core:</strong> Integer, load/store, branch, system, and M-extension instructions</li>
           <li class="mb-2"><i class="bi bi-check-lg text-cyan me-2"></i> <strong>Signal handling & setjmp/longjmp</strong></li>
           <li class="mb-2"><i class="bi bi-check-lg text-cyan me-2"></i> <strong>POSIX emulation:</strong> open, read, write, mmap, fork, execve, socket, futex</li>
         </ul>
@@ -403,17 +403,17 @@ PID  PROCESS
           <h5 class="mb-3"><i class="bi bi-cpu"></i> Dynamic relocation demo</h5>
           <pre style="font-size: 0.75rem; background:#0c0f15; padding: 1rem; border-radius: 16px; overflow-x: auto;"><span style="color:#6aa9ff;">// ELF relocation handling (Java)</span>
 <span style="color:#2dd4bf;">switch</span>(type) {
-  <span style="color:#2dd4bf;">case</span> R_ARM_JUMP_SLOT:
-    setupLazyBinding(gotOffset, symIndex);
+  <span style="color:#2dd4bf;">case</span> R_RISCV_JUMP_SLOT:
+    writeIntLE(memory, offset, resolveSymbol(symName));
     <span style="color:#6aa9ff;">break;</span>
-  <span style="color:#2dd4bf;">case</span> R_ARM_GLOB_DAT:
+  <span style="color:#2dd4bf;">case</span> R_RISCV_GLOB_DAT:
     symAddr = resolveSymbol(symName);
     writeIntLE(memory, offset, symAddr);
     <span style="color:#6aa9ff;">break;</span>
 }
-<span style="color:#2dd4bf;">// PLT resolver stub</span>
-<span style="color:#d4d4d4;">0xe51ff004 : ldr pc, [pc, #-4]</span></pre>
-          <div class="small text-secondary mt-2">OpenTTY implements both REL and RELA relocations, dynamic symbol table, and a generic syscall dispatcher with 70+ Linux EABI syscalls.</div>
+<span style="color:#6aa9ff;">// RISC-V system instruction</span>
+<span style="color:#d4d4d4;">0x00000073 : ecall</span></pre>
+          <div class="small text-secondary mt-2">OpenTTY implements RISC-V RELA relocations, dynamic symbol tables, and a generic syscall dispatcher.</div>
         </div>
       </div>
     </div>
@@ -427,7 +427,7 @@ PID  PROCESS
       <div class="col-md-6">
         <div class="p-4 rounded-4 bg-dark bg-opacity-30 border border-secondary border-opacity-25 h-100">
           <i class="bi bi-quote fs-1 text-cyan opacity-50"></i>
-          <p class="mt-2 fs-5 fst-italic">"OpenTTY brings the Unix philosophy to feature phones. It's more than a terminal — it's a full development and runtime environment for ARM binaries and Lua, all running inside the JVM."</p>
+          <p class="mt-2 fs-5 fst-italic">"OpenTTY brings the Unix philosophy to feature phones. It's more than a terminal — it's a full development and runtime environment for RISC-V binaries and Lua, all running inside the JVM."</p>
           <hr class="my-3 opacity-25">
           <div class="d-flex align-items-center gap-3">
             <div style="width:48px;height:48px;background:#1e293b; border-radius: 99px; display:flex; align-items:center; justify-content:center;"><i class="bi bi-code-slash fs-4"></i></div>
@@ -441,7 +441,7 @@ PID  PROCESS
           <h5 class="mt-2">Modular design</h5>
           <p>ELF loader – independent bytecode interpreter – posix file abstraction – Lua FFI – graphics toolkit. Everything structured for extensions and lightweight memory usage (dynamic heap, 1MB base memory).</p>
           <div class="mt-3 small">
-            <span class="badge bg-dark me-1">#ARM32</span>
+            <span class="badge bg-dark me-1">#RISCV</span>
             <span class="badge bg-dark me-1">#LuaJIT-like</span>
             <span class="badge bg-dark me-1">#RecordStoreFS</span>
             <span class="badge bg-dark">#Socket API</span>
@@ -537,7 +537,7 @@ $ select OpenTTY folder → click Build (🛠️)
     <div class="row gy-4">
       <div class="col-md-5">
         <a class="navbar-brand fw-bold fs-3" href="#"><span style="color:#2dd4bf;">❯❯</span> OpenTTY</a>
-        <p class="small text-secondary mt-2">Modern UNIX-like environment for J2ME phones. ARM ELF loader, Lua scripting, process isolation, networking, and GUI.</p>
+        <p class="small text-secondary mt-2">Modern UNIX-like environment for J2ME phones. RISC-V ELF loader, Lua scripting, process isolation, networking, and GUI.</p>
         <div class="d-flex gap-3 footer-links">
           <a href="https://github.com/mrlima4095/OpenTTY-J2ME"><i class="bi bi-github"></i> GitHub</a>
           <a href="http://git.opentty.fun"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" width="1em" height="1em" fill="currentColor" style="vertical-align: -0.125em;">
