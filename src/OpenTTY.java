@@ -296,7 +296,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     if (useCache && cache.containsKey(full)) { return new ByteArrayInputStream((byte[]) cache.get(full)); }
 
                     byte[] content = readVfsFile(full);
-                    if (content != null) { if (useCache && content.length <= VFS_CACHE_MAX) { cache.put(full, content); } return new ByteArrayInputStream(content); }
+                    if (content != null) { cacheVfsFile(full, content); return new ByteArrayInputStream(content); }
                 }
                 filename = full;
             }
@@ -366,7 +366,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else {
                 if (index >= 6) { registerVfsDir(dir); }
                 int result = writeVfsFile(full, data);
-                if (result == 0 && useCache && data.length <= VFS_CACHE_MAX) { cache.put(full, data); }
+                if (result == 0) { cacheVfsFile(full, data); }
                 return result;
             }
         }
@@ -437,7 +437,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     // | (VFS Store Index)
     private static final int VFS_HASH_MOD = 97, VFS_RESERVED = 9;
-    private static final int VFS_INDEX_RECORD = 3, VFS_CACHE_MAX = 8192;
+    private static final int VFS_INDEX_RECORD = 3, VFS_CACHE_MAX = 8192, VFS_CACHE_ENTRIES = 16;
     private static final String VFS_STORE_PREFIX = "OpenRMS-", VFS_PROTECTED_RECORD = "System file not modify";
     private int vfsWriteStore = 2;
     public int vfsDirIndex(String dir) {
@@ -492,6 +492,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (previous > 0) { try { vfsFiles.put(lines[i].substring(0, previous), lines[i].substring(previous + 1, tab) + "\t" + Integer.parseInt(lines[i].substring(tab + 1))); int store = Integer.parseInt(lines[i].substring(previous + 1, tab).substring(VFS_STORE_PREFIX.length())); if (store > vfsWriteStore) { vfsWriteStore = store; } } catch (Exception e) { } }
         }
     }
+    private void cacheVfsFile(String path, byte[] data) { if (useCache && data.length <= VFS_CACHE_MAX) { if (!cache.containsKey(path) && cache.size() >= VFS_CACHE_ENTRIES) { cache.clear(); } cache.put(path, data); } }
     private void migrateLegacyVfs() throws Exception {
         RecordStore rs = null;
         try {
