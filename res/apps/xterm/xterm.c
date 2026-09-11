@@ -27,6 +27,7 @@ int main(void)
     int terminal = lcdui_new(LCDUI_FORM, "Terminal", 0, 0);
     char motd[512];
     read_text("/etc/motd", motd, sizeof(motd));
+    opentty_expand_env(motd, motd, sizeof(motd));
     int output = lcdui_append_text(terminal, 0, motd);
     int input = lcdui_append_field(terminal, "Command", "", 256, LCDUI_TEXT_ANY);
     int run = lcdui_command("Run", LCDUI_COMMAND_OK, 1);

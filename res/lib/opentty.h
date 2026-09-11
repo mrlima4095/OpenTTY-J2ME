@@ -63,5 +63,6 @@ int opentty_spawn(const char *path, int *pid_out);
 int opentty_waitpid(int pid, int *status_out);
 int opentty_shell(const char *command);
 int opentty_getenv(const char *key, char *buffer, size_t size);
+int opentty_expand_env(const char *text, char *buffer, size_t size);
 
 #endif
