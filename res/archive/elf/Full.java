@@ -2751,7 +2751,7 @@ public class ELF implements CommandListener {
                 }
             }
             else if (midlet.vfsDirIndex(pwd) != -1) { Vector files = midlet.listVfsFiles(pwd); for (int i = 0; i < files.size(); i++) { fileList.addElement(files.elementAt(i)); } }
-            else if (pwd.equals("/home/")) { String[] files = RecordStore.listRecordStores(); if (files != null) { for (int i = 0; i < files.length; i++) { fileList.addElement(files[i]); } } }
+            else if (pwd.equals("/home/")) { String[] files = RecordStore.listRecordStores(); if (files != null) { for (int i = 0; i < files.length; i++) { if (!files[i].startsWith("OpenRMS")) { fileList.addElement(files[i]); } } } }
             
             if (midlet.fs.containsKey(pwd)) {
                 Vector struct = (Vector) midlet.fs.get(pwd);

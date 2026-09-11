@@ -3298,7 +3298,7 @@ public class Lua {
             else if (pwd.equals("/home/")) { 
                 String[] files = RecordStore.listRecordStores(); 
                 if (files != null) { 
-                    for (int i = 0; i < files.length; i++) { if (files[i].equals("OpenRMS")) { continue; } list.put(new Double(index), files[i]); index++; } 
+                    for (int i = 0; i < files.length; i++) { if (files[i].startsWith("OpenRMS")) { continue; } list.put(new Double(index), files[i]); index++; }
                 } 
             }
             
