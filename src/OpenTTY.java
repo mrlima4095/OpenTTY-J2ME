@@ -296,7 +296,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     if (useCache && cache.containsKey(full)) { return new ByteArrayInputStream((byte[]) cache.get(full)); }
 
                     byte[] content = readVfsFile(full);
-                    if (content != null) { if (useCache) { cache.put(full, content); } return new ByteArrayInputStream(content); }
+                    if (content != null) { if (useCache && content.length <= VFS_CACHE_MAX) { cache.put(full, content); } return new ByteArrayInputStream(content); }
                 }
                 filename = full;
             }
@@ -366,7 +366,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else {
                 if (index >= 6) { registerVfsDir(dir); }
                 int result = writeVfsFile(full, data);
-                if (result == 0 && useCache) { cache.put(full, data); }
+                if (result == 0 && useCache && data.length <= VFS_CACHE_MAX) { cache.put(full, data); }
                 return result;
             }
         }
@@ -437,7 +437,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     // | (VFS Store Index)
     private static final int VFS_HASH_MOD = 97, VFS_RESERVED = 9;
-    private static final String VFS_INDEX_STORE = "OpenRMS-VFS", VFS_STORE_PREFIX = "OpenRMS-", VFS_PROTECTED_RECORD = "System file not modify";
+    private static final int VFS_INDEX_RECORD = 3, VFS_CACHE_MAX = 8192;
+    private static final String VFS_STORE_PREFIX = "OpenRMS-", VFS_PROTECTED_RECORD = "System file not modify";
     private int vfsWriteStore = 2;
     public int vfsDirIndex(String dir) {
         while (dir.length() > 1 && dir.endsWith("/")) { dir = dir.substring(0, dir.length() - 1); }
@@ -458,21 +459,38 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (vfsReady) { return; }
         RecordStore rs = null;
         try {
-            rs = RecordStore.openRecordStore(VFS_INDEX_STORE, true);
-            boolean newIndex = rs.getNumRecords() == 0;
-            if (newIndex) { rs.addRecord("VFS3\n".getBytes(), 0, 5); }
-            String index = new String(rs.getRecord(1));
-            if (index.startsWith("VFS3\n")) {
-                String[] lines = split(index, '\n');
-                for (int i = 1; i < lines.length; i++) {
-                    int tab = lines[i].lastIndexOf('\t'), previous = tab < 0 ? -1 : lines[i].lastIndexOf('\t', tab - 1);
-                    if (previous > 0) { try { vfsFiles.put(lines[i].substring(0, previous), lines[i].substring(previous + 1, tab) + "\t" + Integer.parseInt(lines[i].substring(tab + 1))); int store = Integer.parseInt(lines[i].substring(previous + 1, tab).substring(VFS_STORE_PREFIX.length())); if (store > vfsWriteStore) { vfsWriteStore = store; } } catch (Exception e) { } }
-                }
+            rs = RecordStore.openRecordStore("OpenRMS", true);
+            while (rs.getNumRecords() < VFS_INDEX_RECORD) { rs.addRecord(new byte[0], 0, 0); }
+            String index = new String(rs.getRecord(VFS_INDEX_RECORD));
+            if (!index.startsWith("VFS3\n")) {
+                rs.closeRecordStore(); rs = null;
+                index = loadExternalVfsIndex();
+                if (index != null && index.startsWith("VFS3\n")) {
+                    rs = RecordStore.openRecordStore("OpenRMS", true);
+                    byte[] data = index.getBytes(); rs.setRecord(VFS_INDEX_RECORD, data, 0, data.length);
+                    rs.closeRecordStore(); rs = null;
+                    try { RecordStore.deleteRecordStore("OpenRMS-VFS"); } catch (Exception e) { }
+                } else { migrateLegacyVfs(); }
             }
-            if (newIndex) { migrateLegacyVfs(); saveVfsIndex(); }
+            if (index != null && index.startsWith("VFS3\n")) { loadVfsIndex(index); }
+            else { rs = RecordStore.openRecordStore("OpenRMS", true); index = new String(rs.getRecord(VFS_INDEX_RECORD)); loadVfsIndex(index); }
             vfsReady = true;
         } catch (Exception e) { }
         finally { try { if (rs != null) { rs.closeRecordStore(); } } catch (Exception e) { } }
+    }
+    private String loadExternalVfsIndex() {
+        RecordStore rs = null;
+        try { rs = RecordStore.openRecordStore("OpenRMS-VFS", false); return rs.getNumRecords() == 0 ? null : new String(rs.getRecord(1)); }
+        catch (Exception e) { return null; }
+        finally { try { if (rs != null) { rs.closeRecordStore(); } } catch (Exception e) { } }
+    }
+    private void loadVfsIndex(String index) {
+        if (index == null || !index.startsWith("VFS3\n")) { return; }
+        String[] lines = split(index, '\n');
+        for (int i = 1; i < lines.length; i++) {
+            int tab = lines[i].lastIndexOf('\t'), previous = tab < 0 ? -1 : lines[i].lastIndexOf('\t', tab - 1);
+            if (previous > 0) { try { vfsFiles.put(lines[i].substring(0, previous), lines[i].substring(previous + 1, tab) + "\t" + Integer.parseInt(lines[i].substring(tab + 1))); int store = Integer.parseInt(lines[i].substring(previous + 1, tab).substring(VFS_STORE_PREFIX.length())); if (store > vfsWriteStore) { vfsWriteStore = store; } } catch (Exception e) { } }
+        }
     }
     private void migrateLegacyVfs() throws Exception {
         RecordStore rs = null;
@@ -539,7 +557,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
     }
     private String[] vfsLocation(String path) { String location = (String) vfsFiles.get(path); return location == null ? null : split(location, '\t'); }
-    private void saveVfsIndex() throws Exception { RecordStore rs = null; try { rs = RecordStore.openRecordStore(VFS_INDEX_STORE, true); StringBuffer out = new StringBuffer("VFS3\n"); for (Enumeration e = vfsFiles.keys(); e.hasMoreElements();) { String path = (String) e.nextElement(); out.append(path).append('\t').append(vfsFiles.get(path)).append('\n'); } byte[] data = out.toString().getBytes(); rs.setRecord(1, data, 0, data.length); } finally { try { if (rs != null) { rs.closeRecordStore(); } } catch (Exception e) { } } }
+    private void saveVfsIndex() throws Exception { RecordStore rs = null; try { rs = RecordStore.openRecordStore("OpenRMS", true); StringBuffer out = new StringBuffer("VFS3\n"); for (Enumeration e = vfsFiles.keys(); e.hasMoreElements();) { String path = (String) e.nextElement(); out.append(path).append('\t').append(vfsFiles.get(path)).append('\n'); } byte[] data = out.toString().getBytes(); rs.setRecord(VFS_INDEX_RECORD, data, 0, data.length); } finally { try { if (rs != null) { rs.closeRecordStore(); } } catch (Exception e) { } } }
     public byte[] readVfsFile(String path) {
         RecordStore rs = null;
         try {
