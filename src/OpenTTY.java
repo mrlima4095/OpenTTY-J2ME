@@ -23,7 +23,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Runtime runtime = Runtime.getRuntime();
     public Object shell;
     // |
-    public Hashtable attributes = new Hashtable(), fs = new Hashtable(), sys = new Hashtable(), exited = new Hashtable(), tmp = new Hashtable(), cache = new Hashtable(), cacheLua = new Hashtable(), graphics = new Hashtable(), servers = new Hashtable(), globals = new Hashtable(), userID = new Hashtable();
+    public Hashtable attributes = new Hashtable(), fs = new Hashtable(), sys = new Hashtable(), exited = new Hashtable(), tmp = new Hashtable(), cacheLua = new Hashtable(), graphics = new Hashtable(), servers = new Hashtable(), globals = new Hashtable(), userID = new Hashtable();
     private Hashtable vfsFiles = new Hashtable();
     private boolean vfsReady = false;
     public String username = read("/home/OpenRMS", globals), build = "2026-1.18.2-04x38";
@@ -293,10 +293,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String dir = slash < 0 ? filename : filename.substring(0, slash + 1);
                 String name = slash < 0 ? filename : filename.substring(slash + 1);
                 if (vfsDirIndex(dir) != -1) {
-                    if (useCache && cache.containsKey(full)) { return new ByteArrayInputStream((byte[]) cache.get(full)); }
-
                     byte[] content = readVfsFile(full);
-                    if (content != null) { cacheVfsFile(full, content); return new ByteArrayInputStream(content); }
+                    if (content != null) { return new ByteArrayInputStream(content); }
                 }
                 filename = full;
             }
@@ -366,7 +364,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             else {
                 if (index >= 6) { registerVfsDir(dir); }
                 int result = writeVfsFile(full, data);
-                if (result == 0) { cacheVfsFile(full, data); }
                 return result;
             }
         }
@@ -415,14 +412,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 Vector struct = (Vector) fs.get(dir);
                 if (struct != null) { struct.removeElement(name + "/"); }
                 unpersistVfsMount(subdir);
-                if (useCache) { cache.remove(full); }
                 return 0;
             }
 
             int index = vfsDirIndex(dir);
             if (index == -1) { return 5; }
             int result = deleteVfsFile(full);
-            if (result == 0 && useCache) { cache.remove(full); }
             return result;
         }
         else if (filename.startsWith("/tmp/")) {
@@ -437,7 +432,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     // | (VFS Store Index)
     private static final int VFS_HASH_MOD = 97, VFS_RESERVED = 9;
-    private static final int VFS_INDEX_RECORD = 3, VFS_CACHE_MAX = 8192, VFS_CACHE_ENTRIES = 16;
+    private static final int VFS_INDEX_RECORD = 3;
     private static final String VFS_STORE_PREFIX = "OpenRMS-", VFS_PROTECTED_RECORD = "System file not modify";
     private int vfsWriteStore = 2;
     public int vfsDirIndex(String dir) {
@@ -492,7 +487,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (previous > 0) { try { vfsFiles.put(lines[i].substring(0, previous), lines[i].substring(previous + 1, tab) + "\t" + Integer.parseInt(lines[i].substring(tab + 1))); int store = Integer.parseInt(lines[i].substring(previous + 1, tab).substring(VFS_STORE_PREFIX.length())); if (store > vfsWriteStore) { vfsWriteStore = store; } } catch (Exception e) { } }
         }
     }
-    private void cacheVfsFile(String path, byte[] data) { if (useCache && data.length <= VFS_CACHE_MAX) { if (!cache.containsKey(path) && cache.size() >= VFS_CACHE_ENTRIES) { cache.clear(); } cache.put(path, data); } }
     private void migrateLegacyVfs() throws Exception {
         RecordStore rs = null;
         try {
