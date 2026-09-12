@@ -42,7 +42,21 @@ if [ "$LITE" -eq 0 ] && [ "$WAS_LITE" -eq 1 ]; then
     "$ROOT/res/swap_lite.sh"
 fi
 
+# O SDKCLI compila/preverifica dentro de build/, mas nunca limpa:
+# resta classes stale (ex.: ELF$1 do emulador full) e elas vazam
+# para jars lite. Limpa sempre antes de compilar.
+rm -rf "$ROOT/build/compiled" "$ROOT/build/preverified"
+
 java -jar "$ROOT/sdkcli.jar" "$ROOT/" OpenTTY.jar OpenTTY.jad
+
+# Sanidade: o jar nao pode conter a classe anonima do emulador full no modo lite.
+if [ "$LITE" -eq 1 ]; then
+    if unzip -l "$ROOT/dist/OpenTTY.jar" | grep -q 'ELF\$1.class'; then
+        echo "build.sh: ERRO - ELF\$1.class vazou para o jar lite" >&2
+        exit 2
+    fi
+fi
+
 mv "$ROOT"/dist/OpenTTY.* /var/www/opentty/dist
 echo "=> dist copiado para /var/www/opentty/dist"
 
