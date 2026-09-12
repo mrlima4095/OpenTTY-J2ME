@@ -10,7 +10,7 @@ Copyright (C) 2026 - Mr. Lima
 [ Package Manager ]
 
 - multi-sources for different versions
-- feature to block installing of **ARM32 binaries** on OpenTTY builds without emulator
+- feature to block installing of **RISC-V 32 binaries** on OpenTTY builds without emulator
 
 [ VFS ]
 
