@@ -1236,6 +1236,7 @@ public class ELF implements CommandListener {
             if (region == 0) { return 0; }
             libcHeapTop = region;
             libcHeapRegionEnd = region + len;
+            heapEnd = libcHeapRegionEnd;
         }
         int top = libcHeapTop;
         int avail = libcHeapRegionEnd - top;
