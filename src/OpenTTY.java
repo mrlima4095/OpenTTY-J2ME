@@ -12,7 +12,7 @@ import java.io.*;
 // OpenTTY MIDlet
 public class OpenTTY extends MIDlet implements CommandListener {
     // Kept in sync by res/swap_lite.sh so Lua need not load ELF at startup.
-    public static final boolean ELF_LITE = true;
+    public static final boolean ELF_LITE = false;
     // Behavior Settings
     public long uptime = System.currentTimeMillis();
     public boolean useCache = true, debug = false;
@@ -474,10 +474,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         finally { try { if (rs != null) { rs.closeRecordStore(); } } catch (Exception e) { } }
     }
     private String loadExternalVfsIndex() {
+        String result = null;
         RecordStore rs = null;
-        try { rs = RecordStore.openRecordStore("OpenRMS-VFS", false); return rs.getNumRecords() == 0 ? null : new String(rs.getRecord(1)); }
-        catch (Exception e) { return null; }
-        finally { try { if (rs != null) { rs.closeRecordStore(); } } catch (Exception e) { } }
+        try { rs = RecordStore.openRecordStore("OpenRMS-VFS", false); if (rs.getNumRecords() > 0) { result = new String(rs.getRecord(1)); } }
+        catch (Exception e) { }
+        if (rs != null) { try { rs.closeRecordStore(); } catch (Exception e) { } }
+        return result;
     }
     private void loadVfsIndex(String index) {
         if (index == null || !index.startsWith("VFS3\n")) { return; }
