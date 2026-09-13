@@ -54,6 +54,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String cfg = "";
         try {
             InputStream is = getInputStream("/boot/grub.cfg", globals);
+            if (is == null) { is = getInputStream("/boot/grub/grub.cfg", globals); }
             if (is != null) { cfg = read(is, 512, true); is.close(); }
         } catch (Exception e) { }
 
