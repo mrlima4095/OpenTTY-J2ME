@@ -621,7 +621,7 @@ public class Lua {
                                 if (names.size() >= 1) scope.put((String) names.elementAt(0), luaNumber(idx + 1));
                                 if (names.size() >= 2) scope.put((String) names.elementAt(1), item == null ? LUA_NIL : item);
 
-                                // Atualiza o índice no iterador
+                                // Update the iterator index
                                 iterator.put("__index", luaNumber(idx + 1));
 
                                 int originalTokenIndex = tokenIndex;
@@ -873,11 +873,11 @@ public class Lua {
                 while (depth > 0) {
                     Token token = consume();
     
-                    // Tokens que ABREM blocos
+                    // Tokens that OPEN blocks
                     if (token.type == FUNCTION || token.type == IF || token.type == DO) { 
                         depth++; 
                     }
-                    // Tokens que FECHAM blocos  
+                    // Tokens that CLOSE blocks  
                     else if (token.type == END) { 
                         depth--; 
                     }
@@ -956,7 +956,7 @@ public class Lua {
                 }
             }
             
-            // Executar o bloco DO
+            // Execute the DO block
             int originalTokenIndex = tokenIndex;
             Vector originalTokens = tokens;
             
@@ -1137,17 +1137,17 @@ public class Lua {
             }
             consume(RPAREN);
 
-            // Na parte de função anônima
+            // In the anonymous function part
             Vector bodyTokens = new Vector();
             int depth = 1;
             while (depth > 0) {
                 Token token = consume();
                 
-                // Tokens que ABREM blocos
+                // Tokens that OPEN blocks
                 if (token.type == FUNCTION || token.type == IF || token.type == DO) { 
                     depth++; 
                 }
-                // Tokens que FECHAM blocos
+                // Tokens that CLOSE blocks
                 else if (token.type == END) { 
                     depth--; 
                     if (depth > 0) { 
@@ -1965,9 +1965,9 @@ public class Lua {
                                     if (!(posObj instanceof Double)) { return gotbad(3, "insert", "number expected, got " + type(posObj)); }
                                     pos = ((Double) posObj).intValue();
                                     if (pos < 0 || pos > table.size() + 1) { return gotbad(3, "insert", "position out of bounds"); }
-                                    // value continua sendo args[1]
+                                    // value is still args[1]
                                 }
-                                // Desloca elementos para abrir espaço (shift right)
+                                // Shift elements to make room (shift right)
                                 for (int i = table.size(); i >= pos; i--) {
                                     Object val = table.get(new Double(i));
                                     if (val != null) { table.put(new Double(i + 1), val); }
@@ -2006,7 +2006,7 @@ public class Lua {
                         if (tObj instanceof Hashtable) {
                             Hashtable table = (Hashtable) tObj;
                             if (isListTable(table)) {
-                                int pos = table.size(); // default: remove o último
+                                int pos = table.size(); // default: remove the last
                                 if (args.size() >= 2) {
                                     Object posObj = unwrap(args.elementAt(1));
                                     if (!(posObj instanceof Double)) { return gotbad(2, "remove", "number expected, got " + type(posObj)); }
@@ -2016,7 +2016,7 @@ public class Lua {
                                 Object removed = table.get(new Double(pos));
                                 if (removed != null) {
                                     table.remove(new Double(pos));
-                                    // Desloca elementos para preencher o buraco (shift left)
+                                    // Shift elements to fill the gap (shift left)
                                     for (int i = pos; i < table.size(); i++) {
                                         Object val = table.get(new Double(i + 1));
                                         if (val != null) {
@@ -2025,7 +2025,7 @@ public class Lua {
                                             table.remove(new Double(i));
                                         }
                                     }
-                                    // Remove o último índice se vazio
+                                    // Remove the last index if empty
                                     if (table.containsKey(new Double(table.size()))) {
                                         table.remove(new Double(table.size()));
                                     }
@@ -2042,7 +2042,7 @@ public class Lua {
                             Hashtable table = (Hashtable) tObj;
                             if (isListTable(table)) {
                                 Vector list = toVector(table);
-                                // Bubble sort simples (sem comparador customizado)
+                                // Simple bubble sort (no custom comparator)
                                 for (int i = 0; i < list.size() - 1; i++) {
                                     for (int j = 0; j < list.size() - i - 1; j++) {
                                         Object a = list.elementAt(j), b = list.elementAt(j + 1);
@@ -2053,7 +2053,7 @@ public class Lua {
                                         }
                                     }
                                 }
-                                // Reconstrói a tabela ordenada
+                                // Rebuild the sorted table
                                 table.clear();
                                 for (int i = 0; i < list.size(); i++) {
                                     table.put(new Double(i + 1), list.elementAt(i));
@@ -2084,7 +2084,7 @@ public class Lua {
                                     return gotbad(1, "move", "bounds out of range");
                                 }
                                 Vector list = toVector(table);
-                                // Extrai o slice a mover
+                                // Extract the slice to move
                                 Vector slice = new Vector();
                                 for (int i = 0; i < len; i++) {
                                     int idx = from + i - 1;
@@ -2092,17 +2092,17 @@ public class Lua {
                                         slice.addElement(list.elementAt(idx));
                                     }
                                 }
-                                // Remove o bloco original (shift left)
+                                // Remove the original block (shift left)
                                 for (int i = from + len - 1; i >= from; i--) {
                                     if (i - 1 >= 0 && i - 1 < list.size()) {
                                         list.removeElementAt(i - 1);
                                     }
                                 }
-                                // Insere o slice na nova posição
+                                // Insert the slice at the new position
                                 for (int i = 0; i < slice.size(); i++) {
                                     list.insertElementAt(slice.elementAt(i), to + i - 1);
                                 }
-                                // Reconstrói a tabela
+                                // Rebuild the table
                                 table.clear();
                                 for (int i = 0; i < list.size(); i++) {
                                     table.put(new Double(i + 1), list.elementAt(i));

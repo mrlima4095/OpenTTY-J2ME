@@ -19,7 +19,7 @@ public class ELF implements CommandListener {
     private String pid;
     private int id = 1000;
     
-    // Memória e registradores
+    // Memory and registers
     private byte[] memory;
     private int[] registers;
     private int[] signalHandlers;
@@ -45,8 +45,8 @@ public class ELF implements CommandListener {
     private Hashtable copyRelocs, libSymSizes; 
     private int pltGotAddr, dynamicSectionAddr, gotBase;
 
-    // heap do stdlib (malloc/calloc/realloc/free): allocador first-fit com
-    // blocos escritos na RAM do guest: { int size; int next; ...payload }
+    // stdlib heap (malloc/calloc/realloc/free): first-fit allocator with
+    // blocks written into guest RAM: { int size; int next; ...payload }
     private int libcHeapFree, libcHeapTop, libcHeapRegionEnd;
 
     // LCDUI guest objects live in Java; the guest accesses them through handles.
@@ -56,10 +56,10 @@ public class ELF implements CommandListener {
     private boolean uiWaiting, cleaned;
 
     
-    // Constantes ELF
+    // ELF constants
     private static final int EI_NIDENT = 16, ELFCLASS32 = 1, ELFDATA2LSB = 1, EM_RISCV = 243, ET_EXEC = 2, ET_DYN = 3, PT_LOAD = 1, PT_DYNAMIC = 2, PT_INTERP = 3, PT_NOTE = 4;
     
-    // Constantes de Registradores RISC-V (a0-a7 = x10-x17; a7 carrega o numero de syscall)
+    // RISC-V register constants (a0-a7 = x10-x17; a7 carries the syscall number)
     private static final int REG_A0 = 10, REG_A1 = 11, REG_A2 = 12, REG_A3 = 13, REG_A7 = 17;
     private static final int REG_SP = 2, REG_LR = 1, REG_PC = 31;
     
@@ -68,45 +68,45 @@ public class ELF implements CommandListener {
         RV_OP_BRANCH = 0x63, RV_OP_LOAD = 0x03, RV_OP_STORE = 0x23, RV_OP_OPIMM = 0x13, RV_OP_OP = 0x33,
         RV_OP_MISCMEM = 0x0F, RV_OP_SYSTEM = 0x73;
     
-    // Syscalls do kernel (numeros EABI do emulador)
+    // Kernel syscalls (emulator EABI numbers)
     private static final int SYS_EXIT = 1, SYS_FORK = 2, SYS_READ = 3, SYS_WRITE = 4, SYS_OPEN = 5, SYS_CLOSE = 6, SYS_CREAT = 8, SYS_UNLINK = 10, SYS_EXECVE = 11, SYS_CHDIR = 12, SYS_TIME = 13, SYS_LSEEK = 19, SYS_GETPID = 20, SYS_KILL = 37, SYS_MKDIR = 39, SYS_RMDIR = 40, SYS_DUP = 41, SYS_PIPE = 42, SYS_IOCTL = 54, SYS_FCNTL = 55, SYS_SIGNAL = 48, SYS_DUP2 = 63, SYS_GETPPID = 64, SYS_SIGACTION = 67, SYS_BRK = 45, SYS_TRUNCATE = 92, SYS_FTRUNCATE = 93, SYS_SETJMP = 96, SYS_LONGJMP = 97, SYS_FSYNC = 118, SYS_SIGRETURN = 119, SYS_UNAME = 122, SYS_MPROTECT = 125, SYS_SIGPROCMASK = 126, SYS_STAT = 106, SYS_FSTAT = 108, SYS_GETTIMEOFDAY = 78, SYS_GETPRIORITY = 140, SYS_SETPRIORITY = 141, SYS_SELECT = 142, SYS_SCHED_YIELD = 158, SYS_NANOSLEEP = 162, SYS_MREMAP = 163, SYS_POLL = 168, SYS_MUNMAP = 91, SYS_GETRLIMIT = 191, SYS_MMAP = 192, SYS_GETCWD = 183, SYS_GETUID32 = 199, SYS_GETEUID32 = 201, SYS_GETDENTS = 217, SYS_GETTID = 224, SYS_FUTEX = 240, SYS_SOCKET = 281, SYS_BIND = 282, SYS_CONNECT = 283, SYS_LISTEN = 284, SYS_ACCEPT = 285, SYS_GETSOCKNAME = 286, SYS_GETPEERNAME = 287, SYS_SEND = 289, SYS_SENDTO = 290, SYS_RECV = 291, SYS_RECVFROM = 292, SYS_SHUTDOWN = 293, SYS_SETSOCKOPT = 294, SYS_GETSOCKOPT = 295, SYS_SYSCALL = 0;
     
-    // Constantes para socket
+    // Socket constants
     private static final int SOCK_STREAM = 1, SOCK_DGRAM = 2, AF_INET = 2, IPPROTO_TCP = 6, IPPROTO_UDP = 17;
 
-    // Soluções de socket (level para setsockopt/getsockopt)
+    // Socket option levels (level for setsockopt/getsockopt)
     private static final int SOL_SOCKET = 1, SOL_IP = 0;
 
-    // Opções de socket
+    // Socket options
     private static final int TCP_NODELAY = 1, SO_REUSEADDR = 2, SO_TYPE = 3, SO_ERROR = 4, SO_DONTROUTE = 5, SO_BROADCAST = 6, SO_SNDBUF = 7, SO_RCVBUF = 8, SO_KEEPALIVE = 9, SO_OOBINLINE = 10, SO_LINGER = 13;
 
-    // Erros de rede adicionais
+    // Additional network errors
     private static final int ENOTSOCK = 88, ENOPROTOOPT = 92, EADDRINUSE = 98, EADDRNOTAVAIL = 99, EISCONN = 106;
 
-    // Constantes para sinal
+    // Signal constants
     private static final int SIG_ERR = -1, SIG_DFL = 0, SIG_IGN = 1, SIGINT = 2, SIGKILL = 9, SIGSEGV = 11, SIGPIPE = 13, SIGTERM = 15, SIGCHLD = 17, SIGCONT = 18, SIGSTOP = 19, NSIG = 32;
 
-    // Adicionar constantes para flags de ioctl (simplificadas)
+    // Add constants for ioctl flags (simplified)
     private static final int TCGETS = 0x5401, TCSETS = 0x5402, TIOCGWINSZ = 0x5413, TIOCSWINSZ = 0x5414, FIONREAD = 0x541B;
 
-    // Adicionar constantes para mode de mkdir
+    // Add constants for mkdir mode
     private static final int S_IRWXU = 0700, S_IRUSR = 0400, S_IWUSR = 0200, S_IXUSR = 0100, S_IRWXG = 0070, S_IRGRP = 0040, S_IWGRP = 0020, S_IXGRP = 0010, S_IRWXO = 0007, S_IROTH = 0004, S_IWOTH = 0002, S_IXOTH = 0001, S_IFDIR = 0040000;
     
-    // Adicionar constante para SEEK
+    // Add constant for SEEK
     private static final int SEEK_SET = 0, SEEK_CUR = 1, SEEK_END = 2;
 
-    // Flags de open
+    // open flags
     private static final int O_RDONLY = 0, O_WRONLY = 1, O_RDWR = 2, O_CREAT = 64, O_TRUNC = 512, O_APPEND = 1024, O_DIRECTORY = 0x10000;
     
     // Flags mmap
     private static final int PROT_NONE = 0, PROT_READ = 1, PROT_WRITE = 2, PROT_EXEC = 4, MAP_SHARED = 1, MAP_PRIVATE = 2, MAP_FIXED = 16, MAP_ANONYMOUS = 32;
 
-    // Dynamic linking constants - adicione com as outras constantes ELF
+    // Dynamic linking constants - added with the other ELF constants
     private static final int DT_NULL = 0, DT_NEEDED = 1, DT_PLTRELSZ = 2, DT_PLTGOT = 3, DT_HASH = 4, DT_STRTAB = 5, DT_SYMTAB = 6, DT_RELA = 7, DT_RELASZ = 8, DT_RELAENT = 9, DT_STRSZ = 10, DT_SYMENT = 11, DT_INIT = 12, DT_FINI = 13, DT_SONAME = 14, DT_RPATH = 15, DT_SYMBOLIC = 16, DT_REL = 17, DT_RELSZ = 18, DT_RELENT = 19, DT_PLTREL = 20, DT_DEBUG = 21, DT_TEXTREL = 22, DT_JMPREL = 23, DT_BIND_NOW = 24, DT_INIT_ARRAY = 25, DT_FINI_ARRAY = 26, DT_INIT_ARRAYSZ = 27, DT_FINI_ARRAYSZ = 28;
 
-    // stdlib do emulador — "library syscalls" (li a7,#LIB_*; ecall) resolvidas
-    // no Java por handleLibraryCall(). Numeros > syscall vm max (295) ficam
-    // fora do range das syscalls do kernel, entao podem ser usados como ID.
+    // Emulator stdlib - "library syscalls" (li a7,#LIB_*; ecall) resolved
+    // in Java by handleLibraryCall(). Numbers > vm max syscall (295) fall
+    // outside the kernel syscall range, so they can be used as IDs.
     private static final int LIB_BASE = 1000;
     private static final int LIB_STRLEN = LIB_BASE + 1, LIB_STRCPY = LIB_BASE + 2, LIB_STRCMP = LIB_BASE + 3,
         LIB_STRNCMP = LIB_BASE + 4, LIB_STRCAT = LIB_BASE + 5, LIB_STRCHR = LIB_BASE + 6, LIB_STRDUP = LIB_BASE + 7,
@@ -132,14 +132,14 @@ public class ELF implements CommandListener {
     // Relocation types
     private static final int R_RISCV_NONE = 0, R_RISCV_32 = 1, R_RISCV_RELATIVE = 3, R_RISCV_COPY = 4, R_RISCV_JUMP_SLOT = 5, R_RISCV_GLOB_DAT = 6;
         
-    // Constantes fcntl
+    // fcntl constants
     private static final int F_GETFL = 3, F_SETFL = 4, O_NONBLOCK = 2048;
     
-    // Informações do ELF carregado
+    // Loaded ELF info
     private Hashtable elfInfo;
     
     
-    // Stack de sinais
+    // Signal stack
     private Vector signalStack;
     
     // Futex management
@@ -159,7 +159,7 @@ public class ELF implements CommandListener {
         this.allocatedBlocks = new Hashtable();
         this.fileDescriptors = new Hashtable();
         this.nextFd = 3; // 0=stdin, 1=stdout, 2=stderr
-        this.heapStart = 0x40000; // 256KB - início do heap (dentro dos 1MB de RAM)
+        this.heapStart = 0x40000; // 256KB - heap start (within the 1MB of RAM)
         this.heapEnd = heapStart;
         this.signalStack = new Vector();
         this.memoryMappings = new Vector();
@@ -186,13 +186,13 @@ public class ELF implements CommandListener {
         this.uiWaiting = false;
         this.cleaned = false;
 
-        // Carregar bibliotecas padrão
+        // Load default libraries
         loadDefaultLibraries();
 
         this.signalHandlers = new int[NSIG];
         for (int i = 0; i < NSIG; i++) { signalHandlers[i] = SIG_DFL; }
         
-        // Inicializar file descriptors padrão
+        // Initialize default file descriptors
         fileDescriptors.put(new Integer(1), stdout); // stdout
         fileDescriptors.put(new Integer(2), stdout); // stderr
     }
@@ -213,37 +213,37 @@ public class ELF implements CommandListener {
         if (e_type != ET_EXEC) { midlet.print("Not an executable ELF", stdout, id, scope); return false; }
         if (e_machine != EM_RISCV) { midlet.print("Not a RISC-V executable", stdout, id, scope); return false; }
         
-        // Armazenar informações do ELF
+        // Store ELF info
         elfInfo.put("entry", new Integer(e_entry)); elfInfo.put("phoff", new Integer(e_phoff));
         elfInfo.put("phnum", new Integer(e_phnum)); elfInfo.put("shoff", new Integer(e_shoff));
         elfInfo.put("shnum", new Integer(e_shnum));
         
-        // Carregar seções primeiro para obter informações de .bss
+        // Load sections first to get .bss info
         Hashtable sectionInfo = loadSections(elfData, e_shoff, e_shnum, e_shentsize);
         
         pc = e_entry;
         registers[REG_SP] = stackPointer;
         registers[REG_LR] = 0xFFFFFFFF;
         
-        // Inicializar .bss (zerar memória não inicializada)
+        // Initialize .bss (zero out uninitialized memory)
         initializeBSS(sectionInfo);
         
-        // Carregar segmentos
+        // Load segments
         for (int i = 0; i < e_phnum; i++) {
             int phdrOffset = e_phoff + i * e_phentsize, p_type = readIntLE(elfData, phdrOffset);
             
             if (p_type == PT_LOAD) {
                 int p_offset = readIntLE(elfData, phdrOffset + 4), p_vaddr = readIntLE(elfData, phdrOffset + 8), p_filesz = readIntLE(elfData, phdrOffset + 16), p_memsz = readIntLE(elfData, phdrOffset + 20);
                 
-                // Carregar dados do arquivo
+                // Load data from the file
                 for (int j = 0; j < p_filesz && j < memory.length; j++) { if (p_vaddr + j < memory.length) { memory[p_vaddr + j] = elfData[p_offset + j]; } }
                 
-                // Zerar memória restante (.bss)
+                // Zero remaining memory (.bss)
                 for (int j = p_filesz; j < p_memsz; j++) { if (p_vaddr + j < memory.length) { memory[p_vaddr + j] = 0; } }
             }
             else if (p_type == PT_DYNAMIC) { processDynamicSegment(elfData, phdrOffset); }
             else if (p_type == PT_INTERP) {
-                // Interpretador (loader dinâmico) - ignorado por enquanto
+                // Interpreter (dynamic loader) - ignored for now
                 int p_offset = readIntLE(elfData, phdrOffset + 4);
                 String interp = readString(elfData, p_offset, 256);
                 if (midlet.debug) { midlet.print("Interpreter: " + interp, stdout, id, scope); }
@@ -516,7 +516,7 @@ public class ELF implements CommandListener {
         }
         if (symtab == 0 || strtab == 0) { rollbackSharedObjectLoad(mappingCount, libraryCount); return false; }
         
-        // Registrar os símbolos exportados (st_shndx != 0, GLOBAL/WEAK) e o índice->nome
+        // Register the exported symbols (st_shndx != 0, GLOBAL/WEAK) and the index->name mapping
         Hashtable libSyms = new Hashtable();
         Hashtable sizeMap = new Hashtable();
         Vector symNames = new Vector();
@@ -549,7 +549,7 @@ public class ELF implements CommandListener {
             if (needed.length() > 0 && !loadedLibraries.contains(needed) && !loadLibrary(needed)) { rollbackSharedObjectLoad(mappingCount, libraryCount); return false; }
         }
         
-        // Aplicar as relocacoes da propria lib (.rel.dyn/.rela.dyn e .rel.plt/.rela.plt)
+        // Apply the library's own relocations (.rel.dyn/.rela.dyn and .rel.plt/.rela.plt)
         applyLibraryRelocations(rel, relsz, libRelent, symNames, loadBias);
         if (jmprel != 0 && pltrelsz != 0) { applyLibraryRelocations(jmprel, pltrelsz, (pltrel == DT_RELA) ? 12 : 8, symNames, loadBias); }
         return true;
@@ -593,8 +593,8 @@ public class ELF implements CommandListener {
     private void loadDefaultLibraries() {
         Hashtable libc = new Hashtable();
 
-        // stdlib do emulador: cada simbolo e um wrapper de 3 instrucoes
-        // (li a7,#LIB_*; ecall; ret) cujo payload e implementado em handleLibraryCall().
+        // Emulator stdlib: each symbol is a 3-instruction wrapper
+        // (li a7,#LIB_*; ecall; ret) whose payload is implemented in handleLibraryCall().
         libc.put("strlen",   new Integer(createLibraryStub(LIB_STRLEN)));
         libc.put("strcpy",   new Integer(createLibraryStub(LIB_STRCPY)));
         libc.put("strncpy",  new Integer(createLibraryStub(LIB_STRNCPY)));
@@ -624,8 +624,8 @@ public class ELF implements CommandListener {
         libc.put("free",     new Integer(createLibraryStub(LIB_FREE)));
         libc.put("getpid",   new Integer(createLibraryStub(LIB_GETPID)));
 
-        // Runtime helpers que compiladores C (clang/gcc RV32IM) emitem
-        // implicitamente para divisao por 32/64 bits e blits de memoria.
+        // Runtime helpers that C compilers (clang/gcc RV32IM) emit
+        // implicitly for 32/64-bit division and memory blits.
         libc.put("__udivsi3",     new Integer(createLibraryStub(LIB_UDIV32)));
         libc.put("__divsi3",      new Integer(createLibraryStub(LIB_SDIV32)));
         libc.put("__udivmodsi4",  new Integer(createLibraryStub(LIB_UDIVMOD32)));
@@ -658,7 +658,7 @@ public class ELF implements CommandListener {
         libc.put("lcdui_set_label", new Integer(createLibraryStub(LIB_UI_SET_LABEL)));
         libc.put("opentty_expand_env", new Integer(createLibraryStub(LIB_PROC_EXPAND_ENV)));
 
-        // syscalls diretas (open/read/write/close/exit/brk) como antes
+        // direct syscalls (open/read/write/close/exit/brk) as before
         libc.put("exit",  new Integer(createSyscallStub("exit")));
         libc.put("open",  new Integer(createSyscallStub("open")));
         libc.put("read",  new Integer(createSyscallStub("read")));
@@ -679,8 +679,8 @@ public class ELF implements CommandListener {
         return stubAddr;
     }
 
-    // | stdlib do emulador — implementacao das library syscalls (LIB_*)
-    // Argumentos chegam em a0-a3 (e stack nos varargs); retorno em a0.
+    // | Emulator stdlib - implementation of the library syscalls (LIB_*)
+    // Arguments arrive in a0-a3 (and on the stack for varargs); return in a0.
 
     private void handleLibraryCall(int libId) {
         switch (libId) {
@@ -1200,8 +1200,8 @@ public class ELF implements CommandListener {
         registers[REG_A2] = (int) r; registers[REG_A3] = (int) (r >>> 32);
     }
 
-    // | heap do stdlib (malloc/calloc/realloc/free): first-fit com splitting,
-    // | blocos na RAM do guest com header { int size; int next; } seguido de payload.
+    // | stdlib heap (malloc/calloc/realloc/free): first-fit with splitting,
+    // | blocks in guest RAM with header { int size; int next; } followed by payload.
 
     private int libcMalloc(int n) {
         if (n <= 0) { n = 8; }
@@ -1280,7 +1280,7 @@ public class ELF implements CommandListener {
         return np;
     }
 
-    // | printf/sprintf/snprintf — engine de formatacao sobre a RAM do guest
+    // | printf/sprintf/snprintf - formatting engine over guest RAM
 
     private int libcArgReg, libcArgSpOff;
 
@@ -1438,15 +1438,15 @@ public class ELF implements CommandListener {
                     break;
                 }
                 
-                // Verificar sinais pendentes
+                // Check pending signals
                 checkPendingSignals();
                 
-                // Debug avançado
+                // Advanced debug
                 if (midlet.debug && instructionCount % 10000 == 0) {
                     midlet.print("DEBUG: PC=" + toHex(pc) + ", a7=" + registers[REG_A7], stdout, id, scope);
                 }
                 
-                // Executar instrução com cache
+                // Execute instruction
                 int instruction = fetchInstruction(pc);
                 if (midlet.debug && instructionCount < 10) {
                     midlet.print("DEBUG: Instr at PC " + toHex(pc) + ": " + toHex(instruction), stdout, id, scope);
@@ -1483,7 +1483,7 @@ public class ELF implements CommandListener {
     }
 
     private int fetchInstruction(int addr) { return readIntLE(memory, addr); }
-    // ===== Núcleo RV32IM =====
+    // ===== RV32IM Core =====
     private int getReg(int r) { return (r == 0) ? 0 : registers[r]; }
     private void setReg(int r, int v) { if (r != 0) { registers[r] = v; } }
 
@@ -1585,7 +1585,7 @@ public class ELF implements CommandListener {
     }
     private void rvOp(int rd, int funct3, int funct7, int rs1, int rs2) {
         int a = getReg(rs1), b = getReg(rs2), v;
-        if (funct7 == 0x01) { rvMulDiv(rd, funct3, a, b); return; } // Extensao M
+        if (funct7 == 0x01) { rvMulDiv(rd, funct3, a, b); return; } // M extension
         switch (funct3) {
             case 0: v = (funct7 == 0x20) ? a - b : a + b; break; // SUB/ADD
             case 1: v = a << (b & 0x1F); break; // SLL
@@ -1738,8 +1738,8 @@ public class ELF implements CommandListener {
         int dynsymAddr = ((Integer)elfInfo.get("dynsym")).intValue(), dynstrAddr = ((Integer)elfInfo.get("dynstr")).intValue(), symentSize = elfInfo.containsKey("syment") ? ((Integer) elfInfo.get("syment")).intValue() : 16;
         
         dynSymNames.removeAllElements();
-        // Processar símbolos (a entrada 0 do dynsym é o symbolo nulo; o numero
-        // de entradas vem do DT_HASH quando presente — nchain).
+        // Process symbols (dynsym entry 0 is the null symbol; the number
+        // of entries comes from DT_HASH when present - nchain).
         int symOffset = dynsymAddr;
         int maxSym = elfInfo.containsKey("nchain") ? ((Integer) elfInfo.get("nchain")).intValue() : 4096;
         if (maxSym <= 0 || maxSym > 4096) { maxSym = 4096; }
@@ -1834,8 +1834,8 @@ public class ELF implements CommandListener {
         }
     }
 
-    // Binding PLT sem lazy resolver: simbolos nao resolvidos deixam o slot GOT
-    // zerado; toda resolucao suportada e feita eager em processRelocations.
+    // PLT binding without a lazy resolver: unresolved symbols leave the GOT slot
+    // zeroed; all supported resolution is done eagerly in processRelocations.
     private void setupLazyBinding(int gotOffset, int symIndex, int slotIndex) {
         writeIntLE(memory, gotOffset, 0);
         if (midlet.debug) { midlet.print("PLT unresolved slot " + slotIndex + " at GOT " + toHex(gotOffset), stdout, id, scope); }
@@ -1850,7 +1850,7 @@ public class ELF implements CommandListener {
             if (value != 0) { return new Integer(value); }
         }
 
-        // R_RISCV_COPY: definicoes do executavel (simbolos copiados) preemptam as libs
+        // R_RISCV_COPY: executable definitions (copied symbols) preempt the libs
         if (copyRelocs.containsKey(name)) { return new Integer(((Integer) copyRelocs.get(name)).intValue()); }
 
         for (int i = 0; i < loadedLibraries.size(); i++) {
@@ -1864,7 +1864,7 @@ public class ELF implements CommandListener {
             }
         }
         
-        // Criar stub se for syscall
+        // Create a stub if it is a syscall
         if (name.startsWith("sys_")) { return new Integer(createSyscallStub(name)); }
         
         return null;
@@ -1934,7 +1934,7 @@ public class ELF implements CommandListener {
         elfInfo.put("argc", new Integer(argsVec.size()));
         if (argsVec.size() > 0) { elfInfo.put("argv0", argsVec.elementAt(0)); }
         
-        // Configurar stack pointer
+        // Set up stack pointer
         registers[REG_SP] = sp;
         
         if (midlet.debug) {
@@ -2225,7 +2225,7 @@ public class ELF implements CommandListener {
                 handleFsync();
                 break;
             default:
-                registers[REG_A0] = -38; // ENOSYS - Syscall não implementada
+                registers[REG_A0] = -38; // ENOSYS - Unimplemented syscall
                 if (midlet.debug) { midlet.print("Unimplemented syscall: " + number, stdout, id, scope); }
                 break;
         }
@@ -2346,15 +2346,15 @@ public class ELF implements CommandListener {
             return;
         }
         
-        // Para sinais que podem ser ignorados ou manipulados
+        // For signals that can be ignored or handled
         if (sig == SIGINT || sig == SIGCONT || sig == SIGSTOP) {
-            // Enviar sinal para o processo (simulado)
+            // Send signal to the process (simulated)
             if (procObj instanceof Hashtable) {
                 Hashtable proc = (Hashtable) procObj;
                 if (proc.containsKey("elf")) {
                     ELF elf = (ELF) proc.get("elf");
-                    // Em uma implementação real, armazenaríamos o sinal pendente
-                    // e o processaríamos na próxima syscall ou no retorno de syscall
+                    // In a real implementation, we would store the pending signal
+                    // and process it at the next syscall or on syscall return
                 }
             }
             registers[REG_A0] = 0;
@@ -2510,28 +2510,28 @@ public class ELF implements CommandListener {
         int jmpBufPtr = registers[REG_A0];
         if (jmpBufPtr + 132 > memory.length) { registers[REG_A0] = -14; return; }
         
-        // Salvar registradores no jmp_buf
+        // Save registers into the jmp_buf
         for (int i = 0; i < 32; i++) { writeIntLE(memory, jmpBufPtr + i * 4, registers[i]); }
         
-        // Salvar PC atual (é o endereço de retorno de setjmp)
+        // Save current PC (it is the setjmp return address)
         writeIntLE(memory, jmpBufPtr + 128, pc);
         
         int jmpBufId = nextJmpBufId++;
         jmpBufs.put(new Integer(jmpBufId), new Integer(jmpBufPtr));
         
-        registers[REG_A0] = 0; // Primeira chamada retorna 0
+        registers[REG_A0] = 0; // First call returns 0
     }
     private void handleLongjmp() {
         int jmpBufPtr = registers[REG_A0], val = registers[REG_A1];
         if (jmpBufPtr + 132 > memory.length) { running = false; return; }
         
-        // Restaurar registradores
+        // Restore registers
         for (int i = 0; i < 32; i++) { registers[i] = readIntLE(memory, jmpBufPtr + i * 4); }
         
-        // Restaurar PC
+        // Restore PC
         pc = readIntLE(memory, jmpBufPtr + 128);
         
-        // Retornar valor não-zero
+        // Return a non-zero value
         registers[REG_A0] = (val == 0) ? 1 : val;
     }
     // |
@@ -2550,30 +2550,30 @@ public class ELF implements CommandListener {
         switch (request) {
             case TCGETS:
             case TIOCGWINSZ:
-                // Retornar estrutura terminal (simplificada)
+                // Return terminal structure (simplified)
                 if (argp >= 0 && argp + 8 < memory.length) {
-                    // Preencher com valores padrão
+                    // Fill with default values
                     for (int i = 0; i < 8; i++) {
                         memory[argp + i] = 0;
                     }
                     // 80x25 terminal
-                    memory[argp] = 80; // colunas
-                    memory[argp + 2] = 25; // linhas
+                    memory[argp] = 80; // columns
+                    memory[argp + 2] = 25; // rows
                 }
                 registers[REG_A0] = 0;
                 break;
                 
             case TCSETS:
             case TIOCSWINSZ:
-                // Ignorar - terminal não configurável
+                // Ignore - terminal not configurable
                 registers[REG_A0] = 0;
                 break;
                 
             case FIONREAD:
-                // Retornar bytes disponíveis para leitura
+                // Return bytes available for reading
                 int bytesAvailable = 0;
                 if (fd == 0) {
-                    // stdin - sempre 0 por enquanto
+                    // stdin - always 0 for now
                     bytesAvailable = 0;
                 } else if (fileDescriptors.containsKey(fdKey)) {
                     Object stream = fileDescriptors.get(fdKey);
@@ -2592,7 +2592,7 @@ public class ELF implements CommandListener {
                 break;
                 
             default:
-                // IOCTL não suportado
+                // Unsupported IOCTL
                 registers[REG_A0] = -25; // ENOTTY
                 break;
         }
@@ -2636,7 +2636,7 @@ public class ELF implements CommandListener {
                     return;
                 }
                 conn.mkdir(); conn.close();
-                registers[REG_A0] = 0; // Sucesso
+                registers[REG_A0] = 0; // Success
             } catch (Exception e) { registers[REG_A0] = -1; }
         } else { registers[REG_A0] = -38; return; }
     }
@@ -2663,7 +2663,7 @@ public class ELF implements CommandListener {
                 }
                 
                 conn.delete(); conn.close();
-                registers[REG_A0] = 0; // Sucesso
+                registers[REG_A0] = 0; // Success
             } catch (Exception e) { registers[REG_A0] = -1; }
         } else { registers[REG_A0] = -38; }
     }
@@ -2724,13 +2724,13 @@ public class ELF implements CommandListener {
         Integer fdKey = new Integer(fd);
         if (!fileDescriptors.containsKey(fdKey) && fd != 0 && fd != 1 && fd != 2) { registers[REG_A0] = -9; return; }
         
-        // Obter caminho do diretório a partir do file descriptor
+        // Get directory path from the file descriptor
         String dirPath = null;
         if (fileDescriptors.containsKey(fdKey)) {
             Object obj = fileDescriptors.get(fdKey);
             if (obj instanceof String) { dirPath = (String) obj; }
             else if (obj instanceof StringBuffer) {
-                // Verificar se há caminho associado
+                // Check if there is an associated path
                 String pathKey = fd + ":path";
                 if (fileDescriptors.containsKey(pathKey)) { dirPath = (String) fileDescriptors.get(pathKey); }
             }
@@ -2738,11 +2738,11 @@ public class ELF implements CommandListener {
         
         if (dirPath == null) { registers[REG_A0] = -20; return; }
         
-        // Normalizar caminho (garantir que termina com /)
+        // Normalize path (ensure it ends with /)
         String pwd = midlet.joinpath(dirPath, scope);
         if (!pwd.endsWith("/")) { pwd = pwd + "/"; }
         
-        // Coletar arquivos em um Vector
+        // Collect files into a Vector
         Vector fileList = new Vector();
         
         try {
@@ -2776,8 +2776,8 @@ public class ELF implements CommandListener {
             }
         } catch (Exception e) { registers[REG_A0] = -1; return; }
         
-        // Estrutura linux_dirent simplificada
-        // d_ino (4 bytes), d_off (4 bytes), d_reclen (2 bytes), d_name (variável)
+        // Simplified linux_dirent structure
+        // d_ino (4 bytes), d_off (4 bytes), d_reclen (2 bytes), d_name (variable)
         int offset = 0, written = 0;
         
         for (int i = 0; i < fileList.size(); i++) {
@@ -2785,15 +2785,15 @@ public class ELF implements CommandListener {
             byte[] nameBytes = fileName.getBytes();
             int nameLen = nameBytes.length;
             
-            // Tamanho do registro: 4 + 4 + 2 + nameLen + 1 (null terminator)
+            // Record size: 4 + 4 + 2 + nameLen + 1 (null terminator)
             int reclen = 10 + nameLen + 1;
             
-            // Verificar se cabe no buffer
+            // Check if it fits in the buffer
             if (offset + reclen > count || dirp + offset + reclen > memory.length) { break; }
             
             
-            writeIntLE(memory, dirp + offset, i + 1); // d_ino (inode number - simplificado)
-            writeIntLE(memory, dirp + offset + 4, offset + reclen); // d_off (offset - simplificado) 
+            writeIntLE(memory, dirp + offset, i + 1); // d_ino (inode number - simplified)
+            writeIntLE(memory, dirp + offset + 4, offset + reclen); // d_off (offset - simplified) 
             writeShortLE(memory, dirp + offset + 8, (short)reclen); // d_reclen
             
             // d_name
@@ -2812,7 +2812,7 @@ public class ELF implements CommandListener {
         
         if (!fileDescriptors.containsKey(oldKey) && oldfd != 0 && oldfd != 1 && oldfd != 2) { registers[REG_A0] = -9; return; }
         
-        // Encontrar novo fd
+        // Find new fd
         int newfd = nextFd++;
         while (fileDescriptors.containsKey(new Integer(newfd))) { newfd++; }
 
@@ -2828,7 +2828,7 @@ public class ELF implements CommandListener {
         
         if (!fileDescriptors.containsKey(oldKey) && oldfd != 0 && oldfd != 1 && oldfd != 2) { registers[REG_A0] = -9; return; }
         
-        // Fechar newfd se estiver aberto
+        // Close newfd if open
         Integer newKey = new Integer(newfd);
         if (fileDescriptors.containsKey(newKey)) {
             Object stream = fileDescriptors.get(newKey);
@@ -2839,7 +2839,7 @@ public class ELF implements CommandListener {
             fileDescriptors.remove(newKey);
         }
         
-        // Duplicar
+        // Duplicate
         if (oldfd == 0 || oldfd == 1 || oldfd == 2) { fileDescriptors.put(newKey, (oldfd == 1 || oldfd == 2) ? stdout : null); }
         else { fileDescriptors.put(newKey, fileDescriptors.get(oldKey)); }
         
@@ -2847,7 +2847,7 @@ public class ELF implements CommandListener {
     }
     // | (Operations)
     private void handleCreat() {
-        // creat(path, mode) é equivalente a open(path, O_CREAT | O_WRONLY | O_TRUNC, mode)
+        // creat(path, mode) is equivalent to open(path, O_CREAT | O_WRONLY | O_TRUNC, mode)
         int pathAddr = registers[REG_A0], mode = registers[REG_A1];
         
         registers[REG_A1] = O_CREAT | O_WRONLY | O_TRUNC;
@@ -2872,7 +2872,7 @@ public class ELF implements CommandListener {
 
             String fullPath = midlet.joinpath(path, scope);
             
-            // Se for diretório, tratar diferente
+            // If it is a directory, handle it differently
             if (isDirectory) {
                 boolean isDir = false;
                 
@@ -2888,14 +2888,14 @@ public class ELF implements CommandListener {
                 
                 if (isDir) {
                     Integer fd = new Integer(nextFd++);
-                    fileDescriptors.put(fd, fullPath); // Armazenar caminho como String
+                    fileDescriptors.put(fd, fullPath); // Store path as a String
                     registers[REG_A0] = fd.intValue();
                 } 
                 else { registers[REG_A0] = -20; }
                 return;
             }
             
-            // Resto do código para arquivos...
+            // Rest of the code for files...
             if (forReading) {
                 InputStream is = midlet.getInputStream(fullPath, scope);
                 if (is != null) {
@@ -2912,10 +2912,10 @@ public class ELF implements CommandListener {
                     } else { registers[REG_A0] = -1; }
                 } else { registers[REG_A0] = -2; }
             } else if (forWriting) {
-                // Para escrita, usamos um ByteArrayOutputStream temporário
+                // For writing, we use a temporary ByteArrayOutputStream
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 
-                // Se for append, carregar conteúdo existente
+                // If appending, load existing content
                 if (append && !truncate) {
                     InputStream existing = midlet.getInputStream(fullPath, scope);
                     if (existing != null) {
@@ -2929,7 +2929,7 @@ public class ELF implements CommandListener {
                 fileDescriptors.put(fd, baos);
                 registers[REG_A0] = fd.intValue();
                 
-                // Guardar o caminho para uso no close/flush
+                // Store the path for use on close/flush
                 fileDescriptors.put(fd + ":path", fullPath);
             } else { registers[REG_A0] = -1; }
         } catch (Exception e) { registers[REG_A0] = -1; }
@@ -2939,7 +2939,7 @@ public class ELF implements CommandListener {
         Integer fdKey = new Integer(fd);
         
         if (fd == 0 || fd == 1 || fd == 2) {
-            // Não fechar stdin/stdout/stderr
+            // Do not close stdin/stdout/stderr
             registers[REG_A0] = 0;
             return;
         }
@@ -2954,7 +2954,7 @@ public class ELF implements CommandListener {
                     OutputStream os = (OutputStream) stream;
                     os.close();
                     
-                    // Se for ByteArrayOutputStream, salvar no arquivo
+                    // If it is a ByteArrayOutputStream, save to file
                     if (stream instanceof ByteArrayOutputStream) {
                         ByteArrayOutputStream baos = (ByteArrayOutputStream) stream;
                         String pathKey = fd + ":path";
@@ -2986,9 +2986,9 @@ public class ELF implements CommandListener {
 
         int result = midlet.deleteFile(path, id, scope);
         
-        // Converter código de retorno do OpenTTY para errno
+        // Convert OpenTTY return code to errno
         switch (result) {
-            case 0:  registers[REG_A0] = 0; break; // Sucesso
+            case 0:  registers[REG_A0] = 0; break; // Success
             case 2:  registers[REG_A0] = -22; break; // EINVAL
             case 5:  registers[REG_A0] = -2; break; // ENOENT
             case 13: registers[REG_A0] = -13; break; // EACCES
@@ -3004,7 +3004,7 @@ public class ELF implements CommandListener {
         Integer fdKey = new Integer(fd);
         
         if (fd == 0) {
-            // stdin - não implementado por enquanto
+            // stdin - not implemented for now
             registers[REG_A0] = 0;
         } else if (fileDescriptors.containsKey(fdKey)) {
             Object stream = fileDescriptors.get(fdKey);
@@ -3031,7 +3031,7 @@ public class ELF implements CommandListener {
         Integer fdKey = new Integer(fd);
         
         if (fd == 1 || fd == 2) {
-            // stdout/stderr - escrever no OpenTTY
+            // stdout/stderr - write to OpenTTY
             StringBuffer sb = new StringBuffer();
             for (int i = 0; i < count && buf + i < memory.length; i++) { sb.append((char)(memory[buf + i] & 0xFF)); }
             
@@ -3062,7 +3062,7 @@ public class ELF implements CommandListener {
         
         if (pathAddr < 0 || pathAddr >= memory.length || statbufAddr < 0 || statbufAddr >= memory.length) { registers[REG_A0] = -1; return; }
         
-        // Ler caminho
+        // Read path
         StringBuffer pathBuf = new StringBuffer();
         int i = 0;
         while (pathAddr + i < memory.length && memory[pathAddr + i] != 0 && i < 256) {
@@ -3071,9 +3071,9 @@ public class ELF implements CommandListener {
         }
         String path = pathBuf.toString();
         
-        // Implementação simplificada de struct stat
-        // Preencher com valores básicos
-        for (i = 0; i < 108; i++) { // Tamanho aproximado de struct stat
+        // Simplified implementation of struct stat
+        // Fill with basic values
+        for (i = 0; i < 108; i++) { // Approximate size of struct stat
             if (statbufAddr + i < memory.length) {
                 memory[statbufAddr + i] = 0;
             }
@@ -3082,7 +3082,7 @@ public class ELF implements CommandListener {
         // st_mode
         int st_mode = 0;
         if (path.endsWith("/")) { st_mode |= S_IFDIR | S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH; } 
-        else { st_mode |= 0100644; } // Arquivo regular
+        else { st_mode |= 0100644; } // Regular file
 
         writeIntLE(memory, statbufAddr + 16, st_mode);
         
@@ -3113,22 +3113,22 @@ public class ELF implements CommandListener {
             return;
         }
         
-        // Zerar buffer
+        // Zero the buffer
         for (int i = 0; i < 108; i++) { if (statbufAddr + i < memory.length) { memory[statbufAddr + i] = 0; } }
         
         Integer fdKey = new Integer(fd);
         
         if (fd == 0 || fd == 1 || fd == 2) {
-            // stdin/stdout/stderr - dispositivo de caractere
+            // stdin/stdout/stderr - character device
             writeIntLE(memory, statbufAddr + 16, 020000); // st_mode: character device
         } else if (fileDescriptors.containsKey(fdKey)) {
             Object stream = fileDescriptors.get(fdKey);
             
             if (stream instanceof InputStream || stream instanceof OutputStream) {
-                // Arquivo regular
+                // Regular file
                 writeIntLE(memory, statbufAddr + 16, 0100644); // st_mode: regular file
                 
-                // Tentar obter tamanho
+                // Try to obtain the size
                 try {
                     if (stream instanceof InputStream) {
                         int available = ((InputStream) stream).available();
@@ -3136,7 +3136,7 @@ public class ELF implements CommandListener {
                     }
                 } catch (Exception e) {}
             } else {
-                // Dispositivo desconhecido
+                // Unknown device
                 writeIntLE(memory, statbufAddr + 16, 020000);
             }
         } else {
@@ -3144,7 +3144,7 @@ public class ELF implements CommandListener {
             return;
         }
         
-        registers[REG_A0] = 0; // Sucesso
+        registers[REG_A0] = 0; // Success
     }
     private void handleLseek() {
         int fd = registers[REG_A0], offset = registers[REG_A1], whence = registers[REG_A2];
@@ -3153,9 +3153,9 @@ public class ELF implements CommandListener {
         
         if (!fileDescriptors.containsKey(fdKey) && fd != 0 && fd != 1 && fd != 2) { registers[REG_A0] = -9; return; } // EBADF
         
-        // Implementação simplificada - sempre retorna sucesso mas não faz nada
-        // Em uma implementação real, precisaríamos controlar a posição do arquivo
-        registers[REG_A0] = 0; // Sucesso (sempre na posição 0)
+        // Simplified implementation - always returns success but does nothing
+        // In a real implementation, we would need to track the file position
+        registers[REG_A0] = 0; // Success (always at position 0)
     }
     private void handleFsync() {
         int fd = registers[REG_A0];
@@ -3210,7 +3210,7 @@ public class ELF implements CommandListener {
         Hashtable socketInfo = (Hashtable) socketDescriptors.get(fdKey);
         int type = ((Integer) socketInfo.get("type")).intValue();
         
-        // Ler estrutura sockaddr_in da memória
+        // Read sockaddr_in structure from memory
         if (sockaddrPtr + 16 > memory.length) { registers[REG_A0] = -14; return; }
         
         int sin_family = readShortLE(memory, sockaddrPtr), sin_port = readShortLE(memory, sockaddrPtr + 2);
@@ -3296,7 +3296,7 @@ public class ELF implements CommandListener {
         int len = registers[REG_A2];
         int flags = registers[REG_A3];
         
-        // Parâmetros 5-6 na stack
+        // Parameters 5-6 on the stack
         int dest_addr = getSyscallParam(4);
         int addrlen = getSyscallParam(5);
         
@@ -3314,7 +3314,7 @@ public class ELF implements CommandListener {
         
         try {
             if (type == SOCK_DGRAM) {
-                // Socket datagrama: enviar datagrama para o destino informado
+                // Datagram socket: send the datagram to the given destination
                 if (dest_addr == 0 || dest_addr + 16 > memory.length) { registers[REG_A0] = -14; return; }
                 String[] target = readSockAddr(dest_addr);
                 if (target == null) { registers[REG_A0] = -97; return; }
@@ -3326,7 +3326,7 @@ public class ELF implements CommandListener {
                 dc.send(dg);
                 registers[REG_A0] = dg.getLength();
             } else {
-                // Socket conectado (TCP): ignora o destino e envia direto
+                // Connected socket (TCP): ignores the destination and sends directly
                 OutputStream os = (OutputStream) socketInfo.get("outputStream");
                 if (os == null) { registers[REG_A0] = -ENOTSOCK; return; }
                 
@@ -3342,7 +3342,7 @@ public class ELF implements CommandListener {
         int len = registers[REG_A2];
         int flags = registers[REG_A3];
         
-        // Parâmetros 5-6 na stack
+        // Parameters 5-6 on the stack
         int src_addr = getSyscallParam(4);
         int addrlen = getSyscallParam(5);
         
@@ -3375,7 +3375,7 @@ public class ELF implements CommandListener {
                 
                 registers[REG_A0] = n;
             } else {
-                // Socket conectado (TCP): recebe no buffer e reporta o peer
+                // Connected socket (TCP): receives into the buffer and reports the peer
                 InputStream is = (InputStream) fileDescriptors.get(fdKey);
                 if (is == null) { registers[REG_A0] = -ENOTSOCK; return; }
                 
@@ -3409,7 +3409,7 @@ public class ELF implements CommandListener {
         int optname = registers[REG_A2];
         int optval = registers[REG_A3];
         
-        // Parâmetro 5 na stack
+        // Parameter 5 on the stack
         int optlen = getSyscallParam(4);
         
         Integer fdKey = new Integer(fd);
@@ -3433,7 +3433,7 @@ public class ELF implements CommandListener {
         int optname = registers[REG_A2];
         int optval = registers[REG_A3];
         
-        // Parâmetro 5 na stack
+        // Parameter 5 on the stack
         int optlen = getSyscallParam(4);
         
         Integer fdKey = new Integer(fd);
@@ -3516,7 +3516,7 @@ public class ELF implements CommandListener {
         int type = ((Integer) socketInfo.get("type")).intValue();
         
         try {
-            // Fechar placeholder criado pelo socket()
+            // Close placeholder created by socket()
             Object oldServer = socketInfo.get("server");
             if (oldServer != null) { try { ((StreamConnectionNotifier) oldServer).close(); } catch (Exception e) { } socketInfo.remove("server"); }
             Object oldDatagram = socketInfo.get("datagram");
@@ -3552,7 +3552,7 @@ public class ELF implements CommandListener {
         if (type != SOCK_STREAM) { registers[REG_A0] = -22; return; }
         
         try {
-            // "listen" sem bind: vincula porta efêmera (como no Linux)
+            // "listen" without bind: binds an ephemeral port (like on Linux)
             StreamConnectionNotifier server = (StreamConnectionNotifier) socketInfo.get("server");
             if (server == null) {
                 server = (StreamConnectionNotifier) Connector.open("socket://:0");
@@ -3612,10 +3612,10 @@ public class ELF implements CommandListener {
     }
     private void handleShutdown() { registers[REG_A0] = 0; }
     private void handleNanosleep() { registers[REG_A0] = 0; }
-    private void handleGetsockname() { registers[REG_A0] = -1; } // Não implementado
-    private void handleGetpeername() { registers[REG_A0] = -1; } // Não implementado
+    private void handleGetsockname() { registers[REG_A0] = -1; } // Not implemented
+    private void handleGetpeername() { registers[REG_A0] = -1; } // Not implemented
 
-    // Métodos auxiliares para estruturas sockaddr_in
+    // Helper methods for sockaddr_in structures
     private String[] readSockAddr(int ptr) {
         if (ptr == 0 || ptr + 16 > memory.length) { return null; }
         if (readShortLE(memory, ptr) != AF_INET) { return null; }
@@ -3662,13 +3662,13 @@ public class ELF implements CommandListener {
     }
 
     private void handleFutex() {
-        // Parametros 1-4 em a0-a3
+        // Parameters 1-4 in a0-a3
         int uaddr = registers[REG_A0];
         int op = registers[REG_A1];
         int val = registers[REG_A2];
         int timeout = registers[REG_A3];
         
-        // Parâmetros 5-6 na stack
+        // Parameters 5-6 on the stack
         int uaddr2 = getSyscallParam(4);
         int val3 = getSyscallParam(5);
         
@@ -3677,14 +3677,14 @@ public class ELF implements CommandListener {
                         " val=" + val + " timeout=" + timeout, stdout, id, scope);
         }
         
-        // Implementação simplificada
+        // Simplified implementation
         switch (op & 0x7F) { // Mask out flags
             case 0: // FUTEX_WAIT
                 int currentVal = readIntLE(memory, uaddr);
                 if (currentVal != val) {
                     registers[REG_A0] = -11; // EAGAIN
                 } else {
-                    // Adicionar à lista de espera
+                    // Add to the wait list
                     Vector waiters = (Vector) futexWaiters.get(new Integer(uaddr));
                     if (waiters == null) {
                         waiters = new Vector();
@@ -3756,12 +3756,12 @@ public class ELF implements CommandListener {
         
         switch (cmd) {
             case F_GETFL:
-                // Retornar flags do arquivo
-                registers[REG_A0] = 0; // Por padrão, sem flags especiais
+                // Return the file flags
+                registers[REG_A0] = 0; // By default, no special flags
                 break;
                 
             case F_SETFL:
-                // Configurar flags - ignorado por enquanto
+                // Set flags - ignored for now
                 registers[REG_A0] = 0;
                 break;
                 
@@ -3774,14 +3774,14 @@ public class ELF implements CommandListener {
         int fd = registers[REG_A0];
         int length = registers[REG_A1];
         
-        // Implementação simplificada
+        // Simplified implementation
         registers[REG_A0] = 0;
     }
     private void handleTruncate() {
         int path = registers[REG_A0];
         int length = registers[REG_A1];
         
-        // Implementação simplificada
+        // Simplified implementation
         registers[REG_A0] = 0;
     }
     
@@ -3794,7 +3794,7 @@ public class ELF implements CommandListener {
             return;
         }
         
-        // Valores padrão
+        // Default values
         long soft = 0x7FFFFFFFL;
         long hard = 0x7FFFFFFFL;
         
@@ -3822,7 +3822,7 @@ public class ELF implements CommandListener {
     private void checkPendingSignals() { }
 
     private void pushSignalFrame(int sig) {
-        // Salvar contexto atual na stack
+        // Save the current context on the stack
         int sp = registers[REG_SP];
         
         // Push registers
@@ -3835,13 +3835,13 @@ public class ELF implements CommandListener {
         sp -= 4;
         writeIntLE(memory, sp, sig);
         
-        // Push return address (PC atual)
+        // Push return address (current PC)
         sp -= 4;
         writeIntLE(memory, sp, pc);
         
         registers[REG_SP] = sp;
         
-        // Armazenar frame no stack de sinais
+        // Store the frame on the signal stack
         Hashtable frame = new Hashtable();
         frame.put("sp", new Integer(sp));
         frame.put("old_pc", new Integer(pc));
@@ -3852,7 +3852,7 @@ public class ELF implements CommandListener {
     private void handleSelect() { int nfds = registers[REG_A0], readfds = registers[REG_A1], writefds = registers[REG_A2], exceptfds = registers[REG_A3], timeoutPtr = getSyscallParam(4); registers[REG_A0] = 0; }
     private void handlePoll() { int fdsPtr = registers[REG_A0], nfds = registers[REG_A1], timeout = registers[REG_A2]; registers[REG_A0] = 0; }
 
-    // Métodos auxiliares para leitura/escrita little-endian
+    // Helper methods for little-endian read/write
     private int readIntLE(byte[] data, int offset) { if (offset + 3 >= data.length || offset < 0) { return 0; } return ((data[offset] & 0xFF) | ((data[offset + 1] & 0xFF) << 8) | ((data[offset + 2] & 0xFF) << 16) | ((data[offset + 3] & 0xFF) << 24)); } 
     private short readShortLE(byte[] data, int offset) { if (offset + 1 >= data.length || offset < 0) { return 0; } return (short)((data[offset] & 0xFF) | ((data[offset + 1] & 0xFF) << 8)); }
 
@@ -3890,12 +3890,12 @@ public class ELF implements CommandListener {
         return true;
     }
     private int getSyscallParam(int paramIndex) {
-        // Parâmetros 0-7 estão em a0-a7 (x10-x17)
+        // Parameters 0-7 are in a0-a7 (x10-x17)
         if (paramIndex < 8) {
             return registers[10 + paramIndex];
         }
         
-        // Parametros depois de a7 ficam na stack pela convencao RV32.
+        // Parameters after a7 go on the stack per the RV32 convention.
         int sp = registers[REG_SP];
         int offset = (paramIndex - 8) * 4;
         
