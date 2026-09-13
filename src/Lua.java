@@ -3139,8 +3139,10 @@ public class Lua {
                         for (int i = 0; i < args.length; i++) {
                             int j = args[i].indexOf("="); 
                             if (j != -1) {
-                                String key = args[i].substring(0, j), value = midlet.getpattern(args[i].substring(j + 1));
-                                aliases.put(key, value);
+                                String key = args[i].substring(0, j);
+                                StringBuffer value = new StringBuffer(args[i].substring(j + 1));
+                                while (i + 1 < args.length && args[i + 1].indexOf("=") == -1) { value.append(' ').append(args[++i]); }
+                                aliases.put(key, midlet.getpattern(value.toString()));
                             } else {
                                 if (aliases.containsKey(args[i])) {
                                     midlet.print("alias " + args[i] + "='" + ((String) aliases.get(args[i])) + "'", output, id, father);

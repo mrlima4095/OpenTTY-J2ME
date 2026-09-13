@@ -1791,11 +1791,16 @@ class LuaRuntime:
                 for k, v in aliases.items():
                     print(f"alias {k}='{v}'")
             else:
-                for a in args:
+                i = 0
+                while i < len(args):
+                    a = args[i]
                     eq = a.find("=")
                     if eq > 0:
                         key = a[:eq]
                         val = a[eq + 1:]
+                        while i + 1 < len(args) and "=" not in args[i + 1]:
+                            i += 1
+                            val += " " + args[i]
                         aliases[key] = val
                         scope["ALIAS"] = aliases
                     elif a in aliases:
@@ -1803,6 +1808,7 @@ class LuaRuntime:
                     else:
                         print(f"alias: {a}: not found")
                         return 127
+                    i += 1
             return 0
         elif cmd == "unalias":
             if not args:
