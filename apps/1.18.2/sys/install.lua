@@ -1,7 +1,7 @@
 #!/bin/lua
 
 if arg[1] then
-    local root = os.join(arg[1])
+    local root = os.join(arg[1]) .. "/"
 
     if string.sub(root, 1, 5) ~= "/mnt/" then
         print("install: " .. root .. ": invalid path, usage a mount point")
