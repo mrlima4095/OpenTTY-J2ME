@@ -136,20 +136,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         display.setCurrent(bootList);
 
         if (bootTimeout > 0) {
-            bootTimer = new Thread(new Runnable() {
-                public void run() {
-                    int left = bootTimeout;
-                    while (left > 0 && bootList != null && display.getCurrent() == bootList) {
-                        final int count = left;
-                        display.callSerially(new Runnable() { public void run() { if (bootList != null) { bootList.setTitle("OpenTTY - Boot [" + count + "s]"); } } });
-                        try { Thread.sleep(1000); } catch (InterruptedException e) { break; }
-                        left--;
-                    }
-                    display.callSerially(new Runnable() {
-                        public void run() { if (bootList != null && display.getCurrent() == bootList) { bootSelect(bootDefault); } }
-                    });
-                }
-            });
+            bootTimer = new BootCountdown(bootTimeout);
             bootTimer.start();
         }
     }
@@ -163,8 +150,35 @@ public class OpenTTY extends MIDlet implements CommandListener {
             index = bootDefault;
             if (index < 0 || index >= bootEntries.size()) { index = 0; }
         }
-        final Object selected = bootEntries.elementAt(index);
-        new Thread(new Runnable() { public void run() { bootEntry(selected); } }).start();
+        new Thread(new BootEntryRunner(bootEntries.elementAt(index))).start();
+    }
+    // named (non-anonymous) runners: the SDK preverifier and the on-device VM
+    // choke on nested synthetic anonymous Runnables (OpenTTY$1$1 -> IllegalArgumentException)
+    private class BootCountdown extends Thread {
+        private final int start;
+        BootCountdown(int start) { this.start = start; }
+        public void run() {
+            int left = start;
+            while (left > 0 && bootList != null && display.getCurrent() == bootList) {
+                display.callSerially(new BootTitle(left));
+                try { Thread.sleep(1000); } catch (InterruptedException e) { break; }
+                left--;
+            }
+            display.callSerially(new BootAuto());
+        }
+    }
+    private class BootTitle implements Runnable {
+        private final int count;
+        BootTitle(int count) { this.count = count; }
+        public void run() { if (bootList != null) { bootList.setTitle("OpenTTY - Boot [" + count + "s]"); } }
+    }
+    private class BootAuto implements Runnable {
+        public void run() { if (bootList != null && display.getCurrent() == bootList) { bootSelect(bootDefault); } }
+    }
+    private class BootEntryRunner implements Runnable {
+        private final Object entry;
+        BootEntryRunner(Object entry) { this.entry = entry; }
+        public void run() { bootEntry(entry); }
     }
     public void bootEntry(Object entry) {
         BootEntry e = entry instanceof BootEntry ? (BootEntry) entry : null;
