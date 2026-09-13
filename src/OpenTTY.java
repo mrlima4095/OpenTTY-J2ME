@@ -880,7 +880,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String root = scope.containsKey("ROOT") ? (String) scope.get("ROOT") : "";
 
         if (path == null) { return "/"; }
-        else if (root.equals("/") || path.startsWith("/dev/") || path.startsWith("/mnt/") || path.startsWith("/proc/") || path.startsWith("/tmp/")) { return path; }
+        else if (root.equals("/") || path.startsWith("/dev/") || path.startsWith("/mnt/") || path.startsWith("/proc/") || path.startsWith("/tmp/") || path.startsWith("/boot/") || path.equals("/boot")) { return path; }
         else if (path.startsWith("/")) { return root.endsWith("/") ? (root.length() > 1 ? root + path.substring(1) : root) : root + path; } return path;
     }
     public String redirect(String path) {

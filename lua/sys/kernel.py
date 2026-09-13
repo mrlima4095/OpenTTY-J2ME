@@ -1154,7 +1154,7 @@ class OpenTTYKernel:
         root = (scope.get("ROOT") or "") if isinstance(scope, dict) else ""
         if root and root != "/":
             plain = abs_path.lstrip("/")
-            if not (abs_path.startswith(("/dev/", "/proc/", "/tmp/"))):
+            if not (abs_path.startswith(("/boot/", "/dev/", "/proc/", "/tmp/")) or abs_path == "/boot"):
                 abs_path = self._norm(root.rstrip("/") + "/" + plain)
         return abs_path
 
