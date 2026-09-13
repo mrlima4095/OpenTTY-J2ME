@@ -14,7 +14,6 @@ to the bundled resource only when it does not exist.
 The format is a small, GRUB-inspired language:
 
 ```
-set timeout=3
 set default=0
 
 menuentry "OpenTTY" {
@@ -27,8 +26,8 @@ menuentry "OpenTTY" {
 
 | Setting   | Meaning                                                                 |
 |-----------|-------------------------------------------------------------------------|
-| `timeout` | Seconds to wait before booting the default entry. `0` or negative waits for the user.                          |
-| `default` | Selected entry index (`0`, `1`, ...) or a quoted title (`"My OS"`). Default is the first entry.                |
+| `timeout` | Accepted for GRUB compatibility but **ignored** — OpenTTY never auto-boots or counts down. |
+| `default` | Preselected entry index (`0`, `1`, ...) or a quoted title (`"My OS"`). Default is the first entry. |
 
 ### Menu entries
 
@@ -45,11 +44,9 @@ Comments start with `#` and blank lines are ignored.
 
 1. `loadBootMenu()` reads `/boot/grub.cfg` and parses it with `parseBootMenu()`.
 2. A single entry (or none) boots immediately; multiple entries show a `List`
-   menu titled "OpenTTY - Boot".
-   - When `timeout > 0` the title shows a live countdown and the default entry
-     boots automatically when it reaches zero.
-   - When `timeout <= 0` the menu stays until the user picks an entry and
-     presses **Boot** (or taps a line — the list is implicit).
+   menu titled "OpenTTY - Boot". The menu waits for the user to pick an entry and
+   press **Boot** (or tap a line — the list is implicit); there is no countdown
+   or auto-boot.
 3. `bootSelect(index)` launches the chosen boot on a dedicated thread so the
    LCDUI event thread is never blocked.
 4. `bootEntry()` applies the entry:
@@ -82,7 +79,6 @@ browsing) behave identically whether OpenTTY boots from RMS or from a card.
 Example — a second boot candidate running from an SD card:
 
 ```
-set timeout=3
 set default="OpenTTY"
 
 menuentry "OpenTTY" {
