@@ -1714,10 +1714,11 @@ public class Lua {
                         dir = (String) midlet.joinpath(dir, father);
                         if (dir.length() > 1 && !dir.endsWith("/")) { dir = dir + "/"; }
 
-                        if (!dir.equals("/mnt/") && dir.startsWith("/mnt/")) {
+                        String chk = midlet.redirect(dir);
+                        if (!chk.equals("/mnt/") && chk.startsWith("/mnt/")) {
                             FileConnection fc = null;
                             try {
-                                fc = (FileConnection) Connector.open("file:///" + dir.substring(5), Connector.READ_WRITE);
+                                fc = (FileConnection) Connector.open("file:///" + chk.substring(5), Connector.READ_WRITE);
                                 
                                 if (fc.exists()) { return new Double(128); } else { fc.mkdir(); return new Double(0); }
                             }
@@ -3274,7 +3275,7 @@ public class Lua {
             else { pwd = pwd + "/"; }
 
             if (pwd.startsWith("/root/") && id != 0) { return list; }
-            else if ((pwd = midlet.solvepath(pwd, father)).equals("/tmp/")) { for (Enumeration files = midlet.tmp.keys(); files.hasMoreElements();) { list.put(new Double(index), (String) files.nextElement()); index++; } }
+            else if ((pwd = midlet.redirect(midlet.solvepath(pwd, father))).equals("/tmp/")) { for (Enumeration files = midlet.tmp.keys(); files.hasMoreElements();) { list.put(new Double(index), (String) files.nextElement()); index++; } }
             else if (pwd.equals("/mnt/")) { for (Enumeration roots = FileSystemRegistry.listRoots(); roots.hasMoreElements();) { list.put(new Double(index), (String) roots.nextElement()); index++; } } 
             else if (pwd.startsWith("/mnt/")) { 
                 FileConnection CONN = (FileConnection) Connector.open("file:///" + pwd.substring(5), Connector.READ); 
@@ -3436,14 +3437,17 @@ public class Lua {
                 }
 
                 if (midlet.fs.containsKey(target)) { father.put("PWD", target); return new Double(0); }
-                else if (target.startsWith("/mnt/")) {
-                    FileConnection fc = (FileConnection) Connector.open("file:///" + target.substring(5), Connector.READ); 
-                    boolean exist = fc.exists(), dir = fc.isDirectory();
-                    fc.close(); 
-                    if (exist && dir) { father.put("PWD", target); return new Double(0); } 
-                    else { return new Double(exist ? 20 : 127); }
+                else {
+                    String chk = midlet.redirect(target);
+                    if (chk.startsWith("/mnt/")) {
+                        FileConnection fc = (FileConnection) Connector.open("file:///" + chk.substring(5), Connector.READ); 
+                        boolean exist = fc.exists(), dir = fc.isDirectory();
+                        fc.close(); 
+                        if (exist && dir) { father.put("PWD", target); return new Double(0); } 
+                        else { return new Double(exist ? 20 : 127); }
+                    }
+                    else if (midlet.getInputStream(chk.substring(chk.length() - 1), father) != null) { return new Double(20); }
                 }
-                else if (midlet.getInputStream(target.substring(target.length() - 1), father) != null) { return new Double(20); }
 
                 return new Double(127);
             }
