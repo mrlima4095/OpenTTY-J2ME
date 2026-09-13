@@ -27,3 +27,7 @@ lua/sys/lib/
 lua/sys/mnt/
 lua/sys/proc/
 lua/sys/tmp/
+
+# on-device build output (release jars are snapshotted under dist/archive/)
+/dist/OpenTTY.jar
+/dist/OpenTTY.jad
