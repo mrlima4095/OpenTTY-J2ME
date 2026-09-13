@@ -29,11 +29,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public String username = read("/home/OpenRMS", globals), build = "2026-1.18.2-04x38";
     // | (Boot Menu / chroot)
     public String chroot = "";
-    public String bootInit = "/bin/init";
     public Vector bootEntries = null;
     public int bootDefault = 0, bootTimeout = 3;
     private List bootList = null;
-    private boolean bootDone = false;
     // |
     // Graphics
     public Display display = Display.getDisplay(this);
@@ -45,11 +43,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // | (Triggers)
     public void startApp() {
         if (sys.containsKey("1")) { }
-        else if (bootDone) { }
-        else {
-            bootDone = true;
-            loadBootMenu();
-        }
+        else { loadBootMenu(); }
     }
     public void pauseApp() { }
     public void destroyApp(boolean unconditional) { notifyDestroyed(); }
@@ -64,12 +58,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         } catch (Exception e) { }
 
         bootEntries = parseBootMenu(cfg);
-        if (bootEntries == null || bootEntries.size() <= 1) {
-            bootEntry(bootEntries != null && bootEntries.size() == 1 ? bootEntries.elementAt(0) : null);
-            return true;
-        }
-
-        showBootMenu();
+        if (bootEntries != null && bootEntries.size() > 0) { showBootMenu(); }
+        else { bootEntry(null); }
         return true;
     }
     public Vector parseBootMenu(String cfg) {
@@ -78,7 +68,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (cfg == null || cfg.length() == 0) { return entries; }
 
         String[] lines = split(cfg, '\n');
-        BootEntry cur = null;
+        Hashtable cur = null;
+        String defaultTitle = null;
         for (int i = 0; i < lines.length; i++) {
             String line = lines[i].trim();
             if (line.length() == 0 || line.startsWith("#")) { continue; }
@@ -93,31 +84,34 @@ public class OpenTTY extends MIDlet implements CommandListener {
                     }
                     else if (key.equals("default")) {
                         if (val.length() > 0 && val.charAt(0) >= '0' && val.charAt(0) <= '9') { try { bootDefault = Integer.parseInt(val); } catch (Exception ex) { } }
-                        else { int t = bootMenuTitleIndex(entries, val); if (t >= 0) { bootDefault = t; } }
+                        else { defaultTitle = val; }
                     }
                 }
             }
             else if (line.startsWith("menuentry")) {
                 int q1 = line.indexOf('"'), q2 = q1 >= 0 ? line.indexOf('"', q1 + 1) : -1;
-                String title = q1 >= 0 && q2 > q1 ? line.substring(q1 + 1, q2) : "OpenTTY";
-                cur = new BootEntry(title);
+                Hashtable entry = new Hashtable();
+                entry.put("title", q1 >= 0 && q2 > q1 ? line.substring(q1 + 1, q2) : "OpenTTY");
+                entry.put("root", "/");
+                entry.put("init", "/bin/init");
+                cur = entry;
                 entries.addElement(cur);
             }
             else if (cur != null) {
                 if (line.equals("}")) { cur = null; continue; }
                 int eq = line.indexOf('=');
                 if (eq > 0) {
-                    String key = line.substring(0, eq).trim(), val = line.substring(eq + 1).trim();
-                    val = replace(val, "\"", "");
-                    if (key.equals("root")) { cur.root = val; }
-                    else if (key.equals("init")) { cur.init = val.length() == 0 ? "/bin/init" : val; }
+                    String key = line.substring(0, eq).trim(), val = replace(line.substring(eq + 1).trim(), "\"", "");
+                    if (key.equals("root")) { cur.put("root", val); }
+                    else if (key.equals("init")) { cur.put("init", val.length() == 0 ? "/bin/init" : val); }
                 }
             }
         }
+        if (defaultTitle != null) { int t = bootMenuTitleIndex(entries, defaultTitle); if (t >= 0) { bootDefault = t; } }
         return entries;
     }
     private int bootMenuTitleIndex(Vector entries, String title) {
-        for (int i = 0; i < entries.size(); i++) { BootEntry e = (BootEntry) entries.elementAt(i); if (e.title != null && e.title.equals(title)) { return i; } }
+        for (int i = 0; i < entries.size(); i++) { Hashtable e = (Hashtable) entries.elementAt(i); Object t = e.get("title"); if (t != null && t.equals(title)) { return i; } }
         return -1;
     }
     public void showBootMenu() {
@@ -127,8 +121,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         bootList.setCommandListener(this);
 
         for (int i = 0; i < bootEntries.size(); i++) {
-            BootEntry e = (BootEntry) bootEntries.elementAt(i);
-            bootList.append(e.title != null ? e.title : ("Entry " + i), null);
+            Hashtable e = (Hashtable) bootEntries.elementAt(i);
+            Object title = e.get("title");
+            bootList.append(title != null ? (String) title : ("Entry " + i), null);
         }
         if (bootDefault < 0 || bootDefault >= bootEntries.size()) { bootDefault = 0; }
         bootList.setSelectedIndex(bootDefault, true);
@@ -143,23 +138,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
             index = bootDefault;
             if (index < 0 || index >= bootEntries.size()) { index = 0; }
         }
-        final Object entry = bootEntries.elementAt(index);
-        new Thread(new Runnable() { public void run() { bootEntry(entry); } }).start();
+        bootEntry(bootEntries.elementAt(index));
     }
     public void bootEntry(Object entry) {
-        BootEntry e = entry instanceof BootEntry ? (BootEntry) entry : null;
-        if (e == null || e.root == null || e.root.length() == 0 || e.root.equals("/")) { chroot = ""; }
-        else {
-            chroot = e.root;
-            while (chroot.length() > 1 && chroot.endsWith("/")) { chroot = chroot.substring(0, chroot.length() - 1); }
-            if (chroot.equals("/")) { chroot = ""; }
-        }
-        bootInit = (e != null && e.init != null && e.init.length() > 0) ? e.init : "/bin/init";
-
-        if (chroot.length() == 0 && bootInit.equals("/bin/init")) { defaultBoot(); }
-        else { bootKernel(); }
+        Hashtable e = entry instanceof Hashtable ? (Hashtable) entry : null;
+        String root = e != null && e.get("root") != null ? (String) e.get("root") : "/";
+        String init = e != null && e.get("init") != null ? (String) e.get("init") : "/bin/init";
+        if (root == null || root.length() == 0) { root = "/"; }
+        if (init == null || init.length() == 0) { init = "/bin/init"; }
+        if (root.equals("/") && init.equals("/bin/init")) { defaultBoot(root, init); }
+        else { bootKernel(root, init); }
     }
-    private void defaultBoot() {
+    private void defaultBoot(String root, String init) {
         boolean user = username.equals(""), pword = passwd().equals("");
         if (user || pword) {
             Form screen = new Form("OpenTTY - Login");
@@ -170,21 +160,23 @@ public class OpenTTY extends MIDlet implements CommandListener {
             screen.addCommand(new Command("Exit", Command.SCREEN, 1));
             screen.setCommandListener(this);
             display.setCurrent(screen);
-        } else { bootKernel(); }
+        } else { bootKernel(root, init); }
     }
-    private void bootKernel() {
+    private void bootKernel(String root, String init) {
         try {
-            Hashtable args = new Hashtable(); args.put(new Double(0), bootInit);
-            globals.put("PWD", "/home/"); globals.put("USER", "root"); globals.put("ROOT", "/"); globals.put("ALIAS", new Hashtable()); userID.put(username, 1000);
+            Hashtable args = new Hashtable(); args.put(new Double(0), init);
+            String r = (root == null || root.length() == 0) ? "/" : root;
+            chroot = r.equals("/") ? "" : r;
+            globals.put("PWD", "/home/"); globals.put("USER", "root"); globals.put("ROOT", r); globals.put("ALIAS", new Hashtable()); userID.put(username, 1000);
 
-            Process proc = new Process(this, "init", bootInit, "root", 0, "1", new StringBuffer(), globals);
+            Process proc = new Process(this, "init", init, "root", 0, "1", new StringBuffer(), globals);
 
             sys.put("1", proc); proc.lua.globals.put("arg", args); proc.handler = proc.lua.getKernel();
-            proc.lua.currentSource = bootInit;
-            String code = read(bootInit, globals);
+            proc.lua.currentSource = init;
+            String code = read(init, globals);
             if (code == null || code.length() == 0) {
                 Form screen = new Form("Boot Error");
-                screen.append("init not found: " + bootInit);
+                screen.append("init not found: " + init);
                 screen.addCommand(new Command("Exit", Command.OK, 1));
                 screen.setCommandListener(this);
                 display.setCurrent(screen);
@@ -897,6 +889,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     public String redirect(String path) {
         if (path == null || path.length() == 0 || chroot == null || chroot.length() == 0) { return path; }
+        if (path.equals(chroot) || path.startsWith(chroot + "/")) { return path; }
         if (path.equals("/boot") || path.startsWith("/boot/") || path.equals("/proc") || path.startsWith("/proc/") || path.equals("/tmp") || path.startsWith("/tmp/") || path.equals("/mnt") || path.startsWith("/mnt/") || path.equals("/dev") || path.startsWith("/dev/")) { return path; }
         String base = chroot.endsWith("/") ? chroot : chroot + "/";
         if (path.equals("/")) { return base; }
@@ -1019,14 +1012,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // Java Virtual Machine
     public int javaClass(String name) { try { Class.forName(name); return 0; } catch (ClassNotFoundException e) { return 3; } } 
     public String getName() { String s; StringBuffer BUFFER = new StringBuffer(); if ((s = System.getProperty("java.vm.name")) != null) { BUFFER.append(s).append(", ").append(System.getProperty("java.vm.vendor")); if ((s = System.getProperty("java.vm.version")) != null) { BUFFER.append('\n').append(s); } if ((s = System.getProperty("java.vm.specification.name")) != null) { BUFFER.append('\n').append(s); } } else if ((s = System.getProperty("com.ibm.oti.configuration")) != null) { BUFFER.append("J9 VM, IBM (").append(s).append(')'); if ((s = System.getProperty("java.fullversion")) != null) { BUFFER.append("\n\n").append(s); } } else if ((s = System.getProperty("com.oracle.jwc.version")) != null) { BUFFER.append("OJWC v").append(s).append(", Oracle"); } else if (javaClass("com.sun.cldchi.jvm.JVM") == 0) { BUFFER.append("CLDC Hotspot Implementation, Sun"); } else if (javaClass("com.sun.midp.Main") == 0) { BUFFER.append("KVM, Sun (MIDP)"); } else if (javaClass("com.sun.cldc.io.ConsoleOutputStream") == 0) { BUFFER.append("KVM, Sun (CLDC)"); } else if (javaClass("com.jblend.util.SortedVector") == 0) { BUFFER.append("JBlend, Aplix"); } else if (javaClass("com.jbed.io.CharConvUTF8") == 0) { BUFFER.append("Jbed, Esmertec/Myriad Group"); } else if (javaClass("MahoTrans.IJavaObject") == 0) { BUFFER.append("MahoTrans"); } else { BUFFER.append("Unknown"); } return BUFFER.append('\n').toString(); }
-}
-// | 
-// Boot Menu Entry
-class BootEntry {
-    public String title;
-    public String root = "";
-    public String init = "/bin/init";
-    BootEntry(String t) { title = t; }
 }
 // | 
 // Process

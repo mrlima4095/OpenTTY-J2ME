@@ -43,18 +43,22 @@ Comments start with `#` and blank lines are ignored.
 ## Boot Flow
 
 1. `loadBootMenu()` reads `/boot/grub.cfg` and parses it with `parseBootMenu()`.
-2. A single entry (or none) boots immediately; multiple entries show a `List`
-   menu titled "OpenTTY - Boot". The menu waits for the user to pick an entry and
-   press **Boot** (or tap a line — the list is implicit); there is no countdown
-   or auto-boot.
-3. `bootSelect(index)` launches the chosen boot on a dedicated thread so the
-   LCDUI event thread is never blocked.
-4. `bootEntry()` applies the entry:
+2. A config with at least one `menuentry` shows a `List` menu titled "OpenTTY -
+   Boot" that waits for the user to pick an entry and press **Boot** (or tap a
+   line — the list is implicit); there is no countdown or auto-boot. An empty
+   or missing config boots the default entry straight.
+3. `bootSelect(index)` runs on the current thread (the UI event thread) and
+   hands the entry to `bootEntry()`.
+4. `bootEntry()` reads `root`/`init` from the entry and applies it:
 
-   - Standard entry (`root=/` with `init=/bin/init`) → `defaultBoot()` — shows
-     the first-run account gate and then `bootKernel()`.
-   - Anything else → `bootKernel()` directly, which spawns the `init` script
-     as PID 1 (no OpenTTY account gate).
+   - Standard entry (`root=/` with `init=/bin/init`) → `defaultBoot(root, init)`
+     — shows the first-run account gate and then `bootKernel(root, init)`.
+   - Anything else → `bootKernel(root, init)` directly, which spawns the `init`
+     script as PID 1 (no OpenTTY account gate).
+
+   The chosen `root` is stored into `globals["ROOT"]` (so the shell resolves
+   every path against it) and `init` is passed as an argument — there is no
+   global `bootInit` variable.
 
 ## Chroot (`root=/mnt/...`)
 
@@ -96,7 +100,8 @@ menuentry "OpenTTY SD (chroot)" {
 
 The boot logic is implemented in `src/OpenTTY.java`:
 `loadBootMenu`, `parseBootMenu`, `bootMenuTitleIndex`, `showBootMenu`,
-`bootSelect`, `bootEntry`, `defaultBoot`, `bootKernel`, `redirect`, and the
+`bootSelect`, `bootEntry`, `defaultBoot`, `bootKernel`, and `redirect`. Menu
+entries are plain `Hashtable`s (keys `title`, `root`, `init`) — there is no
 `BootEntry` class. Lua-side redirection hooks for `dirs`/`chdir`/`MKDIR` are
 in `src/Lua.java`. The desktop kernel under `lua/sys` does **not** implement
 the boot menu.
