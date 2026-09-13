@@ -33,6 +33,7 @@ return {
         ["hostname"] = { remote = "net/hostname.lua", here = "/bin/hostname", description = "Manage Host Name" },
         ["htop"] = { remote = "sys/htop", here = "/bin/htop", description = "System Monitor" },
         ["ifconfig"] = { remote = "net/ifconfig.lua", here = "/bin/ifconfig", description = "Network Informations" },
+        ["install"] = { remote = "sys/install.lua", here = "/bin/install", description = "Clone OpenTTY System" },
         ["irc"] = { remote = "net/irc.lua", here = "/bin/irc", description = "IRC Client for OpenTTY" },
         ["java"] = { remote = "dev/java/main.lua", here = "/bin/java", description = "Java ME" },
         ["jdb"] = { remote = "sys/benchmark/main.lua", here = "/bin/jdb", depends = { "forge", "log" }, description = "Debugging API" },

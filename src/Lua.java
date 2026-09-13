@@ -3217,6 +3217,11 @@ public class Lua {
                     else if (status == 20) { midlet.print("cd: " + args[0] + ": found", output, id, father); }
                     else if (status == 13) { midlet.print("cd: " + args[0] + ": permission denied", output, id, father); }
                 }
+                else if (mainCommand.equals("chroot")) {
+                    if (args.length == 0) { midlet.print("chroot: missing operand", output, id, father); status = 127; } 
+                    else if (args[0].startsWith("/mnt/")) { father.put("ROOT", args[0]); }
+                    else { midlet.print("chroot: " + args[0] + ": invalid path, usage a mount point", output, id, father); status = 2; }
+                }
                 else if (mainCommand.equals("builtin") || mainCommand.equals("command")) { Vector payload = new Vector(); payload.addElement(argument); payload.addElement(true); payload.addElement(FALSE); return exec(payload); }
                 else if (mainCommand.equals("false")) { status = 255; }
                 else { midlet.print(mainCommand + ": not found", output, id, father); status = 127; }
