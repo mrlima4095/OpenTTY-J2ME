@@ -53,11 +53,49 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public boolean loadBootMenu() {
         String cfg = read("/boot/grub.cfg", globals);
 
-        bootEntries = parseBootMenu(cfg);
-        if (bootEntries != null && bootEntries.size() > 1) { showBootMenu(); }
-        else if (bootEntries != null && bootEntries.size() == 1) { bootEntry(bootEntries.elementAt(0)); }
+        int count = countBootEntries(cfg);
+        if (count == 1) { bootEntry(parseBootEntry(cfg)); }
+        else if (count > 1) {
+            bootEntries = parseBootMenu(cfg);
+            showBootMenu();
+        }
         else { bootEntry(null); }
         return true;
+    }
+    public int countBootEntries(String cfg) {
+        int count = 0, at = 0;
+        if (cfg == null) { return 0; }
+        while ((at = cfg.indexOf("menuentry", at)) >= 0) { count++; at += 9; }
+        return count;
+    }
+    public Hashtable parseBootEntry(String cfg) {
+        Hashtable entry = new Hashtable();
+        entry.put("title", "OpenTTY");
+        entry.put("root", "/");
+        entry.put("init", "/bin/init");
+        if (cfg == null) { return entry; }
+        int m = cfg.indexOf("menuentry");
+        if (m < 0) { return entry; }
+        int brace = cfg.indexOf('{', m), close = brace < 0 ? cfg.length() : cfg.indexOf('}', brace);
+        if (close < 0) { close = cfg.length(); }
+        int q1 = cfg.indexOf('"', m);
+        if (q1 >= 0 && (brace < 0 || q1 < brace)) {
+            int q2 = cfg.indexOf('"', q1 + 1);
+            if (q2 > q1) { entry.put("title", cfg.substring(q1 + 1, q2)); }
+        }
+        String body = (brace >= 0 && close > brace) ? cfg.substring(brace + 1, close) : "";
+        String[] lines = split(body, '\n');
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i].trim();
+            if (line.length() == 0 || line.startsWith("#")) { continue; }
+            int eq = line.indexOf('=');
+            if (eq > 0) {
+                String key = line.substring(0, eq).trim(), val = replace(line.substring(eq + 1).trim(), "\"", "");
+                if (key.equals("root")) { entry.put("root", val); }
+                else if (key.equals("init")) { entry.put("init", val.length() == 0 ? "/bin/init" : val); }
+            }
+        }
+        return entry;
     }
     public Vector parseBootMenu(String cfg) {
         Vector entries = new Vector();
