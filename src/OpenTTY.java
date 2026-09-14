@@ -32,6 +32,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Vector bootEntries = null;
     public int bootDefault = 0, bootTimeout = 3;
     private List bootList = null;
+    private Form bootManual = null;
     // |
     // Graphics
     public Display display = Display.getDisplay(this);
@@ -113,6 +114,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public void showBootMenu() {
         bootList = new List("OpenTTY - Boot", List.IMPLICIT);
         bootList.addCommand(new Command("Boot", Command.OK, 1));
+        bootList.addCommand(new Command("Manual Boot", Command.ITEM, 2));
+        bootList.addCommand(new Command("Exit", Command.EXIT, 3));
         bootList.setSelectCommand(List.SELECT_COMMAND);
         bootList.setCommandListener(this);
 
@@ -124,6 +127,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (bootDefault < 0 || bootDefault >= bootEntries.size()) { bootDefault = 0; }
         bootList.setSelectedIndex(bootDefault, true);
         display.setCurrent(bootList);
+    }
+    public void showBootManual() {
+        bootManual = new Form("OpenTTY - Manual Boot");
+        bootManual.append(new TextField("Root", "/", 256, TextField.ANY));
+        bootManual.append(new TextField("Init", "/bin/init", 256, TextField.ANY));
+        bootManual.addCommand(new Command("Back", Command.BACK, 1));
+        bootManual.addCommand(new Command("Boot", Command.OK, 2));
+        bootManual.setCommandListener(this);
+        display.setCurrent(bootManual);
     }
     public void bootSelect(int index) {
         if (bootList == null) { return; }
@@ -265,6 +277,21 @@ public class OpenTTY extends MIDlet implements CommandListener {
             if (c == List.SELECT_COMMAND || c.getLabel().equals("Boot")) {
                 int sel = bootList.getSelectedIndex();
                 if (sel >= 0) { bootSelect(sel); }
+            }
+            else if (c.getLabel().equals("Manual Boot")) { showBootManual(); }
+        }
+        else if (d == bootManual) {
+            if (c.getLabel().equals("Back")) { showBootMenu(); }
+            else if (c.getLabel().equals("Boot")) {
+                String root = ((TextField) bootManual.get(0)).getString().trim();
+                String init = ((TextField) bootManual.get(1)).getString().trim();
+                if (root.length() == 0) { root = "/"; }
+                if (init.length() == 0) { init = "/bin/init"; }
+                bootManual = null;
+                Hashtable entry = new Hashtable();
+                entry.put("root", root);
+                entry.put("init", init);
+                bootEntry(entry);
             }
         }
         else {
