@@ -7,6 +7,7 @@ return {
         ["autogc"] = { remote = "sys/autogc", here = "/bin/autogc", description = "Auto Clean Memory" },
         ["brainfuck"] = { remote = "dev/brainfuck", here = "/bin/brainfuck", riscv = true, description = "Brainfuck interpreter" },
         ["c4"] = { remote = "dev/c4", here = "/bin/c4", riscv = true, description = "Tiny C interpreter (c4)" },
+        ["c4cc"] = { remote = "dev/c4cc", here = "/bin/c4cc", riscv = true, description = "Small on-device C subset compiler" },
         ["chroot"] = { remote = "sys/chroot.lua", here = "/bin/chroot", description = "Change to a real File System" },
         ["cmatrix"] = { remote = "games/cmatrix", here = "/bin/cmatrix", description = "The Matrix Effect" },
         ["cowsay"] = { remote = "games/cowsay", here = "/bin/cowsay", riscv = true, description = "ASCII cow with speech bubble" },

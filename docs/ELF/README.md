@@ -16,6 +16,7 @@ It describes an OpenTTY guest ABI, not Linux, glibc, newlib, or generic RISC-V.
 - [LCDUI applications](#lcdui-applications)
 - [Dynamic libraries](#dynamic-libraries)
 - [Assembly and raw syscalls](#assembly-and-raw-syscalls)
+- [On-device compiler](#on-device-compiler)
 - [Packaging](#packaging)
 - [Testing and troubleshooting](#testing-and-troubleshooting)
 
@@ -375,6 +376,28 @@ process, timing, and socket syscalls are implementation details; inspect
 
 `-stdlib` uses private `ecall` IDs starting at `1000`. Never hard-code those
 from an app; use the headers and runtime wrappers.
+
+## On-device compiler
+
+`c4cc` is a small native compiler packaged at `/bin/c4cc`. It writes an ELF32
+little-endian `ET_EXEC` RV32IM file itself, so no host toolchain is needed on
+the device:
+
+```c
+int main(void) {
+    // integer arithmetic and output calls are supported
+    puts("Hello from c4cc");
+    printf("answer=%d\n", (2 + 3) * 4);
+    putchar(10);
+    return 0;
+}
+```
+
+Use `c4cc hello.c [hello]`. Its intended subset is one `int main(...)`,
+integer literals and `+`, `-`, `*`, `/` expressions, `return`, `puts`,
+`putchar`, and `printf` with a literal format plus one integer expression.
+It accepts `//` and `/* ... */` comments. It does not support declarations,
+variables, control flow, includes, character literals, or arbitrary calls.
 
 ## Packaging
 
