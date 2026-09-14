@@ -55,7 +55,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String cfg = read("/boot/grub/grub.cfg", globals);
 
         bootEntries = parseBootMenu(cfg);
-        if (bootEntries != null && bootEntries.size() > 0) { showBootMenu(); }
+        if (bootEntries != null && bootEntries.size() > 1) { showBootMenu(); }
+        else if (bootEntries != null && bootEntries.size() == 1) { bootEntry(bootEntries.elementAt(0)); }
         else { bootEntry(null); }
         return true;
     }
