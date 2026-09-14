@@ -4,9 +4,10 @@
 --   gobuster <url>              quick scan with built-in wordlist
 --   gobuster <url> -w <file>    scan with a wordlist file
 --   gobuster <url> -t <delay>   delay between requests (ms)
+--   gobuster <url> -s           live screen mode
 --   gobuster -h | --help
 
-local version = "1.0.0"
+local version = "1.1.0"
 
 os.setproc("name", "gobuster")
 
@@ -33,6 +34,8 @@ local function show_help()
     print("Options:")
     print("  -w <file>    wordlist file (one path per line)")
     print("  -t <delay>   delay between requests in ms (default 0)")
+    print("  -s           live screen mode")
+    print("  --screen     live screen mode")
     print("")
     print("Example:")
     print("  gobuster http://opentty.fun")
@@ -53,10 +56,13 @@ end
 local words = {}
 local has_wordlist = false
 local delay = 0
+local screen_mode = false
 
 local i = 2
 while arg[i] ~= nil do
-    if arg[i] == "-w" then
+    if arg[i] == "-s" or arg[i] == "--screen" then
+        screen_mode = true
+    elseif arg[i] == "-w" then
         i = i + 1
         local wf = arg[i]
         if wf == nil then
@@ -93,6 +99,90 @@ if not has_wordlist then
     for j = 1, #default_wordlist do
         table.insert(words, default_wordlist[j])
     end
+end
+
+local function run_screen()
+    local previous = graphics.getCurrent()
+    local screen = graphics.new("screen", "gobuster: " .. base)
+    local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
+    local stop = graphics.new("command", { label = "Stop", type = "stop", priority = 1 })
+    local switch = graphics.new("command", { label = "Switch to...", type = "screen", priority = 2 })
+    local status = graphics.new("buffer", { label = "Status", value = "Preparing scan...", style = "monospace" })
+    local results = graphics.new("buffer", { label = "Found", value = "", style = "monospace" })
+    local running = true
+
+    local function add_result(text)
+        local current = graphics.GetText(results) or ""
+        if current ~= "" then
+            graphics.SetText(results, current .. "\n" .. text)
+        else
+            graphics.SetText(results, text)
+        end
+    end
+
+    graphics.append(screen, status)
+    graphics.append(screen, results)
+    graphics.addCommand(screen, back)
+    graphics.addCommand(screen, stop)
+    graphics.addCommand(screen, switch)
+    graphics.SetTicker(screen, "Scanning " .. base .. "...")
+    graphics.handler(screen, {
+        [back] = function()
+            running = false
+            graphics.display(previous)
+        end,
+        [stop] = function()
+            running = false
+            graphics.SetTicker(screen, "Stopping gobuster...")
+        end,
+        [switch] = graphics.taskmngr
+    })
+
+    os.setproc("screen", screen)
+    graphics.display(screen)
+
+    java.run(function()
+        local t0 = java.midlet.uptime()
+        local found = 0
+
+        for wi = 1, #words do
+            if running then
+                local word = words[wi]
+                local url = base .. "/" .. word
+                local progress = tostring(wi) .. "/" .. tostring(#words) .. ": /" .. word
+                graphics.SetText(status, progress)
+                graphics.SetTicker(screen, "Scanning " .. progress)
+
+                local ok, body, http_status = pcall(socket.http.get, url)
+                if ok then
+                    if http_status ~= nil and http_status ~= 404 then
+                        local size = 0
+                        if body ~= nil then size = #body end
+                        found = found + 1
+                        add_result(tostring(http_status) .. "  " .. tostring(size) .. "B  /" .. word)
+                    end
+                end
+
+                if delay > 0 and wi < #words then java.sleep(delay) end
+            else
+                break
+            end
+        end
+
+        local ms = java.midlet.uptime() - t0
+        if running then
+            graphics.SetText(status, "Done: " .. found .. " of " .. #words .. " found in " .. ms .. "ms")
+            graphics.SetTicker(screen, "Gobuster complete")
+        else
+            graphics.SetText(status, "Stopped: " .. found .. " found")
+            graphics.SetTicker(screen, "Gobuster stopped")
+        end
+    end, "gobuster")
+end
+
+if screen_mode then
+    run_screen()
+    return
 end
 
 print("Gobuster v" .. version)

@@ -5,8 +5,9 @@
 --   scan <host> -c             common ports
 --   scan <host> <port>         single port
 --   scan <host> <start> <end>  port range
+--   scan <host> -s             live screen mode
 
-local version = "1.0.0"
+local version = "1.1.0"
 
 os.setproc("name", "scan")
 
@@ -38,6 +39,8 @@ local function show_help()
     print("")
     print("Usage: scan <host> [start] [end]")
     print("  scan <host> -c              common ports")
+    print("  scan <host> -s              live screen mode")
+    print("  scan <host> --screen        live screen mode")
     print("")
     print("Examples:")
     print("  scan opentty.fun           common ports")
@@ -57,12 +60,25 @@ end
 
 local start_p = nil
 local end_p = nil
+local screen_mode = false
+local numbers = {}
 
-if arg[2] ~= nil and arg[2] ~= "-c" then
-    local ok1, p1 = pcall(tonumber, arg[2])
+local ai = 2
+while arg[ai] ~= nil do
+    local value = arg[ai]
+    if value == "-s" or value == "--screen" then
+        screen_mode = true
+    elseif value ~= "-c" then
+        table.insert(numbers, value)
+    end
+    ai = ai + 1
+end
+
+if numbers[1] ~= nil then
+    local ok1, p1 = pcall(tonumber, numbers[1])
     if ok1 and p1 then
         start_p = p1
-        local ok2, p2 = pcall(tonumber, arg[3])
+        local ok2, p2 = pcall(tonumber, numbers[2])
         if ok2 and p2 then
             end_p = p2
         else
@@ -95,6 +111,93 @@ else
     end
 end
 
+local function port_line(port)
+    local ps = tostring(port)
+    local pad = string.sub("00000", 1, 5 - #ps)
+    return pad .. ps .. "/tcp  open"
+end
+
+local function run_screen()
+    local previous = graphics.getCurrent()
+    local screen = graphics.new("screen", "scan: " .. host)
+    local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
+    local stop = graphics.new("command", { label = "Stop", type = "stop", priority = 1 })
+    local switch = graphics.new("command", { label = "Switch to...", type = "screen", priority = 2 })
+    local status = graphics.new("buffer", { label = "Status", value = "Preparing scan...", style = "monospace" })
+    local results = graphics.new("buffer", { label = "Open ports", value = "", style = "monospace" })
+    local running = true
+
+    local function add_result(text)
+        local current = graphics.GetText(results) or ""
+        if current ~= "" then
+            graphics.SetText(results, current .. "\n" .. text)
+        else
+            graphics.SetText(results, text)
+        end
+    end
+
+    graphics.append(screen, status)
+    graphics.append(screen, results)
+    graphics.addCommand(screen, back)
+    graphics.addCommand(screen, stop)
+    graphics.addCommand(screen, switch)
+    graphics.SetTicker(screen, "Scanning " .. host .. "...")
+    graphics.handler(screen, {
+        [back] = function()
+            running = false
+            graphics.display(previous)
+        end,
+        [stop] = function()
+            running = false
+            graphics.SetTicker(screen, "Stopping scan...")
+        end,
+        [switch] = graphics.taskmngr
+    })
+
+    os.setproc("screen", screen)
+    graphics.display(screen)
+
+    java.run(function()
+        local t0 = java.midlet.uptime()
+        local open_count = 0
+        local closed = 0
+
+        for i = 1, #ports do
+            if running then
+                local port = ports[i]
+                local progress = tostring(i) .. "/" .. tostring(#ports) .. ": " .. tostring(port) .. "/tcp"
+                graphics.SetText(status, progress)
+                graphics.SetTicker(screen, "Scanning " .. progress)
+
+                local ok, conn, inp, out = pcall(socket.connect, "socket://" .. host .. ":" .. port)
+                if ok then
+                    open_count = open_count + 1
+                    add_result(port_line(port))
+                    pcall(io.close, conn, inp, out)
+                else
+                    closed = closed + 1
+                end
+            else
+                break
+            end
+        end
+
+        local ms = java.midlet.uptime() - t0
+        if running then
+            graphics.SetText(status, "Done: " .. open_count .. " open, " .. closed .. " closed in " .. ms .. "ms")
+            graphics.SetTicker(screen, "Scan complete")
+        else
+            graphics.SetText(status, "Stopped: " .. open_count .. " open, " .. closed .. " closed")
+            graphics.SetTicker(screen, "Scan stopped")
+        end
+    end, "scan:" .. host)
+end
+
+if screen_mode then
+    run_screen()
+    return
+end
+
 print("scan: " .. host .. " (" .. #ports .. " ports)")
 print("")
 
@@ -108,9 +211,7 @@ for i = 1, #ports do
 
     if ok then
         open_count = open_count + 1
-        local ps = tostring(port)
-        local pad = string.sub("00000", 1, 5 - #ps)
-        print(pad .. ps .. "/tcp  open")
+        print(port_line(port))
         pcall(io.close, conn, inp, out)
     else
         closed = closed + 1
