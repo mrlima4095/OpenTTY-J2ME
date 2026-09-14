@@ -1,14 +1,14 @@
 # OpenTTY Boot Menu
 
-OpenTTY reads a GRUB-style boot configuration at boot time from `/boot/grub/grub.cfg`
+OpenTTY reads a GRUB-style boot configuration at boot time from `/boot/grub.cfg`
 VFS/RMS stable state. This document explains the entries it accepts, the boot
 flow, and how path-based chroots work.
 
 ## Configuration File
 
-`/boot/grub/grub.cfg` is seeded from `src/boot/grub/grub.cfg` and read with
-`read()`. A copy made on the device in `/boot/grub/grub.cfg` (via
-`write("/boot/grub/grub.cfg", ...)`) **overrides the seed**, because the boot
+`/boot/grub.cfg` is seeded from `src/boot/grub.cfg` and read with
+`read()`. A copy made on the device in `/boot/grub.cfg` (via
+`write("/boot/grub.cfg", ...)`) **overrides the seed**, because the boot
 loader reads the RMS-backed file first and falls back to the bundled resource
 only when it does not exist.
 
@@ -43,7 +43,7 @@ Comments start with `#` and blank lines are ignored.
 
 ## Boot Flow
 
-1. `loadBootMenu()` reads `/boot/grub/grub.cfg` and parses it with `parseBootMenu()`.
+1. `loadBootMenu()` reads `/boot/grub.cfg` and parses it with `parseBootMenu()`.
 2. A config with at least one `menuentry` shows a `List` menu titled "OpenTTY -
    Boot" that waits for the user to pick an entry and press **Boot** (or tap a
    line — the list is implicit); there is no countdown or auto-boot. An empty

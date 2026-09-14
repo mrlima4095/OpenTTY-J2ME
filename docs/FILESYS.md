@@ -39,7 +39,7 @@ several storage backends: **RMS RecordStores** (`/home/`, `/bin/`, `/etc/`,
 - **Backend**: RMS (OpenRMS page 7 — next free page after `/root/`)
 - **Permissions**: readable by all users; writable only by root (UID 0)
 - Holds the kernel image (`vmlinuz`), ramdisk (`initrd.img`), boot config
-  (`config`, `grub/grub.cfg`). Seeded as jar resources, overridable via RMS.
+  (`config`, `grub.cfg`). Seeded as jar resources, overridable via RMS.
 
 ### `/tmp/` — Temporary storage
 
