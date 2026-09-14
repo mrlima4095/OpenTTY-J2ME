@@ -172,19 +172,22 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     private void bootKernel(String root, String init) {
         try {
-            Hashtable args = new Hashtable(); args.put(new Double(0), init);
+            String[] parts = splitArgs(init != null ? init : "");
+            String program = parts.length > 0 ? parts[0] : init;
+            Hashtable args = new Hashtable(); args.put(new Double(0), program);
+            for (int i = 1; i < parts.length; i++) { args.put(new Double(i), parts[i]); }
             String r = (root == null || root.length() == 0) ? "/" : root;
             chroot = r.equals("/") ? "" : r;
             globals.put("PWD", "/home/"); globals.put("USER", "root"); globals.put("ROOT", r); globals.put("ALIAS", new Hashtable()); userID.put(username, 1000);
 
-            Process proc = new Process(this, "init", init, "root", 0, "1", new StringBuffer(), globals);
+            Process proc = new Process(this, "init", program, "root", 0, "1", new StringBuffer(), globals);
 
             sys.put("1", proc); proc.lua.globals.put("arg", args); proc.handler = proc.lua.getKernel();
-            proc.lua.currentSource = init;
-            String code = read(init, globals);
+            proc.lua.currentSource = program;
+            String code = read(program, globals);
             if (code == null || code.length() == 0) {
                 Form screen = new Form("Boot Error");
-                screen.append("init not found: " + init);
+                screen.append("init not found: " + program);
                 screen.addCommand(new Command("Exit", Command.OK, 1));
                 screen.setCommandListener(this);
                 display.setCurrent(screen);
