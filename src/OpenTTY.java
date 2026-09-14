@@ -155,8 +155,15 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String init = e != null && e.get("init") != null ? (String) e.get("init") : "/bin/init";
         if (root == null || root.length() == 0) { root = "/"; }
         if (init == null || init.length() == 0) { init = "/bin/init"; }
+        clearBoot();
         if (root.equals("/") && init.equals("/bin/init")) { defaultBoot(root, init); }
         else { bootKernel(root, init); }
+    }
+    public void clearBoot() {
+        bootEntries = null;
+        bootList = null;
+        bootManual = null;
+        bootDefault = 0; bootTimeout = 3;
     }
     private void defaultBoot(String root, String init) {
         boolean user = username.equals(""), pword = passwd().equals("");
