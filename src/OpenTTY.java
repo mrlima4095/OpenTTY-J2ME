@@ -69,32 +69,38 @@ public class OpenTTY extends MIDlet implements CommandListener {
         return count;
     }
     public Hashtable parseBootEntry(String cfg) {
-        Hashtable entry = new Hashtable();
-        entry.put("title", "OpenTTY");
-        entry.put("root", "/");
-        entry.put("init", "/bin/init");
-        if (cfg == null) { return entry; }
-        int m = cfg.indexOf("menuentry");
-        if (m < 0) { return entry; }
-        int brace = cfg.indexOf('{', m), close = brace < 0 ? cfg.length() : cfg.indexOf('}', brace);
-        if (close < 0) { close = cfg.length(); }
-        int q1 = cfg.indexOf('"', m);
-        if (q1 >= 0 && (brace < 0 || q1 < brace)) {
-            int q2 = cfg.indexOf('"', q1 + 1);
-            if (q2 > q1) { entry.put("title", cfg.substring(q1 + 1, q2)); }
-        }
-        String body = (brace >= 0 && close > brace) ? cfg.substring(brace + 1, close) : "";
-        String[] lines = split(body, '\n');
-        for (int i = 0; i < lines.length; i++) {
-            String line = lines[i].trim();
-            if (line.length() == 0 || line.startsWith("#")) { continue; }
-            int eq = line.indexOf('=');
-            if (eq > 0) {
-                String key = line.substring(0, eq).trim(), val = replace(line.substring(eq + 1).trim(), "\"", "");
-                if (key.equals("root")) { entry.put("root", val); }
-                else if (key.equals("init")) { entry.put("init", val.length() == 0 ? "/bin/init" : val); }
+        String title = null, root = null, init = null;
+        if (cfg != null) {
+            int m = cfg.indexOf("menuentry");
+            if (m >= 0) {
+                int brace = cfg.indexOf('{', m), close = brace < 0 ? cfg.length() : cfg.indexOf('}', brace);
+                if (close < 0) { close = cfg.length(); }
+                int q1 = cfg.indexOf('"', m);
+                if (q1 >= 0 && (brace < 0 || q1 < brace)) {
+                    int q2 = cfg.indexOf('"', q1 + 1);
+                    if (q2 > q1) { title = cfg.substring(q1 + 1, q2); }
+                }
+                String body = (brace >= 0 && close > brace) ? cfg.substring(brace + 1, close) : "";
+                String[] lines = split(body, '\n');
+                for (int i = 0; i < lines.length; i++) {
+                    String line = lines[i].trim();
+                    if (line.length() == 0 || line.startsWith("#")) { continue; }
+                    int eq = line.indexOf('=');
+                    if (eq > 0) {
+                        String key = line.substring(0, eq).trim(), val = replace(line.substring(eq + 1).trim(), "\"", "");
+                        if (key.equals("root")) { root = val; }
+                        else if (key.equals("init")) { init = val; }
+                    }
+                }
             }
         }
+        if (title == null || title.length() == 0) { title = "OpenTTY"; }
+        if (root == null || root.length() == 0) { root = "/"; }
+        if (init == null || init.length() == 0) { init = "/bin/init"; }
+        Hashtable entry = new Hashtable();
+        entry.put("title", title);
+        entry.put("root", root);
+        entry.put("init", init);
         return entry;
     }
     public Vector parseBootMenu(String cfg) {
