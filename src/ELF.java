@@ -1227,7 +1227,9 @@ public class ELF implements CommandListener {
             cur = next;
         }
         if (libcHeapRegionEnd == 0 || libcHeapTop + 8 + n > libcHeapRegionEnd) {
-            int len = 0x10000, region = 0;
+            int len = 0x10000;
+            if (8 + n > len) { len = (8 + n + 0xFFF) & ~0xFFF; }
+            int region = 0;
             while (len >= 0x1000) {
                 region = findFreeMemoryRegion(len);
                 if (region != 0) { break; }
@@ -1433,8 +1435,8 @@ public class ELF implements CommandListener {
             
             int instructionCount = 0;
             while (running && pc < memory.length - 3 && midlet.sys.containsKey(pid)) {
-                if (instructionCount++ > 1000000) {
-                    if (midlet.debug) midlet.print("DEBUG: Stopping after 1000000 instructions", stdout, id, scope);
+                if (instructionCount++ > 200000000) {
+                    if (midlet.debug) midlet.print("DEBUG: Stopping after 200000000 instructions", stdout, id, scope);
                     break;
                 }
                 
@@ -2865,8 +2867,9 @@ public class ELF implements CommandListener {
         String path = pathBuf.toString();
         
         try {
-            boolean forReading = (flags & O_RDONLY) == O_RDONLY || (flags & O_RDWR) == O_RDWR, 
-                    forWriting = (flags & O_WRONLY) == O_WRONLY || (flags & O_RDWR) == O_RDWR, 
+            int accmode = flags & (O_RDONLY | O_WRONLY | O_RDWR);
+            boolean forReading = accmode == O_RDONLY || accmode == O_RDWR, 
+                    forWriting = accmode == O_WRONLY || accmode == O_RDWR, 
                     create = (flags & O_CREAT) != 0, append = (flags & O_APPEND) != 0, 
                     truncate = (flags & O_TRUNC) != 0, isDirectory = (flags & O_DIRECTORY) != 0;
 
