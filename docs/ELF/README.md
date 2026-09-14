@@ -385,19 +385,45 @@ the device:
 
 ```c
 int main(void) {
-    // integer arithmetic and output calls are supported
-    puts("Hello from c4cc");
-    printf("answer=%d\n", (2 + 3) * 4);
-    putchar(10);
+    int n = 0;
+    int *p = &n;
+    while (n < 3) n = n + 1;
+    if (*p == 3) printf("answer=%d\n", n);
     return 0;
 }
 ```
 
-Use `c4cc hello.c [hello]`. Its intended subset is one `int main(...)`,
-integer literals and `+`, `-`, `*`, `/` expressions, `return`, `puts`,
-`putchar`, and `printf` with a literal format plus one integer expression.
-It accepts `//` and `/* ... */` comments. It does not support declarations,
-variables, control flow, includes, character literals, or arbitrary calls.
+Use `c4cc hello.c [hello]`. It produces a single-load-segment ELF32
+little-endian `ET_EXEC` at `0x10000`, using direct RV32IM instructions and
+OpenTTY `ecall`s; it never invokes a linker on-device.
+
+The intentionally bounded subset is one `int main(...)` definition; local
+`int`, `char`, and single-level pointer declarations (one declarator per
+statement); integer, hexadecimal, string, and character literals; assignment;
+`+ - * / %`, comparisons, `== !=`, `&& ||`, and unary `+ - ! & *`; blocks,
+`if`/`else`, `while`, and `return`. Locals use fixed stack-frame slots. A
+declared `char` loads and stores one byte; pointer dereference is a 32-bit
+word access. There are no globals, arrays, structs, casts, `for`, functions,
+or comma declarations.
+
+Quoted includes are supported as bounded textual source fragments:
+
+```c
+#include "common.inc"       // resolved next to the including source
+#include "/home/common.inc" // direct VFS path
+```
+
+Includes are recursive (maximum depth 8) and the combined source is limited to
+32 KiB. They are not a preprocessor: `#define`, conditionals, and all other
+directives fail. System headers such as `<stdio.h>` fail clearly rather than
+pretending to provide host declarations. Keep include fragments within the
+same subset.
+
+Available calls are `puts`, `putchar`, `printf`, `malloc`, `free`, `memset`,
+and raw OpenTTY file calls `open`, `read`, `write`, and `close`, with up to
+seven integer/pointer arguments. `printf` accepts its normal format pointer
+and arguments through the emulator formatter. The compiler accepts `//` and
+`/* ... */` comments and common string escapes (`\n`, `\t`, `\\`, `\"`).
 
 ## Packaging
 
