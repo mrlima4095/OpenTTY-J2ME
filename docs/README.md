@@ -38,7 +38,7 @@ environment, featuring:
 - a **graphics API** for building user interfaces (Alert, Form, List, TextBox)
 - **network APIs** (HTTP, TCP sockets)
 - **process management** with PIDs and permissions
-- an **ARM 32-bit ELF emulator** (in development)
+- a **RISC-V RV32IM ELF emulator** for native C and assembly apps
 
 ---
 
@@ -63,7 +63,7 @@ After login you have access to:
 Programs can be:
 
 - **Lua scripts** — interpreted by the Lua runtime,
-- **ELF binaries** — executed by the ARM emulator,
+- **ELF binaries** — executed by the RISC-V emulator,
 - **shell scripts** — implemented in Java.
 
 ---
@@ -109,6 +109,8 @@ See the dedicated [File System guide](FILESYS.md) for a complete reference.
 > of shadowing them.
 
 See the [Lua reference](lua/README.md) for the full function list and examples.
+
+Native applications are documented in the [C and RISC-V ELF developer guide](ELF/README.md).
 
 ### Example
 
