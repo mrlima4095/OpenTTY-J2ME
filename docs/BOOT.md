@@ -27,8 +27,8 @@ menuentry "OpenTTY" {
 
 | Setting   | Meaning                                                                 |
 |-----------|-------------------------------------------------------------------------|
-| `timeout` | Accepted for GRUB compatibility but **ignored** — OpenTTY never auto-boots or counts down. |
-| `default` | Preselected entry index (`0`, `1`, ...) or a quoted title (`"My OS"`). Default is the first entry. |
+| `timeout` | Accepted for GRUB compatibility but **ignored** — no countdown or auto-boot. |
+| `default` | Accepted for GRUB compatibility but **ignored** — the first entry is always preselected. |
 
 ### Menu entries
 
@@ -100,8 +100,8 @@ menuentry "OpenTTY SD (chroot)" {
 ## Where the code lives
 
 The boot logic is implemented in `src/OpenTTY.java`:
-`loadBootMenu`, `parseBootMenu`, `bootMenuTitleIndex`, `showBootMenu`,
-`bootSelect`, `bootEntry`, `defaultBoot`, `bootKernel`, and `redirect`. Menu
+`loadBootMenu`, `parseBootMenu`, `showBootMenu`, `bootSelect`, `bootEntry`,
+`clearBoot`, `defaultBoot`, `bootKernel`, and `redirect`. Menu
 entries are plain `Hashtable`s (keys `title`, `root`, `init`) — there is no
 `BootEntry` class. Lua-side redirection hooks for `dirs`/`chdir`/`MKDIR` are
 in `src/Lua.java`. The desktop kernel under `lua/sys` does **not** implement
