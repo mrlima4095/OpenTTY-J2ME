@@ -3221,7 +3221,7 @@ public class Lua {
                 }
                 else if (mainCommand.equals("chroot")) {
                     if (args.length == 0) { midlet.print("chroot: missing operand", output, id, father); status = 127; } 
-                    else if (args[0].startsWith("/mnt/")) { father.put("ROOT", args[0]); }
+                    else if (args[0].equals("/") || args[0].startsWith("/mnt/")) { father.put("ROOT", args[0]); }
                     else { midlet.print("chroot: " + args[0] + ": invalid path, usage a mount point", output, id, father); status = 2; }
                 }
                 else if (mainCommand.equals("builtin") || mainCommand.equals("command")) { Vector payload = new Vector(); payload.addElement(argument); payload.addElement(true); payload.addElement(FALSE); return exec(payload); }
