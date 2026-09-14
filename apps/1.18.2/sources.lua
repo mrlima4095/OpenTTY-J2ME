@@ -48,7 +48,6 @@ return {
         ["netstat"] = { remote = "net/netstat.lua", here = "/bin/netstat", description = "Network connection test" },
         ["nice"] = { remote = "sys/nice.lua", here = "/bin/nice", description = "Chance process priority" },
         ["open"] = { remote = "sys/open.lua", here = "/bin/open", description = "Open a file with the default application" },
-        ["otp"] = { remote = "file/otp", here = "/bin/otp", riscv = true, description = "OTP1 LZSS file compression" },
         ["passwd"] = { remote = "sys/passwd.lua", here = "/bin/passwd", description = "Change password" },
         ["pastebin"] = { remote = "net/pastebin", here = "/bin/pastebin", description = "PasteBin Client for OpenTTY" },
         ["ping"] = { remote = "net/ping.lua", here = "/bin/ping", description = "Test connection delay" },
