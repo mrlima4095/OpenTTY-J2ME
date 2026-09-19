@@ -3615,15 +3615,11 @@ public class ELF implements CommandListener {
             localPort = ((Integer) storedPort).intValue();
         } else {
             Object server = socketInfo.get("server");
-            Object dc = socketInfo.get("datagram");
             Object conn = socketInfo.get("connection");
             try {
                 if (server instanceof ServerSocketConnection) {
                     localIp = ((ServerSocketConnection) server).getLocalAddress();
                     localPort = ((ServerSocketConnection) server).getLocalPort();
-                } else if (dc instanceof DatagramConnection) {
-                    localIp = ((DatagramConnection) dc).getLocalAddress();
-                    localPort = ((DatagramConnection) dc).getLocalPort();
                 } else if (conn instanceof SocketConnection) {
                     localIp = ((SocketConnection) conn).getLocalAddress();
                     localPort = ((SocketConnection) conn).getLocalPort();
