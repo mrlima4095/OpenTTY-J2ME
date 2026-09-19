@@ -23,6 +23,7 @@ public class ELF implements CommandListener {
     private byte[] memory;
     private int[] registers;
     private int[] signalHandlers;
+    private int currentSigMask;
     private int pc;
     private boolean running;
     private int stackPointer;
@@ -45,6 +46,14 @@ public class ELF implements CommandListener {
     private Hashtable copyRelocs, libSymSizes; 
     private int pltGotAddr, dynamicSectionAddr, gotBase;
 
+    // PIE (ET_DYN main) load bias: 0 for ET_EXEC, nonzero for ET_DYN mains.
+    private int loadBias = 0;
+    private boolean mainUsesRela = false;
+
+    // Minimal Zicsr state + LR/SC reservation for the RV32A instructions.
+    private int[] csrs = new int[4096];
+    private int amoReservation = -1;
+
     // stdlib heap (malloc/calloc/realloc/free): first-fit allocator with
     // blocks written into guest RAM: { int size; int next; ...payload }
     private int libcHeapFree, libcHeapTop, libcHeapRegionEnd;
@@ -66,10 +75,14 @@ public class ELF implements CommandListener {
     // Opcodes RV32I
     private static final int RV_OP_LUI = 0x37, RV_OP_AUIPC = 0x17, RV_OP_JAL = 0x6F, RV_OP_JALR = 0x67,
         RV_OP_BRANCH = 0x63, RV_OP_LOAD = 0x03, RV_OP_STORE = 0x23, RV_OP_OPIMM = 0x13, RV_OP_OP = 0x33,
-        RV_OP_MISCMEM = 0x0F, RV_OP_SYSTEM = 0x73;
+        RV_OP_MISCMEM = 0x0F, RV_OP_SYSTEM = 0x73, RV_OP_AMO = 0x2F;
     
     // Kernel syscalls (emulator EABI numbers)
-    private static final int SYS_EXIT = 1, SYS_FORK = 2, SYS_READ = 3, SYS_WRITE = 4, SYS_OPEN = 5, SYS_CLOSE = 6, SYS_CREAT = 8, SYS_UNLINK = 10, SYS_EXECVE = 11, SYS_CHDIR = 12, SYS_TIME = 13, SYS_LSEEK = 19, SYS_GETPID = 20, SYS_KILL = 37, SYS_MKDIR = 39, SYS_RMDIR = 40, SYS_DUP = 41, SYS_PIPE = 42, SYS_IOCTL = 54, SYS_FCNTL = 55, SYS_SIGNAL = 48, SYS_DUP2 = 63, SYS_GETPPID = 64, SYS_SIGACTION = 67, SYS_BRK = 45, SYS_TRUNCATE = 92, SYS_FTRUNCATE = 93, SYS_SETJMP = 96, SYS_LONGJMP = 97, SYS_FSYNC = 118, SYS_SIGRETURN = 119, SYS_UNAME = 122, SYS_MPROTECT = 125, SYS_SIGPROCMASK = 126, SYS_STAT = 106, SYS_FSTAT = 108, SYS_GETTIMEOFDAY = 78, SYS_GETPRIORITY = 140, SYS_SETPRIORITY = 141, SYS_SELECT = 142, SYS_SCHED_YIELD = 158, SYS_NANOSLEEP = 162, SYS_MREMAP = 163, SYS_POLL = 168, SYS_MUNMAP = 91, SYS_GETRLIMIT = 191, SYS_MMAP = 192, SYS_GETCWD = 183, SYS_GETUID32 = 199, SYS_GETEUID32 = 201, SYS_GETDENTS = 217, SYS_GETTID = 224, SYS_FUTEX = 240, SYS_SOCKET = 281, SYS_BIND = 282, SYS_CONNECT = 283, SYS_LISTEN = 284, SYS_ACCEPT = 285, SYS_GETSOCKNAME = 286, SYS_GETPEERNAME = 287, SYS_SEND = 289, SYS_SENDTO = 290, SYS_RECV = 291, SYS_RECVFROM = 292, SYS_SHUTDOWN = 293, SYS_SETSOCKOPT = 294, SYS_GETSOCKOPT = 295, SYS_SYSCALL = 0;
+    private static final int SYS_EXIT = 1, SYS_FORK = 2, SYS_READ = 3, SYS_WRITE = 4, SYS_OPEN = 5, SYS_CLOSE = 6, SYS_CREAT = 8, SYS_UNLINK = 10, SYS_EXECVE = 11, SYS_CHDIR = 12, SYS_TIME = 13, SYS_LSEEK = 19, SYS_GETPID = 20, SYS_KILL = 37, SYS_MKDIR = 39, SYS_RMDIR = 40, SYS_DUP = 41, SYS_PIPE = 42, SYS_IOCTL = 54, SYS_FCNTL = 55, SYS_SIGNAL = 48, SYS_DUP2 = 63, SYS_GETPPID = 64, SYS_SIGACTION = 67, SYS_BRK = 45, SYS_TRUNCATE = 92, SYS_FTRUNCATE = 93, SYS_SETJMP = 96, SYS_LONGJMP = 97, SYS_FSYNC = 118, SYS_SIGRETURN = 119, SYS_UNAME = 122, SYS_MPROTECT = 125, SYS_SIGPROCMASK = 126, SYS_STAT = 106, SYS_FSTAT = 108, SYS_GETTIMEOFDAY = 78, SYS_GETPRIORITY = 140, SYS_SETPRIORITY = 141, SYS_SELECT = 142, SYS_SCHED_YIELD = 158, SYS_NANOSLEEP = 162, SYS_MREMAP = 163, SYS_POLL = 168, SYS_MUNMAP = 91, SYS_GETRLIMIT = 191, SYS_MMAP = 192, SYS_GETCWD = 183, SYS_GETUID32 = 199, SYS_GETEUID32 = 201, SYS_GETDENTS = 217, SYS_GETTID = 224, SYS_FUTEX = 240, SYS_SOCKET = 281, SYS_BIND = 282, SYS_CONNECT = 283, SYS_LISTEN = 284, SYS_ACCEPT = 285, SYS_GETSOCKNAME = 286, SYS_GETPEERNAME = 287, SYS_SEND = 289, SYS_SENDTO = 290, SYS_RECV = 291, SYS_RECVFROM = 292, SYS_SHUTDOWN = 293, SYS_SETSOCKOPT = 294, SYS_GETSOCKOPT = 295, SYS_SYSCALL = 0,
+        SYS_OPENAT = 322, SYS_MKDIRAT = 323, SYS_FCHOWNAT = 325, SYS_NEWFSTATAT = 327, SYS_UNLINKAT = 328, SYS_RENAMEAT = 329, SYS_LINKAT = 330, SYS_SYMLINKAT = 331, SYS_READLINKAT = 332, SYS_FCHMODAT = 333, SYS_FACCESSAT = 334;
+
+    // fcntl *at flags
+    private static final int AT_FDCWD = -100, AT_SYMLINK_NOFOLLOW = 0x100, AT_REMOVEDIR = 0x200, AT_SYMLINK_FOLLOW = 0x400, AT_NO_AUTOMOUNT = 0x800, AT_EMPTY_PATH = 0x1000;
     
     // Socket constants
     private static final int SOCK_STREAM = 1, SOCK_DGRAM = 2, AF_INET = 2, IPPROTO_TCP = 6, IPPROTO_UDP = 17;
@@ -191,6 +204,7 @@ public class ELF implements CommandListener {
 
         this.signalHandlers = new int[NSIG];
         for (int i = 0; i < NSIG; i++) { signalHandlers[i] = SIG_DFL; }
+        currentSigMask = 0;
         
         // Initialize default file descriptors
         fileDescriptors.put(new Integer(1), stdout); // stdout
@@ -210,8 +224,28 @@ public class ELF implements CommandListener {
         
         int e_type = readShortLE(elfData, 16), e_machine = readShortLE(elfData, 18), e_entry = readIntLE(elfData, 24), e_phoff = readIntLE(elfData, 28), e_shoff = readIntLE(elfData, 32), e_phnum = readShortLE(elfData, 44), e_shnum = readShortLE(elfData, 48), e_phentsize = readShortLE(elfData, 42), e_shentsize = readShortLE(elfData, 46);
         
-        if (e_type != ET_EXEC) { midlet.print("Not an executable ELF", stdout, id, scope); return false; }
+        if (e_type != ET_EXEC && e_type != ET_DYN) { midlet.print("Not an executable ELF", stdout, id, scope); return false; }
         if (e_machine != EM_RISCV) { midlet.print("Not a RISC-V executable", stdout, id, scope); return false; }
+        
+        // PIE (ET_DYN) main: relocate every address by a load bias. ET_EXEC keeps
+        // loadBias == 0. Choose 0x10000 (below the heap at 0x40000) when it fits.
+        loadBias = 0;
+        if (e_type == ET_DYN) {
+            int minV = 0x7FFFFFFF, maxV = 0;
+            for (int i = 0; i < e_phnum; i++) {
+                int po = e_phoff + i * e_phentsize;
+                if (readIntLE(elfData, po) == PT_LOAD) {
+                    int pv = readIntLE(elfData, po + 8), pm = readIntLE(elfData, po + 20);
+                    if (pv < minV) { minV = pv; }
+                    if (pv + pm > maxV) { maxV = pv + pm; }
+                }
+            }
+            if (maxV <= minV) { midlet.print("Invalid PIE layout (no PT_LOAD)", stdout, id, scope); return false; }
+            int pieSize = maxV - minV, base = 0x10000;
+            if (base + pieSize > heapStart) { base = heapStart; heapEnd = base + pieSize; }
+            loadBias = base - minV;
+            if (midlet.debug) { midlet.print("PIE main: load bias " + toHex(loadBias) + " (file base +0x" + Integer.toHexString(minV) + ", size 0x" + Integer.toHexString(pieSize) + ")", stdout, id, scope); }
+        }
         
         // Store ELF info
         elfInfo.put("entry", new Integer(e_entry)); elfInfo.put("phoff", new Integer(e_phoff));
@@ -221,7 +255,7 @@ public class ELF implements CommandListener {
         // Load sections first to get .bss info
         Hashtable sectionInfo = loadSections(elfData, e_shoff, e_shnum, e_shentsize);
         
-        pc = e_entry;
+        pc = loadBias + e_entry;
         registers[REG_SP] = stackPointer;
         registers[REG_LR] = 0xFFFFFFFF;
         
@@ -233,20 +267,25 @@ public class ELF implements CommandListener {
             int phdrOffset = e_phoff + i * e_phentsize, p_type = readIntLE(elfData, phdrOffset);
             
             if (p_type == PT_LOAD) {
-                int p_offset = readIntLE(elfData, phdrOffset + 4), p_vaddr = readIntLE(elfData, phdrOffset + 8), p_filesz = readIntLE(elfData, phdrOffset + 16), p_memsz = readIntLE(elfData, phdrOffset + 20);
+                int p_offset = readIntLE(elfData, phdrOffset + 4), p_vaddr = readIntLE(elfData, phdrOffset + 8), p_filesz = readIntLE(elfData, phdrOffset + 16), p_memsz = readIntLE(elfData, phdrOffset + 20), target = loadBias + p_vaddr;
                 
                 // Load data from the file
-                for (int j = 0; j < p_filesz && j < memory.length; j++) { if (p_vaddr + j < memory.length) { memory[p_vaddr + j] = elfData[p_offset + j]; } }
+                for (int j = 0; j < p_filesz && j < memory.length && target + j >= 0; j++) { if (target + j < memory.length) { memory[target + j] = elfData[p_offset + j]; } }
                 
                 // Zero remaining memory (.bss)
-                for (int j = p_filesz; j < p_memsz; j++) { if (p_vaddr + j < memory.length) { memory[p_vaddr + j] = 0; } }
+                for (int j = p_filesz; j < p_memsz; j++) { if (target + j < memory.length && target + j >= 0) { memory[target + j] = 0; } }
             }
             else if (p_type == PT_DYNAMIC) { processDynamicSegment(elfData, phdrOffset); }
             else if (p_type == PT_INTERP) {
-                // Interpreter (dynamic loader) - ignored for now
+                // Interpreter (dynamic loader): the emulator resolves DT_NEEDED
+                // itself, so try to load it like a shared library (best effort).
                 int p_offset = readIntLE(elfData, phdrOffset + 4);
                 String interp = readString(elfData, p_offset, 256);
                 if (midlet.debug) { midlet.print("Interpreter: " + interp, stdout, id, scope); }
+                String interpBase = interp;
+                int slash = interp.lastIndexOf('/');
+                if (slash >= 0) { interpBase = interp.substring(slash + 1); }
+                if (!loadedLibraries.contains(interpBase)) { loadLibrary(interpBase); }
             }
         }
 
@@ -299,7 +338,7 @@ public class ELF implements CommandListener {
             int phdrOffset = e_phoff + i * 32, p_type = readIntLE(elfData, phdrOffset);
             
             if (p_type == PT_DYNAMIC) {
-                dynamicSectionAddr = readIntLE(elfData, phdrOffset + 8);
+                dynamicSectionAddr = loadBias + readIntLE(elfData, phdrOffset + 8);
                 int p_filesz = readIntLE(elfData, phdrOffset + 16);
                 processDynamicEntries(memory, dynamicSectionAddr, p_filesz);
                 break;
@@ -318,18 +357,17 @@ public class ELF implements CommandListener {
                 case DT_NEEDED:
                     neededOffsets.addElement(new Integer(val));
                     break;
-                    
-                case DT_PLTGOT:
-                    pltGotAddr = val;
-                    if (midlet.debug) { midlet.print("PLT/GOT at: " + toHex(val), stdout, id, scope); }
+case DT_PLTGOT:
+                    pltGotAddr = val + loadBias;
+                    if (midlet.debug) { midlet.print("PLT/GOT at: " + toHex(val + loadBias), stdout, id, scope); }
                     break;
                     
                 case DT_STRTAB:
-                    elfInfo.put("dynstr", new Integer(val));
+                    elfInfo.put("dynstr", new Integer(val + loadBias));
                     break;
                     
                 case DT_SYMTAB:
-                    elfInfo.put("dynsym", new Integer(val));
+                    elfInfo.put("dynsym", new Integer(val + loadBias));
                     break;
                     
                 case DT_SYMENT:
@@ -337,7 +375,7 @@ public class ELF implements CommandListener {
                     break;
                     
                 case DT_JMPREL:
-                    elfInfo.put("jmprel", new Integer(val));
+                    elfInfo.put("jmprel", new Integer(val + loadBias));
                     break;
                     
                 case DT_PLTRELSZ:
@@ -349,15 +387,16 @@ public class ELF implements CommandListener {
                     break;
                     
                 case DT_REL:
-                    elfInfo.put("rel", new Integer(val));
+                    elfInfo.put("rel", new Integer(val + loadBias));
                     break;
                     
                 case DT_RELSZ:
                     elfInfo.put("relsz", new Integer(val));
                     break;
+                    
 
                 case DT_RELA:
-                    elfInfo.put("rel", new Integer(val));
+                    elfInfo.put("rel", new Integer(val + loadBias));
                     break;
 
                 case DT_RELASZ:
@@ -369,15 +408,15 @@ public class ELF implements CommandListener {
                     break;
                     
                 case DT_INIT:
-                    elfInfo.put("init", new Integer(val));
+                    elfInfo.put("init", new Integer(val + loadBias));
                     break;
                     
                 case DT_FINI:
-                    elfInfo.put("fini", new Integer(val));
+                    elfInfo.put("fini", new Integer(val + loadBias));
                     break;
 
                 case DT_INIT_ARRAY:
-                    elfInfo.put("init_array", new Integer(val));
+                    elfInfo.put("init_array", new Integer(val + loadBias));
                     break;
 
                 case DT_INIT_ARRAYSZ:
@@ -385,7 +424,7 @@ public class ELF implements CommandListener {
                     break;
 
                 case DT_FINI_ARRAY:
-                    elfInfo.put("fini_array", new Integer(val));
+                    elfInfo.put("fini_array", new Integer(val + loadBias));
                     break;
 
                 case DT_FINI_ARRAYSZ:
@@ -393,7 +432,7 @@ public class ELF implements CommandListener {
                     break;
                     
                 case DT_HASH:
-                    processHashTable(mem, val);
+                    processHashTable(mem, val + loadBias);
                     break;
             }
             
@@ -1434,7 +1473,7 @@ public class ELF implements CommandListener {
             }
             
             int instructionCount = 0;
-            while (running && pc < memory.length - 3 && midlet.sys.containsKey(pid)) {
+            while (running && pc < memory.length - 1 && midlet.sys.containsKey(pid)) {
                 if (instructionCount++ > 200000000) {
                     if (midlet.debug) midlet.print("DEBUG: Stopping after 200000000 instructions", stdout, id, scope);
                     break;
@@ -1448,15 +1487,13 @@ public class ELF implements CommandListener {
                     midlet.print("DEBUG: PC=" + toHex(pc) + ", a7=" + registers[REG_A7], stdout, id, scope);
                 }
                 
-                // Execute instruction
-                int instruction = fetchInstruction(pc);
-                if (midlet.debug && instructionCount < 10) {
-                    midlet.print("DEBUG: Instr at PC " + toHex(pc) + ": " + toHex(instruction), stdout, id, scope);
-                }
-                pc += 4;
-                
+                // Execute one instruction (32-bit or RVC 16-bit)
                 try {
-                    executeInstruction(instruction);
+                    if (midlet.debug && instructionCount < 10) {
+                        int inst16 = readShortLE(memory, pc) & 0xFFFF;
+                        midlet.print("DEBUG: Instr at PC " + toHex(pc) + ": " + toHex(inst16), stdout, id, scope);
+                    }
+                    step();
                 } catch (Exception e) {
                     if (midlet.debug) midlet.print("DEBUG: Exception in executeInstruction: " + e, stdout, id, scope);
                     e.printStackTrace();
@@ -1527,11 +1564,20 @@ public class ELF implements CommandListener {
             case RV_OP_STORE: rvStore(funct3, getReg(rs1) + sImm(instruction), getReg(rs2)); break;
             case RV_OP_OPIMM: rvOpImm(rd, funct3, rs1, iImm(instruction), instruction); break;
             case RV_OP_OP: rvOp(rd, funct3, funct7, rs1, rs2); break;
-            case RV_OP_MISCMEM: break; // FENCE
+            case RV_OP_AMO: rvAmo(funct3, (instruction >> 27) & 0x1F, rd, rs1, rs2); break;
+            case RV_OP_MISCMEM: break; // FENCE / FENCE.I
             case RV_OP_SYSTEM:
                 if (instruction == 0x00000073) { handleSyscall(registers[REG_A7]); } // ecall
                 else if (instruction == 0x00100073) { running = false; } // ebreak
-                else if (rd != 0) { registers[rd] = 0; } // CSR (leitura basica = 0)
+                else if (((instruction >> 12) & 0x7) == 0) {
+                    // system / privileged: mret returns to mepc when set
+                    if ((instruction & 0xFFFFF07F) == 0x30200073) {
+                        int mepc = csrs[0x341];
+                        if (mepc != 0 && mepc < memory.length) { pc = mepc; }
+                    }
+                    // wfi, sfence.vma, sret, uret: no-op in this machine
+                }
+                else { rvCsr(instruction, funct3, rd, rs1); }
                 break;
             default:
                 if (midlet.debug) { midlet.print("[WARN] Unrecognized RISC-V instruction: " + toHex(instruction) + " at PC: " + toHex(pc - 4), stdout, id, scope); }
@@ -1618,6 +1664,241 @@ public class ELF implements CommandListener {
         setReg(rd, v);
     }
 
+    // ---- Zicsr (CSR ops + mret) and RV32A atomic ops -----------------------
+    private void rvCsr(int instruction, int funct3, int rd, int rs1) {
+        int csr = (instruction >> 20) & 0xFFF;
+        int old = csrs[csr];
+        int writeVal;
+        switch (funct3) {
+            case 1: writeVal = getReg(rs1); break;  // CSRRW
+            case 2: writeVal = old | getReg(rs1); break;  // CSRRS
+            case 3: writeVal = old & ~getReg(rs1); break; // CSRRC
+            case 5: writeVal = rs1; break;          // CSRRWI
+            case 6: writeVal = old | rs1; break;    // CSRRSI
+            case 7: writeVal = old & ~rs1; break;   // CSRRCI
+            default: writeVal = old; break;
+        }
+        csrs[csr] = writeVal;
+        setReg(rd, old);
+    }
+
+    private void rvAmo(int funct3, int funct5, int rd, int rs1, int rs2) {
+        // RV32A only supports the .W variants (funct3 == 2).
+        if (funct3 != 2) { setReg(rd, 0); return; }
+        int addr = getReg(rs1);
+        if (addr < 0 || addr + 3 >= memory.length) { setReg(rd, -1); return; }
+        int old = readIntLE(memory, addr);
+        switch (funct5) {
+            case 0x02: amoReservation = addr; setReg(rd, old); return; // LR.W
+            case 0x03: { // SC.W: single thread -> reservation only stolen by a prior LR/SC mismatch
+                boolean ok = (amoReservation == addr);
+                if (ok) { writeIntLE(memory, addr, getReg(rs2)); }
+                amoReservation = -1;
+                setReg(rd, ok ? 0 : 1);
+                return;
+            }
+            case 0x01: setReg(rd, old); writeIntLE(memory, addr, getReg(rs2)); return; // AMOSWAP.W
+            case 0x00: writeIntLE(memory, addr, old + getReg(rs2)); setReg(rd, old); return; // AMOADD.W
+            case 0x04: writeIntLE(memory, addr, old ^ getReg(rs2)); setReg(rd, old); return; // AMOXOR.W
+            case 0x0C: writeIntLE(memory, addr, old & getReg(rs2)); setReg(rd, old); return; // AMOAND.W
+            case 0x08: writeIntLE(memory, addr, old | getReg(rs2)); setReg(rd, old); return; // AMOOR.W
+            case 0x10: writeIntLE(memory, addr, Math.min(old, getReg(rs2))); setReg(rd, old); return; // AMOMIN.W
+            case 0x14: writeIntLE(memory, addr, Math.max(old, getReg(rs2))); setReg(rd, old); return; // AMOMAX.W
+            case 0x18: { // AMOMINU.W
+                long ua = old & 0xFFFFFFFFL, ub = getReg(rs2) & 0xFFFFFFFFL;
+                writeIntLE(memory, addr, ua < ub ? old : getReg(rs2)); setReg(rd, old); return;
+            }
+            case 0x1C: { // AMOMAXU.W
+                long ua = old & 0xFFFFFFFFL, ub = getReg(rs2) & 0xFFFFFFFFL;
+                writeIntLE(memory, addr, ua < ub ? getReg(rs2) : old); setReg(rd, old); return;
+            }
+            default:
+                setReg(rd, 0);
+                return;
+        }
+    }
+
+    // ---- RVC: 16-bit compressed instruction fetch --------------------------
+    // Advances pc by 2 for non-control-flow instructions or sets it to the
+    // jump/branch target. Returns true when a compressed instruction ran.
+    private void step() {
+        int inst16 = readShortLE(memory, pc) & 0xFFFF;
+        if ((inst16 & 0x3) != 0x3) {
+            executeCompressed(inst16);
+        } else {
+            int instruction = fetchInstruction(pc);
+            pc += 4;
+            executeInstruction(instruction);
+        }
+    }
+
+    private void executeCompressed(int inst) {
+        int base = pc;
+        int q = inst & 0x3;
+        int funct3 = (inst >> 13) & 0x7;
+
+        if (q == 0x0) {
+            // Quadrant 00: rd'/rs1'/rs2' = register pair fields
+            int rs1p = ((inst >> 7) & 0x7) + 8;
+            int rd = ((inst >> 2) & 0x7) + 8;
+            switch (funct3) {
+                case 0: { // C.ADDI4SPN: nzimm[5:4]=i[12:11], nzimm[7:6]=i[10:9],
+                          // nzimm[8]=i[8], nzimm[9]=i[7], nzimm[3:2]=i[6:5], nzimm[1]=i[1]
+                    int nzuimm = ((((inst >> 12) & 1) << 5) | (((inst >> 11) & 1) << 4) | (((inst >> 10) & 1) << 7) | (((inst >> 9) & 1) << 6) | (((inst >> 8) & 1) << 8) | (((inst >> 7) & 1) << 9) | (((inst >> 6) & 1) << 3) | (((inst >> 5) & 1) << 2) | ((inst >> 1) & 1));
+                    if (nzuimm != 0) { setReg(rd, getReg(REG_SP) + (nzuimm << 2)); }
+                    break;
+                }
+                case 2: { // C.LW uimm[6:2] = {i[5] i[12:10] i[6]}
+                    int imm = (((inst >> 5) & 1) << 6) | (((inst >> 10) & 0x7) << 3) | (((inst >> 6) & 1) << 2);
+                    rvLoad(2, rd, getReg(rs1p) + imm);
+                    break;
+                }
+                case 6: { // C.SW (same immediate as C.LW)
+                    int imm = (((inst >> 5) & 1) << 6) | (((inst >> 10) & 0x7) << 3) | (((inst >> 6) & 1) << 2);
+                    rvStore(2, getReg(rs1p) + imm, getReg(rd));
+                    break;
+                }
+                // C.FLD/C.FLW/C.FSD/C.FSW and reserved: no FP machine
+                default: break;
+            }
+            pc = base + 2;
+            return;
+        }
+
+        if (q == 0x1) {
+            switch (funct3) {
+                case 0: { // C.ADDI (imm = sext{inst[12],inst[6:2]})
+                    int rd = (inst >> 7) & 0x1F;
+                    int imm = signExtend((((inst >> 12) & 1) << 5) | ((inst >> 2) & 0x1F), 6);
+                    if (rd != 0) { setReg(rd, getReg(rd) + imm); }
+                    break;
+                }
+                case 1: // C.JAL (RV32): link ra
+                    setReg(1, base + 2);
+                    pc = base + cJImm(inst);
+                    return;
+                case 2: { // C.LI
+                    int rd = (inst >> 7) & 0x1F;
+                    int imm = signExtend((((inst >> 12) & 1) << 5) | ((inst >> 2) & 0x1F), 6);
+                    if (rd != 0) { setReg(rd, imm); }
+                    break;
+                }
+                case 3:
+                    if (((inst >> 12) & 1) == 1) { // C.ADDI16SP
+                        int rd = (inst >> 7) & 0x1F;
+                        if (rd == REG_SP) {
+                            int imm = signExtend((((inst >> 12) & 1) << 9) | (((inst >> 4) & 1) << 8) | (((inst >> 3) & 1) << 7) | (((inst >> 5) & 1) << 6) | (((inst >> 2) & 1) << 5) | (((inst >> 6) & 1) << 4), 10);
+                            if (imm != 0) { setReg(REG_SP, getReg(REG_SP) + imm); }
+                        }
+                    } else { // C.LUI nzimm sext6 << 12
+                        int rd = (inst >> 7) & 0x1F;
+                        if (rd != 0 && rd != REG_SP) {
+                            int nzimm = signExtend((((inst >> 12) & 1) << 5) | ((inst >> 2) & 0x1F), 6);
+                            if (nzimm != 0) { setReg(rd, nzimm << 12); }
+                        }
+                    }
+                    break;
+                case 4: {
+                    int funct2 = (inst >> 10) & 0x3;
+                    int rd = ((inst >> 7) & 0x7) + 8;
+                    if (funct2 == 0 || funct2 == 1) { // C.SRLI / C.SRAI
+                        int shamt = (((inst >> 12) & 1) << 5) | ((inst >> 2) & 0x1F);
+                        setReg(rd, (funct2 == 0) ? (getReg(rd) >>> (shamt & 0x1F)) : (getReg(rd) >> (shamt & 0x1F)));
+                    } else if (funct2 == 2) { // C.ANDI
+                        int imm = signExtend((((inst >> 12) & 1) << 5) | ((inst >> 2) & 0x1F), 6);
+                        setReg(rd, getReg(rd) & imm);
+                    } else { // C.SUB/C.XOR/C.OR/C.AND op = i[6:5]
+                        int rs2 = ((inst >> 2) & 0x7) + 8;
+                        int op = (inst >> 5) & 0x3;
+                        int a = getReg(rd), b = getReg(rs2);
+                        if (op == 0) { setReg(rd, a - b); }
+                        else if (op == 1) { setReg(rd, a ^ b); }
+                        else if (op == 2) { setReg(rd, a | b); }
+                        else { setReg(rd, a & b); }
+                    }
+                    break;
+                }
+                case 5: // C.J
+                    pc = base + cJImm(inst);
+                    return;
+                case 6: // C.BEQZ
+                    if (getReg(((inst >> 7) & 0x7) + 8) == 0) { pc = base + cBImm(inst); return; }
+                    pc = base + 2;
+                    return;
+                case 7: // C.BNEZ
+                    if (getReg(((inst >> 7) & 0x7) + 8) != 0) { pc = base + cBImm(inst); return; }
+                    pc = base + 2;
+                    return;
+            }
+            pc = base + 2;
+            return;
+        }
+
+        // q == 0x2 (quadrant 10)
+        switch (funct3) {
+            case 0: { // C.SLLI
+                int rd = (inst >> 7) & 0x1F;
+                int shamt = (((inst >> 12) & 1) << 5) | ((inst >> 2) & 0x1F);
+                if (rd != 0) { setReg(rd, getReg(rd) << (shamt & 0x1F)); }
+                break;
+            }
+            case 2: { // C.LWSP rd=i[11:7], uimm[7:2] = {i[3:2] i[12] i[6:4]}
+                int rd = (inst >> 7) & 0x1F;
+                if (rd != 0) {
+                    int imm = (((inst >> 2) & 3) << 6) | (((inst >> 12) & 1) << 5) | (((inst >> 4) & 7) << 2);
+                    rvLoad(2, rd, getReg(REG_SP) + imm);
+                }
+                break;
+            }
+            case 4: {
+                int rs2 = (inst >> 2) & 0x1F;
+                if (((inst >> 12) & 1) == 0) {
+                    if (rs2 == 0) {
+                        int rd = (inst >> 7) & 0x1F;
+                        if (rd == 0) { running = false; break; } // C.EBREAK
+                        pc = getReg(rd) & ~1; // C.JR jalr x0, rd, 0
+                        return;
+                    }
+                    int rd = (inst >> 7) & 0x1F; // C.MV add rd, x0, rs2
+                    if (rd != 0) { setReg(rd, getReg(rs2)); }
+                } else {
+                    int rd = (inst >> 7) & 0x1F;
+                    if (rs2 == 0) { // C.JALR jalr rd, rd, 0
+                        int next = getReg(rd) & ~1;
+                        setReg(rd, base + 2);
+                        pc = next;
+                        return;
+                    }
+                    if (rd != 0) { setReg(rd, getReg(rd) + getReg(rs2)); } // C.ADD
+                }
+                break;
+            }
+            case 6: { // C.SWSP rs2=i[6:2], uimm[7:2] = {i[8:7] i[12:9]}
+                int rs2 = (inst >> 2) & 0x1F;
+                int imm = (((inst >> 7) & 3) << 6) | (((inst >> 9) & 0xF) << 2);
+                rvStore(2, getReg(REG_SP) + imm, getReg(rs2));
+                break;
+            }
+            // C.FLDSP/C.FLWSP/C.FSDSP/C.FSWSP: no FP machine
+            default: break;
+        }
+        pc = base + 2;
+    }
+
+    // C.J/C.JAL 12-bit (sign-extended, imm[0]=0):
+    // i[11]=i[12], i[10]=i[8], i[9:8]=i[10:9], i[7]=i[6], i[6]=i[7],
+    // i[5]=i[2], i[4]=i[11], i[3:1]=i[5:3]
+    private int cJImm(int inst) {
+        int imm = ((((inst >> 12) & 1) << 11) | (((inst >> 8) & 1) << 10) | (((inst >> 10) & 1) << 9) | (((inst >> 9) & 1) << 8) | (((inst >> 6) & 1) << 7) | (((inst >> 7) & 1) << 6) | (((inst >> 2) & 1) << 5) | (((inst >> 11) & 1) << 4) | (((inst >> 3) & 0x7) << 1));
+        return signExtend(imm, 12);
+    }
+
+    // C.BEQZ/C.BNEZ 9-bit (sign-extended, imm[0]=0)
+    private int cBImm(int inst) {
+        int imm = ((((inst >> 12) & 1) << 8) | (((inst >> 6) & 1) << 7) | (((inst >> 5) & 1) << 6) | (((inst >> 2) & 1) << 5) | (((inst >> 11) & 1) << 4) | (((inst >> 10) & 1) << 3) | (((inst >> 4) & 1) << 2) | (((inst >> 3) & 1) << 1));
+        return signExtend(imm, 9);
+    }
+
     private void executeInitFunctions() {
         if (elfInfo.containsKey("init")) {
             int initAddr = ((Integer)elfInfo.get("init")).intValue();
@@ -1668,10 +1949,8 @@ public class ELF implements CommandListener {
         registers[REG_LR] = savedPC;
         pc = initAddr;
         if (midlet.debug) { midlet.print("Calling " + source + " at " + toHex(initAddr), stdout, id, scope); }
-        for (int i = 0; i < 1024 && pc != savedPC && pc >= 0 && pc + 3 < memory.length; i++) {
-            int instruction = fetchInstruction(pc);
-            pc += 4;
-            executeInstruction(instruction);
+        for (int i = 0; i < 1024 && pc != savedPC && pc >= 0 && pc + 1 < memory.length; i++) {
+            step();
         }
         pc = savedPC;
         registers[REG_SP] = savedSP;
@@ -1701,7 +1980,7 @@ public class ELF implements CommandListener {
             String name = (String) keys.nextElement();
             if (name.equals(".bss") || name.equals(".sbss")) {
                 Hashtable section = (Hashtable) sections.get(name);
-                int addr = ((Integer)section.get("addr")).intValue(), size = ((Integer)section.get("size")).intValue();
+                int addr = ((Integer)section.get("addr")).intValue() + loadBias, size = ((Integer)section.get("size")).intValue();
 
                 for (int i = 0; i < size && addr + i < memory.length; i++) { memory[addr + i] = 0; }
                 if (midlet.debug) { midlet.print("Zeroed " + name + " at " + toHex(addr) + " size " + size, stdout, id, scope); }
@@ -1711,7 +1990,7 @@ public class ELF implements CommandListener {
     
     private void processDynamicSegment(byte[] elfData, int phdrOffset) {
         int p_offset = readIntLE(elfData, phdrOffset + 4), p_vaddr = readIntLE(elfData, phdrOffset + 8), p_filesz = readIntLE(elfData, phdrOffset + 16);
-        if (midlet.debug) { midlet.print("Dynamic segment at " + toHex(p_vaddr), stdout, id, scope); } 
+        if (midlet.debug) { midlet.print("Dynamic segment at " + toHex(loadBias + p_vaddr), stdout, id, scope); } 
 
         for (int offset = 0; offset < p_filesz; offset += 8) {
             int tag = readIntLE(elfData, p_offset + offset), val = readIntLE(elfData, p_offset + offset + 4);
@@ -1722,10 +2001,10 @@ public class ELF implements CommandListener {
                     if (midlet.debug) { midlet.print("Needs library (strtab offset " + val + ")", stdout, id, scope); }
                     break;
                 case 5:
-                    elfInfo.put("dynstr", new Integer(val));
+                    elfInfo.put("dynstr", new Integer(val + loadBias));
                     break;
                 case 6:
-                    elfInfo.put("dynsym", new Integer(val));
+                    elfInfo.put("dynsym", new Integer(val + loadBias));
                     break;
             }
         }
@@ -1746,8 +2025,8 @@ public class ELF implements CommandListener {
         int maxSym = elfInfo.containsKey("nchain") ? ((Integer) elfInfo.get("nchain")).intValue() : 4096;
         if (maxSym <= 0 || maxSym > 4096) { maxSym = 4096; }
         for (int dynSymCount = 0; dynSymCount < maxSym; dynSymCount++) {
-            int st_name = readIntLE(memory, symOffset), st_value = readIntLE(memory, symOffset + 4), st_size = readIntLE(memory, symOffset + 8), st_info = memory[symOffset + 12] & 0xFF;
-            if (dynSymCount > 0 && st_name == 0 && st_value == 0 && st_size == 0 && st_info == 0) { break; }
+            int st_name = readIntLE(memory, symOffset), st_rawValue = readIntLE(memory, symOffset + 4), st_value = st_rawValue + loadBias, st_size = readIntLE(memory, symOffset + 8), st_info = memory[symOffset + 12] & 0xFF;
+            if (dynSymCount > 0 && st_name == 0 && st_rawValue == 0 && st_size == 0 && st_info == 0) { break; }
             
             String symName = (st_name == 0) ? "" : readString(memory, dynstrAddr + st_name, 256);
             if (symName == null) { break; }
@@ -1766,6 +2045,7 @@ public class ELF implements CommandListener {
         if (elfInfo.containsKey("rel") && elfInfo.containsKey("relsz")) {
             int relAddr = ((Integer) elfInfo.get("rel")).intValue(), relsz = ((Integer) elfInfo.get("relsz")).intValue();
             int relent = elfInfo.containsKey("relent") ? ((Integer) elfInfo.get("relent")).intValue() : 8;
+            mainUsesRela = (relent == 12);
             for (int i = 0; i < relsz; i += relent) {
                 int offset = relAddr + i, r_offset = readIntLE(memory, offset), r_info = readIntLE(memory, offset + 4), symIndex = r_info >> 8, type = r_info & 0xFF, addend = (relent == 12) ? readIntLE(memory, offset + 8) : 0;
                 if (type == R_RISCV_JUMP_SLOT) {
@@ -1811,7 +2091,7 @@ public class ELF implements CommandListener {
                 break;
             case R_RISCV_RELATIVE:
                 int current = readIntLE(memory, r_offset);
-                writeIntLE(memory, r_offset, current + addend);
+                writeIntLE(memory, r_offset, mainUsesRela ? (loadBias + addend) : (loadBias + current));
                 break;
             case R_RISCV_COPY: {
                 String copyName = symName;
@@ -2202,6 +2482,12 @@ public class ELF implements CommandListener {
             case SYS_SIGACTION:
                 handleSigaction();
                 break;
+            case SYS_SIGPROCMASK:
+                handleSigprocmask();
+                break;
+            case SYS_SIGRETURN:
+                handleSigreturn();
+                break;
             case SYS_SETJMP:
                 handleSetjmp();
                 break;
@@ -2225,6 +2511,37 @@ public class ELF implements CommandListener {
                 break;
             case SYS_FSYNC:
                 handleFsync();
+                break;
+            case SYS_OPENAT:
+                handleOpenat();
+                break;
+            case SYS_MKDIRAT:
+                handleMkdirat();
+                break;
+            case SYS_FCHOWNAT:
+                registers[REG_A0] = 0;
+                break;
+            case SYS_NEWFSTATAT:
+                handleNewfstatat();
+                break;
+            case SYS_UNLINKAT:
+                handleUnlinkat();
+                break;
+            case SYS_RENAMEAT:
+                registers[REG_A0] = -38; // ENOSYS
+                break;
+            case SYS_LINKAT:
+            case SYS_SYMLINKAT:
+                registers[REG_A0] = -38; // ENOSYS (no link support)
+                break;
+            case SYS_READLINKAT:
+                registers[REG_A0] = -22; // EINVAL (no symlinks)
+                break;
+            case SYS_FCHMODAT:
+                registers[REG_A0] = 0;
+                break;
+            case SYS_FACCESSAT:
+                handleFaccessat();
                 break;
             default:
                 registers[REG_A0] = -38; // ENOSYS - Unimplemented syscall
@@ -2325,6 +2642,29 @@ public class ELF implements CommandListener {
         if (actPtr != 0 && actPtr + 4 <= memory.length) { int newHandler = readIntLE(memory, actPtr); signalHandlers[signum] = newHandler; }
         
         registers[REG_A0] = 0;
+    }
+    private void handleSigprocmask() {
+        int how = registers[REG_A0], newset = registers[REG_A1], oldset = registers[REG_A2], sigsetsize = registers[REG_A3];
+        if (sigsetsize == 0) { registers[REG_A0] = -22; return; }
+        if (oldset != 0 && oldset + 4 <= memory.length) { writeIntLE(memory, oldset, currentSigMask); }
+        if (newset != 0 && newset + 4 <= memory.length) {
+            int news = readIntLE(memory, newset);
+            if (how == 1) { currentSigMask |= news; }      // SIG_BLOCK
+            else if (how == 2) { currentSigMask &= ~news; } // SIG_UNBLOCK
+            else { currentSigMask = news; }                 // SIG_SETMASK
+        }
+        registers[REG_A0] = 0;
+    }
+    private void handleSigreturn() {
+        if (signalStack.size() == 0) { registers[REG_A0] = -1; return; }
+        Hashtable frame = (Hashtable) signalStack.elementAt(signalStack.size() - 1);
+        signalStack.removeElementAt(signalStack.size() - 1);
+        int frameSp = ((Integer) frame.get("sp")).intValue();
+        // Frame layout: [sp]=pc, [sp+4]=sig, [sp+8..sp+135]=registers[0..31]
+        int restorePc = readIntLE(memory, frameSp);
+        for (int i = 0; i < 32 && frameSp + 8 + i * 4 + 3 < memory.length; i++) { registers[i] = readIntLE(memory, frameSp + 8 + i * 4); }
+        registers[REG_SP] = frameSp + 136;
+        pc = restorePc;
     }
     private void handleKill() {
         int pid = registers[REG_A0], sig = registers[REG_A1];
@@ -2998,6 +3338,106 @@ public class ELF implements CommandListener {
             case 127: registers[REG_A0] = -2; break; // ENOENT
             default: registers[REG_A0] = -1; break; // EPERM
         }
+    }
+    // |
+    // | *at family: openat/mkdirat/unlinkat/newfstatat/faccessat.
+    // | path in a3+ is resolved relative to dirfd (usually AT_FDCWD = -100).
+    private String readPath(int pathAddr) {
+        if (pathAddr < 0 || pathAddr >= memory.length) { return null; }
+        StringBuffer buf = new StringBuffer();
+        int i = 0;
+        while (pathAddr + i < memory.length && memory[pathAddr + i] != 0 && i < 256) {
+            buf.append((char)(memory[pathAddr + i] & 0xFF));
+            i++;
+        }
+        return buf.toString();
+    }
+    private String fdDirPath(int fd) {
+        Integer fdKey = new Integer(fd);
+        if (fileDescriptors.containsKey(fdKey)) {
+            Object o = fileDescriptors.get(fdKey);
+            if (o instanceof String) { return slashPath((String) o); }
+            String p = (String) fileDescriptors.get(fdKey + ":path");
+            if (p != null) { return slashPath(p); }
+        }
+        return null;
+    }
+    private String slashPath(String p) {
+        if (p.endsWith("/")) { p = p.substring(0, p.length() - 1); }
+        return p + "/";
+    }
+    private String resolveAtPath(int dirfd, int pathAddr) {
+        String path = readPath(pathAddr);
+        if (path == null) { return null; }
+        if (dirfd != AT_FDCWD && !path.startsWith("/")) {
+            String base = fdDirPath(dirfd);
+            if (base != null) { return base + path; }
+        }
+        return path;
+    }
+    private int writeGuestString(String s) {
+        if (s == null) { return -1; }
+        int sp = registers[REG_SP];
+        byte[] b = s.getBytes();
+        sp -= b.length + 1;
+        for (int i = 0; i < b.length && sp + i < memory.length; i++) { memory[sp + i] = b[i]; }
+        if (sp + b.length < memory.length) { memory[sp + b.length] = 0; }
+        registers[REG_SP] = sp;
+        return sp;
+    }
+    private void handleOpenat() {
+        int dirfd = registers[REG_A0], pathAddr = registers[REG_A1], flags = registers[REG_A2], mode = registers[REG_A3];
+        String path = resolveAtPath(dirfd, pathAddr);
+        if (path == null) { registers[REG_A0] = -1; return; }
+        int addr = writeGuestString(path);
+        registers[REG_A0] = addr; registers[REG_A1] = flags; registers[REG_A2] = mode;
+        handleOpen();
+    }
+    private void handleMkdirat() {
+        int dirfd = registers[REG_A0], pathAddr = registers[REG_A1], mode = registers[REG_A2];
+        String path = resolveAtPath(dirfd, pathAddr);
+        if (path == null) { registers[REG_A0] = -1; return; }
+        registers[REG_A0] = writeGuestString(path); registers[REG_A1] = mode;
+        handleMkdir();
+    }
+    private void handleUnlinkat() {
+        int dirfd = registers[REG_A0], pathAddr = registers[REG_A1], flags = registers[REG_A2];
+        String path = resolveAtPath(dirfd, pathAddr);
+        if (path == null) { registers[REG_A0] = -1; return; }
+        registers[REG_A0] = writeGuestString(path);
+        if ((flags & AT_REMOVEDIR) != 0) { handleRmdir(); }
+        else { handleUnlink(); }
+    }
+    private void handleNewfstatat() {
+        int dirfd = registers[REG_A0], pathAddr = registers[REG_A1], statbufAddr = registers[REG_A2], flags = registers[REG_A3];
+        String path = resolveAtPath(dirfd, pathAddr);
+        if (path == null || statbufAddr < 0 || statbufAddr >= memory.length) { registers[REG_A0] = -1; return; }
+        registers[REG_A0] = writeGuestString(path); registers[REG_A1] = statbufAddr;
+        handleStat();
+    }
+    private void handleFaccessat() {
+        int dirfd = registers[REG_A0], pathAddr = registers[REG_A1], mode = registers[REG_A2];
+        String path = resolveAtPath(dirfd, pathAddr);
+        if (path == null) { registers[REG_A0] = -1; return; }
+        boolean exists = false;
+        if (path.endsWith("/")) {
+            if (path.equals("/home/") || path.equals("/tmp/") || path.equals("/bin/") || path.equals("/etc/") || path.equals("/lib/") || path.equals("/boot/") || midlet.fs.containsKey(path)) { exists = true; }
+            else if (path.startsWith("/mnt/")) {
+                try {
+                    FileConnection c = (FileConnection) Connector.open("file:///" + path.substring(5), Connector.READ);
+                    exists = c.exists() && c.isDirectory();
+                    c.close();
+                } catch (Exception e) { exists = false; }
+            }
+        } else {
+            InputStream is = null;
+            try {
+                is = midlet.getInputStream(path, scope);
+                exists = (is != null);
+            } catch (Exception e) { exists = false; }
+            if (is != null) { try { is.close(); } catch (Exception e) {} }
+        }
+        registers[REG_A0] = exists ? 0 : -2;
     }
     // |
     private void handleRead() {
