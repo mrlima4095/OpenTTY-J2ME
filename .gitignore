@@ -8,6 +8,7 @@ java/*.class
 /build/**/*.class
 __pycache__/
 *.pyc
+.desktop-out/
 
 # device root seeded when running the python port with the default --root (cwd)
 /bin/

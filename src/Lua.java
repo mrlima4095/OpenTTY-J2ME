@@ -1414,7 +1414,7 @@ public class Lua {
             return returnValue;
         }
         public Object internals(Vector args) throws Exception {
-            Object arg;
+            Object arg0;
 
             switch (MOD) {
                 // Package [global]
@@ -1662,10 +1662,10 @@ public class Lua {
                         Process process = (Process) midlet.sys.get(toLuaString(args.elementAt(0)));
                         if (process.lua != null && process.handler != null) {
                             Lua lua = (Lua) process.lua;
-                            Vector arg = new Vector(); arg.addElement(toLuaString(args.elementAt(1))); arg.addElement(args.size() > 2 ? args.elementAt(2) : null); arg.addElement(father); arg.addElement(PID); arg.addElement(new Double(id));
+                            Vector argr = new Vector(); argr.addElement(toLuaString(args.elementAt(1))); argr.addElement(args.size() > 2 ? args.elementAt(2) : null); argr.addElement(father); argr.addElement(PID); argr.addElement(new Double(id));
                             Object response = null;
 
-                            try { response = ((Lua.LuaFunction) process.handler).call(arg); }
+                            try { response = ((Lua.LuaFunction) process.handler).call(argr); }
                             catch (Exception e) { return lua.getTraceback(e); } 
                             catch (Error e) { midlet.print(midlet.getCatch(e), stdout, id, father); return new Double(lua.status); }
 
@@ -1737,13 +1737,13 @@ public class Lua {
                 case READ:
                     if (args.isEmpty()) { return stdout instanceof StringItem ? ((StringItem) stdout).getText() : stdout instanceof StringBuffer ? ((StringBuffer) stdout).toString() : stdout instanceof String ? midlet.getcontent((String) stdout, father) : ""; }
                     else {
-                        arg = args.elementAt(0);
+                        arg0 = args.elementAt(0);
 
-                        if (arg instanceof InputStream) { return midlet.read((InputStream) arg, args.size() > 1 && args.elementAt(1) instanceof Double ? ((Double) args.elementAt(1)).intValue() : 1024, false); }
-                        else if (arg instanceof StringBuffer) { ((StringBuffer) arg).toString(); }
-                        else if (arg instanceof OutputStream) { return gotbad(1, "read", "input stream expected, got output"); } 
+                        if (arg0 instanceof InputStream) { return midlet.read((InputStream) arg0, args.size() > 1 && args.elementAt(1) instanceof Double ? ((Double) args.elementAt(1)).intValue() : 1024, false); }
+                        else if (arg0 instanceof StringBuffer) { ((StringBuffer) arg0).toString(); }
+                        else if (arg0 instanceof OutputStream) { return gotbad(1, "read", "input stream expected, got output"); } 
                         else {
-                            String path = toLuaString(arg);
+                            String path = toLuaString(arg0);
                             if (path.equals("/dev/stdout")) {
                                 if (stdout instanceof StringItem) return ((StringItem) stdout).getText();
                                 else if (stdout instanceof StringBuffer) return ((StringBuffer) stdout).toString();
@@ -1813,17 +1813,17 @@ public class Lua {
                     if (args.isEmpty()) { }
                     else {
                         for (int i = 0; i < args.size(); i++) {
-                            arg = args.elementAt(i);
+                            arg0 = args.elementAt(i);
 
-                            if (arg instanceof ServerSocketConnection) { ((ServerSocketConnection) arg).close(); }
-                            else if (arg instanceof StreamConnection) { ((StreamConnection) arg).close(); }
-                            else if (arg instanceof InputStream) { ((InputStream) arg).close(); }
-                            else if (arg instanceof OutputStream) { ((OutputStream) arg).close(); }
-                            else if (arg instanceof StringBuffer || arg instanceof StringItem) { }
-                            else if (arg instanceof Player) { Player player = (Player) arg; player.stop(); player.deallocate(); player.close(); }
-                            else { return gotbad(i + 1, "close", "stream expected, got " + type(arg)); }
+                            if (arg0 instanceof ServerSocketConnection) { ((ServerSocketConnection) arg0).close(); }
+                            else if (arg0 instanceof StreamConnection) { ((StreamConnection) arg0).close(); }
+                            else if (arg0 instanceof InputStream) { ((InputStream) arg0).close(); }
+                            else if (arg0 instanceof OutputStream) { ((OutputStream) arg0).close(); }
+                            else if (arg0 instanceof StringBuffer || arg0 instanceof StringItem) { }
+                            else if (arg0 instanceof Player) { Player player = (Player) arg0; player.stop(); player.deallocate(); player.close(); }
+                            else { return gotbad(i + 1, "close", "stream expected, got " + type(arg0)); }
 
-                            proc.net.remove(arg); break;
+                            proc.net.remove(arg0); break;
                         }
                     }
                     break;
@@ -2160,11 +2160,11 @@ public class Lua {
                 case BASE64_ENCODE:
                     if (args.isEmpty()) { return gotbad(1, "encode", "string or table expected, got no value"); }
                     
-                    arg = args.elementAt(0);
+                    arg0 = args.elementAt(0);
                     byte[] data;
                     
-                    if (arg instanceof Hashtable) {
-                        Hashtable table = (Hashtable) arg;
+                    if (arg0 instanceof Hashtable) {
+                        Hashtable table = (Hashtable) arg0;
                         if (isListTable(table)) {
                             Vector vec = toVector(table);
                             data = new byte[vec.size()];
@@ -2183,10 +2183,10 @@ public class Lua {
                         } else {
                             return gotbad(1, "encode", "table must be array-like");
                         }
-                    } else if (arg instanceof String) {
-                        data = toLuaString(arg).getBytes("UTF-8");
+                    } else if (arg0 instanceof String) {
+                        data = toLuaString(arg0).getBytes("UTF-8");
                     } else {
-                        return gotbad(1, "encode", "string or table expected, got " + type(arg));
+                        return gotbad(1, "encode", "string or table expected, got " + type(arg0));
                     }
                 
                     return midlet.encodeBase64(data);
@@ -2364,16 +2364,16 @@ public class Lua {
                 case APPEND:
                     if (args.size() < 2) { return gotbad(1, "append", "wrong number of arguments"); }
                     else {
-                        Object target = args.elementAt(0), itemObj = args.elementAt(1);
+                        Object tgt = args.elementAt(0), itemObj = args.elementAt(1);
                         
-                        if (target instanceof Form) {
-                            Form form = (Form) target;
+                        if (tgt instanceof Form) {
+                            Form form = (Form) tgt;
                             
                             if (itemObj instanceof Hashtable) {
                                 Hashtable field = (Hashtable) itemObj;
-                                String type = getFieldValue(field, "type", "text");
+                                String ftype = getFieldValue(field, "type", "text");
                                 
-                                if (type.equals("image")) {
+                                if (ftype.equals("image")) {
                                     if (field.containsKey("img") && field.get("img") instanceof Image) {
                                         form.append((Image) field.get("img"));
                                     } else {
@@ -2381,14 +2381,14 @@ public class Lua {
                                         if (!imgPath.equals("")) { form.append(midlet.readImg(imgPath, father)); }
                                     }
                                 } 
-                                else if (type.equals("text")) {
+                                else if (ftype.equals("text")) {
                                     String layout = getFieldValue(field, "layout", "default");
                                     StringItem si = new StringItem(getFieldValue(field, "label", ""), getFieldValue(field, "value", ""), layout.equals("link") ? StringItem.HYPERLINK : layout.equals("button") ? StringItem.BUTTON : Item.LAYOUT_DEFAULT);
                                     
                                     si.setFont(genFont(getFieldValue(field, "style", "default")));
                                     form.append(si);
                                 }
-                                else if (type.equals("item")) {
+                                else if (ftype.equals("item")) {
                                     Object rootObj = field.containsKey("root") ? field.get("root") : gotbad("append", "item", "missing root"); 
 
                                     Command RUN = new Command(getFieldValue(field, "label", (String) gotbad("append", "item", "missing label")), Command.ITEM, 1); 
@@ -2400,7 +2400,7 @@ public class Lua {
                                     s.setItemCommandListener((ItemCommandListener) new LuaFunction("item", (Lua) rootObj)); 
                                     form.append(s);
                                 }
-                                else if (type.equals("choice")) { 
+                                else if (ftype.equals("choice")) { 
                                     String choiceType = getFieldValue(field, "mode", "exclusive");
                                     ChoiceGroup cg = new ChoiceGroup(getFieldValue(field, "label", ""), choiceType.equals("exclusive") ? Choice.EXCLUSIVE : choiceType.equals("multiple") ? Choice.MULTIPLE : Choice.POPUP);
                                     Object options = field.get("options");
@@ -2423,15 +2423,15 @@ public class Lua {
                                     form.setItemStateListener((ItemStateListener) new LuaFunction("state", field.containsKey("root") ? field.get("root") : LUA_NIL));
                                     form.append(cg);
                                 } 
-                                else if (type.equals("field")) { form.append(new TextField(getFieldValue(field, "label", ""), getFieldValue(field, "value", ""), getFieldNumber(field, "length", 256), getQuest(getFieldValue(field, "mode", "")))); } 
-                                else if (type.equals("spacer")) { form.append(new Spacer(getFieldNumber(field, "width", 1), getFieldNumber(field, "height", 10))); }
-                                else if (type.equals("gauge")) { form.append(new Gauge(getFieldValue(field, "label", ""), getFieldBoolean(field, "interactive", false), getFieldNumber(field, "maxValue", 100), getFieldNumber(field, "value", 0))); } 
+                                else if (ftype.equals("field")) { form.append(new TextField(getFieldValue(field, "label", ""), getFieldValue(field, "value", ""), getFieldNumber(field, "length", 256), getQuest(getFieldValue(field, "mode", "")))); } 
+                                else if (ftype.equals("spacer")) { form.append(new Spacer(getFieldNumber(field, "width", 1), getFieldNumber(field, "height", 10))); }
+                                else if (ftype.equals("gauge")) { form.append(new Gauge(getFieldValue(field, "label", ""), getFieldBoolean(field, "interactive", false), getFieldNumber(field, "maxValue", 100), getFieldNumber(field, "value", 0))); } 
                             } 
                             else if (itemObj instanceof Item) { form.append((Item) itemObj); } 
                             else { form.append(new StringItem("", toLuaString(itemObj))); }
                         } 
-                        else if (target instanceof List) {
-                            List list = (List) target;
+                        else if (tgt instanceof List) {
+                            List list = (List) tgt;
                             Image image = null;
                             
                             if (args.size() > 2) {
@@ -2447,12 +2447,12 @@ public class Lua {
                 case ADDCMD:
                     if (args.size() < 2) { return gotbad(1, "addCommand", "wrong number of arguments"); }
                     else {
-                        Object target = args.elementAt(0), cmdObj = args.elementAt(1);
+                        Object dcmd = args.elementAt(0), cmdObj = args.elementAt(1);
                         
-                        if (!(target instanceof Displayable)) { return gotbad(1, "addCommand", "Displayable expected"); }
+                        if (!(dcmd instanceof Displayable)) { return gotbad(1, "addCommand", "Displayable expected"); }
                         if (!(cmdObj instanceof Command)) { return gotbad(1, "addCommand", "Command expected"); }
                         
-                        ((Displayable) target).addCommand((Command) cmdObj); break;
+                        ((Displayable) dcmd).addCommand((Command) cmdObj); break;
                     }
                 case HANDLER:
                     if (args.size() < 2) { return gotbad(1, "handler", "wrong number of arguments"); }
@@ -2576,10 +2576,10 @@ public class Lua {
                             Hashtable table = (Hashtable) firstArg;
                             StringBuffer sb = new StringBuffer();
                             for (int i = 0; i <= table.size(); i++) {
-                                arg = table.get(new Double(i + 1));
-                                if (arg == null) { continue; }
+                                arg0 = table.get(new Double(i + 1));
+                                if (arg0 == null) { continue; }
                                 double num;
-                                if (arg instanceof Double) { num = ((Double) arg).doubleValue(); } 
+                                if (arg0 instanceof Double) { num = ((Double) arg0).doubleValue(); } 
                                 else { return gotbad(1, "char", "value out of range"); }
                                 int c = (int) num;
                                 if (c < 0 || c > 255) { return gotbad(1, "char", "value out of range"); }
@@ -2589,13 +2589,13 @@ public class Lua {
                         } else {
                             StringBuffer sb = new StringBuffer();
                             for (int i = 0; i < args.size(); i++) {
-                                arg = args.elementAt(i);
-                                if (arg == null) { return gotbad(1, "char", "number expected, got nil"); }
+                                arg0 = args.elementAt(i);
+                                if (arg0 == null) { return gotbad(1, "char", "number expected, got nil"); }
                                 double num;
-                                if (arg instanceof Double) { num = ((Double) arg).doubleValue(); } 
+                                if (arg0 instanceof Double) { num = ((Double) arg0).doubleValue(); } 
                                 else {
-                                    try { num = Double.parseDouble(toLuaString(arg)); } 
-                                    catch (Exception e) { return gotbad(1, "char", "number expected, got " + type(arg)); }
+                                    try { num = Double.parseDouble(toLuaString(arg0)); } 
+                                    catch (Exception e) { return gotbad(1, "char", "number expected, got " + type(arg0)); }
                                 }
                                 int c = (int) num;
                                 if (c < 0 || c > 255) { return gotbad(1, "char", "value out of range"); }
@@ -2705,13 +2705,13 @@ public class Lua {
                 case SLEEP:
                     if (args.isEmpty()) { }
                     else {
-                        arg = args.elementAt(0);
-                        if (arg instanceof Double) { Thread.sleep(((Double) arg).longValue()); break; }
-                        else { return gotbad(1, "sleep", "number expected, got " + type(arg)); }
+                        arg0 = args.elementAt(0);
+                        if (arg0 instanceof Double) { Thread.sleep(((Double) arg0).longValue()); break; }
+                        else { return gotbad(1, "sleep", "number expected, got " + type(arg0)); }
                     }
                 // Kernel Core
                 case KERNEL:
-                    Object payload = args.elementAt(0), arg = args.elementAt(1), scope = args.elementAt(2), pid = args.elementAt(3);
+                    Object payload = args.elementAt(0), arg = args.elementAt(1), scope = args.elementAt(2), kpid = args.elementAt(3);
                     int uid = ((Double) args.elementAt(4)).intValue();
 
                     if (payload == null || payload.equals("")) { return null; }
@@ -2817,8 +2817,8 @@ public class Lua {
                                 process.parentPid = PID;
                                 process.lua.kill = false;
 
-                                Hashtable arg = new Hashtable(); arg.put(new Double(0), program); arg.put(new Double(1), "--deamon");
-                                Hashtable res = process.lua.run(program, code, arg);
+                                Hashtable sarg = new Hashtable(); sarg.put(new Double(0), program); sarg.put(new Double(1), "--deamon");
+                                Hashtable res = process.lua.run(program, code, sarg);
 
                                 Object handler = res.get("object");
                                 if (handler instanceof Vector) {
@@ -2981,12 +2981,12 @@ public class Lua {
             }
         }
 
-        public Double exec(Vector args) throws Exception {
-            if (args.isEmpty()) { return (Double) gotbad(1, "execute", "string expected, got no value"); }
+        public Double exec(Vector aargs) throws Exception {
+            if (aargs.isEmpty()) { return (Double) gotbad(1, "execute", "string expected, got no value"); }
             else {
-                int status = 0; InputStream in; boolean builtin = args.size() > 1 ? ((Boolean) args.elementAt(1)).booleanValue() : false;
+                int status = 0; InputStream in; boolean builtin = aargs.size() > 1 ? ((Boolean) aargs.elementAt(1)).booleanValue() : false;
 
-                String command = midlet.env(toLuaString(args.elementAt(0)));
+                String command = midlet.env(toLuaString(aargs.elementAt(0)));
 
                 Vector chain = splitAmpersands(command);
                 if (chain.size() > 1) {
@@ -3022,8 +3022,8 @@ public class Lua {
                         Vector sanitize = new Vector(); StringBuffer buffer = new StringBuffer();
                         for (int j = 0; j < i; j++) { sanitize.addElement(args[j]); if (j > 0) buffer.append(' '); buffer.append(args[j]); }
 
-                        String[] args = new String[sanitize.size()];
-                        sanitize.copyInto(args); argument = buffer.toString();
+                        String[] sanitized = new String[sanitize.size()];
+                        sanitize.copyInto(sanitized); argument = buffer.toString();
 
                         break;
                     }
@@ -3046,8 +3046,8 @@ public class Lua {
                 else if (mainCommand.equals("cat")) {
                     for (int i = 0; i < args.length; i++) {
                         try {
-                            InputStream in = midlet.getInputStream(midlet.joinpath(args[i], father), father);
-                            if (in != null) { midlet.print(midlet.read(in, 1024, true), output, id, father); }
+                            InputStream fin = midlet.getInputStream(midlet.joinpath(args[i], father), father);
+                            if (fin != null) { midlet.print(midlet.read(fin, 1024, true), output, id, father); }
                             else { status = 2; break; }
                         } catch (Exception e) {
                             status = 127; break;
@@ -3212,7 +3212,7 @@ public class Lua {
                 else if (mainCommand.equals("pwd")) { midlet.print((String) father.get("PWD"), output, id, father); }
                 else if (mainCommand.equals("cd")) {
                     Vector payload = new Vector();
-                    payload.addElement(args.length == 0 ? "/home/" : args[0]);
+                    payload.addElement(args.length == 0 ? (id == 0 ? "/root/" : "/home/") : args[0]);
                     status = ((Double) chdir(payload)).intValue();
 
                     if (status == 127) { midlet.print("cd: " + args[0] + ": not found", output, id, father); }
