@@ -80,11 +80,8 @@ public class ELF implements CommandListener {
     // Socket options
     private static final int TCP_NODELAY = 1, SO_REUSEADDR = 2, SO_TYPE = 3, SO_ERROR = 4, SO_DONTROUTE = 5, SO_BROADCAST = 6, SO_SNDBUF = 7, SO_RCVBUF = 8, SO_KEEPALIVE = 9, SO_OOBINLINE = 10, SO_LINGER = 13;
 
-    // recv/send flags (Linux values, RISC-V ABI)
-    private static final int MSG_WAITALL = 0x100;
-
     // Additional network errors
-    private static final int ENOTSOCK = 88, ENOPROTOOPT = 92, EADDRINUSE = 98, EADDRNOTAVAIL = 99, EISCONN = 106, ENOTCONN = 107, EINVAL = 22;
+    private static final int ENOTSOCK = 88, ENOPROTOOPT = 92, EADDRINUSE = 98, EADDRNOTAVAIL = 99, EISCONN = 106;
 
     // Signal constants
     private static final int SIG_ERR = -1, SIG_DFL = 0, SIG_IGN = 1, SIGINT = 2, SIGKILL = 9, SIGSEGV = 11, SIGPIPE = 13, SIGTERM = 15, SIGCHLD = 17, SIGCONT = 18, SIGSTOP = 19, NSIG = 32;
@@ -3279,7 +3276,20 @@ public class ELF implements CommandListener {
             InputStream is = (InputStream) fileDescriptors.get(fdKey);
             if (is == null) { registers[REG_A0] = -9; return; }
             
-            registers[REG_A0] = readStream(is, buf, len, flags);
+            int bytesRead = 0;
+            for (int i = 0; i < len && buf + i < memory.length; i++) {
+                int b = is.read();
+                if (b == -1) {
+                    if (bytesRead == 0) { registers[REG_A0] = 0; }
+                    else { registers[REG_A0] = bytesRead; }
+
+                    return;
+                }
+                memory[buf + i] = (byte) b;
+                bytesRead++;
+            }
+            
+            registers[REG_A0] = bytesRead;
         } catch (Exception e) { registers[REG_A0] = -104; }
     }
     private void handleSendto() {
@@ -3368,10 +3378,21 @@ public class ELF implements CommandListener {
                 
                 registers[REG_A0] = n;
             } else {
+                // Connected socket (TCP): receives into the buffer and reports the peer
                 InputStream is = (InputStream) fileDescriptors.get(fdKey);
                 if (is == null) { registers[REG_A0] = -ENOTSOCK; return; }
                 
-                int bytesRead = readStream(is, buf, len, flags);
+                int bytesRead = 0;
+                for (int i = 0; i < len && buf + i < memory.length; i++) {
+                    int b = is.read();
+                    if (b == -1) {
+                        if (bytesRead == 0) { registers[REG_A0] = 0; }
+                        else { registers[REG_A0] = bytesRead; }
+                        return;
+                    }
+                    memory[buf + i] = (byte) b;
+                    bytesRead++;
+                }
                 
                 if (src_addr != 0) {
                     String[] peer = getSocketPeer(fdKey);
@@ -3594,67 +3615,8 @@ public class ELF implements CommandListener {
     }
     private void handleShutdown() { registers[REG_A0] = 0; }
     private void handleNanosleep() { registers[REG_A0] = 0; }
-    private void handleGetsockname() {
-        int fd = registers[REG_A0];
-        int addrPtr = registers[REG_A1];
-        int addrlenPtr = registers[REG_A2];
-        
-        Integer fdKey = new Integer(fd);
-        
-        if (!socketDescriptors.containsKey(fdKey)) { registers[REG_A0] = -ENOTSOCK; return; }
-        
-        Hashtable socketInfo = (Hashtable) socketDescriptors.get(fdKey);
-        
-        String localIp = null;
-        int localPort = -1;
-        
-        Object storedIp = socketInfo.get("localIp");
-        Object storedPort = socketInfo.get("localPort");
-        if (storedIp != null && storedPort != null) {
-            localIp = (String) storedIp;
-            localPort = ((Integer) storedPort).intValue();
-        } else {
-            Object server = socketInfo.get("server");
-            Object conn = socketInfo.get("connection");
-            try {
-                if (server instanceof ServerSocketConnection) {
-                    localIp = ((ServerSocketConnection) server).getLocalAddress();
-                    localPort = ((ServerSocketConnection) server).getLocalPort();
-                } else if (conn instanceof SocketConnection) {
-                    localIp = ((SocketConnection) conn).getLocalAddress();
-                    localPort = ((SocketConnection) conn).getLocalPort();
-                }
-            } catch (Exception e) { }
-        }
-        
-        if (localIp == null) { localIp = "0.0.0.0"; }
-        if (localPort < 0) { localPort = 0; }
-        
-        if (addrPtr != 0) { writeSockAddr(memory, addrPtr, localIp, localPort); }
-        if (addrlenPtr != 0 && addrlenPtr + 3 < memory.length) { writeIntLE(memory, addrlenPtr, 16); }
-        
-        registers[REG_A0] = 0;
-    }
-    private void handleGetpeername() {
-        int fd = registers[REG_A0];
-        int addrPtr = registers[REG_A1];
-        int addrlenPtr = registers[REG_A2];
-        
-        Integer fdKey = new Integer(fd);
-        
-        if (!socketDescriptors.containsKey(fdKey)) { registers[REG_A0] = -ENOTSOCK; return; }
-        
-        Hashtable socketInfo = (Hashtable) socketDescriptors.get(fdKey);
-        if (!((Boolean) socketInfo.get("connected")).booleanValue()) { registers[REG_A0] = -ENOTCONN; return; }
-        
-        String[] peer = getSocketPeer(fdKey);
-        if (peer == null) { registers[REG_A0] = -ENOTCONN; return; }
-        
-        if (addrPtr != 0) { writeSockAddr(memory, addrPtr, peer[0], Integer.parseInt(peer[1])); }
-        if (addrlenPtr != 0 && addrlenPtr + 3 < memory.length) { writeIntLE(memory, addrlenPtr, 16); }
-        
-        registers[REG_A0] = 0;
-    }
+    private void handleGetsockname() { registers[REG_A0] = -1; } // Not implemented
+    private void handleGetpeername() { registers[REG_A0] = -1; } // Not implemented
 
     // Helper methods for sockaddr_in structures
     private String[] readSockAddr(int ptr) {
@@ -3700,32 +3662,6 @@ public class ELF implements CommandListener {
         int colon = a.lastIndexOf(':');
         if (colon == -1) { return null; }
         return new String[] { a.substring(0, colon), a.substring(colon + 1) };
-    }
-    private int readStream(InputStream is, int buf, int len, int flags) throws Exception {
-        int maxLen = len;
-        if (buf + maxLen > memory.length) { maxLen = memory.length - buf; }
-        if (maxLen <= 0) { return 0; }
-        
-        int bytesRead = 0;
-        while (bytesRead < maxLen) {
-            int b = is.read();
-            if (b == -1) { break; }
-            memory[buf + bytesRead] = (byte) b;
-            bytesRead++;
-            
-            if ((flags & MSG_WAITALL) != 0) { continue; }
-            
-            int avail = is.available();
-            if (avail > maxLen - bytesRead) { avail = maxLen - bytesRead; }
-            for (int i = 0; i < avail; i++) {
-                int c = is.read();
-                if (c == -1) { return bytesRead; }
-                memory[buf + bytesRead] = (byte) c;
-                bytesRead++;
-            }
-            break;
-        }
-        return bytesRead;
     }
 
     private void handleFutex() {
