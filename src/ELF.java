@@ -2758,6 +2758,13 @@ case DT_PLTGOT:
             if (target != null) { midlet.display.setCurrent(target); }
             else { midlet.destroyApp(true); }
         }
+
+        // The guest heap is a 1 MB buffer; drop it now so the GC can reclaim
+        // it right away (the ELF instance may stay referenced via proc.elf in
+        // the exited table). A killed run-loop thread that is already inside
+        // step() catches the resulting NPE and stops the process.
+        memory = null;
+        signalStack.removeAllElements();
     }
     // |
     private void handleGetpid() { try { int pidValue = Integer.parseInt(this.pid); registers[REG_A0] = pidValue; } catch (NumberFormatException e) { registers[REG_A0] = 1; } }
