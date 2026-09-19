@@ -69,7 +69,8 @@ final class DesktopLcdui {
     }
 
     private static void build() {
-        if (headless) { return; }
+        if (headless) { System.err.println("[LC] WARN: build() skipped, headless=" + headless); return; }
+        System.err.println("[LC] build() DISPLAY=" + System.getenv("DISPLAY"));
         frame = new JFrame("OpenTTY");
         titleBar = new JLabel(" ", SwingConstants.CENTER);
         titleBar.setFont(titleBar.getFont().deriveFont(java.awt.Font.BOLD, 15f));
@@ -97,10 +98,15 @@ final class DesktopLcdui {
                 Display d = Display.getDisplay();
                 if (d != null) { d._windowClosed(); }
             }
+            public void windowOpened(WindowEvent e) {
+                System.err.println("[LC] windowOpened bounds=" + frame.getBounds());
+            }
         });
         frame.setSize(500, 760);
-        frame.setLocationByPlatform(true);
+        frame.setLocation(60, 40);
         frame.setVisible(true);
+        frame.toFront();
+        System.err.println("[LC] after setVisible bounds=" + frame.getBounds() + " visible=" + frame.isVisible());
     }
 
     static void onEdt(Runnable r) {
@@ -139,6 +145,7 @@ final class DesktopLcdui {
 
     private static void publish(Displayable d) {
         if (headless) { return; }
+        System.err.println("[LC] publish " + d.getClass().getName() + " title=" + d.getTitle());
         if (current == d && frame.isVisible() && scroller.getViewport().getView() != null) {
             // still current; full refresh below anyway
         }
