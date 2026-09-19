@@ -9,7 +9,7 @@ mkdir -p "$OUT"
 
 find stubs -name '*.java' > /tmp/opentty-srcs.txt
 
-javac -encoding UTF-8 -Xlint:-options -source 8 -target 8 \
+javac -encoding UTF-8 -nowarn \
     -d "$OUT" @/tmp/opentty-srcs.txt \
     src/OpenTTY.java src/Lua.java src/ELF.java
 
