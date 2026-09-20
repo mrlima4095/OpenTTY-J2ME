@@ -1922,12 +1922,11 @@ public class Lua {
                             
                             InputStream is = midlet.getInputStream(file, father);
                             if (is == null) { return new Double(127); }
-                            try {
-                                byte[] buffer = new byte[1024];
-                                int bytesRead;
-                                while ((bytesRead = is.read(buffer)) != -1) { os.write(buffer, 0, bytesRead); }
-                                os.flush();
-                            } finally { try { is.close(); } catch (Exception e) { } }
+                            
+                            byte[] buffer = new byte[1024];
+                            int bytesRead;
+                            while ((bytesRead = is.read(buffer)) != -1) { os.write(buffer, 0, bytesRead); }
+                            os.flush(); is.close();
                             return new Double(0);
                         }
                         else if (target instanceof StringBuffer || target instanceof String) {
@@ -1936,13 +1935,13 @@ public class Lua {
                                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
                                 InputStream is = midlet.getInputStream(file, father);
-                                if (is == null) { baos.close(); return new Double(127); }
-                                try {
-                                    byte[] buffer = new byte[1024];
-                                    int bytesRead;
-                                    while ((bytesRead = is.read(buffer)) != -1) { baos.write(buffer, 0, bytesRead); }
-                                    return new Double(midlet.write(toLuaString(target), baos.toByteArray(), id, father));
-                                } finally { try { is.close(); } catch (Exception e) { } try { baos.close(); } catch (Exception e) { } }
+                                if (is == null) { return new Double(127); }
+
+                                byte[] buffer = new byte[1024];
+                                int bytesRead;
+                                while ((bytesRead = is.read(buffer)) != -1) { baos.write(buffer, 0, bytesRead); }
+
+                                return new Double(midlet.write(toLuaString(target), baos.toByteArray(), id, father));
                             }
                         }
                     }
