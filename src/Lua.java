@@ -2785,6 +2785,14 @@ public class Lua {
                             else { return new Double(2); }
                         }
                         else if (payload.equals("cache")) { if (arg == null || arg.equals("")) { return new Boolean(midlet.useCache); } else if (arg == TRUE || toLuaString(arg).equals("true")) { midlet.useCache = true; } else if (arg == FALSE || toLuaString(arg).equals("false")) { midlet.useCache = false; midlet.cacheLua.clear(); } else { return new Double(2); } }
+                        else if (payload.equals("memory")) {
+                            if (arg == null || arg.equals("")) { return new Double(midlet.memory_size); }
+                            if (!(arg instanceof Double)) { return new Double(2); }
+                            double value = ((Double) arg).doubleValue();
+                            if (value < 512 || value > Integer.MAX_VALUE / 1024 || value != Math.floor(value)) { return new Double(22); }
+                            midlet.memory_size = (int) value;
+                            return new Double(midlet.memory_size);
+                        }
                         else if (payload.equals("debug")) { if (arg == null || arg.equals("")) { return new Boolean(midlet.debug); } else if (arg == TRUE || toLuaString(arg).equals("true")) { midlet.debug = true; } else if (arg == FALSE || toLuaString(arg).equals("false")) { midlet.debug = false; } else { return new Double(2); } } 
                         else if (payload.equals("netsh")) {
                             if (arg == null || arg.equals("")) {

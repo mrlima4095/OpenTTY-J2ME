@@ -18,7 +18,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public boolean useCache = true, debug = false;
     // |
     // System Objects
-    public int lastID = 1000;
+    public int lastID = 1000, memory_size = 512;
     public Random random = new Random();
     public Runtime runtime = Runtime.getRuntime();
     public Object shell;
@@ -26,7 +26,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Hashtable attributes = new Hashtable(), fs = new Hashtable(), sys = new Hashtable(), exited = new Hashtable(), tmp = new Hashtable(), cacheLua = new Hashtable(), graphics = new Hashtable(), servers = new Hashtable(), globals = new Hashtable(), userID = new Hashtable();
     private Hashtable vfsFiles = new Hashtable();
     private boolean vfsReady = false;
-    public String username = read("/home/OpenRMS", globals), build = "2026-1.18.2-04x38";
+    public String username = read("/home/OpenRMS", globals), build = "2026-1.18.2-04x39";
     // | (Boot Menu / chroot)
     public String chroot = "";
     public Vector bootEntries = null;
