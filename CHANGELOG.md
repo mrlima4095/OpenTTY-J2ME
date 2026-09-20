@@ -18,6 +18,11 @@ Copyright (C) 2026 - Mr. Lima
 - improved filesystem mounting 
 - file caching disabled
 
+[ Lua ]
+
+- fixed inverted logic in **Garbage Collector** when reading `free` and `total`
+
 [ ELF ]
 
 - Interface changed to RISC-V 32
+- Default memory size decreased to 512kb, setup with `os.request(1, "memory", [size])`
