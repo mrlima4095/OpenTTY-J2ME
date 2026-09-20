@@ -5,23 +5,12 @@ Contexto
 --------
 
 O commit af5099dd tentou aplicar todas as otimizacoes abaixo de uma vez e foi
-revertido pelo commit ef411d44 depois de causar NoClassDefFoundError. O roadmap
-foi reaplicado sem adicionar uma nova classe interna ao Lua.java.
+revertido pelo commit ef411d44 depois de causar NoClassDefFoundError.
 
 A causa mais provavel e a classe interna nova Lua$ManagedInputStream. O build
 J2ME precisa compilar, preverificar e incluir cada classe interna no JAR. Se o
 Lua$ManagedInputStream.class nao entrar no pacote final, o aparelho gera
 NoClassDefFoundError quando Lua e carregado ou quando o HTTP streaming e usado.
-Essa classe foi removida. O HTTP streaming agora registra InputStream e
-HttpConnection juntos em um Vector, sem gerar arquivo .class adicional.
-
-Status atual
-------------
-
-- Etapas 1 a 11 aplicadas.
-- Lua$ManagedInputStream removido.
-- Nenhuma classe interna ou anonima nova foi adicionada.
-- HTTP rget/rpost usa Vector para controlar InputStream e HttpConnection.
 
 Regra para aplicar este roadmap
 -------------------------------

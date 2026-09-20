@@ -16,7 +16,6 @@ public class Lua {
     public String PID = "";
     private long uptime = System.currentTimeMillis();
     private int id = 1000, tokenIndex, loopDepth = 0;
-    private boolean exitRecorded = false;
     public Hashtable globals = new Hashtable(), father, requireCache = new Hashtable(), labels = new Hashtable();
     public Vector tokens;
     public String currentSource = "";
@@ -29,7 +28,6 @@ public class Lua {
     public String thrownSource = "";
     public String thrownCode = "";
     public Vector thrownLineOffsets = null;
-    private Vector ownedResources = new Vector();
     // |
     public int status = 0;
     public boolean silent = false;
@@ -140,123 +138,9 @@ public class Lua {
         catch (Exception e) { recordThrow(); midlet.print(getTraceback(e), stdout, id, father); status = 1; } 
         catch (Error e) { if (!silent) { midlet.print(midlet.getCatch(e), stdout, id, father); status = 1; } }
 
-        if (kill) { cleanupProcess(); recordExit(status); midlet.sys.remove(PID); }
+        if (kill) { midlet.sys.remove(PID); }
         ITEM.put("status", status);
         return ITEM;
-    }
-    private void closeResource(Object resource) {
-        if (resource == null) { return; }
-        if (resource instanceof Player) {
-            Player player = (Player) resource;
-            try { player.stop(); } catch (Exception e) { }
-            try { player.deallocate(); } catch (Exception e) { }
-            try { player.close(); } catch (Exception e) { }
-            return;
-        }
-        try {
-            if (resource instanceof Vector) {
-                Vector group = (Vector) resource;
-                if (!group.isEmpty() && group.elementAt(0) instanceof Player) {
-                    for (int i = 0; i < group.size(); i++) { closeResource(group.elementAt(i)); }
-                } else {
-                    for (int i = group.size() - 1; i >= 0; i--) { closeResource(group.elementAt(i)); }
-                }
-            }
-            else if (resource instanceof InputStream) { ((InputStream) resource).close(); }
-            else if (resource instanceof OutputStream) { ((OutputStream) resource).close(); }
-            else if (resource instanceof Connection) { ((Connection) resource).close(); }
-        } catch (Exception e) { }
-    }
-    private void unregisterResource(Object resource) {
-        if (proc == null || proc.net == null) { return; }
-        Vector remove = new Vector();
-        for (Enumeration keys = proc.net.keys(); keys.hasMoreElements();) {
-            Object key = keys.nextElement(), value = proc.net.get(key);
-            if (value == resource || (value instanceof Vector && !((Vector) value).isEmpty() && ((Vector) value).elementAt(0) == resource)) { remove.addElement(key); }
-        }
-        for (int i = 0; i < remove.size(); i++) { proc.net.remove(remove.elementAt(i)); }
-        remove.removeAllElements();
-        for (Enumeration keys = midlet.servers.keys(); keys.hasMoreElements();) {
-            Object key = keys.nextElement();
-            if (midlet.servers.get(key) == resource) { remove.addElement(key); }
-        }
-        for (int i = 0; i < remove.size(); i++) { midlet.servers.remove(remove.elementAt(i)); }
-        for (int i = ownedResources.size() - 1; i >= 0; i--) {
-            Object value = ownedResources.elementAt(i);
-            if (value == resource || (value instanceof Vector && !((Vector) value).isEmpty() && ((Vector) value).elementAt(0) == resource)) { ownedResources.removeElementAt(i); }
-        }
-    }
-    private Object registeredResource(Object resource) {
-        if (proc == null || proc.net == null) { return null; }
-        for (Enumeration values = proc.net.elements(); values.hasMoreElements();) {
-            Object value = values.nextElement();
-            if (value == resource || (value instanceof Vector && !((Vector) value).isEmpty() && ((Vector) value).elementAt(0) == resource)) { return value; }
-        }
-        for (int i = 0; i < ownedResources.size(); i++) {
-            Object value = ownedResources.elementAt(i);
-            if (value == resource || (value instanceof Vector && !((Vector) value).isEmpty() && ((Vector) value).elementAt(0) == resource)) { return value; }
-        }
-        return null;
-    }
-    private void registerResource(String name, Object resource) {
-        String key = name;
-        int suffix = 2;
-        while (proc.net.containsKey(key)) { key = name + "#" + suffix++; }
-        proc.net.put(key, resource);
-    }
-    private void closeProcessResources() {
-        if (proc == null || proc.net == null) { return; }
-        Vector resources = new Vector();
-        for (Enumeration values = proc.net.elements(); values.hasMoreElements();) { resources.addElement(values.nextElement()); }
-        proc.net.clear();
-        for (int i = 0; i < resources.size(); i++) {
-            Object resource = resources.elementAt(i);
-            if (resource instanceof ServerSocketConnection) { unregisterResource(resource); }
-            closeResource(resource);
-        }
-        for (int i = 0; i < ownedResources.size(); i++) { closeResource(ownedResources.elementAt(i)); }
-        ownedResources.removeAllElements();
-    }
-    private boolean cleanupProcess() {
-        boolean hadScreen = proc != null && proc.screen != null;
-        closeProcessResources();
-        if (proc == null) { return hadScreen; }
-        Displayable screen = proc.screen;
-        if (screen != null) {
-            screen.setCommandListener(null);
-            if (screen instanceof Form) {
-                Form form = (Form) screen;
-                form.setItemStateListener(null);
-                for (int i = 0; i < form.size(); i++) { form.get(i).setItemCommandListener(null); }
-                form.deleteAll();
-            }
-            else if (screen instanceof List) { ((List) screen).deleteAll(); }
-            Vector remove = new Vector();
-            for (Enumeration keys = midlet.graphics.keys(); keys.hasMoreElements();) {
-                Object key = keys.nextElement();
-                if (midlet.graphics.get(key) == screen) { remove.addElement(key); }
-            }
-            for (int i = 0; i < remove.size(); i++) { midlet.graphics.remove(remove.elementAt(i)); }
-        }
-        proc.screen = null;
-        proc.handler = null;
-        proc.sighandler = null;
-        proc.db.clear();
-        return hadScreen;
-    }
-    private void recordExit(int exitStatus) {
-        if (proc == null || exitRecorded) { return; }
-        exitRecorded = true;
-        proc.exitStatus = exitStatus;
-        proc.exited = true;
-        Process parent = proc.parentPid == null ? null : (Process) midlet.sys.get(proc.parentPid);
-        if (parent != null && parent.elf != null) {
-            proc.lua = null;
-            proc.scope = null;
-            proc.stdout = null;
-            proc.stderr = null;
-            midlet.exited.put(PID, proc);
-        }
     }
     // |
     public void recordThrow() { recordThrow(tokenIndex, tokens); }
@@ -481,7 +365,7 @@ public class Lua {
     public Object statement(Hashtable scope) throws Exception {
         Token current = peek();
 
-        if (status != 0) { silent = true; cleanupProcess(); midlet.sys.remove(PID); throw new Error(); }
+        if (status != 0) { silent = true; midlet.sys.remove(PID); throw new Error(); }
         if (midlet.sys.containsKey(PID)) { } else { silent = true; throw new Error("Process killed"); } 
 
         if (current.type == IDENTIFIER) {
@@ -1931,10 +1815,15 @@ public class Lua {
                         for (int i = 0; i < args.size(); i++) {
                             arg = args.elementAt(i);
 
-                            if (!(arg instanceof Connection) && !(arg instanceof InputStream) && !(arg instanceof OutputStream) && !(arg instanceof StringBuffer) && !(arg instanceof StringItem) && !(arg instanceof Player)) { return gotbad(i + 1, "close", "stream expected, got " + type(arg)); }
-                            Object registered = registeredResource(arg);
-                            closeResource(registered != null ? registered : arg);
-                            unregisterResource(arg);
+                            if (arg instanceof ServerSocketConnection) { ((ServerSocketConnection) arg).close(); }
+                            else if (arg instanceof StreamConnection) { ((StreamConnection) arg).close(); }
+                            else if (arg instanceof InputStream) { ((InputStream) arg).close(); }
+                            else if (arg instanceof OutputStream) { ((OutputStream) arg).close(); }
+                            else if (arg instanceof StringBuffer || arg instanceof StringItem) { }
+                            else if (arg instanceof Player) { Player player = (Player) arg; player.stop(); player.deallocate(); player.close(); }
+                            else { return gotbad(i + 1, "close", "stream expected, got " + type(arg)); }
+
+                            proc.net.remove(arg); break;
                         }
                     }
                     break;
@@ -2028,12 +1917,11 @@ public class Lua {
                             
                             InputStream is = midlet.getInputStream(file, father);
                             if (is == null) { return new Double(127); }
-                            try {
-                                byte[] buffer = new byte[1024];
-                                int bytesRead;
-                                while ((bytesRead = is.read(buffer)) != -1) { os.write(buffer, 0, bytesRead); }
-                                os.flush();
-                            } finally { try { is.close(); } catch (Exception e) { } }
+                            
+                            byte[] buffer = new byte[1024];
+                            int bytesRead;
+                            while ((bytesRead = is.read(buffer)) != -1) { os.write(buffer, 0, bytesRead); }
+                            os.flush(); is.close();
                             return new Double(0);
                         }
                         else if (target instanceof StringBuffer || target instanceof String) {
@@ -2043,12 +1931,12 @@ public class Lua {
 
                                 InputStream is = midlet.getInputStream(file, father);
                                 if (is == null) { return new Double(127); }
-                                try {
-                                    byte[] buffer = new byte[1024];
-                                    int bytesRead;
-                                    while ((bytesRead = is.read(buffer)) != -1) { baos.write(buffer, 0, bytesRead); }
-                                    return new Double(midlet.write(toLuaString(target), baos.toByteArray(), id, father));
-                                } finally { try { is.close(); } catch (Exception e) { } try { baos.close(); } catch (Exception e) { } }
+
+                                byte[] buffer = new byte[1024];
+                                int bytesRead;
+                                while ((bytesRead = is.read(buffer)) != -1) { baos.write(buffer, 0, bytesRead); }
+
+                                return new Double(midlet.write(toLuaString(target), baos.toByteArray(), id, father));
                             }
                         }
                     }
@@ -2323,10 +2211,9 @@ public class Lua {
                         Vector result = new Vector();
 
                         SocketConnection conn = (SocketConnection) Connector.open(toLuaString(args.elementAt(0)));
-                        try {
-                            result.addElement(conn); result.addElement(conn.openInputStream()); result.addElement(conn.openOutputStream()); result.addElement(args.elementAt(0)); result.addElement(new Double(id));
-                        } catch (Exception e) { closeResource(result); closeResource(conn); throw e; }
-                        registerResource(toLuaString(args.elementAt(0)), result);
+                            
+                        result.addElement(conn); result.addElement(conn.openInputStream()); result.addElement(conn.openOutputStream()); result.addElement(args.elementAt(0)); result.addElement(new Double(id));
+                        proc.net.put(toLuaString(args.elementAt(0)), result);
 
                         return result;
                     } 
@@ -2347,7 +2234,7 @@ public class Lua {
                     else {
                         ServerSocketConnection server = (ServerSocketConnection) Connector.open("socket://:" + toLuaString(args.elementAt(0)));
                         midlet.servers.put(toLuaString(args.elementAt(0)), server);
-                        registerResource(toLuaString(args.elementAt(0)), server);
+                        proc.net.put(toLuaString(args.elementAt(0)), server);
                         return server;
                     }
                 case ACCEPT:
@@ -2356,9 +2243,9 @@ public class Lua {
                         Vector result = new Vector();
 
                         SocketConnection conn = (SocketConnection) ((ServerSocketConnection) args.elementAt(0)).acceptAndOpen();
-                        try { result.addElement(conn); result.addElement(conn.openInputStream()); result.addElement(conn.openOutputStream()); }
-                        catch (Exception e) { closeResource(result); closeResource(conn); throw e; }
-                        registerResource("socket://:" + ((ServerSocketConnection) args.elementAt(0)).getLocalPort(), result);
+                            
+                        result.addElement(conn); result.addElement(conn.openInputStream()); result.addElement(conn.openOutputStream());
+                        proc.net.put("socket://:" + ((ServerSocketConnection) args.elementAt(0)).getLocalPort(), result);
 
                         return result;
                     }
@@ -2767,14 +2654,10 @@ public class Lua {
                     else {
                         InputStream is = midlet.getInputStream(toLuaString(args.elementAt(0)), father);
                         if (is != null) {
-                            Player player = null;
-                            try {
-                                player = Manager.createPlayer(is, args.size() > 1 ? toLuaString(args.elementAt(1)) : "audio/mpeg");
-                                player.prefetch();
-                                Vector audioResource = new Vector(); audioResource.addElement(player); audioResource.addElement(is);
-                                ownedResources.addElement(audioResource);
-                                return player;
-                            } catch (Exception e) { closeResource(player); try { is.close(); } catch (Exception ignored) { } throw e; }
+                            Player player = Manager.createPlayer(is, args.size() > 1 ? toLuaString(args.elementAt(1)) : "audio/mpeg"); 
+                            player.prefetch();
+                            
+                            return player;
                         }
                     }
                 case AUDIO_PLAY: if (args.isEmpty() || !(args.elementAt(0) instanceof Player)) { return gotbad(1, "play", "audio object expected"); } else { ((Player) args.elementAt(0)).start(); return new Double(0); }
@@ -2851,7 +2734,6 @@ public class Lua {
                                             catch (Throwable e) {  }
                                         }
 
-                                        if (process.lua != null) { process.lua.cleanupProcess(); process.lua.recordExit(128 + getNumber(signal, 0)); }
                                         midlet.sys.remove(pid);
                                         if (signal.equals("9") && arg.equals("1")) { midlet.destroyApp(true); }
                                         return new Double(0);
@@ -3043,30 +2925,22 @@ public class Lua {
                     os.flush(); os.close();
                 }
 
-                is = conn.openInputStream();
-                if (toget) {
-                    int responseCode = conn.getResponseCode();
-                    Vector resource = new Vector(); resource.addElement(is); resource.addElement(conn);
-                    registerResource(url, resource);
-                    Vector result = new Vector(); result.addElement(is); result.addElement(luaNumber(responseCode));
-                    is = null; conn = null;
-                    return result;
-                }
+                is = conn.openInputStream(); if (toget) { Vector result = new Vector(); result.addElement(is); result.addElement(new Double(new Double(conn.getResponseCode()))); return result; }
                 baos = new ByteArrayOutputStream();
                 int ch;
                 while ((ch = is.read()) != -1) { baos.write(ch); }
 
                 Vector result = new Vector();
                 result.addElement(new String(baos.toByteArray(), "UTF-8"));
-                result.addElement(luaNumber(conn.getResponseCode()));
+                result.addElement(new Double(new Double(conn.getResponseCode())));
 
-                return result;
-            }
-            finally {
                 if (is != null) { try { is.close(); } catch (Exception e) { } }
                 if (conn != null) { try { conn.close(); } catch (Exception e) { } }
                 if (baos != null) { try { baos.close(); } catch (Exception e) { } }
-            }
+
+                return result;
+            } 
+            catch (Exception e) { throw e; }
         }
         private int compareLua(Object a, Object b) { if (a == null && b == null) { return 0; } if (a == null) { return -1; } if (b == null) { return 1; } if (a instanceof Double && b instanceof Double) { double da = ((Double) a).doubleValue(), db = ((Double) b).doubleValue(); return da < db ? -1 : (da > db ? 1 : 0); } String sa = toLuaString(a), sb = toLuaString(b); return sa.compareTo(sb); }
         // |
@@ -3419,11 +3293,9 @@ public class Lua {
             else if ((pwd = midlet.redirect(midlet.solvepath(pwd, father))).equals("/tmp/")) { for (Enumeration files = midlet.tmp.keys(); files.hasMoreElements();) { list.put(new Double(index), (String) files.nextElement()); index++; } }
             else if (pwd.equals("/mnt/")) { for (Enumeration roots = FileSystemRegistry.listRoots(); roots.hasMoreElements();) { list.put(new Double(index), (String) roots.nextElement()); index++; } } 
             else if (pwd.startsWith("/mnt/")) { 
-                FileConnection CONN = null;
-                try {
-                    CONN = (FileConnection) Connector.open("file:///" + pwd.substring(5), Connector.READ);
-                    for (Enumeration files = CONN.list(); files.hasMoreElements();) { list.put(new Double(index), (String) files.nextElement()); index++; }
-                } finally { if (CONN != null) { try { CONN.close(); } catch (Exception e) { } } }
+                FileConnection CONN = (FileConnection) Connector.open("file:///" + pwd.substring(5), Connector.READ); 
+                for (Enumeration files = CONN.list(); files.hasMoreElements();) { list.put(new Double(index), (String) files.nextElement()); index++; } 
+                CONN.close(); 
             } 
             else if (pwd.startsWith("/proc/")) {
                 String rest = pwd.substring(6);
@@ -3466,12 +3338,9 @@ public class Lua {
             Hashtable scope = (args.size() < 5) ? father : (args.elementAt(4) instanceof Hashtable ? (Hashtable) args.elementAt(4) : (Hashtable) gotbad(5, "popen", "table expected, got " + type(args.elementAt(4))));
             InputStream is = (args.size() < 6) ? midlet.getInputStream(program, father) : (InputStream) args.elementAt(5);
             
-            return popen(program, midlet.genpid(), arguments, owner, out, scope, is, args.size() < 6);
+            return popen(program, midlet.genpid(), arguments, owner, out, scope, is);
         }
         public Vector popen(String program, String pid, Object arguments, int owner, Object out, Hashtable scope, InputStream is) throws Exception {
-            return popen(program, pid, arguments, owner, out, scope, is, true);
-        }
-        private Vector popen(String program, String pid, Object arguments, int owner, Object out, Hashtable scope, InputStream is, boolean closeInput) throws Exception {
             Vector result = new Vector();
             
             if (is == null) { result.addElement(new Double(127)); return result; }
@@ -3547,7 +3416,6 @@ public class Lua {
                 return result; 
                 
             } catch (Exception e) { result.addElement(new Double(1)); return result; }
-            finally { if (closeInput) { try { is.close(); } catch (Exception e) { } } }
         }
 
         public Object chdir(Vector args) throws Exception {
@@ -3593,10 +3461,7 @@ public class Lua {
                         if (exist && dir) { father.put("PWD", target); return new Double(0); } 
                         else { return new Double(exist ? 20 : 127); }
                     }
-                    else {
-                        InputStream path = midlet.getInputStream(chk.substring(chk.length() - 1), father);
-                        if (path != null) { try { path.close(); } catch (Exception e) { } return new Double(20); }
-                    }
+                    else if (midlet.getInputStream(chk.substring(chk.length() - 1), father) != null) { return new Double(20); }
                 }
 
                 return new Double(127);
@@ -3607,8 +3472,10 @@ public class Lua {
             silent = true;
             if (PID.equals("1")) { midlet.destroyApp(true); }
             else {
-                boolean hadScreen = cleanupProcess();
-                recordExit(args.isEmpty() ? 1 : getNumber(toLuaString(args.elementAt(0)), 1));
+                boolean hadScreen = proc.screen != null;
+                proc.exitStatus = args.isEmpty() ? 1 : getNumber(toLuaString(args.elementAt(0)), 1);
+                proc.exited = true;
+                midlet.exited.put(PID, proc);
                 midlet.sys.remove(PID);
                 if (hadScreen) {
                     Displayable target = null;
@@ -3638,11 +3505,9 @@ public class Lua {
         public void commandAction(Command c, Displayable d) {
             try {
                 if (suPromptForm != null && d == suPromptForm) {
-                    Displayable previous = suPromptPrevious;
-                    Form prompt = suPromptForm;
-                    if (previous != null) { midlet.display.setCurrent(previous); }
+                    if (suPromptPrevious != null) { midlet.display.setCurrent(suPromptPrevious); }
                     if (c == suPromptRun) {
-                        TextField tf = (TextField) prompt.get(0);
+                        TextField tf = (TextField) suPromptForm.get(0);
                         String query = tf.getString();
                         if (query == null || !midlet.passwd(query)) {
                             midlet.print("Permission denied!", stdout, id, father);
@@ -3651,12 +3516,7 @@ public class Lua {
                             father.put("USER", "root");
                         }
                     }
-                    prompt.setCommandListener(null);
-                    prompt.deleteAll();
                     suPromptForm = null;
-                    suPromptPrevious = null;
-                    suPromptBack = null;
-                    suPromptRun = null;
                     return;
                 }
                 if (cmds.containsKey(c) && cmds.get(c) instanceof LuaFunction) {
@@ -3687,10 +3547,10 @@ public class Lua {
                     ((LuaFunction) cmds.get(c)).call(args);
                 }
             }
-            catch (Exception e) { midlet.print(getTraceback(e), stdout); cleanupProcess(); recordExit(1); midlet.sys.remove(PID); }
-            catch (Error e) { if (!silent) { midlet.print(midlet.getCatch(e), stdout); } cleanupProcess(); recordExit(status == 0 ? 1 : status); midlet.sys.remove(PID); }
+            catch (Exception e) { midlet.print(getTraceback(e), stdout); midlet.sys.remove(PID); } 
+            catch (Error e) { if (!silent) { midlet.print(midlet.getCatch(e), stdout); } midlet.sys.remove(PID); }
         }
-        public void commandAction(Command c, Item item) { try { if (root instanceof LuaFunction) { ((LuaFunction) root).call(new Vector()); } } catch (Exception e) { midlet.print(getTraceback(e), stdout, id, father); cleanupProcess(); recordExit(1); midlet.sys.remove(PID); } catch (Error e) { if (!silent) { midlet.print(midlet.getCatch(e), stdout, id, father); } cleanupProcess(); recordExit(status == 0 ? 1 : status); midlet.sys.remove(PID); } }
+        public void commandAction(Command c, Item item) { try { if (root instanceof LuaFunction) { ((LuaFunction) root).call(new Vector()); } } catch (Exception e) { midlet.print(getTraceback(e), stdout, id, father); midlet.sys.remove(PID); } catch (Error e) { if (!silent) { midlet.print(midlet.getCatch(e), stdout, id, father); } midlet.sys.remove(PID); } }
         public void itemStateChanged(Item item) {
             try {
                 if (root == LUA_NIL) { }
@@ -3706,7 +3566,7 @@ public class Lua {
 
                     ((LuaFunction) root).call(args); 
                 }
-            } catch (Exception e) { midlet.print(getTraceback(e), stdout, id, father); cleanupProcess(); recordExit(1); midlet.sys.remove(PID); } catch (Error e) { if (!silent) { midlet.print(midlet.getCatch(e), stdout, id, father); } cleanupProcess(); recordExit(status == 0 ? 1 : status); midlet.sys.remove(PID); }
+            } catch (Exception e) { midlet.print(getTraceback(e), stdout, id, father); midlet.sys.remove(PID); } catch (Error e) { if (!silent) { midlet.print(midlet.getCatch(e), stdout, id, father); } midlet.sys.remove(PID); } 
         }
     }
 }
