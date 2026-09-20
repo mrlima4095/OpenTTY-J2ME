@@ -54,12 +54,17 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String cfg = read("/boot/grub.cfg", globals);
 
         int count = countBootEntries(cfg);
-        if (count == 1) { bootEntry(parseBootEntry(cfg)); }
+        if (count == 1) {
+            Hashtable entry = parseBootEntry(cfg);
+            cfg = null;
+            bootEntry(entry);
+        }
         else if (count > 1) {
             bootEntries = parseBootMenu(cfg);
+            cfg = null;
             showBootMenu();
         }
-        else { bootEntry(null); }
+        else { cfg = null; bootEntry(null); }
         return true;
     }
     public int countBootEntries(String cfg) {
@@ -161,7 +166,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     public void bootSelect(int index) {
         if (bootList == null) { return; }
-        bootList = null;
 
         if (bootEntries == null || bootEntries.size() == 0) { bootEntry(null); return; }
         if (index < 0 || index >= bootEntries.size()) { index = 0; }
@@ -173,14 +177,19 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String init = e != null && e.get("init") != null ? (String) e.get("init") : "/bin/init";
         if (root == null || root.length() == 0) { root = "/"; }
         if (init == null || init.length() == 0) { init = "/bin/init"; }
-        clearBoot();
+        e = null;
+        entry = null;
         if (root.equals("/") && init.equals("/bin/init")) { defaultBoot(root, init); }
         else { bootKernel(root, init); }
     }
     public void clearBoot() {
+        if (bootEntries != null) { bootEntries.removeAllElements(); }
+        if (bootList != null) { bootList.deleteAll(); bootList.setCommandListener(null); }
+        if (bootManual != null) { bootManual.deleteAll(); bootManual.setCommandListener(null); }
         bootEntries = null;
         bootList = null;
         bootManual = null;
+        System.gc();
     }
     private void defaultBoot(String root, String init) {
         boolean user = username.equals(""), pword = passwd().equals("");
@@ -193,6 +202,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             screen.addCommand(new Command("Exit", Command.SCREEN, 1));
             screen.setCommandListener(this);
             display.setCurrent(screen);
+            clearBoot();
         } else { bootKernel(root, init); }
     }
     private void bootKernel(String root, String init) {
@@ -218,6 +228,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 display.setCurrent(screen);
                 return;
             }
+            clearBoot();
             proc.lua.tokens = proc.lua.tokenize(code);
 
             while (proc.lua.peek().type != 0) { Object res = proc.lua.statement(globals); if (proc.lua.doreturn) { break; } }
@@ -315,7 +326,6 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 String init = ((TextField) bootManual.get(1)).getString().trim();
                 if (root.length() == 0) { root = "/"; }
                 if (init.length() == 0) { init = "/bin/init"; }
-                bootManual = null;
                 Hashtable entry = new Hashtable();
                 entry.put("root", root);
                 entry.put("init", init);
