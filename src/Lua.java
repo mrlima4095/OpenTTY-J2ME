@@ -55,20 +55,6 @@ public class Lua {
     private static Double luaNumber(double d) { if (d == Math.floor(d) && d >= NUM_MIN && d <= NUM_MAX) { return SMALL_NUMBERS[(int) d - NUM_MIN]; } return new Double(d); }
     // |
     public static class Token { int type; Object value; int offset; Token(int type, Object value) { this.type = type; this.value = value; this.offset = -1; } Token(int type, Object value, int offset) { this.type = type; this.value = value; this.offset = offset; } public String toString() { return "Token(type=" + type + ", value=" + value + ")"; } }
-    private static class ManagedInputStream extends InputStream {
-        private InputStream input;
-        private Connection connection;
-        ManagedInputStream(InputStream input, Connection connection) { this.input = input; this.connection = connection; }
-        public int read() throws IOException { return input == null ? -1 : input.read(); }
-        public int read(byte[] data, int offset, int length) throws IOException { return input == null ? -1 : input.read(data, offset, length); }
-        public int available() throws IOException { return input == null ? 0 : input.available(); }
-        public void close() throws IOException {
-            IOException failure = null;
-            if (input != null) { try { input.close(); } catch (IOException e) { failure = e; } input = null; }
-            if (connection != null) { try { connection.close(); } catch (IOException e) { if (failure == null) { failure = e; } } connection = null; }
-            if (failure != null) { throw failure; }
-        }
-    }
     // |
     public static class Frame { public String name; public String source; public int line; Frame(String n, String s, int l) { name = n; source = s; line = l; } }
     // | (Chained scope: avoids copying closure/globals into a fresh table per call)
@@ -3060,9 +3046,9 @@ public class Lua {
                 is = conn.openInputStream();
                 if (toget) {
                     int responseCode = conn.getResponseCode();
-                    ManagedInputStream stream = new ManagedInputStream(is, conn);
-                    registerResource(url, stream);
-                    Vector result = new Vector(); result.addElement(stream); result.addElement(luaNumber(responseCode));
+                    Vector resource = new Vector(); resource.addElement(is); resource.addElement(conn);
+                    registerResource(url, resource);
+                    Vector result = new Vector(); result.addElement(is); result.addElement(luaNumber(responseCode));
                     is = null; conn = null;
                     return result;
                 }
