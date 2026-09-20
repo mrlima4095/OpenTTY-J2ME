@@ -1823,12 +1823,7 @@ public class Lua {
                             else if (arg instanceof Player) { Player player = (Player) arg; player.stop(); player.deallocate(); player.close(); }
                             else { return gotbad(i + 1, "close", "stream expected, got " + type(arg)); }
 
-                            Object netKey = null;
-                            for (Enumeration keys = proc.net.keys(); keys.hasMoreElements();) {
-                                Object key = keys.nextElement(), value = proc.net.get(key);
-                                if (value == arg || (value instanceof Vector && ((Vector) value).contains(arg))) { netKey = key; break; }
-                            }
-                            if (netKey != null) { proc.net.remove(netKey); }
+                            proc.net.remove(arg); break;
                         }
                     }
                     break;
