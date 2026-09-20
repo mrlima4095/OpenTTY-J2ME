@@ -1,0 +1,258 @@
+ROADMAP DE OTIMIZACAO DE MEMORIA DO Lua.java
+=============================================
+
+Contexto
+--------
+
+O commit af5099dd tentou aplicar todas as otimizacoes abaixo de uma vez e foi
+revertido pelo commit ef411d44 depois de causar NoClassDefFoundError.
+
+A causa mais provavel e a classe interna nova Lua$ManagedInputStream. O build
+J2ME precisa compilar, preverificar e incluir cada classe interna no JAR. Se o
+Lua$ManagedInputStream.class nao entrar no pacote final, o aparelho gera
+NoClassDefFoundError quando Lua e carregado ou quando o HTTP streaming e usado.
+
+Regra para aplicar este roadmap
+-------------------------------
+
+1. Aplicar apenas uma etapa por commit.
+2. Gerar o JAR/JAD pelo SDK J2ME usado no aparelho.
+3. Conferir os arquivos Lua*.class dentro do JAR antes de instalar.
+4. Instalar e testar boot, xterm, comandos Lua e encerramento de processos.
+5. Testar a funcao alterada pela etapa.
+6. Medir memoria antes e depois.
+7. So continuar se o aparelho nao apresentar NoClassDefFoundError ou regressao.
+
+Etapa 1 - Corrigir io.close
+---------------------------
+
+Alteracao tentada:
+- Remover o break que interrompe o loop depois do primeiro argumento.
+- Fazer io.close(a, b, c) fechar todos os recursos recebidos.
+- Remover do registro proc.net o recurso que foi fechado.
+
+Como aplicar com baixo risco:
+- Alterar somente o case CLOSE.
+- Nao criar helpers ou classes novas nesta etapa.
+- Manter os testes instanceof ja existentes.
+
+Teste:
+- Abrir socket e executar io.close(conn, input, output).
+- Confirmar que todos foram fechados e que comandos normais continuam abrindo.
+
+Etapa 2 - Fechar streams internos de io.copy
+--------------------------------------------
+
+Alteracao tentada:
+- Usar try/finally nas duas ramificacoes em que io.copy abre um InputStream a
+  partir de um nome de arquivo.
+- Fechar tambem o ByteArrayOutputStream temporario.
+
+Como aplicar com baixo risco:
+- Fechar somente streams abertos dentro de io.copy.
+- Nao fechar streams entregues diretamente pelo script Lua.
+
+Teste:
+- Copiar arquivo para stream, StringBuffer e outro arquivo.
+- Repetir a copia muitas vezes e verificar se nao ocorre falta de handles.
+
+Etapa 3 - Fechar o InputStream de popen
+---------------------------------------
+
+Alteracao tentada:
+- Fechar em finally o stream usado para carregar o executavel/script.
+
+Como aplicar com baixo risco:
+- Adicionar um boolean indicando se popen abriu o stream internamente.
+- Fechar apenas quando o proprio popen for dono do stream.
+- Preservar o sexto argumento de io.popen, pois ele pertence ao chamador.
+
+Teste:
+- Executar comandos de /bin repetidamente.
+- Passar um InputStream manual como sexto argumento e confirmar que ele continua
+  aberto depois do popen.
+
+Etapa 4 - Fechar FileConnection e verificacoes temporarias
+----------------------------------------------------------
+
+Alteracao tentada:
+- Fechar FileConnection de dirs(/mnt/...) em finally.
+- Fechar o InputStream temporario usado por chdir para detectar arquivo.
+- Fechar conexoes parcialmente abertas quando socket.connect ou socket.accept
+  falhar durante a abertura dos streams.
+
+Como aplicar com baixo risco:
+- Fazer uma funcao por commit: dirs, depois chdir, depois sockets.
+- Nao alterar a estrutura de proc.net ainda.
+
+Teste:
+- Listar diretorios /mnt varias vezes.
+- Usar chdir contra arquivo e diretorio.
+- Simular falha de conexao e abrir outra conexao em seguida.
+
+Etapa 5 - Limpeza do prompt su
+------------------------------
+
+Alteracao tentada:
+- Remover o CommandListener do formulario.
+- Executar deleteAll no formulario.
+- Anular suPromptForm, suPromptPrevious, suPromptBack e suPromptRun.
+
+Como aplicar com baixo risco:
+- Alterar apenas commandAction do prompt su.
+- Guardar a tela anterior em variavel local antes de anular os campos.
+
+Teste:
+- Abrir e fechar su por Back.
+- Abrir su com senha errada e correta.
+- Confirmar retorno para a tela anterior.
+
+Etapa 6 - Evitar sobrescrita no registro proc.net
+-------------------------------------------------
+
+Alteracao tentada:
+- Criar chaves com sufixo #2, #3 etc. quando varias conexoes usam o mesmo
+  endpoint.
+- Evitar que um novo socket esconda um recurso antigo e impeca sua limpeza.
+
+Como aplicar com baixo risco:
+- Criar apenas um helper registerResource, sem mudar o formato dos valores.
+- Manter a primeira chave com o nome antigo para compatibilidade com netsh.
+
+Teste:
+- Abrir duas conexoes para o mesmo endereco.
+- Aceitar dois clientes no mesmo servidor.
+- Confirmar que netsh mostra todos e que cada um pode ser fechado.
+
+Etapa 7 - Cleanup de recursos no fim do processo
+------------------------------------------------
+
+Alteracao tentada:
+- Percorrer proc.net ao encerrar o processo.
+- Fechar Vector de socket, InputStream, OutputStream, Connection e Player.
+- Limpar proc.net e remover servidores de midlet.servers.
+- Chamar a limpeza em retorno normal, erro, sinal e callback de UI.
+
+Como aplicar com baixo risco:
+- Implementar primeiro apenas fechamento de proc.net no retorno normal.
+- Depois testar e adicionar os caminhos de erro.
+- Adicionar sinal e callbacks em commits separados.
+- Nao limpar globals, father ou closures; eles podem ser usados por servicos.
+- Fazer a rotina idempotente para suportar chamadas repetidas.
+
+Teste:
+- Processo abre socket e termina normalmente.
+- Processo abre socket e chama os.exit.
+- Processo recebe sinal.
+- Callback de tela gera erro.
+- Em todos os casos, confirmar que o socket/servidor pode ser aberto novamente.
+
+Etapa 8 - Cleanup de telas e callbacks
+--------------------------------------
+
+Alteracao tentada:
+- Remover CommandListener e ItemStateListener da tela do processo encerrado.
+- Remover ItemCommandListener dos itens do Form.
+- Esvaziar Form/List e retirar a tela de midlet.graphics.
+- Anular proc.screen, proc.handler e proc.sighandler.
+
+Como aplicar com baixo risco:
+- Executar somente quando o processo realmente for encerrado.
+- Nao limpar tela de processo com kill=false ou servico ativo.
+- Trocar para outra tela antes de apagar a tela atual, quando necessario.
+
+Teste:
+- Abrir e fechar xterm.
+- Encerrar app grafico pelo task manager.
+- Gerar erro em callback e confirmar que outra tela continua funcional.
+
+Etapa 9 - Reduzir objetos mantidos em exited
+--------------------------------------------
+
+Alteracao tentada:
+- Registrar processo Lua em exited somente quando o pai for ELF e puder chamar
+  waitpid.
+- Antes de guardar o registro, anular lua, scope, stdout e stderr.
+- Manter somente PID, parentPid, exitStatus e metadados necessarios.
+- Registrar tambem termino normal, sinal e erro para waitpid.
+
+Como aplicar com baixo risco:
+- Primeiro corrigir termino normal de filho ELF e testar waitpid.
+- Tornar recordExit idempotente para nao recriar zombie ja coletado.
+- Depois remover referencias pesadas uma por uma.
+
+Teste:
+- ELF cria filho Lua que termina por EOF.
+- ELF cria filho Lua que chama os.exit.
+- ELF chama waitpid e recebe PID/status apenas uma vez.
+- Processo Lua comum termina sem aumentar indefinidamente midlet.exited.
+
+Etapa 10 - Audio
+----------------
+
+Alteracao tentada:
+- Rastrear Player junto com o InputStream usado por Manager.createPlayer.
+- Fechar Player primeiro e o stream depois.
+- Fechar ambos se createPlayer ou prefetch falhar.
+
+Como aplicar com baixo risco:
+- Usar um Vector existente como grupo; nao criar classe interna nova.
+- Guardar recursos de audio fora de proc.net para nao aparecerem no netsh.
+
+Teste:
+- Carregar, tocar, pausar e fechar audio.
+- Encerrar processo durante reproducao.
+- Repetir carregamento ate confirmar que nao acumula handles.
+
+Etapa 11 - HTTP sem classe interna nova
+---------------------------------------
+
+Alteracao tentada:
+- Fechar HttpConnection, InputStream e ByteArrayOutputStream em finally.
+- No modo rget/rpost, retornar um ManagedInputStream que fecha tambem a conexao.
+
+Risco identificado:
+- ManagedInputStream criou Lua$ManagedInputStream.class e provavelmente causou o
+  NoClassDefFoundError por nao entrar corretamente no JAR/preverification.
+
+Como aplicar com baixo risco:
+- Primeiro corrigir somente get/post com finally, sem classe nova.
+- Para rget/rpost, registrar InputStream e HttpConnection juntos em um Vector ja
+  suportado pelo runtime.
+- Fazer io.close(stream) localizar e fechar o grupo inteiro.
+- Se uma classe wrapper for realmente necessaria, confirmar explicitamente que
+  Lua$ManagedInputStream.class foi compilado, preverificado e incluido no JAR.
+
+Teste:
+- get/post com sucesso e com excecao.
+- rget/rpost seguido de io.close.
+- Encerrar processo sem fechar a resposta manualmente.
+- Inspecionar o JAR e testar no aparelho antes de seguir para outra etapa.
+
+Itens analisados mas que nao devem ser alterados sem projeto maior
+-----------------------------------------------------------------
+
+- Closures guardam scope completo para manter upvalues mutaveis.
+- Cada LuaFunction guarda codigo e offsets para traceback.
+- package.loaded/requireCache deve manter modulos carregados.
+- cacheLua mantem codigo e tokens intencionalmente; reduzir seu limite muda o
+  equilibrio entre memoria e velocidade e deve ser medido separadamente.
+- java.run usa kill=false e precisa de contagem de workers antes de ser mudado.
+- globals e ciclos entre Lua/LuaFunction podem ser coletados pelo GC quando nao
+  existe uma raiz externa; nao devem ser limpos enquanto callbacks estiverem
+  ativos.
+
+Ordem recomendada
+-----------------
+
+1. io.close.
+2. io.copy.
+3. popen.
+4. dirs/chdir/conexoes parciais.
+5. prompt su.
+6. registro proc.net.
+7. cleanup de recursos do processo.
+8. cleanup de telas.
+9. exited/waitpid.
+10. audio.
+11. HTTP streaming por ultimo.
