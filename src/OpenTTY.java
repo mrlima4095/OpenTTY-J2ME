@@ -41,10 +41,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // |
     // MIDlet Loader
     // | (Triggers)
-    public void startApp() {
-        if (sys.containsKey("1")) { }
-        else { loadBootMenu(); }
-    }
+    public void startApp() { if (sys.containsKey("1")) { } else { loadBootMenu(); } }
     public void pauseApp() { }
     public void destroyApp(boolean unconditional) { notifyDestroyed(); }
     // |
@@ -714,9 +711,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             at = dataEnd + 8;
         }
     }
-    private void prepareVfsStore(RecordStore rs) throws Exception {
-        if (rs.getNumRecords() == 0) { byte[] marker = VFS_PROTECTED_RECORD.getBytes(); rs.addRecord(marker, 0, marker.length); }
-    }
+    private void prepareVfsStore(RecordStore rs) throws Exception { if (rs.getNumRecords() == 0) { byte[] marker = VFS_PROTECTED_RECORD.getBytes(); rs.addRecord(marker, 0, marker.length); } }
     private boolean addVfsFile(String path, byte[] data) {
         int store = vfsWriteStore;
         while (true) {
