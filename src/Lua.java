@@ -2699,7 +2699,7 @@ public class Lua {
                 case NAME: return midlet.getName(); 
                 case DELETE: if (args.isEmpty() || !(args.elementAt(0) instanceof Hashtable)) { return gotbad(1, "delete", "table expected, got " + (args.isEmpty() ? "no value" : type(args.elementAt(0)))); } else if (args.size() < 2 || args.elementAt(1) == null) { return gotbad(2, "delete", "value expected, got " + (args.size() < 2 ? "no value" : "nil")); } else { ((Hashtable) args.elementAt(0)).remove(args.elementAt(1)); } break;
                 case RUN: if (args.isEmpty()) { break; } else if (args.elementAt(0) instanceof LuaFunction) { kill = false; new Thread((Runnable) new LuaFunction((LuaFunction) args.elementAt(0)), args.size() > 1 ? toLuaString(args.elementAt(1)) : "Background").start(); } else { return gotbad(1, "run", "function expected, got" + type(args.elementAt(0))); } break;
-                case PREQ: if (args.isEmpty()) { break; } else { midlet.notifyPaused(); return new Boolean(midlet.platformRequest(toLuaString(args.elementAt(0)))); }
+                case PREQ: if (args.isEmpty()) { break; } else { return new Boolean(midlet.platformRequest(toLuaString(args.elementAt(0)))); }
                 case THREAD: return midlet.getThreadName(Thread.currentThread());
                 case UPTIME: return new Double(System.currentTimeMillis() - midlet.uptime);
                 case SLEEP:
