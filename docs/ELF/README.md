@@ -406,8 +406,11 @@ Behavior notes:
 - `access` (`33`) checks the path against the VFS/RMS and `/mnt`, returning
   `0` or `-ENOENT`. `readlink` (`85`) always reports `-EINVAL` (no symlinks)
   for existing paths and `-ENOENT` otherwise.
-- `gethostname` (`172`) returns the per-process host name (default `opentty`,
-  settable with `sethostname` `170`, name length capped at 64 bytes).
+- `gethostname` (`172`) returns the per-process host name, seeded from
+  `/etc/hostname` (fallback `opentty`) on first use; `sethostname` (`170`,
+  name length capped at 64 bytes) updates it **and** persists it to
+  `/etc/hostname`, so both the Lua shell and ELF guests share one host name
+  like a real system.
 
 Examples: `hello.s`, `cat.s`, `netsock.s`,
 

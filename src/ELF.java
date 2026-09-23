@@ -33,7 +33,7 @@ public class ELF implements CommandListener {
 
     // Process attributes (for umask, hostname and alarm syscalls)
     private int processUmask = 0022;
-    private String hostName = "opentty";
+    private String hostName = null; // null = seed from /etc/hostname on first use (like a real system)
     private int alarmLeft = 0;
 
     private Hashtable jmpBufs;
@@ -3124,14 +3124,33 @@ public class ELF implements CommandListener {
         int nameAddr = registers[REG_A0], len = registers[REG_A1];
         if (nameAddr < 0 || nameAddr >= memory.length || len > 64) { registers[REG_A0] = -1; return; }
         String name = readGuestCString(nameAddr, len);
-        if (name != null && name.length() > 0) { hostName = name; }
+        if (name != null && name.length() > 0) {
+            hostName = name;
+            // Persist like a real system would: /etc/hostname is the source of truth.
+            try { midlet.write(midlet.joinpath("/etc/hostname", scope), name, id, scope); } catch (Exception e) { }
+        }
         registers[REG_A0] = 0;
     }
     private void handleGethostname() {
         int bufAddr = registers[REG_A0], len = registers[REG_A1];
         if (len <= 0 || bufAddr < 0 || bufAddr >= memory.length) { registers[REG_A0] = -1; return; }
+        if (hostName == null) { hostName = readHostName(); }
         writeString(memory, bufAddr, hostName, len);
         registers[REG_A0] = 0;
+    }
+    private String readHostName() {
+        try {
+            InputStream is = midlet.getInputStream(midlet.joinpath("/etc/hostname", scope), scope);
+            if (is != null) {
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                byte[] buf = new byte[128]; int n;
+                while ((n = is.read(buf)) != -1) { out.write(buf, 0, n); }
+                is.close();
+                String s = new String(out.toByteArray(), "UTF-8").trim();
+                if (s.length() > 0 && s.length() <= 64) { return s; }
+            }
+        } catch (Exception e) { }
+        return "opentty";
     }
     private void handleUnlink() {
         int pathAddr = registers[REG_A0];
