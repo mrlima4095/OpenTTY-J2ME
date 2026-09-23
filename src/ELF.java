@@ -31,6 +31,11 @@ public class ELF implements CommandListener {
     private Hashtable fileDescriptors, socketDescriptors;
     private int nextFd;
 
+    // Process attributes (for umask, hostname and alarm syscalls)
+    private int processUmask = 0022;
+    private String hostName = "opentty";
+    private int alarmLeft = 0;
+
     private Hashtable jmpBufs;
     private int nextJmpBufId;
 
@@ -69,7 +74,7 @@ public class ELF implements CommandListener {
         RV_OP_MISCMEM = 0x0F, RV_OP_SYSTEM = 0x73;
     
     // Kernel syscalls (emulator EABI numbers)
-    private static final int SYS_EXIT = 1, SYS_FORK = 2, SYS_READ = 3, SYS_WRITE = 4, SYS_OPEN = 5, SYS_CLOSE = 6, SYS_CREAT = 8, SYS_UNLINK = 10, SYS_EXECVE = 11, SYS_CHDIR = 12, SYS_TIME = 13, SYS_LSEEK = 19, SYS_GETPID = 20, SYS_KILL = 37, SYS_MKDIR = 39, SYS_RMDIR = 40, SYS_DUP = 41, SYS_PIPE = 42, SYS_IOCTL = 54, SYS_FCNTL = 55, SYS_SIGNAL = 48, SYS_DUP2 = 63, SYS_GETPPID = 64, SYS_SIGACTION = 67, SYS_BRK = 45, SYS_TRUNCATE = 92, SYS_FTRUNCATE = 93, SYS_SETJMP = 96, SYS_LONGJMP = 97, SYS_FSYNC = 118, SYS_SIGRETURN = 119, SYS_UNAME = 122, SYS_MPROTECT = 125, SYS_SIGPROCMASK = 126, SYS_STAT = 106, SYS_FSTAT = 108, SYS_GETTIMEOFDAY = 78, SYS_GETPRIORITY = 140, SYS_SETPRIORITY = 141, SYS_SELECT = 142, SYS_SCHED_YIELD = 158, SYS_NANOSLEEP = 162, SYS_MREMAP = 163, SYS_POLL = 168, SYS_MUNMAP = 91, SYS_GETRLIMIT = 191, SYS_MMAP = 192, SYS_GETCWD = 183, SYS_GETUID32 = 199, SYS_GETEUID32 = 201, SYS_GETDENTS = 217, SYS_GETTID = 224, SYS_FUTEX = 240, SYS_SOCKET = 281, SYS_BIND = 282, SYS_CONNECT = 283, SYS_LISTEN = 284, SYS_ACCEPT = 285, SYS_GETSOCKNAME = 286, SYS_GETPEERNAME = 287, SYS_SEND = 289, SYS_SENDTO = 290, SYS_RECV = 291, SYS_RECVFROM = 292, SYS_SHUTDOWN = 293, SYS_SETSOCKOPT = 294, SYS_GETSOCKOPT = 295, SYS_SYSCALL = 0;
+    private static final int SYS_EXIT = 1, SYS_FORK = 2, SYS_READ = 3, SYS_WRITE = 4, SYS_OPEN = 5, SYS_CLOSE = 6, SYS_CREAT = 8, SYS_UNLINK = 10, SYS_EXECVE = 11, SYS_CHDIR = 12, SYS_TIME = 13, SYS_LSEEK = 19, SYS_GETPID = 20, SYS_ALARM = 27, SYS_ACCESS = 33, SYS_KILL = 37, SYS_MKDIR = 39, SYS_RMDIR = 40, SYS_DUP = 41, SYS_PIPE = 42, SYS_IOCTL = 54, SYS_FCNTL = 55, SYS_UMASK = 60, SYS_DUP2 = 63, SYS_GETPPID = 64, SYS_SETSID = 66, SYS_SIGACTION = 67, SYS_SIGNAL = 48, SYS_GETRUSAGE = 77, SYS_READLINK = 85, SYS_BRK = 45, SYS_TRUNCATE = 92, SYS_FTRUNCATE = 93, SYS_SETJMP = 96, SYS_LONGJMP = 97, SYS_FSYNC = 118, SYS_SIGRETURN = 119, SYS_UNAME = 122, SYS_MPROTECT = 125, SYS_SIGPROCMASK = 126, SYS_STAT = 106, SYS_FSTAT = 108, SYS_GETTIMEOFDAY = 78, SYS_GETPRIORITY = 140, SYS_SETPRIORITY = 141, SYS_SELECT = 142, SYS_SCHED_YIELD = 158, SYS_NANOSLEEP = 162, SYS_MREMAP = 163, SYS_POLL = 168, SYS_SETHOSTNAME = 170, SYS_GETHOSTNAME = 172, SYS_MUNMAP = 91, SYS_GETRLIMIT = 191, SYS_MMAP = 192, SYS_GETCWD = 183, SYS_GETUID32 = 199, SYS_GETEUID32 = 201, SYS_GETGID32 = 200, SYS_GETEGID32 = 202, SYS_GETDENTS = 217, SYS_GETTID = 224, SYS_FUTEX = 240, SYS_SOCKET = 281, SYS_BIND = 282, SYS_CONNECT = 283, SYS_LISTEN = 284, SYS_ACCEPT = 285, SYS_GETSOCKNAME = 286, SYS_GETPEERNAME = 287, SYS_SEND = 289, SYS_SENDTO = 290, SYS_RECV = 291, SYS_RECVFROM = 292, SYS_SHUTDOWN = 293, SYS_SETSOCKOPT = 294, SYS_GETSOCKOPT = 295, SYS_SYSCALL = 0;
     
     // Socket constants
     private static final int SOCK_STREAM = 1, SOCK_DGRAM = 2, AF_INET = 2, IPPROTO_TCP = 6, IPPROTO_UDP = 17;
@@ -90,7 +95,7 @@ public class ELF implements CommandListener {
     private static final int TCGETS = 0x5401, TCSETS = 0x5402, TIOCGWINSZ = 0x5413, TIOCSWINSZ = 0x5414, FIONREAD = 0x541B;
 
     // Add constants for mkdir mode
-    private static final int S_IRWXU = 0700, S_IRUSR = 0400, S_IWUSR = 0200, S_IXUSR = 0100, S_IRWXG = 0070, S_IRGRP = 0040, S_IWGRP = 0020, S_IXGRP = 0010, S_IRWXO = 0007, S_IROTH = 0004, S_IWOTH = 0002, S_IXOTH = 0001, S_IFDIR = 0040000;
+    private static final int S_IRWXU = 0700, S_IRUSR = 0400, S_IWUSR = 0200, S_IXUSR = 0100, S_IRWXG = 0070, S_IRGRP = 0040, S_IWGRP = 0020, S_IXGRP = 0010, S_IRWXO = 0007, S_IROTH = 0004, S_IWOTH = 0002, S_IXOTH = 0001, S_IFDIR = 0040000, S_IFIFO = 0010000;
     
     // Add constant for SEEK
     private static final int SEEK_SET = 0, SEEK_CUR = 1, SEEK_END = 2;
@@ -2215,7 +2220,38 @@ public class ELF implements CommandListener {
                 handleNanosleep();
                 break;
             case SYS_PIPE:
-                registers[REG_A0] = -38; //handlePipe();
+                handlePipe();
+                break;
+            case SYS_ALARM:
+                handleAlarm();
+                break;
+            case SYS_ACCESS:
+                handleAccess();
+                break;
+            case SYS_UMASK:
+                registers[REG_A0] = processUmask;
+                processUmask = registers[REG_A1] & 0777;
+                break;
+            case SYS_SETSID:
+                handleSetsid();
+                break;
+            case SYS_GETRUSAGE:
+                handleGetrusage();
+                break;
+            case SYS_READLINK:
+                handleReadlink();
+                break;
+            case SYS_GETGID32:
+                registers[REG_A0] = 0;
+                break;
+            case SYS_GETEGID32:
+                registers[REG_A0] = 0;
+                break;
+            case SYS_SETHOSTNAME:
+                handleSethostname();
+                break;
+            case SYS_GETHOSTNAME:
+                handleGethostname();
                 break;
             case SYS_SELECT:
                 handleSelect();
@@ -2980,6 +3016,123 @@ public class ELF implements CommandListener {
             } catch (Exception e) { registers[REG_A0] = -1; }
         } else { registers[REG_A0] = -1; }
     }
+    // |
+    // | Pipe (SYS_PIPE) - in-process FIFO backed by the fd table
+    private static class PipeBuffer {
+        private byte[] buf = new byte[1024];
+        private int count = 0, read = 0;
+
+        private synchronized void write(byte[] src, int off, int n) {
+            if (n <= 0) return;
+            if (count + n > buf.length) {
+                int need = Math.max(buf.length * 2, count + n + 1024);
+                byte[] nb = new byte[need];
+                System.arraycopy(buf, 0, nb, 0, count);
+                buf = nb;
+            }
+            System.arraycopy(src, off, buf, count, n);
+            count += n;
+        }
+        private synchronized int read(byte[] dst, int off, int maxN) {
+            if (read >= count) return 0;
+            int n = 0;
+            while (read < count && n < maxN && off + n < dst.length) {
+                dst[off + n] = buf[read];
+                read++;
+                n++;
+            }
+            if (read == count) { read = 0; count = 0; }
+            return n;
+        }
+    }
+    private static class PipeReadEnd { PipeBuffer pipe; PipeReadEnd(PipeBuffer pipe) { this.pipe = pipe; } }
+    private static class PipeWriteEnd { PipeBuffer pipe; PipeWriteEnd(PipeBuffer pipe) { this.pipe = pipe; } }
+
+    private void handlePipe() {
+        int pipefdPtr = registers[REG_A0];
+        if (pipefdPtr < 0 || pipefdPtr + 8 > memory.length) { registers[REG_A0] = -1; return; } // EFAULT
+
+        PipeBuffer pbuf = new PipeBuffer();
+        int readFd = nextFd++, writeFd = nextFd++;
+        fileDescriptors.put(new Integer(readFd), new PipeReadEnd(pbuf));
+        fileDescriptors.put(new Integer(writeFd), new PipeWriteEnd(pbuf));
+        writeIntLE(memory, pipefdPtr, readFd);
+        writeIntLE(memory, pipefdPtr + 4, writeFd);
+        registers[REG_A0] = 0;
+    }
+    // |
+    // | Additional syscalls
+    private String readGuestCString(int addr, int maxLen) {
+        if (addr < 0 || addr >= memory.length) return null;
+        StringBuffer sb = new StringBuffer();
+        for (int i = 0; i < maxLen && addr + i < memory.length; i++) {
+            if (memory[addr + i] == 0) break;
+            sb.append((char)(memory[addr + i] & 0xFF));
+        }
+        return sb.toString();
+    }
+    private boolean guestPathExists(String path) {
+        if (path == null || path.length() == 0) return false;
+        if (path.equals("/") || path.equals("/home/") || path.equals("/tmp/") || path.equals("/bin/") || path.equals("/etc/") || path.equals("/lib/") || path.equals("/boot/")) { return true; }
+        if (midlet.fs.containsKey(path) || midlet.fs.containsKey(path + "/")) { return true; }
+        if (path.startsWith("/mnt/")) {
+            try {
+                FileConnection conn = (FileConnection) Connector.open("file:///" + path.substring(5), Connector.READ);
+                boolean ok = conn.exists();
+                conn.close();
+                return ok;
+            } catch (Exception e) { return false; }
+        }
+        try {
+            InputStream is = midlet.getInputStream(path, scope);
+            if (is != null) { is.close(); return true; }
+        } catch (Exception e) { }
+        return false;
+    }
+    private void handleAccess() {
+        int pathAddr = registers[REG_A0], mode = registers[REG_A1];
+        if (pathAddr < 0 || pathAddr >= memory.length) { registers[REG_A0] = -1; return; }
+        String path = readGuestCString(pathAddr, 256);
+        if (guestPathExists(midlet.joinpath(path, scope))) { registers[REG_A0] = 0; }
+        else { registers[REG_A0] = -2; } // ENOENT
+    }
+    private void handleAlarm() {
+        int seconds = registers[REG_A0];
+        int old = alarmLeft;
+        alarmLeft = seconds;
+        registers[REG_A0] = old;
+    }
+    private void handleSetsid() {
+        int p = 1;
+        try { p = Integer.parseInt(pid); } catch (NumberFormatException e) { }
+        registers[REG_A0] = p;
+    }
+    private void handleGetrusage() {
+        int usage = registers[REG_A1];
+        if (usage < 0 || usage + 144 > memory.length) { registers[REG_A0] = -1; return; } // EFAULT
+        for (int i = 0; i < 144; i++) { memory[usage + i] = 0; }
+        registers[REG_A0] = 0;
+    }
+    private void handleReadlink() {
+        int pathAddr = registers[REG_A0];
+        if (pathAddr < 0 || pathAddr >= memory.length) { registers[REG_A0] = -1; return; }
+        String path = readGuestCString(pathAddr, 256);
+        if (guestPathExists(midlet.joinpath(path, scope))) { registers[REG_A0] = -22; } // EINVAL: not a symlink
+        else { registers[REG_A0] = -2; } // ENOENT
+    }
+    private void handleSethostname() {
+        int nameAddr = registers[REG_A0], len = registers[REG_A1];
+        if (nameAddr < 0 || nameAddr >= memory.length || len > 64) { registers[REG_A0] = -1; return; }
+        String name = readGuestCString(nameAddr, len);
+        if (name != null && name.length() > 0) { hostName = name; }
+        registers[REG_A0] = 0;
+    }
+    private void handleGethostname() {
+        int bufAddr = registers[REG_A0], len = registers[REG_A1];
+        if (len <= 0 || bufAddr < 0 || bufAddr >= memory.length) { registers[REG_A0] = -1; return; }
+        writeString(memory, bufAddr, hostName, len);
+        registers[REG_A0] = 0;
+    }
     private void handleUnlink() {
         int pathAddr = registers[REG_A0];
         if (pathAddr < 0 || pathAddr >= memory.length) { registers[REG_A0] = -1; return; }
@@ -3029,6 +3182,8 @@ public class ELF implements CommandListener {
                     }
                     registers[REG_A0] = bytesRead;
                 } catch (Exception e) { registers[REG_A0] = -1; }
+            } else if (stream instanceof PipeReadEnd) {
+                registers[REG_A0] = ((PipeReadEnd) stream).pipe.read(memory, buf, count);
             } else { registers[REG_A0] = -1; }
         } else { registers[REG_A0] = -1; }
     }
@@ -3060,6 +3215,9 @@ public class ELF implements CommandListener {
             } else if (stream instanceof StringBuffer) {
                 StringBuffer sb = (StringBuffer) stream;
                 for (int i = 0; i < count && buf + i < memory.length; i++) { sb.append((char)(memory[buf + i] & 0xFF)); }
+                registers[REG_A0] = count;
+            } else if (stream instanceof PipeWriteEnd) {
+                ((PipeWriteEnd) stream).pipe.write(memory, buf, count);
                 registers[REG_A0] = count;
             } else { registers[REG_A0] = -1; }
         } else { registers[REG_A0] = -1; }
@@ -3143,6 +3301,9 @@ public class ELF implements CommandListener {
                         writeIntLE(memory, statbufAddr + 44, available);
                     }
                 } catch (Exception e) {}
+            } else if (stream instanceof PipeReadEnd || stream instanceof PipeWriteEnd) {
+                // Pipe (FIFO) - fileDescriptors holds both ends of the same buffer
+                writeIntLE(memory, statbufAddr + 16, S_IFIFO | 0600);
             } else {
                 // Unknown device
                 writeIntLE(memory, statbufAddr + 16, 020000);

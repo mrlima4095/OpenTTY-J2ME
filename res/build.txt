@@ -207,3 +207,4 @@
 [2026-1.18.2-03x37]	ELF emulator: fix LDR/STR/byte com offset por registro (bit 25); apps C de teste: libutil/dcalc/flags/sum/base64/collatz
 [2026-1.18.2-03x38]	Build #338 - ELF emulator: open() accmode (O_RDONLY==0), heap region p/ pedidos >= 64KB, limite 200M instr; app OTP1 (otp, LZSS+CRC32)
 [2026-1.18.2-04x39]	Build #439 - ELF guest RAM padrao de 512KB, configuravel pelo kernel Lua
+[2026-1.18.2-04x40]	Build #440 - ELF emulator: syscalls pipe/alarm/access/umask/setsid/getrusage/readlink/sethostname/gethostname/getgid32

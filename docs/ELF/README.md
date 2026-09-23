@@ -369,10 +369,47 @@ Prefer `opentty.h` from C. RV32IM assembly passes arguments in `a0` through
     ecall
 ```
 
-Common raw syscall numbers are `1` (`exit`), `3` (`read`), `4` (`write`), `5`
-(`open`), `6` (`close`), `20` (`getpid`), and `45` (`brk`). Other filesystem,
-process, timing, and socket syscalls are implementation details; inspect
-`src/ELF.java` before using them. Examples: `hello.s`, `cat.s`, `netsock.s`,
+The `ecall` derives from ARM EABI. Supported kernel syscalls in `src/ELF.java`
+(`handleSyscall`) are:
+
+- `1 exit`, `2 fork` (always fails, returns `-1`), `3 read`, `4 write`,
+  `5 open`, `6 close`, `8 creat`, `10 unlink`, `11 execve`, `12 chdir`,
+  `13 time`, `19 lseek`, `20 getpid`, `27 alarm`, `33 access`, `37 kill`,
+  `39 mkdir`, `40 rmdir`, `41 dup`, `42 pipe`, `45 brk`, `48 signal`,
+  `54 ioctl`, `55 fcntl`, `60 umask`, `63 dup2`, `64 getppid`,
+  `66 setsid`, `67 sigaction`, `77 getrusage`, `78 gettimeofday`,
+  `85 readlink`, `91 munmap`, `92 truncate`, `93 ftruncate`,
+  `96 setjmp`, `97 longjmp`, `106 stat`, `108 fstat`, `118 fsync`,
+  `119 sigreturn`, `122 uname`, `125 mprotect`, `126 sigprocmask`,
+  `140 getpriority`, `141 setpriority`, `142 select`, `158 sched_yield`,
+  `162 nanosleep`, `163 mremap`, `168 poll`, `170 sethostname`,
+  `172 gethostname`, `183 getcwd`, `191 getrlimit`, `192 mmap`,
+  `199 getuid32`, `200 getgid32`, `201 geteuid32`, `202 getegid32`,
+  `217 getdents`, `224 gettid`, `240 futex`, and the socket family
+  `281`-`295` (`socket`, `bind`, `connect`, `listen`, `accept`,
+  `getsockname`, `getpeername`, `send`, `sendto`, `recv`, `recvfrom`,
+  `shutdown`, `setsockopt`, `getsockopt`).
+
+Behavior notes:
+- `pipe` (`42`) returns two real file descriptors into the guest fd table
+  backed by an in-process FIFO: `write` appends, `read` drains, both block or
+  return `0` when the guest pipe has no data, and `fstat` reports `S_IFIFO`.
+  Pipe fds are closed by `close` like any other fd.
+- `alarm` (`27`) stores the requested seconds per-process and returns the
+  previous value (time is not advanced; this is a placeholder for
+  `signal(SIGALRM)`).
+- `umask` (`60`) returns the old per-process umask and sets the new one
+  (`mode & 0777`). `setpriority`/`getpriority` store the process priority.
+- `setsid` (`66`) returns the process PID (the process is its own session
+  leader), `getgid32`/`getegid32` return `0` (root group).
+- `getrusage` (`77`) zero-fills the 144-byte `struct rusage` and returns `0`.
+- `access` (`33`) checks the path against the VFS/RMS and `/mnt`, returning
+  `0` or `-ENOENT`. `readlink` (`85`) always reports `-EINVAL` (no symlinks)
+  for existing paths and `-ENOENT` otherwise.
+- `gethostname` (`172`) returns the per-process host name (default `opentty`,
+  settable with `sethostname` `170`, name length capped at 64 bytes).
+
+Examples: `hello.s`, `cat.s`, `netsock.s`,
 
 `-stdlib` uses private `ecall` IDs starting at `1000`. Never hard-code those
 from an app; use the headers and runtime wrappers.
