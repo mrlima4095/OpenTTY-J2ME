@@ -2,6 +2,13 @@
 
 OpenTTY: a J2ME MIDlet (CLDC-1.0/MIDP-2.0) that is a Lua-scripted shell + RISC-V ELF emulator. It also contains a Docker/Coolify deployment of the web services (PHP + Python proxies).
 
+## Language
+
+All code, comments, commit messages, docs, and on-device user-facing strings in
+this repository must be written in **English** (US), so the project stays
+accessible to everyone. Do not introduce Portuguese (or any other language)
+text; translate existing non-English content when you touch it.
+
 ## Source layout — what edits go where
 
 - `src/` — canonical MIDlet source: `OpenTTY.java`, `Lua.java`, `ELF.java`, `LuaCanvas.java`, plus `src/bin` (built-in `/bin` commands, Lua scripts with `#!/bin/lua` shebang), `src/etc`, `src/boot` (kernel/ramdisk seed files), `src/lib/libcore.so` (a Lua module despite the `.so` name).

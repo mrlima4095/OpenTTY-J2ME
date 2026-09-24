@@ -1,26 +1,26 @@
 #!/bin/lua
 
--- memelf: consulta ou define o limite de RAM (em KB) do emulador ELF.
--- Uso: memelf          -> mostra o valor atual
---      memelf <kb>     -> define a RAM max (vale para ELFs lancados depois)
+-- memelf: query or set the max RAM (in KB) of the ELF emulator.
+-- Usage: memelf          -> show the current value
+--        memelf <kb>     -> set the max RAM (applies to ELFs started later)
 
 os.setproc("name", "memelf")
 
 local function show(kb)
-    print("memelf: RAM max do ELF = " .. kb .. " KB")
+    print("memelf: max ELF RAM = " .. kb .. " KB")
 end
 
 if arg[1] then
     local kb = tonumber(arg[1])
     if not kb then
-        print("memelf: valor invalido (numero em KB esperado): " .. arg[1])
+        print("memelf: invalid value (a number in KB is expected): " .. arg[1])
         os.exit(2)
     end
     local res = os.request(1, "memory", kb)
     if type(res) == "number" and res >= 512 then
         show(res)
     else
-        print("memelf: falhou ao definir memoria (" .. tostring(res) .. ")")
+        print("memelf: failed to set memory (" .. tostring(res) .. ")")
         os.exit(1)
     end
 else

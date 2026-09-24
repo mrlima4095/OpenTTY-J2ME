@@ -85,6 +85,10 @@ on the source:
 ## Code Style & Gotchas
 
 - **Do not comment** J2ME/Lua runtime code unless the comment is essential.
+- **Write everything in English (US)**: code identifiers, comments, commit
+  messages, docs, and on-device user-facing strings. The project must stay
+  accessible to everyone; do not add Portuguese (or other) text, and translate
+  existing non-English content when you touch it.
 - Follow the existing naming and formatting style of the file you edit.
 - **Lua `string` library**: `string.format`, `string.rep`, `string.gsub`, and
   `string.gmatch` do **not** exist. Don't introduce them. Use native

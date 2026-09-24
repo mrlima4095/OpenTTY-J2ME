@@ -1,11 +1,11 @@
-/* cal.c - Calendario gregoriano no stdout.
+/* cal.c - Gregorian calendar on stdout.
  *
- * cal             -> mes atual (UTC, via syscall time)
- * cal [MES ANO]   -> calendario de um mes
- * cal ANO         -> os 12 meses do ano
- * O dia da semana vem do algoritmo de Sakamoto; dias por mes com aniversario
- * bissexto. A data atual usa a conversao civil de Howard Hinnant (32-bit).
- * Compilar:
+ * cal             -> current month (UTC, via the time syscall)
+ * cal [MONTH YEAR]-> calendar for one month
+ * cal YEAR        -> all 12 months of the year
+ * Weekday comes from Sakamoto's algorithm; days per month respect leap
+ * years. The current date uses Howard Hinnant's civil conversion (32-bit).
+ * Build:
  *   ./build-elf.sh res/apps/src/cal.c res/apps/src/cal_time.s -stdlib -o res/apps/dist/cal
  */
 int printf(const char *fmt, ...);
