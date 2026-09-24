@@ -1,15 +1,17 @@
 /* cal.c - Calendario gregoriano no stdout.
  *
- * cal [MES ANO]  -> calendario de um mes
- * cal ANO        -> os 12 meses do ano
+ * cal             -> mes atual (UTC, via syscall time)
+ * cal [MES ANO]   -> calendario de um mes
+ * cal ANO         -> os 12 meses do ano
  * O dia da semana vem do algoritmo de Sakamoto; dias por mes com aniversario
- * bissexto. Apenas printf()/atoi() da libc do emulador.
+ * bissexto. A data atual usa a conversao civil de Howard Hinnant (32-bit).
  * Compilar:
- *   ./build-elf.sh res/apps/src/cal.c -stdlib -o res/apps/dist/cal
+ *   ./build-elf.sh res/apps/src/cal.c res/apps/src/cal_time.s -stdlib -o res/apps/dist/cal
  */
 int printf(const char *fmt, ...);
 int atoi(const char *s);
 void exit(int status);
+long time(long *t);
 
 static const char *months[12] = {
     "January", "February", "March", "April", "May", "June",
@@ -31,6 +33,22 @@ static int dow(int y, int m, int d)
     static const int t[12] = { 0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4 };
     if (m < 3) { y--; }
     return (y + y / 4 - y / 100 + y / 400 + t[m - 1] + d) % 7;
+}
+
+/* epoch (segundos UTC) -> ano/mes, algoritmo de Howard Hinnant (32-bit) */
+static void epoch_to_ym(int t, int *y, int *mo)
+{
+    int days = t / 86400, z, era, yy;
+    unsigned doe, yoe, doy, mp;
+    z = days + 719468;
+    era = (z >= 0 ? z : z - 146096) / 146097;
+    doe = (unsigned)(z - era * 146097);
+    yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
+    yy = (int)yoe + era * 400;
+    doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    mp = (5 * doy + 2) / 153;
+    *mo = (int)(mp < 10 ? mp + 3 : mp - 9);
+    *y = yy + (*mo <= 2);
 }
 
 static void show(int m, int y)
@@ -56,7 +74,11 @@ int main(int argc, char **argv)
 {
     int m, y;
 
-    if (argc == 2) {
+    if (argc == 1) {
+        int t = (int) time(0);
+        epoch_to_ym(t, &y, &m);
+        show(m, y);
+    } else if (argc == 2) {
         y = atoi(argv[1]);
         if (y < 1600) { printf("cal: year %d too small\n", y); exit(1); }
         for (m = 1; m <= 12; m++) { show(m, y); }
