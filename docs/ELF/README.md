@@ -229,6 +229,11 @@ Use `O_RDONLY`, `O_WRONLY`, `O_RDWR`, `O_CREAT`, `O_TRUNC`, `O_APPEND`, and
 permissions and chroot redirection apply. Check negative results; this ABI does
 not provide portable `errno` details.
 
+When opening a directory with `O_DIRECTORY`, trailing slashes are accepted and
+ignored (`/bin` and `/bin/` are the same), and `.`/`..` resolve against the
+process `PWD`. The directory is always reported as `<path>/` (trailing slash
+normalized).
+
 ```c
 #include "../../lib/opentty.h"
 

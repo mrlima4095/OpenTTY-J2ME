@@ -2920,19 +2920,28 @@ public class ELF implements CommandListener {
             if (isDirectory) {
                 boolean isDir = false;
                 
-                if (fullPath.equals("/") || fullPath.equals("/home/") || fullPath.equals("/tmp/") || fullPath.equals("/bin/") || fullPath.equals("/etc/") || fullPath.equals("/lib/") || fullPath.equals("/boot/")) { isDir = true; } 
-                else if (fullPath.startsWith("/mnt/")) {
+                // Normalize trailing slashes so "/bin", "/bin/" and "." (resolved
+                // to a PWD without trailing slash) all resolve to the same dir.
+                String dir = fullPath;
+                while (dir.length() > 1 && dir.endsWith("/")) { dir = dir.substring(0, dir.length() - 1); }
+                
+                if (dir.equals("/") || dir.equals("/home") || dir.equals("/tmp") || dir.equals("/bin") || dir.equals("/etc") || dir.equals("/lib") || dir.equals("/boot") || dir.equals("/dev")) { isDir = true; }
+                else if (dir.equals("/proc") || dir.startsWith("/proc/")) { isDir = true; }
+                else if (dir.equals("/mnt")) { isDir = true; }
+                else if (dir.startsWith("/mnt/")) {
                     try {
-                        FileConnection conn = (FileConnection) Connector.open("file:///" + fullPath.substring(5), Connector.READ);
+                        FileConnection conn = (FileConnection) Connector.open("file:///" + dir.substring(5), Connector.READ);
                         isDir = conn.exists() && conn.isDirectory();
                         conn.close();
                     } catch (Exception e) { isDir = false; }
                 }
-                else if (midlet.fs.containsKey(fullPath)) { isDir = true; }
+                else if (midlet.vfsDirIndex(dir) != -1) { isDir = true; }
+                else if (midlet.fs.containsKey(fullPath) || midlet.fs.containsKey(dir + "/")) { isDir = true; }
                 
                 if (isDir) {
                     Integer fd = new Integer(nextFd++);
-                    fileDescriptors.put(fd, fullPath); // Store path as a String
+                    String stored = dir.equals("/") ? "/" : dir + "/";
+                    fileDescriptors.put(fd, stored); // Store path as a String
                     registers[REG_A0] = fd.intValue();
                 } 
                 else { registers[REG_A0] = -20; }
