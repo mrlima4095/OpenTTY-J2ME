@@ -470,10 +470,26 @@ Quoted includes are supported as bounded textual source fragments:
 ```
 
 Includes are recursive (maximum depth 8) and the combined source is limited to
-32 KiB. They are not a preprocessor: `#define`, conditionals, and all other
-directives fail. System headers such as `<stdio.h>` fail clearly rather than
-pretending to provide host declarations. Keep include fragments within the
-same subset.
+32 KiB. A small line-oriented preprocessor then runs over the spliced text:
+`#define` (object-like), `#undef`, `#if`, `#ifdef`, `#ifndef`, `#elif`,
+`#else`, `#endif`, and `#error` are supported, and macros expand at token
+level inside `#if` expressions (`defined(M)` works) without ever expanding
+inside strings or comments:
+
+```c
+#define GREETING "answer=%d\n"
+#define SHOW 1
+#if SHOW    // evaluates to 1
+    printf(GREETING, 42);
+#endif
+```
+
+Comments are replaced by a single space so parser line numbers stay accurate,
+and skipped conditional bodies are emitted as blank lines. Function-like
+macros and trailing `\` line continuations are rejected clearly. `#pragma` and
+`#line` are ignored, and system headers such as `<stdio.h>` fail clearly
+rather than pretending to provide host declarations. Keep include fragments
+within the same subset.
 
 Available calls are `puts`, `putchar`, `printf`, `malloc`, `free`, `memset`,
 and raw OpenTTY file calls `open`, `read`, `write`, and `close`, with up to
