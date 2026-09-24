@@ -51,6 +51,7 @@ return {
         ["libutil"] = { remote = "lib/libutil.so", here = "/lib/libutil.so", riscv = true, description = "OpenTTY C utility library" },
         ["log"] = { remote = "sys/smile/logs.lua", here = "/bin/log", description = "MIDlet Logs" },
         ["man"] = { remote = "sys/man.lua", here = "/bin/man", description = "Application manual pages" },
+        ["memelf"] = { remote = "sys/memelf", here = "/bin/memelf", description = "Set the max RAM of the ELF emulator (KB)" },
         ["nano"] = { remote = "file/nano.lua", here = "/bin/nano", description = "Text Editor for OpenTTY" },
         ["nginx"] = { remote = "net/nginx/main.lua", here = "/bin/nginx", description = "HTTP Server (Nginx-style)" },
         ["nc"] = { remote = "net/netcat.lua", here = "/bin/nc", description = "Connect with Remote Interfaces" },
