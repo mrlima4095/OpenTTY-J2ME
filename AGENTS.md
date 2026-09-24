@@ -25,6 +25,7 @@ text; translate existing non-English content when you touch it.
 ## Build
 
 - There is **no working CI or desktop build** in-repo right now. `src/` needs a J2ME toolchain. The real build happens **on-device** with the J2ME SDK (see `docs/BUILD.md`), producing `dist/OpenTTY.jar` + `dist/OpenTTY.jad`.
+- **Build versioning** (`src/OpenTTY.java` `build` string + a new line in `res/build.txt`): format `YEAR-major.version-NNxMM` (e.g. `2026-1.18.2-04x41`). The `MM` counter increments by one per build and only ever goes to `99`; when `MM` reaches `99`, the `NN` prefix increments and `MM` resets to `1` (`04x99` → `05x01`). Never skip ahead: after `04x40` the next build is `04x41`, **not** `05x41`. Keep the orphan `x1`-style wraparound in mind (there is no `x00`/`x100`).
 - Sanity-check every Lua script you touch with: `lua -e "assert(loadfile('<file>'))"`.
 
 ## Lua runtime gotchas (verified in `src/Lua.java`)
