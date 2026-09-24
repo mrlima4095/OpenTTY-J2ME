@@ -132,7 +132,9 @@ public class ELF implements CommandListener {
         LIB_PROC_SET = LIB_BASE + 53, LIB_PROC_SPAWN = LIB_BASE + 54,
         LIB_PROC_WAITPID = LIB_BASE + 55, LIB_PROC_SHELL = LIB_BASE + 56,
         LIB_PROC_GETENV = LIB_BASE + 57, LIB_UI_SET_LABEL = LIB_BASE + 58,
-        LIB_PROC_EXPAND_ENV = LIB_BASE + 59;
+        LIB_PROC_EXPAND_ENV = LIB_BASE + 59,
+        LIB_GC = LIB_BASE + 60, LIB_MEM_FREE = LIB_BASE + 61,
+        LIB_MEM_TOTAL = LIB_BASE + 62, LIB_MEM_USED = LIB_BASE + 63;
 
     // Relocation types
     private static final int R_RISCV_NONE = 0, R_RISCV_32 = 1, R_RISCV_RELATIVE = 3, R_RISCV_COPY = 4, R_RISCV_JUMP_SLOT = 5, R_RISCV_GLOB_DAT = 6;
@@ -748,6 +750,10 @@ public class ELF implements CommandListener {
             case LIB_PROC_GETENV - LIB_BASE: registers[REG_A0] = procGetenv(registers[REG_A0], registers[REG_A1], registers[REG_A2]); break;
             case LIB_UI_SET_LABEL - LIB_BASE: registers[REG_A0] = uiSetLabel(registers[REG_A0], registers[REG_A1]); break;
             case LIB_PROC_EXPAND_ENV - LIB_BASE: registers[REG_A0] = procExpandEnv(registers[REG_A0], registers[REG_A1], registers[REG_A2]); break;
+            case LIB_GC - LIB_BASE: Runtime.getRuntime().gc(); registers[REG_A0] = 0; break;
+            case LIB_MEM_FREE - LIB_BASE: registers[REG_A0] = (int) (Runtime.getRuntime().freeMemory() / 1024); break;
+            case LIB_MEM_TOTAL - LIB_BASE: registers[REG_A0] = (int) (Runtime.getRuntime().totalMemory() / 1024); break;
+            case LIB_MEM_USED - LIB_BASE: { Runtime r = Runtime.getRuntime(); registers[REG_A0] = (int) ((r.totalMemory() - r.freeMemory()) / 1024); break; }
             default: registers[REG_A0] = -1; break;
         }
     }

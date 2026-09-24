@@ -312,6 +312,17 @@ int graphics_taskmngr(void);
 int opentty_setproc(const char *key, ...);
 ```
 
+The `-stdlib` layer also exposes the clock and the Java heap to guest C
+(declared in `opentty.h`):
+
+```c
+long time(long *tloc);      /* seconds since epoch, UTC (SYS_TIME 13) */
+void gc(void);              /* run the host garbage collector */
+int mem_total(void);        /* Java heap: total KB (like `free`) */
+int mem_free(void);         /* Java heap: free KB */
+int mem_used(void);         /* Java heap: used KB (total - free) */
+```
+
 Minimal event loop:
 
 ```c

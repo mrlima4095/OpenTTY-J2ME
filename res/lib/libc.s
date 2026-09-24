@@ -74,6 +74,10 @@
 .equ LIB_PROC_GETENV,      LIB_BASE + 57
 .equ LIB_PROC_EXPAND_ENV,  LIB_BASE + 59
 .equ LIB_UI_SET_LABEL,     LIB_BASE + 58
+.equ LIB_GC,               LIB_BASE + 60
+.equ LIB_MEM_FREE,         LIB_BASE + 61
+.equ LIB_MEM_TOTAL,        LIB_BASE + 62
+.equ LIB_MEM_USED,         LIB_BASE + 63
 
 # ============================================================
 # _start - Entry point (compativel com o CRT do emulador):
@@ -144,6 +148,10 @@ LIBWRAP LIB_FREE,        free
 
 # ---- misc ----------------------------------------------------
 LIBWRAP LIB_GETPID,      getpid
+LIBWRAP LIB_GC,          gc
+LIBWRAP LIB_MEM_FREE,    mem_free
+LIBWRAP LIB_MEM_TOTAL,   mem_total
+LIBWRAP LIB_MEM_USED,    mem_used
 
 # ---- LCDUI ---------------------------------------------------
 LIBWRAP LIB_UI_NEW,          lcdui_new
@@ -259,6 +267,14 @@ abort:
     ecall
 
 # ---- wrappers de syscall uteis ---------------------------------
+.globl time
+.type time, %function
+time:
+    mv      a1, a0               # tloc: emulator reads the pointer from a1
+    li      a7, 13               # SYS_TIME (seconds, UTC)
+    ecall
+    ret
+
 .globl write
 write:
     li      a7, 4                # SYS_WRITE

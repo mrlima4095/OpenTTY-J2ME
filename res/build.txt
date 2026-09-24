@@ -208,3 +208,4 @@
 [2026-1.18.2-03x38]	Build #338 - ELF emulator: open() accmode (O_RDONLY==0), heap region p/ pedidos >= 64KB, limite 200M instr; app OTP1 (otp, LZSS+CRC32)
 [2026-1.18.2-04x39]	Build #439 - ELF guest RAM padrao de 512KB, configuravel pelo kernel Lua
 [2026-1.18.2-04x40]	Build #440 - ELF emulator: syscalls pipe/alarm/access/umask/setsid/getrusage/readlink/sethostname/gethostname/getgid32
+[2026-1.18.2-05x41]	Build #441 - ELF guest libc: time() wrapper (SYS_TIME); gc() + mem_free/mem_total/mem_used (Java heap KB)

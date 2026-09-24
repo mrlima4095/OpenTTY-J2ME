@@ -6,7 +6,7 @@
  * Weekday comes from Sakamoto's algorithm; days per month respect leap
  * years. The current date uses Howard Hinnant's civil conversion (32-bit).
  * Build:
- *   ./build-elf.sh res/apps/src/cal.c res/apps/src/cal_time.s -stdlib -o res/apps/dist/cal
+ *   ./build-elf.sh res/apps/src/cal.c -stdlib -o res/apps/dist/cal
  */
 int printf(const char *fmt, ...);
 int atoi(const char *s);

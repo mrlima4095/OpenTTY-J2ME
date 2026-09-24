@@ -57,6 +57,15 @@ int open(const char *path, int flags, int mode);
 int close(int fd);
 int brk(void *address);
 
+/* Clock and memory. time() returns seconds since the Unix epoch (UTC);
+ * gc() runs the host garbage collector; mem_total/free/used report the
+ * Java heap in KB, as the `free` command does. */
+long time(long *tloc);
+void gc(void);
+int mem_total(void);
+int mem_free(void);
+int mem_used(void);
+
 /* OpenTTY process ABI. spawn starts a Lua or ELF program asynchronously and
  * returns its PID; waitpid returns -11 while that child is still running. */
 int opentty_spawn(const char *path, int *pid_out);
