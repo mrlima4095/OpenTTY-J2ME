@@ -248,11 +248,7 @@ public class Display {
                     body.add(b);
                 } else {
                     String txt = (si.getLabel() == null || si.getLabel().length() == 0) ? si.getText() : si.getLabel() + ": " + si.getText();
-                    JLabel lab = new JLabel(txt);
-                    lab.setFont(new java.awt.Font("Monospaced", java.awt.Font.PLAIN, 12));
-                    lab.setAlignmentX(Component.LEFT_ALIGNMENT);
-                    lab.setOpaque(true);
-                    body.add(lab);
+                    body.add(textWidget(txt));
                 }
             } else if (obj instanceof Image) {
                 final Image img = (Image) obj;
@@ -264,13 +260,30 @@ public class Display {
                 lab.setAlignmentX(Component.LEFT_ALIGNMENT);
                 body.add(lab);
             } else {
-                JLabel lab = new JLabel(String.valueOf(obj));
-                lab.setFont(new java.awt.Font("Monospaced", java.awt.Font.PLAIN, 12));
-                lab.setAlignmentX(Component.LEFT_ALIGNMENT);
-                body.add(lab);
+                body.add(textWidget(String.valueOf(obj)));
             }
         }
         if (f.items.size() == 0) { body.add(new JLabel(" ")); }
+    }
+
+    private javax.swing.JComponent textWidget(String txt) {
+        javax.swing.JComponent w;
+        if (txt.indexOf('\n') >= 0) {
+            JTextArea area = new JTextArea(txt);
+            area.setEditable(false);
+            area.setLineWrap(false);
+            area.setWrapStyleWord(false);
+            area.setFocusable(false);
+            area.setBorder(null);
+            w = area;
+        } else {
+            w = new JLabel(txt);
+        }
+        w.setFont(new java.awt.Font("Monospaced", java.awt.Font.PLAIN, 12));
+        w.setAlignmentX(Component.LEFT_ALIGNMENT);
+        w.setBackground(java.awt.Color.WHITE);
+        w.setOpaque(true);
+        return w;
     }
 
     private void textFieldWidget(final TextField tf) {
