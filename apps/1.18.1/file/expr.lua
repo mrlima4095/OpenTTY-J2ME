@@ -1,4 +1,5 @@
 #!/bin/lua
 
 os.setproc("name", "expr")
-if arg[1] then print(load("return " .. arg[1])) else print("expr: missing operand") end
+local expr = table.concat(arg, " ")
+if expr ~= "" then print(load("return " .. expr)) else print("expr: missing operand") end

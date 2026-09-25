@@ -31,3 +31,8 @@ lua/sys/tmp/
 # on-device build output (release jars are snapshotted under dist/archive/)
 /dist/OpenTTY.jar
 /dist/OpenTTY.jad
+
+# test suite build artifacts (compiled classes + rebuilt fixtures)
+/tests/java/build/
+/tests/java/work/
+/tests/java/rv/memtest

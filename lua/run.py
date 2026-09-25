@@ -26,7 +26,7 @@ def main():
         "USER": os.environ.get("USER", "user"),
         "PWD": "/home/",
         "ROOT": "",
-        "VERSION": "1.18.1",
+        "VERSION": "1.18.2",
         "SHELL": "/bin/sh",
         "HOSTNAME": "opentty-pc",
         "ALIAS": {},
@@ -34,7 +34,7 @@ def main():
     runtime._scope = runtime.scope
 
     # Set up default env
-    runtime.attributes["VERSION"] = "1.18.1"
+    runtime.attributes["VERSION"] = "1.18.2"
     runtime.attributes["REPO"] = "socket://opentty.fun:31522"
     runtime.attributes["SHELL"] = "/bin/sh"
 

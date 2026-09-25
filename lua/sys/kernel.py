@@ -39,8 +39,8 @@ except ImportError:  # pragma: no cover - loaded as a plain script
 
 # ─── constants from src/ (error codes match libcore.errormsg) ────────────────
 
-OPEN_VERSION = "1.18.1"
-OPEN_BUILD = "2026-1.18.1-python"
+OPEN_VERSION = "1.18.2"
+OPEN_BUILD = "2026-1.18.2-python"
 
 # exit/return codes (shared with apps/sys/.../libcore.so)
 E_OK = 0
@@ -776,7 +776,8 @@ class KernelHandler:
 
 class OpenTTYKernel:
     def __init__(self, devroot=None, keys=None, username=None, hostname="opentty", base_dir=None):
-        self.base_dir = _os.path.abspath(base_dir) if base_dir else _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+        # lua/sys/kernel.py -> lua/sys -> lua -> repo root, where src/ and apps/ live.
+        self.base_dir = _os.path.abspath(base_dir) if base_dir else _os.path.dirname(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
         self.devroot = _os.path.abspath(devroot) if devroot else _os.path.abspath(_os.getcwd())
         self.keys_path = keys or _os.path.expanduser("~/.opentty-keys")
         self.hostname = hostname or "opentty"
