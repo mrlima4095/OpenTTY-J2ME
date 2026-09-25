@@ -17,3 +17,7 @@ __pycache__/
 /tests/java/build/
 /tests/java/work/
 /tests/java/rv/memtest
+
+# desktop development shim (pc/) build products
+/pc/build/
+/pc/work/
