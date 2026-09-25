@@ -104,5 +104,4 @@ The boot logic is implemented in `src/OpenTTY.java`:
 `clearBoot`, `defaultBoot`, `bootKernel`, and `redirect`. Menu
 entries are plain `Hashtable`s (keys `title`, `root`, `init`) — there is no
 `BootEntry` class. Lua-side redirection hooks for `dirs`/`chdir`/`MKDIR` are
-in `src/Lua.java`. The desktop kernel under `lua/sys` does **not** implement
-the boot menu.
+in `src/Lua.java`.

@@ -21,6 +21,14 @@ fails=0
 # Version gate.
 grep -q 'MIDlet-Version: 1.18.2' dist/OpenTTY.jad || { echo "FAIL: JAD MIDlet-Version != 1.18.2"; fails=1; }
 
+# The Nokia-MIDlet-Background-Event attribute must not leak into the release
+# manifest (it was removed from nbproject/project.properties in 1.18.2).
+if grep -q 'Nokia-MIDlet-Background-Event' dist/OpenTTY.jad; then
+    echo "FAIL: Nokia-MIDlet-Background-Event present in JAD"; fails=1
+else
+    echo "PASS: no Nokia-MIDlet-Background-Event in JAD"
+fi
+
 # Full emulator (not the lite stub): ELF class present.
 if unzip -l dist/OpenTTY.jar | grep -q 'ELF.class'; then
     echo "PASS: ELF.class (full emulator) in jar"

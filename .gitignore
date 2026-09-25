@@ -9,25 +9,6 @@ java/*.class
 __pycache__/
 *.pyc
 
-# device root seeded when running the python port with the default --root (cwd)
-/bin/
-/etc/
-/home/
-/tmp/
-/mnt/
-/dev/
-/proc/
-
-# lua/sys/ package: keep only the ported source (bin/, *.py); the rest is a
-# seeded device root if the kernel is ever run from inside lua/sys/
-lua/sys/dev/
-lua/sys/etc/
-lua/sys/home/
-lua/sys/lib/
-lua/sys/mnt/
-lua/sys/proc/
-lua/sys/tmp/
-
 # on-device build output (release jars are snapshotted under dist/archive/)
 /dist/OpenTTY.jar
 /dist/OpenTTY.jad
