@@ -143,9 +143,21 @@ public class Display {
         }
     }
 
+    private boolean rebuilding = false;
+
     private void rebuild() {
+        if (rebuilding) { return; }
+        rebuilding = true;
+        frame.setVisible(true);
+        try {
+            coreRebuild();
+        } finally {
+            rebuilding = false;
+        }
+    }
+
+    private void coreRebuild() {
         Displayable d = current;
-        if (!frame.isVisible()) { frame.setVisible(true); }
         titleLabel.setText(d == null ? "" : d.getTitle());
         body.removeAll();
         commands.removeAll();
@@ -154,23 +166,26 @@ public class Display {
         else if (d instanceof Form) { renderForm((Form) d); }
         else if (d instanceof List) { renderList((List) d); }
         else if (d instanceof TextBox) { renderTextBox((TextBox) d); }
-        else { body.add(new JLabel("Unsupported screen: " + d.getClass().getName())); }
+        else if (d != null) { body.add(new JLabel("Unsupported screen: " + d.getClass().getName())); }
+        else { body.add(new JLabel(" ")); }
 
         pruneWidgetCache(d);
 
-        Enumeration cs = d.commands.elements();
-        while (cs.hasMoreElements()) {
-            final Command c = (Command) cs.nextElement();
-            final Displayable screen = d;
-            if (c == List.SELECT_COMMAND) { continue; }
-            JButton b = new JButton(c.getLabel());
-            b.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent ev) {
-                    CommandListener l = screen.listener;
-                    if (l != null) { l.commandAction(c, screen); }
-                }
-            });
-            commands.add(b);
+        if (d != null) {
+            Enumeration cs = d.commands.elements();
+            while (cs.hasMoreElements()) {
+                final Command c = (Command) cs.nextElement();
+                final Displayable screen = d;
+                if (c == List.SELECT_COMMAND) { continue; }
+                JButton b = new JButton(c.getLabel());
+                b.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent ev) {
+                        CommandListener l = screen.listener;
+                        if (l != null) { l.commandAction(c, screen); }
+                    }
+                });
+                commands.add(b);
+            }
         }
 
         body.validate();

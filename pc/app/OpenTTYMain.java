@@ -15,6 +15,11 @@ import javax.microedition.rms.RecordStoreException;
 import javax.swing.SwingUtilities;
 
 public class OpenTTYMain {
+    private static boolean flag(String key) {
+        String v = System.getProperty(key, "");
+        return v.equals("1") || v.equalsIgnoreCase("true");
+    }
+
     public static void main(String[] args) throws Exception {
         String root = System.getProperty("opentty.rms", "data/rms");
         String user = System.getProperty("opentty.user", "opentty");
@@ -23,8 +28,60 @@ public class OpenTTYMain {
         seedOpenRMS(user);
 
         final MIDlet midlet = new OpenTTY();
+        System.out.println("[stage] new OpenTTY() ok"); System.out.flush();
 
-        if (Boolean.getBoolean("opentty.smoke")) {
+        if (flag("opentty.watchdog")) {
+            System.out.println("[stage] watchdog branch"); System.out.flush();
+            // Reproduce the interactive path (startApp on the EDT) while main
+            // watches; if no screen appears, dump every thread's stack and quit.
+            final Throwable[] err = new Throwable[1];
+            Thread launcher = new Thread(new Runnable() {
+                public void run() {
+                    try {
+                        SwingUtilities.invokeAndWait(new Runnable() {
+                            public void run() {
+                                try { midlet.startApp(); }
+                                catch (Throwable e) { err[0] = e; }
+                            }
+                        });
+                    } catch (Throwable e) { err[0] = e; }
+                }
+            }, "launcher");
+            launcher.start();
+            System.out.println("[stage] launcher started"); System.out.flush();
+            long t0 = System.currentTimeMillis();
+            int nullTicks = 0;
+            for (;;) {
+                try { Thread.sleep(3000); } catch (InterruptedException e) { }
+                long el = System.currentTimeMillis() - t0;
+                System.out.println("[watchdog] t=" + (el / 1000) + "s current=" + describe(Display.staticCurrent()));
+                if (err[0] != null) {
+                    System.out.println("[watchdog] startApp threw: " + err[0]);
+                    err[0].printStackTrace(System.out);
+                    System.exit(3);
+                }
+                if (Display.staticCurrent() != null) {
+                    if (++nullTicks >= 2) { System.out.println("[watchdog] boot OK"); System.exit(0); }
+                    continue;
+                }
+                nullTicks = 0;
+                if (el > 15000) {
+                    System.out.println("------------------------------------------------");
+                    java.util.Map stacks = Thread.getAllStackTraces();
+                    java.util.Iterator it = stacks.entrySet().iterator();
+                    while (it.hasNext()) {
+                        java.util.Map.Entry en = (java.util.Map.Entry) it.next();
+                        Thread th = (Thread) en.getKey();
+                        StackTraceElement[] els = (StackTraceElement[]) en.getValue();
+                        System.out.println("== " + th.getName() + " " + th.getState() + " daemon=" + th.isDaemon());
+                        for (int i = 0; i < els.length; i++) { System.out.println("    " + els[i]); }
+                    }
+                    System.exit(9);
+                }
+            }
+        }
+
+        if (flag("opentty.smoke")) {
             // Non-interactive boot check: run startApp on a worker thread (as
             // MIDP would) and, after a settle delay, dump the current screen
             // and the PID-1 output buffer, then exit.
