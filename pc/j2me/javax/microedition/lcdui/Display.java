@@ -81,6 +81,13 @@ public class Display {
         frame.setSize(560, 640);
         frame.setMinimumSize(new Dimension(360, 320));
         frame.setLocationRelativeTo(null);
+        // Tiling WMs (bspwm, i3...) resize the toplevel behind our back (and
+        // without a compositor they may not send Expose). Re-run a full pass
+        // so Swing revalidates and paints the content at the real size.
+        frame.addComponentListener(new java.awt.event.ComponentAdapter() {
+            public void componentResized(java.awt.event.ComponentEvent ev) { repaintAll(); }
+            public void componentShown(java.awt.event.ComponentEvent ev) { repaintAll(); }
+        });
     }
 
     public void setCurrent(Displayable d) {
@@ -135,25 +142,33 @@ public class Display {
         instance.repaintAll();
     }
 
+    // All rebuilds run on the EDT. touch()/setCurrent may be called from any
+    // thread (the Lua boot touches StringItems on its own thread), so marshal
+    // every request and coalesce storms. A request arriving while a rebuild is
+    // already queued must still produce a <i>later</i> pass, otherwise output
+    // written to a console StringItem never gets validated/repainted — which
+    // shows up as a blank window on WMs without a compositor (bspwm).
+    private boolean rebuildQueued = false;
+
     private void repaintAll() {
-        if (SwingUtilities.isEventDispatchThread()) {
-            rebuild();
-        } else {
-            SwingUtilities.invokeLater(new Runnable() { public void run() { rebuild(); } });
-        }
+        if (rebuildQueued) { return; }
+        rebuildQueued = true;
+        SwingUtilities.invokeLater(new Runnable() { public void run() { rebuild(); } });
     }
 
-    private boolean rebuilding = false;
-
     private void rebuild() {
-        if (rebuilding) { return; }
-        rebuilding = true;
-        frame.setVisible(true);
-        try {
+        rebuildQueued = false;
+        if (frame.isVisible()) {
             coreRebuild();
-        } finally {
-            rebuilding = false;
+        } else {
+            // Build the content before the first map so the WM's first expose
+            // already sees real widgets.
+            coreRebuild();
+            frame.setVisible(true);
+            frame.repaint();
         }
+        scroll.revalidate();
+        scroll.repaint();
     }
 
     private void coreRebuild() {
@@ -190,10 +205,10 @@ public class Display {
 
         body.validate();
         body.repaint();
-        frame.validate();
-        frame.repaint();
-        JTextField f = focusTarget();
-        if (f != null) { f.requestFocusInWindow(); }
+frame.revalidate();
+            frame.repaint();
+            JTextField f = focusTarget();
+            if (f != null) { f.requestFocusInWindow(); }
     }
 
     private void pruneWidgetCache(Displayable d) {

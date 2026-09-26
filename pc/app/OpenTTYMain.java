@@ -255,6 +255,21 @@ public class OpenTTYMain {
             javax.swing.Timer t = new javax.swing.Timer(2000, new java.awt.event.ActionListener() {
                 public void actionPerformed(java.awt.event.ActionEvent e) {
                     System.out.println("[probe] display = " + describe(Display.staticCurrent()));
+                    Object cur = Display.staticCurrent();
+                    try {
+                        if (cur instanceof javax.microedition.lcdui.Form) {
+                            java.awt.Frame[] fs = java.awt.Frame.getFrames();
+                            for (int i = 0; i < fs.length; i++) {
+                                java.awt.Frame f = fs[i];
+                                System.out.println("[probe] frame=" + f.getName() + " size=" + f.getWidth() + "x" + f.getHeight()
+                                    + " visible=" + f.isVisible() + " showing=" + f.isShowing()
+                                    + " valid=" + f.isValid());
+                                java.awt.Container c = ((javax.swing.JFrame) f).getContentPane();
+System.out.println("[probe]   content " + c.getWidth() + "x" + c.getHeight()
+                                    + " valid=" + c.isValid());
+                            }
+                        }
+                    } catch (Throwable t2) { System.out.println("[probe] geom error: " + t2); }
                 }
             });
             t.start();

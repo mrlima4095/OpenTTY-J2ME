@@ -88,6 +88,17 @@ java -jar dist/OpenTTY-desktop-1.18.2.jar -- /tmp/app.lua
 The JAR accepts the same options as `pc/run.sh`. Per-boot state (RecordStores,
 mounts) lives under `data/` by default.
 
+> Non-reparenting window managers (bspwm, i3, dwm, awesome, xmonad...) never
+> send OpenJDK AWT the `ReparentNotify` it waits for, so the window can open as
+> a blank grey canvas. `pc/run.sh` sets `_JAVA_AWT_WM_NONREPARENTING=1`
+> automatically; when launching the JAR with `java -jar`, set it yourself:
+>
+> ```
+> _JAVA_AWT_WM_NONREPARENTING=1 java -jar dist/OpenTTY-desktop-1.18.2.jar
+> ```
+>
+> It is harmless on reparenting WMs (GNOME/Cinnamon/KDE).
+
 ## Smoke / watchdog
 
 - `--smoke` boots headless, fires the command through the console Run handler,

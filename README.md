@@ -254,6 +254,10 @@ pc/run.sh init=./init.lua          # boot a Lua script as PID 1
 pc/run.sh root=/path/to/rootfs     # chroot a host directory (root=)
 ```
 
+Under non-reparenting WMs (bspwm, i3, dwm...) the window can open blank grey;
+`run.sh` sets `_JAVA_AWT_WM_NONREPARENTING=1` to fix it (see
+[docs/RUNNER.md](docs/RUNNER.md)).
+
 `pc/build-jar.sh` packs the same build into a standalone desktop JAR
 (`dist/OpenTTY-desktop-1.18.2.jar`, `java -jar …`). See
 [docs/RUNNER.md](docs/RUNNER.md) for the full runner reference.

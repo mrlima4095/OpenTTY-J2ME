@@ -182,6 +182,12 @@ if [ -x "$ROOT/pc/java" ]; then
     JAVA="$ROOT/pc/java"
 fi
 
+# bspwm/i3/dwm/awesome... do not reparent client windows, but OpenJDK's AWT
+# assumes a reparenting WM and ignores X events until a ReparentNotify that
+# never comes, leaving the window a blank grey canvas. Opt into the
+# non-reparenting path (harmless under reparenting WMs too).
+export _JAVA_AWT_WM_NONREPARENTING=1
+
 exec "$JAVA" \
     ${OPENTTY_JVM_OPTS:-} \
     "${JVM[@]+"${JVM[@]}"}" \
