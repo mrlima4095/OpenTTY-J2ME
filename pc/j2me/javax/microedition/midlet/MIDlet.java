@@ -39,7 +39,16 @@ public abstract class MIDlet {
         return v != null ? v.toString() : System.getProperty(key, null);
     }
 
-    public final void notifyDestroyed() { System.out.println("[OpenTTY] MIDlet destroyed"); }
+    public final void notifyDestroyed() {
+        System.out.println("[OpenTTY] MIDlet destroyed");
+        // Close the desktop window (destroyApp is the AMS shut-down: on a
+        // device the MIDlet is removed from memory) and terminate so the
+        // JVM does not linger with the AWT event thread or MIDlet workers.
+        try {
+            javax.microedition.lcdui.Display.notifyDestroyed();
+        } catch (Throwable t) { }
+        System.exit(0);
+    }
 
     public final void notifyPaused() { }
 

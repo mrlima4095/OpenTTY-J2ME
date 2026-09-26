@@ -246,6 +246,11 @@ public class OpenTTYMain {
 
         if (flag("opentty.repro")) { reproDiagnose(midlet); }
 
+        if (System.getProperty("opentty.dumpui") != null) {
+            try { Thread.sleep(3000); } catch (InterruptedException e) { }
+            dumpUI();
+        }
+
         if (System.getProperty("opentty.cmd") != null) {
             try { Thread.sleep(1500); } catch (InterruptedException e) { }
             dumpState(midlet);
@@ -274,6 +279,77 @@ System.out.println("[probe]   content " + c.getWidth() + "x" + c.getHeight()
             });
             t.start();
         }
+    }
+
+    /** Diagnostic (opentty.dumpui=1): reflect into the pc/j2me Display and walk
+     *  the Swing widget tree, printing type, bounds and text of every node so
+     *  layout problems (left margins, clipping) are visible. */
+    private static void dumpUI() {
+        Runnable r = new Runnable() { public void run() {
+            try {
+                Class<?> dc = Class.forName("javax.microedition.lcdui.Display");
+                java.lang.reflect.Field ifl = dc.getDeclaredField("instance");
+                ifl.setAccessible(true);
+                Object disp = ifl.get(null);
+                if (disp == null) { System.out.println("[ui] display instance is null"); return; }
+                java.lang.reflect.Field ff = dc.getDeclaredField("frame");
+                ff.setAccessible(true);
+                javax.swing.JFrame f = (javax.swing.JFrame) ff.get(disp);
+                javax.swing.JTextField input = dumpComponent(f.getContentPane(), 0);
+                if (System.getProperty("opentty.enterTest") != null && !enterTestFired) {
+                    enterTestFired = true;
+                    if (input == null) { System.out.println("[ui] no text field found"); return; }
+                    input.setText("echo ENTER-OK");
+                    input.postActionEvent();
+                    System.out.println("[ui] posed Enter with 'echo ENTER-OK'");
+                    final Trigger t = new Trigger();
+                    new Thread(new Runnable() { public void run() {
+                        try { Thread.sleep(6000); } catch (InterruptedException e) { }
+                        SwingUtilities.invokeLater(new Runnable() { public void run() { t.arm(); } });
+                    }}).start();
+                }
+            } catch (Throwable t) { System.out.println("[ui] error: " + t); }
+        }};
+        if (SwingUtilities.isEventDispatchThread()) { r.run(); }
+        else {
+            try { SwingUtilities.invokeAndWait(r); }
+            catch (Throwable t) { System.out.println("[ui] invoke error: " + t); }
+        }
+    }
+
+    static boolean enterTestFired;
+
+    @SuppressWarnings("serial")
+    static class Trigger implements java.awt.event.ActionListener {
+        javax.swing.Timer timer = new javax.swing.Timer(1200, this);
+        Trigger() { timer.setRepeats(false); }
+        void arm() { timer.start(); }
+        public void actionPerformed(java.awt.event.ActionEvent e) { dumpUI(); }
+    }
+
+    private static javax.swing.JTextField dumpComponent(java.awt.Component c, int depth) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < depth; i++) { sb.append("  "); }
+        sb.append(c.getClass().getSimpleName()).append(" bounds=").append(c.getX()).append(",")
+            .append(c.getY()).append(" ").append(c.getWidth()).append("x").append(c.getHeight());
+        if (c instanceof javax.swing.JTextArea || c instanceof javax.swing.JLabel || c instanceof javax.swing.JPanel) {
+            sb.append(" pref=").append(c.getMinimumSize()).append("~").append(c.getPreferredSize()).append("~").append(c.getMaximumSize())
+                .append(" alignX=").append(c.getAlignmentX()).append(" layout=").append(c instanceof javax.swing.JPanel ? ((javax.swing.JPanel) c).getLayout().getClass().getSimpleName() : "-");
+        }
+        if (c instanceof javax.swing.JTextArea) { sb.append(" text='").append(((javax.swing.JTextArea) c).getText().replace("\n", "|")).append("'"); }
+        else if (c instanceof javax.swing.JLabel) { sb.append(" text='").append(((javax.swing.JLabel) c).getText()).append("'"); }
+        else if (c instanceof javax.swing.JTextField) { sb.append(" text='").append(((javax.swing.JTextField) c).getText()).append("'"); }
+        System.out.println("[ui] " + sb);
+        javax.swing.JTextField result = null;
+        if (c instanceof javax.swing.JTextField) { result = (javax.swing.JTextField) c; }
+        if (c instanceof java.awt.Container) {
+            java.awt.Container co = (java.awt.Container) c;
+            for (int i = 0; i < co.getComponentCount(); i++) {
+                javax.swing.JTextField t = dumpComponent(co.getComponent(i), depth + 1);
+                if (t != null) { result = t; }
+            }
+        }
+        return result;
     }
 
     /** Diagnostic mode (opentty.repro=1): run statements inside the xterm's

@@ -62,6 +62,39 @@ public class Display {
 
     private final JFrame frame = new JFrame("OpenTTY");
     private final JPanel body = new JPanel();
+    private java.awt.GridBagConstraints bodyGbc = new java.awt.GridBagConstraints();
+
+    /** Reset the shared body panel and its row counter for a fresh render.
+     *  GridBagLayout fills every row across the full column width, so console
+     *  text and fields are always flush with the left edge (BoxLayout Y_AXIS
+     *  left a large empty margin beside the console JTextArea). */
+    private void resetBody() {
+        body.removeAll();
+        body.setLayout(new java.awt.GridBagLayout());
+        bodyGbc = new java.awt.GridBagConstraints();
+        bodyGbc.gridx = 0;
+        bodyGbc.gridy = -1;
+        bodyGbc.weightx = 1.0;
+        bodyGbc.weighty = 0.0;
+        bodyGbc.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        bodyGbc.anchor = java.awt.GridBagConstraints.NORTHWEST;
+    }
+
+    private void addBodyRow(java.awt.Component c) {
+        bodyGbc.gridy++;
+        body.add(c, bodyGbc);
+    }
+
+    /** Give the whole extra vertical space to the last row's cell so the grid
+     *  stays pinned to the top instead of GridBagLayout centering it. */
+    private void pinGridTop() {
+        int n = body.getComponentCount();
+        if (n == 0) { return; }
+        java.awt.GridBagLayout gb = (java.awt.GridBagLayout) body.getLayout();
+        java.awt.GridBagConstraints g = gb.getConstraints(body.getComponent(n - 1));
+        g.weighty = 1.0;
+        gb.setConstraints(body.getComponent(n - 1), g);
+    }
     private final JPanel commands = new JPanel();
     private final JLabel titleLabel = new JLabel("OpenTTY");
     private final JScrollPane scroll = new JScrollPane(body);
@@ -199,6 +232,12 @@ public class Display {
                         if (l != null) { l.commandAction(c, screen); }
                     }
                 });
+                // Enter on a focused command button activates it (JButton only
+                // responds to Space when not the root pane default button).
+                b.getInputMap(javax.swing.JComponent.WHEN_FOCUSED).put(javax.swing.KeyStroke.getKeyStroke("ENTER"), "activate");
+                b.getActionMap().put("activate", new javax.swing.AbstractAction() {
+                    public void actionPerformed(ActionEvent ev) { b.doClick(); }
+                });
                 commands.add(b);
             }
         }
@@ -209,6 +248,30 @@ frame.revalidate();
             frame.repaint();
             JTextField f = focusTarget();
             if (f != null) { f.requestFocusInWindow(); }
+    }
+
+    private void fireRunCommand() {
+        Displayable d = current;
+        if (!(d instanceof Form)) { return; }
+        Form f = (Form) d;
+        Command run = null;
+        for (int i = 0; i < f.commands.size(); i++) {
+            Command c = (Command) f.commands.elementAt(i);
+            if (c.getLabel().equals("Run")) { run = c; break; }
+        }
+        if (run == null || f.listener == null) { return; }
+        f.listener.commandAction(run, f);
+    }
+
+    public static void notifyDestroyed() {
+        if (instance == null) { return; }
+        final JFrame f = instance.frame;
+        if (f == null) { return; }
+        Runnable close = new Runnable() {
+            public void run() { f.dispose(); }
+        };
+        if (SwingUtilities.isEventDispatchThread()) { close.run(); }
+        else { SwingUtilities.invokeLater(close); }
     }
 
     private void pruneWidgetCache(Displayable d) {
@@ -243,7 +306,7 @@ frame.revalidate();
 
     // | (Form)
     private void renderForm(Form f) {
-        body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
+        resetBody();
         body.setBackground(java.awt.Color.WHITE);
         for (int i = 0; i < f.items.size(); i++) {
             Object obj = f.items.elementAt(i);
@@ -253,32 +316,30 @@ frame.revalidate();
                 final StringItem si = (StringItem) obj;
                 if ((si.layout & StringItem.BUTTON) != 0 && si.itemCommandListener != null && si.defaultCommand != null) {
                     JButton b = new JButton(si.getText().length() == 0 ? si.getLabel() : si.getText());
-                    b.setAlignmentX(Component.LEFT_ALIGNMENT);
                     final Command cmd = si.defaultCommand;
                     final Item item = si;
                     final ItemCommandListener l = si.itemCommandListener;
                     b.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent ev) { l.commandAction(cmd, item); }
                     });
-                    body.add(b);
+                    addBodyRow(b);
                 } else {
                     String txt = (si.getLabel() == null || si.getLabel().length() == 0) ? si.getText() : si.getLabel() + ": " + si.getText();
-                    body.add(textWidget(txt));
+                    addBodyRow(textWidget(txt));
                 }
             } else if (obj instanceof Image) {
                 final Image img = (Image) obj;
                 JLabel lab = new JLabel(img.awt() != null ? new javax.swing.ImageIcon(img.awt()) : new javax.swing.ImageIcon());
-                lab.setAlignmentX(Component.LEFT_ALIGNMENT);
-                body.add(lab);
+                addBodyRow(lab);
             } else if (obj instanceof Item) {
                 JLabel lab = new JLabel(((Item) obj).getLabel());
-                lab.setAlignmentX(Component.LEFT_ALIGNMENT);
-                body.add(lab);
+                addBodyRow(lab);
             } else {
-                body.add(textWidget(String.valueOf(obj)));
+                addBodyRow(textWidget(String.valueOf(obj)));
             }
         }
-        if (f.items.size() == 0) { body.add(new JLabel(" ")); }
+        if (f.items.size() == 0) { addBodyRow(new JLabel(" ")); }
+        pinGridTop();
     }
 
     private javax.swing.JComponent textWidget(String txt) {
@@ -295,10 +356,21 @@ frame.revalidate();
             w = new JLabel(txt);
         }
         w.setFont(new java.awt.Font("Monospaced", java.awt.Font.PLAIN, 12));
-        w.setAlignmentX(Component.LEFT_ALIGNMENT);
         w.setBackground(java.awt.Color.WHITE);
+        w.setAlignmentX(Component.LEFT_ALIGNMENT);
+        // The console/description area must fill the whole form column, with
+        // the text starting at the left edge. BoxLayout Y_AXIS does not
+        // reliably stretch a raw JTextArea child (it was laid out with a
+        // big empty margin on the left), so wrap it in a full-width panel
+        // that centers the area, keeping its own left alignment.
+        javax.swing.JPanel wrapper = new javax.swing.JPanel(new java.awt.BorderLayout());
+        wrapper.setOpaque(true);
+        wrapper.setBackground(java.awt.Color.WHITE);
+        wrapper.setAlignmentX(Component.LEFT_ALIGNMENT);
+        wrapper.setMaximumSize(new Dimension(Integer.MAX_VALUE, (int) w.getPreferredSize().getHeight()));
         w.setOpaque(true);
-        return w;
+        wrapper.add(w, java.awt.BorderLayout.CENTER);
+        return wrapper;
     }
 
     private void textFieldWidget(final TextField tf) {
@@ -321,13 +393,18 @@ frame.revalidate();
                 public void removeUpdate(javax.swing.event.DocumentEvent e) { tf.updateFromUi(f2.getText()); }
                 public void changedUpdate(javax.swing.event.DocumentEvent e) { tf.updateFromUi(f2.getText()); }
             });
+            // Enter in the input row runs the form's default Run command, like
+            // pressing the (focused) Run button on the command bar.
+            field.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent ev) { fireRunCommand(); }
+            });
             widgetCache.put(tf, field);
         }
         String model = tf.getString();
         if (!field.getText().equals(model)) { field.setText(model); }
         row.add(field, BorderLayout.CENTER);
         row.setMaximumSize(new Dimension(Integer.MAX_VALUE, (int) field.getPreferredSize().getHeight() + 26));
-        body.add(row);
+        addBodyRow(row);
     }
 
     // | (List)

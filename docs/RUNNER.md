@@ -43,6 +43,17 @@ JVM options go through `OPENTTY_JVM_OPTS`, e.g.:
 OPENTTY_JVM_OPTS="-Dopentty.watchdog=1 -Dopentty.execdbg=1" pc/run.sh
 ```
 
+## Desktop window quirks
+
+- Form rows fill the full column width: the console area starts flush at the
+  left edge (no large empty margin), and the input row sits right below it.
+- **Enter** in the xterm input row runs the command (same as pressing the
+  focused **Run** button); the Run button itself also answers Enter/Space when
+  focused.
+- When the MIDlet is destroyed (Exiting, typing `exit`, emulator end),
+  `MIDlet.notifyDestroyed()` closes the window and exits the JVM — no zombie
+  process is left behind.
+
 ## Running a program at boot
 
 Host file paths in the command are **staged** into `data/mnt/opentty/` and

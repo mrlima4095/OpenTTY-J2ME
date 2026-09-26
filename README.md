@@ -258,6 +258,11 @@ Under non-reparenting WMs (bspwm, i3, dwm...) the window can open blank grey;
 `run.sh` sets `_JAVA_AWT_WM_NONREPARENTING=1` to fix it (see
 [docs/RUNNER.md](docs/RUNNER.md)).
 
+Desktop niceties: Enter in the xterm input row runs the command (a focused Run
+button answers Enter too), the console output fills the window width with no
+left margin, and destroying the MIDlet (Exit/`exit`) closes the window instead
+of leaving a zombie JVM.
+
 `pc/build-jar.sh` packs the same build into a standalone desktop JAR
 (`dist/OpenTTY-desktop-1.18.2.jar`, `java -jar …`). See
 [docs/RUNNER.md](docs/RUNNER.md) for the full runner reference.
