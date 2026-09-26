@@ -117,6 +117,38 @@ def fix_write_finally(path):
     )])
 
 
+def fix_token_index(path):
+    # Lua.run() reuses the instance cursor without resetting it, so a second
+    # run() on the same Lua (e.g. /bin/lua loading a chunk and the caller
+    # re-running it) starts at EOF and skips every statement. Reset it before
+    # the statement loop.
+    patch_file(path, [(
+        "frameStack.removeAllElements();\n        clearThrown();\n        silent = false;",
+        "frameStack.removeAllElements();\n        clearThrown();\n        tokenIndex = 0;\n        silent = false;",
+        "run-token-index-reset",
+    )])
+
+
+def fix_exec_debug(path):
+    # Optional exec tracing (opentty.execdbg=1) for the desktop runner.
+    patch_file(path, [(
+        "String mainCommand = midlet.getCommand(command), argument = midlet.getArgument(command);\n                String[] argv = midlet.splitArgs(argument);",
+        "String mainCommand = midlet.getCommand(command), argument = midlet.getArgument(command);\n                String[] argv = midlet.splitArgs(argument);\n                if ((System.getProperty(\"opentty.execdbg\") != null)) { System.out.println(\"[execdbg] main=\" + mainCommand + \" args=\" + java.util.Arrays.toString(argv)); }",
+        "exec-debug",
+    )])
+
+
+def fix_exec_dot_shadow(path):
+    # On the desktop, "/bin/." resolves as the bin *directory* (an empty
+    # stream), so the "/bin/<main>" branch swallows a "." command before the
+    # source-branch below can run the file. Keep "." out of that branch.
+    patch_file(path, [(
+        "else if ((inOut = open(\"/bin/\" + mainCommand, father)) != null) { status = (Integer) popen(\"/bin/\" + mainCommand, midlet.genpid(), argument, id, output, father, inOut).elementAt(0); }",
+        "else if (!mainCommand.equals(\".\") && (inOut = open(\"/bin/\" + mainCommand, father)) != null) { status = (Integer) popen(\"/bin/\" + mainCommand, midlet.genpid(), argument, id, output, father, inOut).elementAt(0); }",
+        "exec-dot-shadow",
+    )])
+
+
 def replace_arg_ranges(path, ranges, name):
     with open(path, "r", encoding="utf-8") as f:
         text = f.read()
@@ -207,5 +239,8 @@ fix_shadowing(lua_)
 add_list_import(open_)
 add_list_import(lua_)
 wrap_all_switch_cases(lua_)
+fix_token_index(lua_)
+fix_exec_debug(lua_)
+fix_exec_dot_shadow(lua_)
 fix_write_finally(open_)
 print("patched", open_, "and", lua_)

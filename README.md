@@ -239,7 +239,24 @@ Quick overview:
 - Build on-device using the J2ME SDK (`http://opentty.fun/dl/SDK.jar`)
 - Compiles to `OpenTTY.jar` + `OpenTTY.jad`
 - Install directly on Java ME (MIDP-2.0 / CLDC-1.0) devices
-- Version: **1.18.1**
+- Version: **1.18.2**
+
+### Desktop development
+
+For fast iteration without a device, `pc/run.sh` boots the unmodified `src/`
+MIDlet on a desktop JDK (17+) via the `pc/j2me` bindings:
+
+```
+pc/run.sh                          # interactive boot
+pc/run.sh --smoke -- /tmp/app.lua  # run a Lua app at boot and dump state
+pc/run.sh -- /tmp/rvtest.elf       # stage + run a RISC-V ELF at boot
+pc/run.sh init=./init.lua          # boot a Lua script as PID 1
+pc/run.sh root=/path/to/rootfs     # chroot a host directory (root=)
+```
+
+`pc/build-jar.sh` packs the same build into a standalone desktop JAR
+(`dist/OpenTTY-desktop-1.18.2.jar`, `java -jar …`). See
+[docs/RUNNER.md](docs/RUNNER.md) for the full runner reference.
 
 ---
 
@@ -251,6 +268,7 @@ Comprehensive docs live in [`docs/`](docs/):
 - [File system](docs/FILESYS.md)
 - [User system](docs/USERS.md)
 - [Lua reference & examples](docs/lua/README.md)
+- [Desktop runner (`pc/run.sh`, `-jar`)](docs/RUNNER.md)
 - [Building from source](docs/BUILD.md)
 
 Also see the [changelog](CHANGELOG.md) and [roadmap](ROADMAP.md).

@@ -21,3 +21,7 @@ __pycache__/
 # desktop development shim (pc/) build products
 /pc/build/
 /pc/work/
+# desktop shim runtime state (RecordStores, mounts, staged apps)
+/data/
+# desktop shim release jar (built by pc/build-jar.sh)
+/dist/OpenTTY-desktop-*.jar

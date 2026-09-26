@@ -1,5 +1,5 @@
 import javax.microedition.midlet.MIDlet;
-import javax.microedition.midlet.MIDletStateChangeException;
+
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Command;
@@ -20,10 +20,124 @@ public class OpenTTYMain {
         return v.equals("1") || v.equalsIgnoreCase("true");
     }
 
+    /** Parse runner arguments (mirror of pc/run.sh) and translate them into
+     *  JVM properties, staging host files into data/mnt/opentty/. */
+    private static void parseArgs(String[] args) throws Exception {
+        String mntBase = System.getProperty("opentty.mnt", "data/mnt");
+        java.io.File opentty = new java.io.File(mntBase, "opentty");
+        opentty.mkdirs();
+        String command = "";
+        java.util.ArrayList<String> tokens = new java.util.ArrayList<String>();
+        boolean sep = false;
+        for (int i = 0; i < args.length; i++) {
+            String a = args[i];
+            if (sep) { tokens.add(a); }
+            else if (a.equals("-h") || a.equals("--help")) {
+                System.out.println("Usage: OpenTTYMain [options] [--] [command tokens...]");
+                System.out.println("  root=PATH  init=PATH  --user NAME  --smoke  --watchdog  --cmd CMD  --");
+                System.out.println("Host files in the command are staged to /mnt/opentty/ and run by content.");
+                System.exit(0);
+            }
+            else if (a.startsWith("root=")) { System.setProperty("opentty.bootRoot", a.substring(5)); }
+            else if (a.startsWith("init=")) { System.setProperty("opentty.bootInit", a.substring(5)); }
+            else if (a.equals("--user")) {
+                if (i + 1 >= args.length) { System.out.println("--user requires a name"); System.exit(2); }
+                System.setProperty("opentty.user", args[++i]);
+            }
+            else if (a.startsWith("--user=")) { System.setProperty("opentty.user", a.substring(7)); }
+            else if (a.equals("--smoke")) { System.setProperty("opentty.smoke", "1"); }
+            else if (a.equals("--watchdog")) { System.setProperty("opentty.watchdog", "1"); }
+            else if (a.equals("--repro")) { System.setProperty("opentty.repro", "1"); }
+            else if (a.equals("--cmd")) {
+                if (i + 1 >= args.length) { System.out.println("--cmd requires a command"); System.exit(2); }
+                command = args[++i];
+            }
+            else if (a.equals("--")) { sep = true; }
+            else { tokens.add(a); sep = true; }
+        }
+        if (command.length() == 0) {
+            if (!tokens.isEmpty()) {
+                java.util.ArrayList<String> out = new java.util.ArrayList<String>();
+                boolean firstStaged = false;
+                for (int i = 0; i < tokens.size(); i++) {
+                    String tok = tokens.get(i);
+                    String staged = stage(mntBase, opentty, tok);
+                    if (staged != null) {
+                        if (i == 0) { firstStaged = true; }
+                        out.add(staged);
+                    } else {
+                        out.add(tok);
+                    }
+                }
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < out.size(); i++) {
+                    if (i > 0) { sb.append(' '); }
+                    sb.append(out.get(i));
+                }
+                command = sb.toString();
+                if (firstStaged) { command = ". " + command; }
+            }
+        }
+        if (command.length() > 0) { System.setProperty("opentty.cmd", command); }
+
+        String bi = System.getProperty("opentty.bootInit", "");
+        if (bi.length() > 0 && !bi.equals("/bin/init") && !bi.startsWith("/mnt/")) {
+            String stagedInit = stage(mntBase, opentty, bi);
+            if (stagedInit != null) { System.setProperty("opentty.bootInit", stagedInit); }
+        }
+        String br = System.getProperty("opentty.bootRoot", "");
+        if (br.length() > 0 && !br.equals("/") && !br.startsWith("/mnt/")) {
+            java.io.File rd = new java.io.File(br);
+            if (rd.isDirectory()) {
+                java.io.File dst = new java.io.File(new java.io.File(mntBase), rd.getName());
+                try {
+                    java.nio.file.Files.walk(rd.toPath()).forEach(p -> {
+                        try {
+                            if (java.nio.file.Files.isDirectory(p)) {
+                                new java.io.File(dst, rd.toPath().relativize(p).toString()).mkdirs();
+                            } else {
+                                java.nio.file.Files.copy(p, new java.io.File(dst, rd.toPath().relativize(p).toString()).toPath(),
+                                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                            }
+                        } catch (Exception e) { }
+                    });
+                    System.setProperty("opentty.bootRoot", "/mnt/" + rd.getName());
+                } catch (Exception e) {
+                    System.out.println("[stage] root= copy failed: " + e);
+                }
+            }
+        }
+    }
+
+    /** Copy a host file into data/mnt/opentty/ and return the guest path
+     *  (/mnt/opentty/<name>), or null when the token is not a host file. */
+    private static String stage(String mntBase, java.io.File opentty, String hostPath) {
+        java.io.File f = new java.io.File(hostPath);
+        if (!f.isFile()) { return null; }
+        java.io.File dst = new java.io.File(opentty, f.getName());
+        try {
+            byte[] src = java.nio.file.Files.readAllBytes(f.toPath());
+            if (!dst.exists() || dst.length() != src.length) {
+                java.nio.file.Files.write(dst.toPath(), src);
+            }
+        } catch (Exception e) {
+            System.out.println("[stage] failed to stage " + hostPath + ": " + e);
+            return null;
+        }
+        return "/mnt/opentty/" + f.getName();
+    }
+
     public static void main(String[] args) throws Exception {
         String root = System.getProperty("opentty.rms", "data/rms");
         String user = System.getProperty("opentty.user", "opentty");
         System.out.println("[OpenTTY] desktop run: user=" + user + " rms=" + root);
+
+        // Same command line as pc/run.sh, so `java -jar OpenTTY-desktop-*.jar
+        // [options] [--] [command tokens...]` works out of the box. When a
+        // caller already supplied the props (run.sh), leave them alone.
+        if (System.getProperty("opentty.cmd") == null) {
+            parseArgs(args);
+        }
 
         seedOpenRMS(user);
 
@@ -35,12 +149,14 @@ public class OpenTTYMain {
             // Reproduce the interactive path (startApp on the EDT) while main
             // watches; if no screen appears, dump every thread's stack and quit.
             final Throwable[] err = new Throwable[1];
+            final String br = System.getProperty("opentty.bootRoot", "");
+            final String bi = System.getProperty("opentty.bootInit", "");
             Thread launcher = new Thread(new Runnable() {
                 public void run() {
                     try {
                         SwingUtilities.invokeAndWait(new Runnable() {
                             public void run() {
-                                try { midlet.startApp(); }
+                                try { boot(midlet, br, bi); }
                                 catch (Throwable e) { err[0] = e; }
                             }
                         });
@@ -85,9 +201,11 @@ public class OpenTTYMain {
             // Non-interactive boot check: run startApp on a worker thread (as
             // MIDP would) and, after a settle delay, dump the current screen
             // and the PID-1 output buffer, then exit.
+            final String br = System.getProperty("opentty.bootRoot", "");
+            final String bi = System.getProperty("opentty.bootInit", "");
             Thread midletThread = new Thread(new Runnable() {
                 public void run() {
-                    try { midlet.startApp(); }
+                    try { boot(midlet, br, bi); }
                     catch (Throwable e) { e.printStackTrace(); System.exit(1); }
                 }
             }, "MIDlet");
@@ -102,7 +220,7 @@ public class OpenTTYMain {
             // exercises CommandListener -> Lua handler -> os.execute.
             try {
                 SwingUtilities.invokeAndWait(new Runnable() {
-                    public void run() { dispatchRunCommand(); }
+                    public void run() { fireCommand(System.getProperty("opentty.cmd", "echo hello opentty desktop"), "smoke"); }
                 });
                 Thread.sleep(4000);
             } catch (Throwable e) {
@@ -112,16 +230,26 @@ public class OpenTTYMain {
             System.exit(0);
         }
 
+        String br = System.getProperty("opentty.bootRoot", "");
+        String bi = System.getProperty("opentty.bootInit", "");
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
-                try { midlet.startApp(); }
-                catch (MIDletStateChangeException e) { }
+                try { boot(midlet, br, bi); }
                 catch (Throwable e) {
                     e.printStackTrace();
                     System.exit(1);
                 }
             }
         });
+
+        fireBootCommand(System.getProperty("opentty.cmd", ""));
+
+        if (flag("opentty.repro")) { reproDiagnose(midlet); }
+
+        if (System.getProperty("opentty.cmd") != null) {
+            try { Thread.sleep(1500); } catch (InterruptedException e) { }
+            dumpState(midlet);
+        }
 
         if (System.getProperty("opentty.probe") != null) {
             javax.swing.Timer t = new javax.swing.Timer(2000, new java.awt.event.ActionListener() {
@@ -133,9 +261,140 @@ public class OpenTTYMain {
         }
     }
 
-    private static void dispatchRunCommand() {
+    /** Diagnostic mode (opentty.repro=1): run statements inside the xterm's
+     *  Lua instance and report os.execute/io.popen results via its stdout. */
+    private static void reproDiagnose(final MIDlet midlet) {
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+                public void run() {
+                    try {
+                        java.lang.reflect.Field sf = OpenTTY.class.getDeclaredField("sys");
+                        sf.setAccessible(true);
+                        java.util.Hashtable sys = (java.util.Hashtable) sf.get(midlet);
+                        Object xlua = null;
+                        java.util.Enumeration en = sys.keys();
+                        while (en.hasMoreElements() && xlua == null) {
+                            Object p = sys.get(en.nextElement());
+                            Object nm = null;
+                            try {
+                                java.lang.reflect.Field nf = p.getClass().getDeclaredField("name");
+                                nf.setAccessible(true);
+                                nm = nf.get(p);
+                            } catch (Throwable t) { }
+                            if (nm != null && nm.toString().equals("xterm")) {
+                                java.lang.reflect.Field lf = p.getClass().getDeclaredField("lua");
+                                lf.setAccessible(true);
+                                xlua = lf.get(p);
+                            }
+                        }
+                        if (xlua == null) { System.out.println("[repro] no xterm lua"); return; }
+                        try {
+                            java.lang.reflect.Field sof = xlua.getClass().getDeclaredField("stdout");
+                            sof.setAccessible(true);
+                            Object so = sof.get(xlua);
+                            System.out.println("[repro] xterm lua.stdout=" + System.identityHashCode(so) + " " + so.getClass().getName());
+                            Object cur = Display.staticCurrent();
+                            if (cur instanceof Form && ((Form) cur).size() > 0) {
+                                Object it0 = ((Form) cur).get(0);
+                                System.out.println("[repro] form item[0]=" + System.identityHashCode(it0) + " " + it0.getClass().getName());
+                            }
+                        } catch (Throwable t) { System.out.println("[repro] compare failed: " + t); }
+                        java.lang.reflect.Method runMethod = null;
+                        try {
+                            runMethod = xlua.getClass().getMethod("run", String.class, String.class, java.util.Hashtable.class);
+                            System.out.println("[repro] run method=" + runMethod);
+                        } catch (Throwable te) { System.out.println("[repro] getMethod failed: " + te); }
+                        String cmd = System.getProperty("opentty.cmd", "");
+                        String code = "_REPRO = 'HELLO'\n"
+                            + "local ok0, r0 = pcall(io.popen, '/mnt/opentty/nosuch.lua')\n"
+                            + "_REPRO = _REPRO .. '|P0=' .. tostring(ok0) .. '|' .. tostring(r0) .. ';'\n"
+                            + "local ok1, r1 = pcall(io.popen, '/mnt/opentty/zt.lua')\n"
+                            + "_REPRO = _REPRO .. '|P1=' .. tostring(ok1) .. '|' .. tostring(r1) .. ';'\n"
+                            + "local okc, rc = pcall(os.execute, 'cat /mnt/opentty/nosuch.lua')\n"
+                            + "_REPRO = _REPRO .. '|CAT=' .. tostring(okc) .. '|' .. tostring(rc) .. ';'\n"
+                            + "local ok2, m2 = pcall(os.execute, '" + cmd.replace("'", "\\'") + "')\n"
+                            + "_REPRO = _REPRO .. '|EXEC=' .. tostring(ok2) .. '|' .. tostring(m2) .. ';'\n";
+                        java.util.Hashtable dr = (java.util.Hashtable) runMethod
+                            .invoke(xlua, "repro", code, new java.util.Hashtable());
+                        java.lang.reflect.Field gif = xlua.getClass().getDeclaredField("globals");
+                        gif.setAccessible(true);
+                        java.util.Hashtable g = (java.util.Hashtable) gif.get(xlua);
+                        System.out.println("[repro] _REPRO=[" + g.get("_REPRO") + "]");
+                        java.lang.reflect.Field sf2 = OpenTTY.class.getDeclaredField("sys");
+                        sf2.setAccessible(true);
+                        java.util.Hashtable sys2 = (java.util.Hashtable) sf2.get(midlet);
+                        String pids = "";
+                        java.util.Enumeration en2 = sys2.keys();
+                        while (en2.hasMoreElements()) { Object k = en2.nextElement(); pids += k + " "; }
+                        System.out.println("[repro] sys keys after: " + pids);
+                    } catch (Throwable t) {
+                        System.out.println("[repro] failed: " + t);
+                        t.printStackTrace(System.out);
+                    }
+                }
+            });
+            System.out.println("------------------------------------------------");
+            dumpState(midlet);
+            System.exit(0);
+        } catch (Throwable t) {
+            System.out.println("[repro] outer failed: " + t);
+            t.printStackTrace(System.out);
+        }
+    }
+
+    /** Boot the MIDlet. With default root/init this is a plain startApp();
+     *  otherwise it drives the boot like a custom grub entry. */
+    private static void boot(MIDlet midlet, String bootRoot, String bootInit) throws Throwable {
+        if (bootRoot.length() == 0 && bootInit.length() == 0) {
+            midlet.startApp();
+            return;
+        }
+        if (!(midlet instanceof OpenTTY)) { throw new IllegalStateException("runner requires the OpenTTY MIDlet"); }
+        java.util.Hashtable entry = new java.util.Hashtable();
+        entry.put("title", "(desktop runner)");
+        entry.put("root", bootRoot.length() > 0 ? bootRoot : "/");
+        entry.put("init", bootInit.length() > 0 ? bootInit : "/bin/init");
+        ((OpenTTY) midlet).bootEntry(entry);
+    }
+
+    /** After boot, wait for a console Form with a Run command and fire the
+     *  runner command through its Run handler (os.execute). */
+    private static void fireBootCommand(String cmd) {
+        if (cmd == null || cmd.length() == 0) { return; }
+        long t0 = System.currentTimeMillis();
+        while (System.currentTimeMillis() - t0 < 20000) {
+            if (hasRunCommand(Display.staticCurrent())) {
+                try {
+                    SwingUtilities.invokeAndWait(new Runnable() {
+                        public void run() { fireCommand(cmd, "run"); }
+                    });
+                } catch (Throwable e) {
+                    System.out.println("[run] dispatch failed: " + e);
+                }
+                return;
+            }
+            try { Thread.sleep(500); } catch (InterruptedException e) { }
+        }
+        System.out.println("[run] no runnable console appeared; command not fired: " + cmd);
+    }
+
+    private static boolean hasRunCommand(Object cur) {
+        if (!(cur instanceof Form)) { return false; }
+        try {
+            java.lang.reflect.Field f = Displayable.class.getDeclaredField("commands");
+            f.setAccessible(true);
+            java.util.Vector cmds = (java.util.Vector) f.get(cur);
+            for (int i = 0; i < cmds.size(); i++) {
+                javax.microedition.lcdui.Command c = (javax.microedition.lcdui.Command) cmds.elementAt(i);
+                if (c.getLabel().equals("Run")) { return true; }
+            }
+        } catch (Throwable e) { }
+        return false;
+    }
+
+    private static void fireCommand(String command, String tag) {
         Object cur = Display.staticCurrent();
-        if (!(cur instanceof Form)) { System.out.println("[smoke] no Form to drive: " + cur); return; }
+        if (!(cur instanceof Form)) { System.out.println("[" + tag + "] no Form to drive: " + cur); return; }
         Form form = (Form) cur;
         try {
             // stdin is the field whose label ends with the prompt "$"/"#".
@@ -147,8 +406,8 @@ public class OpenTTYMain {
                     if (l != null && (l.endsWith("$") || l.endsWith("#"))) { stdin = (TextField) it; }
                 }
             }
-            if (stdin == null) { System.out.println("[smoke] stdin field not found"); return; }
-            stdin.setString("echo hello opentty desktop");
+            if (stdin == null) { System.out.println("[" + tag + "] stdin field not found"); return; }
+            stdin.setString(command);
 
             java.lang.reflect.Field f = Displayable.class.getDeclaredField("commands");
             f.setAccessible(true);
@@ -165,14 +424,43 @@ public class OpenTTYMain {
                 if (c.getLabel().equals("Run")) { run = c; }
             }
             if (run == null || listener == null) {
-                System.out.println("[smoke] run command/listener not found (cmds=" + cmds.size() + ")");
+                System.out.println("[" + tag + "] run command/listener not found (cmds=" + cmds.size() + ")");
                 return;
             }
-            System.out.println("[smoke] firing Run: '" + stdin.getString() + "'");
+            System.out.println("[" + tag + "] firing Run: '" + command + "'");
             ((javax.microedition.lcdui.CommandListener) listener).commandAction(run, form);
         } catch (Throwable e) {
-            System.out.println("[smoke] driving failed: " + e);
+            System.out.println("[" + tag + "] driving failed: " + e);
             e.printStackTrace();
+        }
+    }
+
+    private static void dumpProcesses(String tag, MIDlet midlet, java.util.Hashtable table, String title) {
+        System.out.println("[" + tag + "] " + title + " .size()=" + table.size());
+        java.util.Enumeration en = table.keys();
+        while (en.hasMoreElements()) {
+            Object pid = en.nextElement();
+            Object p = table.get(pid);
+            String name = "";
+            String out = "";
+            try {
+                java.lang.reflect.Field nf = p.getClass().getDeclaredField("name");
+                nf.setAccessible(true);
+                Object n = nf.get(p);
+                if (n != null) { name = n.toString(); }
+            } catch (Throwable e) { }
+            try {
+                java.lang.reflect.Field of = p.getClass().getDeclaredField("stdout");
+                of.setAccessible(true);
+                Object o = of.get(p);
+                if (o instanceof StringBuffer) { out = ((StringBuffer) o).toString(); }
+                else if (o instanceof String) { out = (String) o; }
+                else if (o instanceof java.io.ByteArrayOutputStream) { out = ((java.io.ByteArrayOutputStream) o).toString("UTF-8"); }
+            } catch (Throwable e) { }
+            System.out.println("[" + tag + "]   pid=" + pid + " " + p.getClass().getSimpleName() + " name=" + name);
+            if (out.length() > 0) {
+                System.out.println("[" + tag + "]     stdout=" + out.replace("\n", "\\n"));
+            }
         }
     }
 
@@ -181,23 +469,16 @@ public class OpenTTYMain {
         try {
             java.lang.reflect.Field sf = OpenTTY.class.getDeclaredField("sys");
             sf.setAccessible(true);
-            java.util.Hashtable sys = (java.util.Hashtable) sf.get(midlet);
-            System.out.println("[smoke] sys.size()=" + sys.size());
-            java.util.Enumeration en = sys.keys();
-            while (en.hasMoreElements()) {
-                Object pid = en.nextElement();
-                Object p = sys.get(pid);
-                String name = "";
-                try {
-                    java.lang.reflect.Field nf = p.getClass().getDeclaredField("name");
-                    nf.setAccessible(true);
-                    Object n = nf.get(p);
-                    if (n != null) { name = n.toString(); }
-                } catch (Throwable e) { }
-                System.out.println("[smoke]   pid=" + pid + " " + p.getClass().getSimpleName() + " name=" + name);
-            }
+            dumpProcesses("smoke", midlet, (java.util.Hashtable) sf.get(midlet), "sys");
         } catch (Throwable e) {
             System.out.println("[smoke] sys dump failed: " + e);
+        }
+        try {
+            java.lang.reflect.Field ef = OpenTTY.class.getDeclaredField("exited");
+            ef.setAccessible(true);
+            dumpProcesses("smoke", midlet, (java.util.Hashtable) ef.get(midlet), "exited");
+        } catch (Throwable e) {
+            System.out.println("[smoke] exited dump failed: " + e);
         }
         try {
             RecordStore rs = RecordStore.openRecordStore("OpenRMS", false);
