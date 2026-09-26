@@ -248,6 +248,7 @@ MIDlet on a desktop JDK (17+) via the `pc/j2me` bindings:
 
 ```
 pc/run.sh                                   # interactive boot (1st run: create user/password)
+pc/run-jar.sh                               # run dist/OpenTTY-desktop-*.jar (sets the WM env var)
 pc/run.sh --user opentty --pass opentty     # headless first boot, straight to console
 pc/run.sh --smoke --user opentty --pass opentty -- /tmp/app.lua  # run a Lua app at boot + dump state
 pc/run.sh -- /tmp/rvtest.elf       # stage + run a RISC-V ELF at boot

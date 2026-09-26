@@ -71,6 +71,10 @@ OPENTTY_JVM_OPTS="-Dopentty.watchdog=1 -Dopentty.execdbg=1" pc/run.sh
 
 ## Desktop window quirks
 
+- `java -jar` on a non-reparenting WM (bspwm/i3/dwm) opens a **blank grey
+  window** unless `_JAVA_AWT_WM_NONREPARENTING=1` is set — use
+  `pc/run-jar.sh` which sets it for you.
+
 - Form rows fill the full column width: the console area starts flush at the
   left edge (no large empty margin), and the input row sits right below it.
 - **Enter** in the xterm input row runs the command (same as pressing the
