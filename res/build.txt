@@ -209,3 +209,4 @@
 [2026-1.18.2-04x39]	Build #439 - ELF guest RAM padrao de 512KB, configuravel pelo kernel Lua
 [2026-1.18.2-04x40]	Build #440 - ELF emulator: syscalls pipe/alarm/access/umask/setsid/getrusage/readlink/sethostname/gethostname/getgid32
 [2026-1.18.2-04x41]	Build #441 - ELF guest libc: time() wrapper (SYS_TIME); gc() + mem_free/mem_total/mem_used (Java heap KB)
+[2026-1.18.2-04x42] Release 1.18.2 - In Marluce's memory

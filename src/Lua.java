@@ -3234,6 +3234,7 @@ public class Lua {
                 }
                 else if (mainCommand.equals("builtin") || mainCommand.equals("command")) { Vector payload = new Vector(); payload.addElement(argument); payload.addElement(true); payload.addElement(FALSE); return exec(payload); }
                 else if (mainCommand.equals("false")) { status = 255; }
+                else if (mainCommand.equals("grandma")) { midlet.print("Press F to respect...", output, id, father); }
                 else { midlet.print(mainCommand + ": not found", output, id, father); status = 127; }
                 
                 return new Double(status);
