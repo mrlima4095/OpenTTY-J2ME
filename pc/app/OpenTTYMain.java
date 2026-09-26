@@ -34,7 +34,10 @@ public class OpenTTYMain {
             if (sep) { tokens.add(a); }
             else if (a.equals("-h") || a.equals("--help")) {
                 System.out.println("Usage: OpenTTYMain [options] [--] [command tokens...]");
-                System.out.println("  root=PATH  init=PATH  --user NAME  --smoke  --watchdog  --cmd CMD  --");
+                System.out.println("  root=PATH  init=PATH  --user NAME  --pass PASS  --smoke  --watchdog  --cmd CMD  --");
+                System.out.println("First boot with no credentials asks you to create a user and");
+                System.out.println("password (like the J2ME MIDlet); --user/--pass pre-create them for");
+                System.out.println("headless or scripted runs (persisted in the RMS under data/).");
                 System.out.println("Host files in the command are staged to /mnt/opentty/ and run by content.");
                 System.exit(0);
             }
@@ -45,6 +48,11 @@ public class OpenTTYMain {
                 System.setProperty("opentty.user", args[++i]);
             }
             else if (a.startsWith("--user=")) { System.setProperty("opentty.user", a.substring(7)); }
+            else if (a.equals("--pass")) {
+                if (i + 1 >= args.length) { System.out.println("--pass requires a password"); System.exit(2); }
+                System.setProperty("opentty.pass", args[++i]);
+            }
+            else if (a.startsWith("--pass=")) { System.setProperty("opentty.pass", a.substring(7)); }
             else if (a.equals("--smoke")) { System.setProperty("opentty.smoke", "1"); }
             else if (a.equals("--watchdog")) { System.setProperty("opentty.watchdog", "1"); }
             else if (a.equals("--repro")) { System.setProperty("opentty.repro", "1"); }
@@ -128,9 +136,8 @@ public class OpenTTYMain {
     }
 
     public static void main(String[] args) throws Exception {
-        String root = System.getProperty("opentty.rms", "data/rms");
-        String user = System.getProperty("opentty.user", "opentty");
-        System.out.println("[OpenTTY] desktop run: user=" + user + " rms=" + root);
+        String rms = System.getProperty("opentty.rms", "data/rms");
+        System.out.println("[OpenTTY] desktop run: rms=" + rms);
 
         // Same command line as pc/run.sh, so `java -jar OpenTTY-desktop-*.jar
         // [options] [--] [command tokens...]` works out of the box. When a
@@ -139,7 +146,13 @@ public class OpenTTYMain {
             parseArgs(args);
         }
 
-        seedOpenRMS(user);
+        // Device behavior: a first run with no credentials crops up the
+        // "OpenTTY - Login" form (create user + password). Credentials are
+        // only pre-seeded when --user/--pass were given (headless/scripted
+        // runs); once written to the RMS they persist across runs.
+        String user = System.getProperty("opentty.user", "");
+        String pass = System.getProperty("opentty.pass", "");
+        seedOpenRMS(user, pass);
 
         final MIDlet midlet = new OpenTTY();
         System.out.println("[stage] new OpenTTY() ok"); System.out.flush();
@@ -610,25 +623,40 @@ System.out.println("[probe]   content " + c.getWidth() + "x" + c.getHeight()
         return sb.toString();
     }
 
-    /** OpenRMS record 1 = username, 2 = password hash, 3 = VFS index. Seeding
-     *  them makes the first boot land directly on the console. */
-    private static void seedOpenRMS(String user) {
+    /** OpenRMS record 1 = username, 2 = password hash, 3 = VFS index. On the
+     *  real device these are written by the "OpenTTY - Login" first-boot form.
+     *  Here they are only seeded when the caller asks for credentials
+     *  (--user/--pass); with both empty the first run shows that login form,
+     *  matching the J2ME MIDlet. Record 3 (the VFS index) is still ensured. */
+    private static void seedOpenRMS(String user, String pass) {
+        if (user.length() == 0 && pass.length() == 0) {
+            System.out.println("[OpenTTY] credentials not requested; existing RMS credentials are preserved");
+            return;
+        }
         RecordStore rs = null;
         try {
             rs = RecordStore.openRecordStore("OpenRMS", true);
-            if (rs.getNumRecords() < 1) {
+            // The boot-time VFS loader pads the store with empty records, so a
+            // value is "missing" when its record is empty, not by count.
+            while (rs.getNumRecords() < 3) { rs.addRecord(new byte[0], 0, 0); }
+            String r1 = new String(rs.getRecord(1) != null ? rs.getRecord(1) : new byte[0]);
+            String r2 = new String(rs.getRecord(2) != null ? rs.getRecord(2) : new byte[0]);
+            if (user.length() > 0 && r1.length() == 0) {
                 byte[] u = user.getBytes();
-                rs.addRecord(u, 0, u.length);
+                rs.setRecord(1, u, 0, u.length);
+                System.out.println("[OpenTTY] OpenRMS seeded for user '" + user + "'");
             }
-            if (rs.getNumRecords() < 2) {
-                byte[] h = String.valueOf(user.hashCode()).getBytes();
-                rs.addRecord(h, 0, h.length);
+            if (pass.length() > 0 && r2.length() == 0) {
+                byte[] h = String.valueOf(pass.hashCode()).getBytes();
+                rs.setRecord(2, h, 0, h.length);
+                System.out.println("[OpenTTY] password hash seeded for user '" + user + "'");
             }
-            if (rs.getNumRecords() < 3) {
+            if (new String(rs.getRecord(3) != null ? rs.getRecord(3) : new byte[0]).length() == 0) {
                 byte[] idx = "VFS3\n".getBytes();
-                rs.addRecord(idx, 0, idx.length);
+                rs.setRecord(3, idx, 0, idx.length);
             }
-            System.out.println("[OpenTTY] OpenRMS seeded for user '" + user + "'");
+            rs.closeRecordStore();
+            rs = null;
         } catch (RecordStoreException e) {
             System.err.println("[OpenTTY] could not seed OpenRMS: " + e);
         } finally {

@@ -26,11 +26,37 @@ pc/run.sh [options] [--] [command tokens...]
 With no arguments it boots the normal system interactively. Command tokens are
 executed on the shell console once the system is up.
 
+## First boot (like the real MIDlet)
+
+A first run with no credentials opens the **OpenTTY - Login** form and asks you
+to create a user and password — exactly like the J2ME MIDlet. After saving
+them you get the *Reopen MIDlet* alert, close the window and reopen: OpenTTY
+then boots to the console. Everything (credentials, stores, the VFS index)
+persists under `data/rms`, so the second boot skips the login.
+
+For headless/scripted runs, pre-seed the credentials instead:
+
+```
+pc/run.sh --user opentty --pass opentty          # first boot straight to console
+pc/run.sh --smoke --user opentty --pass opentty  # smoke needs credentials too
+```
+
+Without `--user`/`--pass` the first run shows the login form (device behavior).
+
+## Boot menu
+
+Like the device, a **OpenTTY - Boot** list menu appears whenever `/boot/grub.cfg`
+contains more than one `menuentry` (the shipped default has one and boots
+straight). Boot entries written by the guest (e.g. a root `init=` script doing
+`io.write("/boot/grub.cfg", cfg)`) are persisted in the RMS and shown on the
+next start.
+
 | Option | Meaning |
 | --- | --- |
 | `root=PATH` | Boot root: `"/"` (default, normal OpenTTY) or a host directory copied into `data/mnt/<name>` and used as a chroot (guest path `/mnt/<name>/...`). |
 | `init=PATH` | Boot init program (guest path or host file, default `/bin/init`). Runs as PID 1 and must be a Lua script. |
-| `--user NAME` | OpenTTY user (default `$OPENTTY_USER` or `opentty`). |
+| `--user NAME` | OpenTTY username. First boot with no credentials opens the login form (device behavior); `--user` seeds the username (password prompt only). Default `$OPENTTY_USER` (empty). |
+| `--pass PASS` | Seed the password together with `--user` to skip the login form (headless/smoke runs). |
 | `--smoke` | Headless boot check: boot, dump display + processes, drive the console with the command (or `echo hello`), exit. |
 | `--watchdog` | Dump all thread stacks and exit 9 if boot hangs; exit 3 on a boot throw. |
 | `--cmd CMD` | Execute one command string at boot (same as the token form). |

@@ -247,8 +247,9 @@ For fast iteration without a device, `pc/run.sh` boots the unmodified `src/`
 MIDlet on a desktop JDK (17+) via the `pc/j2me` bindings:
 
 ```
-pc/run.sh                          # interactive boot
-pc/run.sh --smoke -- /tmp/app.lua  # run a Lua app at boot and dump state
+pc/run.sh                                   # interactive boot (1st run: create user/password)
+pc/run.sh --user opentty --pass opentty     # headless first boot, straight to console
+pc/run.sh --smoke --user opentty --pass opentty -- /tmp/app.lua  # run a Lua app at boot + dump state
 pc/run.sh -- /tmp/rvtest.elf       # stage + run a RISC-V ELF at boot
 pc/run.sh init=./init.lua          # boot a Lua script as PID 1
 pc/run.sh root=/path/to/rootfs     # chroot a host directory (root=)
@@ -258,10 +259,13 @@ Under non-reparenting WMs (bspwm, i3, dwm...) the window can open blank grey;
 `run.sh` sets `_JAVA_AWT_WM_NONREPARENTING=1` to fix it (see
 [docs/RUNNER.md](docs/RUNNER.md)).
 
-Desktop niceties: Enter in the xterm input row runs the command (a focused Run
-button answers Enter too), the console output fills the window width with no
-left margin, and destroying the MIDlet (Exit/`exit`) closes the window instead
-of leaving a zombie JVM.
+Desktop niceties: the first run opens the “OpenTTY - Login” form to create a
+user and password (like the J2ME MIDlet, with an RMS persisting credentials
+and the VFS under `data/rms`); a boot menu (“OpenTTY - Boot”) appears whenever
+`/boot/grub.cfg` has several entries; Enter in the xterm input row runs the
+command (a focused Run button answers Enter too), the console output fills the
+window width with no left margin, and destroying the MIDlet (Exit/`exit`)
+closes the window instead of leaving a zombie JVM.
 
 `pc/build-jar.sh` packs the same build into a standalone desktop JAR
 (`dist/OpenTTY-desktop-1.18.2.jar`, `java -jar …`). See

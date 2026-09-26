@@ -40,7 +40,12 @@ Options:
   init=PATH      Boot init program (guest path, default /bin/init). The
                  program runs as PID 1 and must be a Lua script,
                  e.g.  ./run.sh init=./init.lua
-  --user NAME    OpenTTY user (default: $OPENTTY_USER or opentty).
+  --user NAME    OpenTTY username. First run with no credentials asks you to
+                 create user + password (like the J2ME MIDlet); --user seeds
+                 the username so only the password prompt appears. Default:
+                 $OPENTTY_USER (unset = first-run login form).
+  --pass PASS    Seed the password with --user (skips the password prompt on
+                 first boot), e.g. ./run.sh --user opentty --pass opentty.
   --smoke        Headless boot check: boot, dump state, drive the console
                  with the command (or 'echo hello opentty desktop'), exit.
   --cmd CMD      Execute one command string at boot (same as token form).
@@ -63,7 +68,8 @@ EOF
 
 smoke=0
 watchdog=0
-user="${OPENTTY_USER:-opentty}"
+user="${OPENTTY_USER:-}"
+pass=""
 boot_root="/"
 boot_init="/bin/init"
 cmd_tokens=()
@@ -85,6 +91,12 @@ while [ $i -le $# ]; do
                 user="${!i}"
                 ;;
             --user=*) user="${arg#--user=}" ;;
+            --pass)
+                i=$((i + 1))
+                [ $i -le $# ] || { echo "--pass requires a password" >&2; exit 2; }
+                pass="${!i}"
+                ;;
+            --pass=*) pass="${arg#--pass=}" ;;
             --smoke) smoke=1 ;;
             --watchdog) watchdog=1 ;;
             --cmd|--) after_sep=true ;;
@@ -158,6 +170,8 @@ JVM=()
 [ -n "$command" ] && JVM+=("-Dopentty.cmd=$command")
 [ "$smoke" = "1" ] && JVM+=("-Dopentty.smoke=1")
 [ "$watchdog" = "1" ] && JVM+=("-Dopentty.watchdog=1")
+[ -n "$user" ] && JVM+=("-Dopentty.user=$user")
+[ -n "$pass" ] && JVM+=("-Dopentty.pass=$pass")
 
 mkdir -p "$BUILD" "$DATA/rms" "$DATA/mnt"
 rm -rf "$WORK/src"
@@ -193,7 +207,6 @@ exec "$JAVA" \
     "${JVM[@]+"${JVM[@]}"}" \
     -Dopentty.rms="$DATA/rms" \
     -Dopentty.mnt="$DATA/mnt" \
-    -Dopentty.user="$user" \
     -cp "$BUILD:$ROOT/src" \
     OpenTTYMain "$@"
 
