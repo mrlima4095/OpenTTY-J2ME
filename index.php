@@ -35,9 +35,12 @@ if ($isOld) {
         <a href="/cli">🌐 WebProxy</a>
         <hr>
         <h3>🛠️ Building OpenTTY from Source</h3>
-        <pre>📥 Step 1: Download SDK.jar from http://opentty.fun/dl/SDK.jar
-📁 Step 2: Navigate to OpenTTY repo folder
-🔨 Step 3: Launch SDK.jar, browse repo, press Build button (hammer icon)
+        <pre>💻 Option 1: Download sdkcli.jar from http://opentty.fun/sdkcli.jar
+ 📁 Run sdkcli.jar from the OpenTTY repository folder to compile on your computer
+
+ 📱 Option 2: Compile directly on your device
+ 📁 Open the OpenTTY source folder in the on-device SDK
+ 🔨 Press the Build button (hammer icon)
 
 📦 Output: dist/OpenTTY.jar + OpenTTY.jad
 📲 Install: run OpenTTY.jar or OpenTTY.jad on your J2ME phone</pre>
@@ -459,17 +462,17 @@ PID  PROCESS
       <div class="text-center mb-4">
         <i class="bi bi-hammer fs-1 text-cyan"></i>
         <h2 class="fw-bold mt-2">Building OpenTTY from Source Code</h2>
-        <p class="text-secondary">Compile OpenTTY directly on your mobile device using the official SDK tool</p>
+        <p class="text-secondary">Compile with sdkcli.jar on a computer or directly on your mobile device using the on-device SDK</p>
       </div>
       <div class="row g-4">
         <div class="col-md-6">
           <div class="bg-black bg-opacity-40 p-3 rounded-3 h-100">
-            <h5><i class="bi bi-1-square-fill text-cyan"></i> Download SDK</h5>
-            <p>Get <a href="http://opentty.fun/dl/SDK.jar" class="text-cyan">SDK.jar</a> and transfer it to your device's storage or SD card.</p>
-            <h5 class="mt-3"><i class="bi bi-2-square-fill text-cyan"></i> Access Repository</h5>
-            <p>Open file manager, navigate to the OpenTTY source folder. Ensure all Java files are present.</p>
-            <h5 class="mt-3"><i class="bi bi-3-square-fill text-cyan"></i> Compile with SDK</h5>
-            <p>Launch <code>SDK.jar</code>, browse to OpenTTY directory, press the <strong>Build button (🛠️ hammer icon)</strong>. Wait for compilation.</p>
+            <h5><i class="bi bi-1-square-fill text-cyan"></i> Compile with sdkcli.jar</h5>
+            <p>Download <a href="http://opentty.fun/sdkcli.jar" class="text-cyan">sdkcli.jar</a>, open a terminal in the OpenTTY repository folder, and run the SDK CLI to build the project.</p>
+            <h5 class="mt-3"><i class="bi bi-2-square-fill text-cyan"></i> Or build on your device</h5>
+            <p>Open the OpenTTY source folder in the on-device SDK. Ensure all Java files are present.</p>
+            <h5 class="mt-3"><i class="bi bi-3-square-fill text-cyan"></i> Start the build</h5>
+            <p>Press the <strong>Build button (🛠️ hammer icon)</strong> and wait for compilation to finish.</p>
           </div>
         </div>
         <div class="col-md-6">
@@ -513,9 +516,13 @@ PID  PROCESS
         <div class="terminal-window mb-4">
           <div class="terminal-header ps-3 py-2"><span class="text-white-50">Quick setup</span></div>
           <div class="terminal-body p-3 text-start">
-            <pre style="margin:0; font-size: 0.8rem;"># compile using mobile SDK.jar
-$ java -jar SDK.jar (on phone via J2ME runner)
-$ select OpenTTY folder → click Build (🛠️)
+            <pre style="margin:0; font-size: 0.8rem;"># download sdkcli.jar from http://opentty.fun/sdkcli.jar
+# then run it from the OpenTTY repository folder
+ $ java -jar sdkcli.jar
+
+ # or compile on-device
+ $ open the OpenTTY folder in the on-device SDK
+ $ click Build (🛠️)
 
 # output: dist/OpenTTY.jar + OpenTTY.jad
 # install on any MIDP 2.0 device</pre>
@@ -524,7 +531,7 @@ $ select OpenTTY folder → click Build (🛠️)
         <div class="mt-3">
           <a href="http://git.opentty.fun" class="text-decoration-none me-3"><i class="bi bi-git"></i> Git repository (Forgejo)</a>
           <a href="/assets/" class="text-decoration-none"><i class="bi bi-archive"></i> Assets & mirrors</a>
-          <a href="http://opentty.fun/dl/SDK.jar" class="text-decoration-none ms-3"><i class="bi bi-tools"></i> Download SDK.jar</a>
+          <a href="http://opentty.fun/sdkcli.jar" class="text-decoration-none ms-3"><i class="bi bi-tools"></i> Download sdkcli.jar</a>
         </div>
       </div>
     </div>
