@@ -330,7 +330,6 @@ end
 
 local function proxyDaemon()
     os.setproc("name", "x11d")
-
     local conn, input, output
     local pending = ""
     local events = {}
