@@ -3,7 +3,7 @@
 local version = "0.7"
 local release_date = "2026-09-01"
 
-os.setproc("name", "x11ctl")
+os.setproc("name", "x11")
 os.setproc("version", version)
 
 local function warn(key)
@@ -328,124 +328,8 @@ local function banner()
     graphics.display(screen)
 end
 
-local function proxyDaemon()
-    os.setproc("name", "x11proxy")
-    local conn, input, output
-    local pending = ""
-    local events = {}
-
-    local function b64(value)
-        return base64.encode(tostring(value or ""))
-    end
-
-    local function readLine()
-        while true do
-            local endAt = string.find(pending, "\n")
-            if endAt then
-                local line = string.sub(pending, 1, endAt - 1)
-                pending = string.sub(pending, endAt + 1)
-                return line
-            end
-            local chunk = io.read(input, 1024)
-            if not chunk or chunk == "" then return nil end
-            pending = pending .. chunk
-        end
-    end
-
-    local function send(payload, args)
-        if not output then return nil, "x11: not connected" end
-        args = args or {}
-        local fields = { payload }
-        if payload == "create" then
-            fields[#fields + 1] = b64(args.window)
-            fields[#fields + 1] = b64(args.title or "OpenTTY")
-            fields[#fields + 1] = b64(args.width or 640)
-            fields[#fields + 1] = b64(args.height or 480)
-        elseif payload == "text" then
-            fields[#fields + 1] = b64(args.window)
-            fields[#fields + 1] = b64(args.x or 0)
-            fields[#fields + 1] = b64(args.y or 0)
-            fields[#fields + 1] = b64(args.text)
-            fields[#fields + 1] = b64(args.color or "black")
-        elseif payload == "rect" then
-            fields[#fields + 1] = b64(args.window)
-            fields[#fields + 1] = b64(args.x or 0)
-            fields[#fields + 1] = b64(args.y or 0)
-            fields[#fields + 1] = b64(args.width or 1)
-            fields[#fields + 1] = b64(args.height or 1)
-            fields[#fields + 1] = b64(args.color or "black")
-        elseif payload == "title" then
-            fields[#fields + 1] = b64(args.window)
-            fields[#fields + 1] = b64(args.title)
-        elseif payload == "clear" or payload == "show" or payload == "close" then
-            fields[#fields + 1] = b64(args.window)
-        else
-            return nil, "x11: unknown proxy operation '" .. tostring(payload) .. "'"
-        end
-        io.write(table.concat(fields, "\t") .. "\n", output)
-
-        while true do
-            local response = readLine()
-            if not response then return nil, "x11: proxy disconnected" end
-            if string.startswith(response, "event\t") then
-                events[#events + 1] = response
-            elseif string.startswith(response, "ok") then
-                return true
-            elseif string.startswith(response, "error\t") then
-                return nil, response
-            end
-        end
-    end
-
-    local handler = function(payload, args)
-        if payload == "connect" then
-            if not args or not args.host or not args.port then return "x11: host and port are required" end
-            local ok, c, i, o = pcall(socket.connect, "socket://" .. args.host .. ":" .. args.port)
-            if not ok then return "x11: " .. tostring(c) end
-            conn, input, output = c, i, o
-            return "connected to " .. args.host .. ":" .. args.port
-        elseif payload == "status" then
-            return output and "connected" or "disconnected"
-        elseif payload == "event" then
-            local event = events[1]
-            if event then table.remove(events, 1) end
-            return event
-        end
-        local ok, err = send(payload, args)
-        return ok or err
-    end
-    os.setproc("handler", handler)
-    return handler
-end
-
-local function proxyService()
-    local pid = os.getpid("x11proxy")
-    if not pid then
-        os.request(1, "serve", os.join(arg[0]))
-        pid = os.getpid("x11proxy")
-    end
-    return pid
-end
-
 local what = arg[1]
-if what == "--deamon" then
-    return proxyDaemon()
-elseif what == "connect" then
-    if not arg[2] or not arg[3] then
-        print("x11: usage: x11 connect <ip> <port>")
-        os.exit(2)
-    end
-    local pid = proxyService()
-    if not pid then
-        print("x11: failed to start proxy service")
-        os.exit(1)
-    end
-    local result = os.request(pid, "connect", { host = arg[2], port = arg[3] })
-    print(tostring(result))
-elseif what == "status" then
-    local pid = os.getpid("x11proxy")
-    print(pid and tostring(os.request(pid, "status")) or "disconnected")
-elseif what == "make" or what == "screen" then
+if what == "make" or what == "screen" then
     buildScreen(source(arg[2], arg[3]))
 elseif what == "list" then
     buildList(source(arg[2], arg[3]))
