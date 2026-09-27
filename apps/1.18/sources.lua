@@ -59,6 +59,7 @@ return {
         ["wget"] = { remote = "net/wget", here = "/bin/wget", description = "Download files from Network" },
         ["xterm"] = { remote = "sys/x11/xterm.lua", here = "/bin/xterm", description = "MIDlet Terminal" },
         ["x11"] = { remote = "sys/x11/main.lua", here = "/bin/x11", description = "X Server Client" },
+        ["x11-demo"] = { remote = "sys/x11/demo.lua", here = "/bin/x11-demo", depends = { "x11" }, description = "Native X11 proxy demonstration" },
         ["watch"] = { remote = "sys/watch.lua", here = "", description = "Watch a program" },
 
         --[""] = { remote = "", here = "", depends = {}, description = "" }
