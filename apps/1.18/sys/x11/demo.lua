@@ -1,6 +1,6 @@
 #!/bin/lua
 
-local x11 = os.getpid("x11")
+local x11 = os.getpid("x11d")
 if not x11 then
     print("x11-demo: X11 service is not running")
     print("x11-demo: run 'x11 connect <ip> <port>' first")

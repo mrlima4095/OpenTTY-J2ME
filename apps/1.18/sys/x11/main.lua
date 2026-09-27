@@ -329,7 +329,7 @@ local function banner()
 end
 
 local function proxyDaemon()
-    os.setproc("name", "x11")
+    os.setproc("name", "x11d")
 
     local conn, input, output
     local pending = ""
@@ -418,10 +418,10 @@ local function proxyDaemon()
 end
 
 local function proxyService()
-    local pid = os.getpid("x11")
+    local pid = os.getpid("x11d")
     if not pid then
         os.request(1, "serve", os.join(arg[0]))
-        pid = os.getpid("x11")
+        pid = os.getpid("x11d")
     end
     return pid
 end
@@ -442,7 +442,7 @@ elseif what == "connect" then
     local result = os.request(pid, "connect", { host = arg[2], port = arg[3] })
     print(tostring(result))
 elseif what == "status" then
-    local pid = os.getpid("x11")
+    local pid = os.getpid("x11d")
     print(pid and tostring(os.request(pid, "status")) or "disconnected")
 elseif what == "make" or what == "screen" then
     buildScreen(source(arg[2], arg[3]))
