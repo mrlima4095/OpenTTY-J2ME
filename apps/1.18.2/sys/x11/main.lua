@@ -329,7 +329,7 @@ local function banner()
 end
 
 local function proxyDaemon()
-    os.setproc("name", "x11d")
+    os.setproc("name", "x11proxy")
     local conn, input, output
     local pending = ""
     local events = {}
@@ -397,7 +397,7 @@ local function proxyDaemon()
         end
     end
 
-    return function(payload, args)
+    local handler = function(payload, args)
         if payload == "connect" then
             if not args or not args.host or not args.port then return "x11: host and port are required" end
             local ok, c, i, o = pcall(socket.connect, "socket://" .. args.host .. ":" .. args.port)
@@ -414,13 +414,15 @@ local function proxyDaemon()
         local ok, err = send(payload, args)
         return ok or err
     end
+    os.setproc("handler", handler)
+    return handler
 end
 
 local function proxyService()
-    local pid = os.getpid("x11d")
+    local pid = os.getpid("x11proxy")
     if not pid then
         os.request(1, "serve", os.join(arg[0]))
-        pid = os.getpid("x11d")
+        pid = os.getpid("x11proxy")
     end
     return pid
 end
@@ -441,7 +443,7 @@ elseif what == "connect" then
     local result = os.request(pid, "connect", { host = arg[2], port = arg[3] })
     print(tostring(result))
 elseif what == "status" then
-    local pid = os.getpid("x11d")
+    local pid = os.getpid("x11proxy")
     print(pid and tostring(os.request(pid, "status")) or "disconnected")
 elseif what == "make" or what == "screen" then
     buildScreen(source(arg[2], arg[3]))

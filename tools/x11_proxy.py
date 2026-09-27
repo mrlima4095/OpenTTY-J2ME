@@ -31,18 +31,21 @@ class Client:
 
     def run(self):
         try:
+            print("OpenTTY client connected: %s:%d" % self.address, flush=True)
             with self.conn.makefile("r", encoding="utf-8", newline="\n") as stream:
                 for line in stream:
                     fields = line.rstrip("\r\n").split("\t")
                     if not fields or not fields[0]:
                         continue
+                    print("OpenTTY request: %s" % fields[0], flush=True)
                     reply = queue.Queue(1)
                     self.commands.put((self, fields, reply))
                     result = reply.get()
                     self.send(result)
-        except (ConnectionError, OSError):
-            pass
+        except (ConnectionError, OSError) as error:
+            print("OpenTTY client error: %s" % error, flush=True)
         finally:
+            print("OpenTTY client disconnected: %s:%d" % self.address, flush=True)
             self.conn.close()
 
 
