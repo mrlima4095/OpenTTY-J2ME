@@ -438,8 +438,8 @@ included echo services with `-lib`:
 ./build-elf.sh res/apps/src/tcp-echo.c -lib -o res/apps/dist/tcp-echo
 ```
 
-`udp-echo` binds UDP port 8080, receives one datagram, and echoes it to the
-sender. `tcp-echo` binds TCP port 8081, accepts one connection, and echoes one
+`udp-echo` binds UDP port 18080, receives one datagram, and echoes it to the
+sender. `tcp-echo` binds TCP port 18081, accepts one connection, and echoes one
 received chunk. Both use `sockaddr_in_init()` so `sin_port` has network byte
 order.
 

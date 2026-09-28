@@ -178,7 +178,7 @@ if [ "$SHARED" -eq 1 ]; then
 else
     # The emulator resolves DT_NEEDED itself; an ELF interpreter is neither
     # available nor useful and would overlap .text at the fixed guest address.
-    "$LD" "${LDFLAGS[@]}" --hash-style=sysv -Ttext="$TEXT" --no-dynamic-linker --no-as-needed --allow-shlib-undefined --entry="$ENTRY" -o "$OUTPUT" "${OBJS[@]}" "${LIBFLAGS[@]}"
+    "$LD" "${LDFLAGS[@]}" -Ttext="$TEXT" --no-dynamic-linker --no-as-needed --allow-shlib-undefined --entry="$ENTRY" -o "$OUTPUT" "${OBJS[@]}" "${LIBFLAGS[@]}"
 fi
 
 if [ "$KEEP" -eq 1 ]; then cp "$WORK"/*.o "$(dirname "$OUTPUT")/" && echo "Objetos .o preservados em: $(dirname "$OUTPUT")/"; fi

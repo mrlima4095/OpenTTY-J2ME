@@ -13,10 +13,10 @@ int main(void)
     int received;
 
     if (fd < 0) { printf("udp-echo: socket failed: %d\n", fd); return 1; }
-    sockaddr_in_init(&peer, 8080, 0, 0, 0, 0);
+    sockaddr_in_init(&peer, 18080, 0, 0, 0, 0);
     if (bind(fd, &peer, sizeof(peer)) < 0) { printf("udp-echo: bind failed\n"); close(fd); return 1; }
 
-    printf("udp-echo: listening on UDP 8080\n");
+    printf("udp-echo: listening on UDP 18080\n");
     received = recvfrom(fd, buffer, sizeof(buffer), 0, &peer, &peer_length);
     if (received > 0) { sendto(fd, buffer, received, 0, &peer, peer_length); }
     printf("udp-echo: echoed %d bytes\n", received);

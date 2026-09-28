@@ -17,12 +17,12 @@ int main(void)
 
     if (server < 0) { printf("tcp-echo: socket failed: %d\n", server); return 1; }
     setsockopt(server, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
-    sockaddr_in_init(&local, 8081, 0, 0, 0, 0);
+    sockaddr_in_init(&local, 18081, 0, 0, 0, 0);
     if (bind(server, &local, sizeof(local)) < 0 || listen(server, 1) < 0) {
         printf("tcp-echo: bind or listen failed\n"); close(server); return 1;
     }
 
-    printf("tcp-echo: listening on TCP 8081\n");
+    printf("tcp-echo: listening on TCP 18081\n");
     client = accept(server, &peer, &peer_length);
     if (client < 0) { printf("tcp-echo: accept failed\n"); close(server); return 1; }
     received = recvfrom(client, buffer, sizeof(buffer), 0, &peer, &peer_length);

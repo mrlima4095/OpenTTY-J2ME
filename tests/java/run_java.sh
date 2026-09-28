@@ -3,7 +3,8 @@
 # J2ME stubs for the parts ELF.java references (Lua/OpenTTY/Process + LCDUI).
 #
 # Test sources: tests/java/src/TestELF.java, TestMem.java, TestCalNow.java,
-# and TestSockets.java. Socket coverage uses the desktop Connector bindings.
+# TestSockets.java, and TestSocketApps.java. Socket coverage uses the desktop
+# Connector bindings.
 # They load the shipped emulator binaries from res/apps/dist/.
 #
 # Usage: tests/java/run_java.sh [clean]
@@ -31,7 +32,8 @@ javac -nowarn -encoding UTF-8 -d "$OUT" \
     "$HERE/src/TestELF.java" \
     "$HERE/src/TestMem.java" \
     "$HERE/src/TestCalNow.java" \
-    "$HERE/src/TestSockets.java"
+    "$HERE/src/TestSockets.java" \
+    "$HERE/src/TestSocketApps.java"
 
 REPOPROP="-Dopentty.repo=$ROOT"
 
@@ -45,6 +47,7 @@ run TestELF   || fails=$((fails + 1))
 if [ -f "$HERE/rv/memtest" ]; then run TestMem || fails=$((fails + 1)); else echo "== TestMem =="; echo "SKIP memtest fixture unavailable"; fi
 run TestCalNow || fails=$((fails + 1))
 run TestSockets || fails=$((fails + 1))
+run TestSocketApps || fails=$((fails + 1))
 
 echo
 if [ "$fails" -eq 0 ]; then
