@@ -778,9 +778,11 @@ public class ELF implements CommandListener {
                 while (socketReaders.containsKey(key)) {
                     int count = input.read(buffer);
                     if (count > 0) {
-                        String text = new String(buffer, 0, count, "UTF-8");
-                        String current = output.getText();
-                        output.setText((current == null ? "" : current) + text);
+                        final String text = new String(buffer, 0, count, "UTF-8");
+                        midlet.display.callSerially(new Runnable() { public void run() {
+                            String current = output.getText();
+                            output.setText((current == null ? "" : current) + text);
+                        } });
                     } else {
                         try { Thread.sleep(100); } catch (InterruptedException e) { }
                     }

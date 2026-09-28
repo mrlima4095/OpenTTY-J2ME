@@ -60,6 +60,8 @@ public class Display {
 
     public static boolean isCurrent(Displayable d) { return instance != null && instance.current == d; }
 
+    public void callSerially(Runnable runnable) { SwingUtilities.invokeLater(runnable); }
+
     private final JFrame frame = new JFrame("OpenTTY");
     private final JPanel body = new JPanel();
     private java.awt.GridBagConstraints bodyGbc = new java.awt.GridBagConstraints();
