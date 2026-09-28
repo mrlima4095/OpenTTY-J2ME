@@ -34,7 +34,8 @@ int main(int argc, char **argv) {
     send = lcdui_command("Send", LCDUI_COMMAND_OK, 1); tasks = lcdui_command("Switch to...", LCDUI_COMMAND_SCREEN, 2); quit = lcdui_command("Disconnect", LCDUI_COMMAND_EXIT, 1);
     lcdui_add_command(form, send); lcdui_add_command(form, tasks); lcdui_add_command(form, quit);
     opentty_setproc("name", "nc-c"); lcdui_display(form); opentty_socket_reader_start(fd, output);
-    while (lcdui_wait_event(&event)) {
+    while (1) {
+        if (!lcdui_wait_event(&event)) continue;
         if (event.type != LCDUI_EVENT_COMMAND) continue;
         if (event.command == tasks) { graphics_taskmngr(); continue; }
         if (event.command == quit) break;
