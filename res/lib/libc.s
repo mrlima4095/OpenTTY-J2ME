@@ -78,6 +78,8 @@
 .equ LIB_MEM_FREE,         LIB_BASE + 61
 .equ LIB_MEM_TOTAL,        LIB_BASE + 62
 .equ LIB_MEM_USED,         LIB_BASE + 63
+.equ LIB_SOCKET_READER_START, LIB_BASE + 64
+.equ LIB_SOCKET_READER_STOP,  LIB_BASE + 65
 
 # ============================================================
 # _start - Entry point (compativel com o CRT do emulador):
@@ -175,6 +177,8 @@ LIBWRAP LIB_PROC_SHELL,      opentty_shell
 LIBWRAP LIB_PROC_GETENV,     opentty_getenv
 LIBWRAP LIB_PROC_EXPAND_ENV, opentty_expand_env
 LIBWRAP LIB_UI_SET_LABEL,    lcdui_set_label
+LIBWRAP LIB_SOCKET_READER_START, opentty_socket_reader_start
+LIBWRAP LIB_SOCKET_READER_STOP,  opentty_socket_reader_stop
 
 # ---- Helpers de runtime RISC-V ---------------------------------
 LIBWRAP LIB_UDIV32,           __udivsi3

@@ -28,7 +28,7 @@ public class ELF implements CommandListener {
     private int stackPointer;
     
     // File descriptors
-    private Hashtable fileDescriptors, socketDescriptors;
+    private Hashtable fileDescriptors, socketDescriptors, socketReaders;
     private int nextFd;
 
     // Process attributes (for umask, hostname and alarm syscalls)
@@ -134,7 +134,8 @@ public class ELF implements CommandListener {
         LIB_PROC_GETENV = LIB_BASE + 57, LIB_UI_SET_LABEL = LIB_BASE + 58,
         LIB_PROC_EXPAND_ENV = LIB_BASE + 59,
         LIB_GC = LIB_BASE + 60, LIB_MEM_FREE = LIB_BASE + 61,
-        LIB_MEM_TOTAL = LIB_BASE + 62, LIB_MEM_USED = LIB_BASE + 63;
+        LIB_MEM_TOTAL = LIB_BASE + 62, LIB_MEM_USED = LIB_BASE + 63,
+        LIB_SOCKET_READER_START = LIB_BASE + 64, LIB_SOCKET_READER_STOP = LIB_BASE + 65;
 
     // Relocation types
     private static final int R_RISCV_NONE = 0, R_RISCV_32 = 1, R_RISCV_RELATIVE = 3, R_RISCV_COPY = 4, R_RISCV_JUMP_SLOT = 5, R_RISCV_GLOB_DAT = 6;
@@ -162,7 +163,7 @@ public class ELF implements CommandListener {
         this.nextJmpBufId = 1;
         this.stackPointer = memory.length - 1024;
         this.jmpBufs = new Hashtable();
-        this.socketDescriptors = new Hashtable();
+        this.socketDescriptors = new Hashtable(); this.socketReaders = new Hashtable();
         this.allocatedBlocks = new Hashtable();
         this.fileDescriptors = new Hashtable();
         this.nextFd = 3; // 0=stdin, 1=stdout, 2=stderr
@@ -664,6 +665,8 @@ public class ELF implements CommandListener {
         libc.put("opentty_getenv", new Integer(createLibraryStub(LIB_PROC_GETENV)));
         libc.put("lcdui_set_label", new Integer(createLibraryStub(LIB_UI_SET_LABEL)));
         libc.put("opentty_expand_env", new Integer(createLibraryStub(LIB_PROC_EXPAND_ENV)));
+        libc.put("opentty_socket_reader_start", new Integer(createLibraryStub(LIB_SOCKET_READER_START)));
+        libc.put("opentty_socket_reader_stop", new Integer(createLibraryStub(LIB_SOCKET_READER_STOP)));
 
         // direct syscalls (open/read/write/close/exit/brk) as before
         libc.put("exit",  new Integer(createSyscallStub("exit")));
@@ -754,12 +757,38 @@ public class ELF implements CommandListener {
             case LIB_MEM_FREE - LIB_BASE: registers[REG_A0] = (int) (Runtime.getRuntime().freeMemory() / 1024); break;
             case LIB_MEM_TOTAL - LIB_BASE: registers[REG_A0] = (int) (Runtime.getRuntime().totalMemory() / 1024); break;
             case LIB_MEM_USED - LIB_BASE: { Runtime r = Runtime.getRuntime(); registers[REG_A0] = (int) ((r.totalMemory() - r.freeMemory()) / 1024); break; }
+            case LIB_SOCKET_READER_START - LIB_BASE: registers[REG_A0] = startSocketReader(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_SOCKET_READER_STOP - LIB_BASE: registers[REG_A0] = stopSocketReader(registers[REG_A0]); break;
             default: registers[REG_A0] = -1; break;
         }
     }
 
     private String uiString(int ptr) { return ptr == 0 ? "" : libcReadCString(ptr); }
     private Object uiObject(int handle) { return uiObjects.get(new Integer(handle)); }
+    private int startSocketReader(final int fd, int item) {
+        final Integer key = new Integer(fd);
+        Object stream = fileDescriptors.get(key), object = uiObject(item);
+        if (!(stream instanceof InputStream) || !(object instanceof StringItem)) { return -1; }
+        stopSocketReader(fd);
+        final InputStream input = (InputStream) stream;
+        final StringItem output = (StringItem) object;
+        Thread reader = new Thread(new Runnable() { public void run() {
+            byte[] buffer = new byte[1024];
+            try {
+                int count;
+                while (socketReaders.containsKey(key) && (count = input.read(buffer)) != -1) {
+                    String text = new String(buffer, 0, count, "UTF-8");
+                    String current = output.getText();
+                    output.setText((current == null ? "" : current) + text);
+                }
+            } catch (Exception e) { }
+            socketReaders.remove(key);
+        } }, "ELF socket reader " + fd);
+        socketReaders.put(key, reader);
+        reader.start();
+        return 0;
+    }
+    private int stopSocketReader(int fd) { socketReaders.remove(new Integer(fd)); return 0; }
     private int uiStore(Object object) {
         Integer handle = new Integer(nextUiHandle++);
         uiObjects.put(handle, object);

@@ -139,6 +139,8 @@ static int sendto(int fd, const void *buffer, int length, int flags, const struc
 static int recvfrom(int fd, void *buffer, int length, int flags, struct sockaddr_in *address, int *address_length) { return opentty_syscall6(292, fd, (int)buffer, length, flags, (int)address, (int)address_length); }
 static int setsockopt(int fd, int level, int option, const void *value, int length) { return opentty_syscall5(294, fd, level, option, (int)value, length); }
 static int getsockopt(int fd, int level, int option, void *value, int *length) { return opentty_syscall5(295, fd, level, option, (int)value, (int)length); }
+int opentty_socket_reader_start(int fd, int output_item);
+int opentty_socket_reader_stop(int fd);
 
 /* Clock and memory. time() returns seconds since the Unix epoch (UTC);
  * gc() runs the host garbage collector; mem_total/free/used report the

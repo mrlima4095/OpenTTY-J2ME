@@ -55,6 +55,7 @@ return {
         ["nano"] = { remote = "file/nano.lua", here = "/bin/nano", description = "Text Editor for OpenTTY" },
         ["nginx"] = { remote = "net/nginx/main.lua", here = "/bin/nginx", description = "HTTP Server (Nginx-style)" },
         ["nc"] = { remote = "net/netcat.lua", here = "/bin/nc", description = "Connect with Remote Interfaces" },
+        ["nc2"] = { remote = "net/nc2", here = "/bin/nc2", riscv = true, description = "Native C network terminal" },
         ["netstat"] = { remote = "net/netstat.lua", here = "/bin/netstat", description = "Network connection test" },
         ["nice"] = { remote = "sys/nice.lua", here = "/bin/nice", description = "Chance process priority" },
         ["open"] = { remote = "sys/open.lua", here = "/bin/open", description = "Open a file with the default application" },
