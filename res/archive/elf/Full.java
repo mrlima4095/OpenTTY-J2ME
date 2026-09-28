@@ -2942,6 +2942,24 @@ public class ELF implements CommandListener {
             registers[REG_A0] = 0;
             return;
         }
+
+        if (socketDescriptors.containsKey(fdKey)) {
+            Hashtable socketInfo = (Hashtable) socketDescriptors.remove(fdKey);
+            try {
+                Object server = socketInfo.get("server");
+                Object datagram = socketInfo.get("datagram");
+                Object connection = socketInfo.get("connection");
+                Object output = socketInfo.get("outputStream");
+                Object input = fileDescriptors.remove(fdKey);
+                if (input instanceof InputStream) { ((InputStream) input).close(); }
+                if (output instanceof OutputStream) { ((OutputStream) output).close(); }
+                if (connection instanceof Connection) { ((Connection) connection).close(); }
+                if (server instanceof Connection) { ((Connection) server).close(); }
+                if (datagram instanceof Connection) { ((Connection) datagram).close(); }
+                registers[REG_A0] = 0;
+            } catch (Exception e) { registers[REG_A0] = -1; }
+            return;
+        }
         
         if (fileDescriptors.containsKey(fdKey)) {
             Object stream = fileDescriptors.get(fdKey);
@@ -3120,6 +3138,10 @@ public class ELF implements CommandListener {
         if (fd == 0 || fd == 1 || fd == 2) {
             // stdin/stdout/stderr - dispositivo de caractere
             writeIntLE(memory, statbufAddr + 16, 020000); // st_mode: character device
+        } else if (socketDescriptors.containsKey(fdKey)) {
+            Hashtable socketInfo = (Hashtable) socketDescriptors.get(fdKey);
+            int type = ((Integer) socketInfo.get("type")).intValue();
+            writeIntLE(memory, statbufAddr + 16, type == SOCK_DGRAM ? S_IFIFO | 0600 : 0140000 | 0600);
         } else if (fileDescriptors.containsKey(fdKey)) {
             Object stream = fileDescriptors.get(fdKey);
             
@@ -3179,23 +3201,15 @@ public class ELF implements CommandListener {
         if (type != SOCK_STREAM && type != SOCK_DGRAM) { registers[REG_A0] = -22; return; }
         
         try {
-            String protocolStr = (type == SOCK_STREAM) ? "tcp" : "udp";
-            String url = "socket://0.0.0.0";
-            
-            StreamConnectionNotifier server = null;
-            if (type == SOCK_STREAM) { server = (StreamConnectionNotifier) Connector.open("socket://:0"); }
-            
             int fd = nextFd++;
             Hashtable socketInfo = new Hashtable();
             socketInfo.put("type", new Integer(type));
             socketInfo.put("protocol", new Integer(protocol));
-            socketInfo.put("server", server);
             socketInfo.put("connected", Boolean.FALSE);
             socketInfo.put("error", new Integer(0));
             socketInfo.put("options", new Hashtable());
             
             socketDescriptors.put(new Integer(fd), socketInfo);
-            fileDescriptors.put(new Integer(fd), null); // Placeholder
             
             registers[REG_A0] = fd;
         } catch (Exception e) { registers[REG_A0] = -1; }
@@ -3209,17 +3223,21 @@ public class ELF implements CommandListener {
         Hashtable socketInfo = (Hashtable) socketDescriptors.get(fdKey);
         int type = ((Integer) socketInfo.get("type")).intValue();
         
-        // Ler estrutura sockaddr_in da memória
+        // sockaddr_in uses native endian for sin_family and network endian for sin_port.
         if (sockaddrPtr + 16 > memory.length) { registers[REG_A0] = -14; return; }
-        
-        int sin_family = readShortLE(memory, sockaddrPtr), sin_port = readShortLE(memory, sockaddrPtr + 2);
-        byte[] sin_addr = new byte[4];
-        for (int i = 0; i < 4; i++) { sin_addr[i] = memory[sockaddrPtr + 4 + i]; }
-        if (sin_family != AF_INET) { registers[REG_A0] = -97; return; }
-        
-        String host = (sin_addr[0] & 0xFF) + "." + (sin_addr[1] & 0xFF) + "." + (sin_addr[2] & 0xFF) + "." + (sin_addr[3] & 0xFF), port = String.valueOf(sin_port & 0xFFFF);
+        String[] peer = readSockAddr(sockaddrPtr);
+        if (peer == null) { registers[REG_A0] = -97; return; }
+        String host = peer[0], port = peer[1];
         
         try {
+            if (type == SOCK_DGRAM) {
+                DatagramConnection dc = (DatagramConnection) getOrCreateDatagram(socketInfo, 0);
+                if (dc == null) { registers[REG_A0] = -1; return; }
+                socketInfo.put("peer", new String[] { host, port });
+                socketInfo.put("connected", Boolean.TRUE);
+                registers[REG_A0] = 0;
+                return;
+            }
             SocketConnection conn = (SocketConnection) Connector.open("socket://" + host + ":" + port);
             
             socketInfo.put("connection", conn);
@@ -3271,21 +3289,9 @@ public class ELF implements CommandListener {
         try {
             InputStream is = (InputStream) fileDescriptors.get(fdKey);
             if (is == null) { registers[REG_A0] = -9; return; }
-            
-            int bytesRead = 0;
-            for (int i = 0; i < len && buf + i < memory.length; i++) {
-                int b = is.read();
-                if (b == -1) {
-                    if (bytesRead == 0) { registers[REG_A0] = 0; }
-                    else { registers[REG_A0] = bytesRead; }
-
-                    return;
-                }
-                memory[buf + i] = (byte) b;
-                bytesRead++;
-            }
-            
-            registers[REG_A0] = bytesRead;
+            if (buf < 0 || buf >= memory.length || len < 0) { registers[REG_A0] = -14; return; }
+            int bytesRead = is.read(memory, buf, Math.min(len, memory.length - buf));
+            registers[REG_A0] = bytesRead < 0 ? 0 : bytesRead;
         } catch (Exception e) { registers[REG_A0] = -104; }
     }
     private void handleSendto() {
@@ -3295,7 +3301,7 @@ public class ELF implements CommandListener {
         int len = registers[REG_A2];
         int flags = registers[REG_A3];
         
-        // Parâmetros 5-6 na stack
+        // Parameters 5-6 are in a4/a5.
         int dest_addr = getSyscallParam(4);
         int addrlen = getSyscallParam(5);
         
@@ -3341,7 +3347,7 @@ public class ELF implements CommandListener {
         int len = registers[REG_A2];
         int flags = registers[REG_A3];
         
-        // Parâmetros 5-6 na stack
+        // Parameters 5-6 are in a4/a5.
         int src_addr = getSyscallParam(4);
         int addrlen = getSyscallParam(5);
         
@@ -3357,7 +3363,8 @@ public class ELF implements CommandListener {
         try {
             if (type == SOCK_DGRAM) {
                 DatagramConnection dc = (DatagramConnection) socketInfo.get("datagram");
-                if (dc == null) { registers[REG_A0] = -ENOTSOCK; return; }
+                if (dc == null) { dc = (DatagramConnection) getOrCreateDatagram(socketInfo, 0); }
+                if (dc == null) { registers[REG_A0] = -1; return; }
                 
                 Datagram dg = dc.newDatagram(len);
                 dc.receive(dg);
@@ -3378,17 +3385,9 @@ public class ELF implements CommandListener {
                 InputStream is = (InputStream) fileDescriptors.get(fdKey);
                 if (is == null) { registers[REG_A0] = -ENOTSOCK; return; }
                 
-                int bytesRead = 0;
-                for (int i = 0; i < len && buf + i < memory.length; i++) {
-                    int b = is.read();
-                    if (b == -1) {
-                        if (bytesRead == 0) { registers[REG_A0] = 0; }
-                        else { registers[REG_A0] = bytesRead; }
-                        return;
-                    }
-                    memory[buf + i] = (byte) b;
-                    bytesRead++;
-                }
+                if (buf < 0 || buf >= memory.length || len < 0) { registers[REG_A0] = -14; return; }
+                int bytesRead = is.read(memory, buf, Math.min(len, memory.length - buf));
+                if (bytesRead < 0) { registers[REG_A0] = 0; return; }
                 
                 if (src_addr != 0) {
                     String[] peer = getSocketPeer(fdKey);
@@ -3408,7 +3407,7 @@ public class ELF implements CommandListener {
         int optname = registers[REG_A2];
         int optval = registers[REG_A3];
         
-        // Parâmetro 5 na stack
+        // Parameter 5 is in a4.
         int optlen = getSyscallParam(4);
         
         Integer fdKey = new Integer(fd);
@@ -3432,7 +3431,7 @@ public class ELF implements CommandListener {
         int optname = registers[REG_A2];
         int optval = registers[REG_A3];
         
-        // Parâmetro 5 na stack
+        // Parameter 5 is in a4.
         int optlen = getSyscallParam(4);
         
         Integer fdKey = new Integer(fd);
@@ -3618,7 +3617,7 @@ public class ELF implements CommandListener {
     private String[] readSockAddr(int ptr) {
         if (ptr == 0 || ptr + 16 > memory.length) { return null; }
         if (readShortLE(memory, ptr) != AF_INET) { return null; }
-        int port = readShortLE(memory, ptr + 2) & 0xFFFF;
+        int port = ((memory[ptr + 2] & 0xFF) << 8) | (memory[ptr + 3] & 0xFF);
         String ip = (memory[ptr + 4] & 0xFF) + "." + (memory[ptr + 5] & 0xFF) + "." + (memory[ptr + 6] & 0xFF) + "." + (memory[ptr + 7] & 0xFF);
         return new String[] { ip, String.valueOf(port) };
     }
@@ -3626,7 +3625,8 @@ public class ELF implements CommandListener {
         if (addr >= 0 && addr + 16 <= mem.length) {
             int family = AF_INET;
             writeShortLE(mem, addr, (short) family);
-            writeShortLE(mem, addr + 2, (short) port);
+            mem[addr + 2] = (byte) (port >>> 8);
+            mem[addr + 3] = (byte) port;
             String[] parts = midlet.split(ip, '.');
             for (int i = 0; i < 4; i++) {
                 if (i < parts.length) { try { mem[addr + 4 + i] = (byte) Integer.parseInt(parts[i].trim()); } catch (Exception e) { mem[addr + 4 + i] = 0; } }
@@ -3667,7 +3667,7 @@ public class ELF implements CommandListener {
         int val = registers[REG_A2];
         int timeout = registers[REG_A3];
         
-        // Parâmetros 5-6 na stack
+        // Parameters 5-6 are in a4/a5.
         int uaddr2 = getSyscallParam(4);
         int val3 = getSyscallParam(5);
         
