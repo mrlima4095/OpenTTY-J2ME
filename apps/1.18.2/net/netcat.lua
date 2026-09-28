@@ -20,33 +20,32 @@ local function new_terminal(title, prompt)
     local clear = graphics.new("command", { label = "Clear", type = "screen", priority = 1 })
     local disconnect = graphics.new("command", { label = "Disconnect", type = "screen", priority = 1 })
     local switch = graphics.new("command", { label = "Switch to...", type = "screen", priority = 2 })
-    local running, connected = true, false
-    local conn, stream_in, stream_out, listener = nil, nil, nil, nil
+    local state = { running = true, connected = false, conn = nil, stream_in = nil, stream_out = nil, listener = nil }
 
     local function write_output(text)
         graphics.SetText(output, (graphics.GetText(output) or "") .. text)
     end
 
     local function close_session()
-        running = false
-        connected = false
-        if conn then pcall(io.close, conn) end
-        if listener then pcall(io.close, listener) end
-        conn, stream_in, stream_out, listener = nil, nil, nil, nil
+        state.running = false
+        state.connected = false
+        if state.conn then pcall(io.close, state.conn) end
+        if state.listener then pcall(io.close, state.listener) end
+        state.conn, state.stream_in, state.stream_out, state.listener = nil, nil, nil, nil
     end
 
     local function attach(connection, input_stream, output_stream)
-        if not running then
+        if not state.running then
             pcall(io.close, connection)
             return
         end
-        conn, stream_in, stream_out = connection, input_stream, output_stream
-        connected = true
+        state.conn, state.stream_in, state.stream_out = connection, input_stream, output_stream
+        state.connected = true
         write_output("[nc] Connected.\n")
 
         java.run(function()
-            while running and stream_in do
-                local ok, data = pcall(io.read, stream_in, 1024)
+            while state.running and state.stream_in do
+                local ok, data = pcall(io.read, state.stream_in, 1024)
                 if ok and data and data ~= "" then
                     write_output(data)
                 else
@@ -67,11 +66,11 @@ local function new_terminal(title, prompt)
     graphics.handler(screen, {
         [send] = function(command)
             if command and command ~= "" then
-                if not connected or not stream_out then
+                if not state.connected or not state.stream_out then
                     write_output("[nc] Not connected yet.\n")
                     return
                 end
-                local ok, err = pcall(io.write, command .. "\n", stream_out)
+                local ok, err = pcall(io.write, command .. "\n", state.stream_out)
                 if ok then
                     write_output("> " .. command .. "\n")
                     graphics.SetText(input, "")
@@ -91,7 +90,7 @@ local function new_terminal(title, prompt)
     os.setproc("screen", screen)
     os.setproc("stdout", output)
     graphics.display(screen)
-    return attach, close_session, function() return running end, function(value) listener = value end, write_output
+    return attach, close_session, function() return state.running end, function(value) state.listener = value end, write_output
 end
 
 local function start_client(host, port)
