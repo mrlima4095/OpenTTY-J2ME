@@ -430,6 +430,19 @@ Behavior notes:
 
 Examples: `hello.s`, `cat.s`, `netsock.s`,
 
+`res/lib/opentty.h` also exposes the IPv4 socket API for C programs. Build the
+included echo services with `-lib`:
+
+```sh
+./build-elf.sh res/apps/src/udp-echo.c -lib -o res/apps/dist/udp-echo
+./build-elf.sh res/apps/src/tcp-echo.c -lib -o res/apps/dist/tcp-echo
+```
+
+`udp-echo` binds UDP port 8080, receives one datagram, and echoes it to the
+sender. `tcp-echo` binds TCP port 8081, accepts one connection, and echoes one
+received chunk. Both use `sockaddr_in_init()` so `sin_port` has network byte
+order.
+
 `-stdlib` uses private `ecall` IDs starting at `1000`. Never hard-code those
 from an app; use the headers and runtime wrappers.
 
