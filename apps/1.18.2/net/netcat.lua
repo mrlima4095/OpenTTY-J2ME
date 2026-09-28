@@ -47,12 +47,13 @@ local function new_terminal(title, prompt)
         java.run(function()
             while running and stream_in do
                 local ok, data = pcall(io.read, stream_in, 1024)
-                if not ok or not data or data == "" then
-                    connected = false
-                    if running then write_output("\n[nc] Remote closed the connection.\n") end
-                    break
+                if ok and data and data ~= "" then
+                    write_output(data)
+                else
+                    -- The MIDP stream API reports EOF and transient read errors alike.
+                    -- Keep the interactive session open until the user disconnects.
+                    java.sleep(100)
                 end
-                write_output(data)
             end
         end)
     end
