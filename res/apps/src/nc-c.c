@@ -21,13 +21,15 @@ static int parse_ipv4(const char *text, int *a, int *b, int *c, int *d) {
 
 int main(int argc, char **argv) {
     struct sockaddr_in peer; struct lcdui_event event; char line[257];
-    int fd, form, output, input, send, tasks, quit, port, a, b, c, d;
+    int fd, form, output, input, send, tasks, quit, port, a, b, c, d, result;
     if (argc < 3) { printf("usage: nc-c HOST PORT\n"); return 2; }
     port = atoi(argv[2]);
     if (!parse_ipv4(argv[1], &a, &b, &c, &d)) { printf("nc-c: IPv4 address required\n"); return 2; }
     sockaddr_in_init(&peer, port, a, b, c, d);
     fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (fd < 0 || connect(fd, &peer, sizeof(peer)) < 0) { printf("nc-c: connect failed\n"); return 1; }
+    if (fd < 0) { printf("nc-c: socket failed: %d\n", fd); return 1; }
+    result = connect(fd, &peer, sizeof(peer));
+    if (result < 0) { printf("nc-c: connect failed: %d\n", result); close(fd); return 1; }
     form = lcdui_new(LCDUI_FORM, "nc-c", 0, 0);
     output = lcdui_append_text(form, 0, "[nc-c] Connected.\n");
     input = lcdui_append_field(form, "Remote >", "", 256, LCDUI_TEXT_ANY);
