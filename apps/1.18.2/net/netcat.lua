@@ -16,7 +16,7 @@ local function usage()
     print("Use Switch to... to open the task manager without disconnecting.")
 end
 
-local function run_terminal(host, port, is_server)
+local function run_terminal(host, port, mode)
     local previous = graphics.getCurrent()
     local screen = graphics.new("screen", "nc " .. host .. ":" .. port)
     local back = graphics.new("command", { label = "Disconnect", type = "screen", priority = 1 })
@@ -80,8 +80,8 @@ local function run_terminal(host, port, is_server)
     graphics.display(screen)
 
     java.run(function()
-        if is_server then
-            append_output("[nc] Listening on port " .. tostring(port) .. "...\n")
+        if mode == "listen" then
+            append_output("[nc] Mode: listen on port " .. tostring(port) .. "\n")
             local ok, value = pcall(socket.server, port)
             if not ok then
                 append_output("[nc] Listen failed: " .. tostring(value) .. "\n")
@@ -98,7 +98,7 @@ local function run_terminal(host, port, is_server)
             pcall(io.close, server)
             server = nil
         else
-            append_output("[nc] Connecting to " .. host .. ":" .. tostring(port) .. "...\n")
+            append_output("[nc] Mode: connect to " .. host .. ":" .. tostring(port) .. "\n")
             local ok, c, i, o = pcall(socket.connect, "socket://" .. host .. ":" .. tostring(port))
             if not ok then
                 append_output("[nc] Connection failed: " .. tostring(c) .. "\n")
@@ -132,14 +132,14 @@ if arg[1] and arg[2] then
             print("nc: invalid port: " .. tostring(arg[2]))
             os.exit(2)
         end
-        run_terminal("0.0.0.0", port, true)
+        run_terminal("0.0.0.0", port, "listen")
     else
         local port = tonumber(arg[2])
         if not port then
             print("nc: invalid port: " .. tostring(arg[2]))
             os.exit(2)
         end
-        run_terminal(a1, port, false)
+        run_terminal(a1, port, "connect")
     end
 else
     usage()
