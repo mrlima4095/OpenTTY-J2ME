@@ -775,11 +775,15 @@ public class ELF implements CommandListener {
         Thread reader = new Thread(new Runnable() { public void run() {
             byte[] buffer = new byte[1024];
             try {
-                int count;
-                while (socketReaders.containsKey(key) && (count = input.read(buffer)) != -1) {
-                    String text = new String(buffer, 0, count, "UTF-8");
-                    String current = output.getText();
-                    output.setText((current == null ? "" : current) + text);
+                while (socketReaders.containsKey(key)) {
+                    int count = input.read(buffer);
+                    if (count > 0) {
+                        String text = new String(buffer, 0, count, "UTF-8");
+                        String current = output.getText();
+                        output.setText((current == null ? "" : current) + text);
+                    } else {
+                        try { Thread.sleep(100); } catch (InterruptedException e) { }
+                    }
                 }
             } catch (Exception e) { }
             socketReaders.remove(key);
