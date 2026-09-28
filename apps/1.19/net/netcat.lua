@@ -1,147 +1,139 @@
 #!/bin/lua
 
-local version = "2.1.0"
+local version = "3.0.0"
 
 os.setproc("name", "nc")
 
 local function usage()
     print("nc (netcat) v" .. version .. " - OpenTTY Network Terminal")
-    print("")
     print("Usage:")
-    print("  nc [host] [port]          Connect to remote host:port")
-    print("  nc -l [port]              Listen on port (server mode)")
-    print("  nc -h                     Show this help")
-    print("")
-    print("The terminal sends each entered line to the remote endpoint.")
-    print("Use Switch to... to open the task manager without disconnecting.")
+    print("  nc HOST PORT       Connect to a remote TCP endpoint")
+    print("  nc -l PORT         Listen for one TCP client")
 end
 
-local function run_terminal(host, port, mode)
+local function new_terminal(title, prompt)
     local previous = graphics.getCurrent()
-    local screen = graphics.new("screen", "nc " .. host .. ":" .. port)
-    local back = graphics.new("command", { label = "Disconnect", type = "screen", priority = 1 })
+    local screen = graphics.new("screen", title)
+    local output = graphics.new("buffer", { label = "", value = "", style = "monospace" })
+    local input = graphics.new("field", { label = prompt, value = "", length = 256, mode = "" })
+    local send = graphics.new("command", { label = "Send", type = "ok", priority = 1 })
     local clear = graphics.new("command", { label = "Clear", type = "screen", priority = 1 })
-    local run = graphics.new("command", { label = "Send", type = "ok", priority = 1 })
+    local disconnect = graphics.new("command", { label = "Disconnect", type = "screen", priority = 1 })
     local switch = graphics.new("command", { label = "Switch to...", type = "screen", priority = 2 })
+    local running, connected = true, false
+    local conn, stream_in, stream_out, listener = nil, nil, nil, nil
 
-    local buffer = graphics.new("buffer", { label = "", value = "", style = "monospace" })
-    local field = graphics.new("field", { label = host .. ":" .. port .. " >", value = "", length = 256, mode = "" })
-
-    local running = true
-    local connected = false
-    local conn = nil
-    local inp = nil
-    local out = nil
-    local server = nil
-
-    local function append_output(text)
-        local current = graphics.GetText(buffer) or ""
-        graphics.SetText(buffer, current .. text)
+    local function write_output(text)
+        graphics.SetText(output, (graphics.GetText(output) or "") .. text)
     end
 
-    graphics.append(screen, buffer)
-    graphics.append(screen, field)
-    graphics.addCommand(screen, run)
-    graphics.addCommand(screen, back)
-    graphics.addCommand(screen, clear)
-    graphics.addCommand(screen, switch)
+    local function close_session()
+        running = false
+        connected = false
+        if conn then pcall(io.close, conn) end
+        if listener then pcall(io.close, listener) end
+        conn, stream_in, stream_out, listener = nil, nil, nil, nil
+    end
 
+    local function attach(connection, input_stream, output_stream)
+        if not running then
+            pcall(io.close, connection)
+            return
+        end
+        conn, stream_in, stream_out = connection, input_stream, output_stream
+        connected = true
+        write_output("[nc] Connected.\n")
+
+        java.run(function()
+            while running and stream_in do
+                local ok, data = pcall(io.read, stream_in, 1024)
+                if not ok or not data or data == "" then
+                    connected = false
+                    if running then write_output("\n[nc] Remote closed the connection.\n") end
+                    break
+                end
+                write_output(data)
+            end
+        end)
+    end
+
+    graphics.append(screen, output)
+    graphics.append(screen, input)
+    graphics.addCommand(screen, send)
+    graphics.addCommand(screen, clear)
+    graphics.addCommand(screen, disconnect)
+    graphics.addCommand(screen, switch)
     graphics.handler(screen, {
-        [back] = function()
-            running = false
-            if conn then pcall(io.close, conn) end
-            if server then pcall(io.close, server) end
+        [send] = function(command)
+            if command and command ~= "" then
+                if not connected or not stream_out then
+                    write_output("[nc] Not connected yet.\n")
+                    return
+                end
+                local ok, err = pcall(io.write, command .. "\n", stream_out)
+                if ok then
+                    write_output("> " .. command .. "\n")
+                    graphics.SetText(input, "")
+                else
+                    write_output("[nc] Send failed: " .. tostring(err) .. "\n")
+                end
+            end
+        end,
+        [clear] = function() graphics.SetText(output, "") end,
+        [disconnect] = function()
+            close_session()
             graphics.display(previous)
             os.exit(0)
         end,
-        [clear] = function()
-            graphics.SetText(buffer, "")
-        end,
-        [run] = function(command)
-            if command and command ~= "" then
-                if not connected or not out then
-                    append_output("[nc] Not connected yet.\n")
-                    return
-                end
-                local ok, err = pcall(io.write, command .. "\n", out)
-                if ok then
-                    append_output("> " .. command .. "\n")
-                    graphics.SetText(field, "")
-                else
-                    append_output("[nc] Send failed: " .. tostring(err) .. "\n")
-                end
-            end
-        end,
         [switch] = graphics.taskmngr
     })
-
     os.setproc("screen", screen)
-    os.setproc("stdout", buffer)
+    os.setproc("stdout", output)
     graphics.display(screen)
+    return attach, close_session, function() return running end, function(value) listener = value end, write_output
+end
 
+local function start_client(host, port)
+    local attach, close_session, running, set_listener, write_output = new_terminal("nc " .. host .. ":" .. port, host .. ":" .. port .. " >")
     java.run(function()
-        if mode == "listen" then
-            append_output("[nc] Mode: listen on port " .. tostring(port) .. "\n")
-            local ok, value = pcall(socket.server, port)
-            if not ok then
-                append_output("[nc] Listen failed: " .. tostring(value) .. "\n")
-                return
-            end
-            server = value
-            append_output("[nc] Waiting for a connection...\n")
-            local accepted, c, i, o = pcall(socket.accept, server)
-            if not accepted then
-                if running then append_output("[nc] Accept failed: " .. tostring(c) .. "\n") end
-                return
-            end
-            conn, inp, out = c, i, o
-            pcall(io.close, server)
-            server = nil
-        else
-            append_output("[nc] Mode: connect to " .. host .. ":" .. tostring(port) .. "\n")
-            local ok, c, i, o = pcall(socket.connect, "socket://" .. host .. ":" .. tostring(port))
-            if not ok then
-                append_output("[nc] Connection failed: " .. tostring(c) .. "\n")
-                return
-            end
-            conn, inp, out = c, i, o
+        write_output("[nc] Client: connecting to " .. host .. ":" .. tostring(port) .. "...\n")
+        local ok, conn, input, output = pcall(socket.connect, "socket://" .. host .. ":" .. tostring(port))
+        if not ok then
+            write_output("[nc] Connection failed: " .. tostring(conn) .. "\n")
+            return
         end
-
-        connected = true
-        append_output("[nc] Connected.\n")
-        while running do
-            local ok, data = pcall(io.read, inp, 1024)
-            if not ok or not data or data == "" then
-                connected = false
-                if running then append_output("\n[nc] Remote closed the connection.\n") end
-                break
-            end
-            append_output(data)
-        end
+        attach(conn, input, output)
     end)
 end
 
-if arg[1] and arg[2] then
-    local a1 = tostring(arg[1])
-    if a1 == "-h" or a1 == "--help" then
-        usage()
-        os.exit(0)
-    elseif a1 == "-l" then
-        local port = tonumber(arg[2])
-        if not port then
-            print("nc: invalid port: " .. tostring(arg[2]))
-            os.exit(2)
+local function start_server(port)
+    local attach, close_session, running, set_listener, write_output = new_terminal("nc listen :" .. port, "client:" .. port .. " >")
+    java.run(function()
+        write_output("[nc] Server: listening on port " .. tostring(port) .. "...\n")
+        local ok, server = pcall(socket.server, port)
+        if not ok then
+            write_output("[nc] Listen failed: " .. tostring(server) .. "\n")
+            return
         end
-        run_terminal("0.0.0.0", port, "listen")
-    else
-        local port = tonumber(arg[2])
-        if not port then
-            print("nc: invalid port: " .. tostring(arg[2]))
-            os.exit(2)
+        set_listener(server)
+        write_output("[nc] Waiting for one client...\n")
+        local accepted, conn, input, output = pcall(socket.accept, server)
+        if not accepted then
+            if running() then write_output("[nc] Accept failed: " .. tostring(conn) .. "\n") end
+            return
         end
-        run_terminal(a1, port, "connect")
-    end
+        pcall(io.close, server)
+        set_listener(nil)
+        attach(conn, input, output)
+    end)
+end
+
+if arg[1] == "-l" then
+    local port = tonumber(arg[2])
+    if not port then print("nc: invalid port") else start_server(port) end
+elseif arg[1] and arg[2] then
+    local port = tonumber(arg[2])
+    if not port then print("nc: invalid port") else start_client(tostring(arg[1]), port) end
 else
     usage()
-    os.exit(2)
 end
