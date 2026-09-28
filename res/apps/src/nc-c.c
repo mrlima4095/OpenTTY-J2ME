@@ -19,17 +19,33 @@ static int parse_ipv4(const char *text, int *a, int *b, int *c, int *d) {
     return 1;
 }
 
+static int show_error(const char *message, int code) {
+    struct lcdui_event event;
+    char text[96];
+    int alert = lcdui_new(LCDUI_ALERT, "nc-c error", 0, 0);
+    int close = lcdui_command("Close", LCDUI_COMMAND_EXIT, 1);
+    snprintf(text, sizeof(text), "%s: %d", message, code);
+    lcdui_append_text(alert, 0, text);
+    lcdui_add_command(alert, close);
+    lcdui_display(alert);
+    while (1) {
+        if (!lcdui_wait_event(&event)) continue;
+        if (event.type == LCDUI_EVENT_COMMAND && event.command == close) return 1;
+    }
+}
+
 int main(int argc, char **argv) {
     struct sockaddr_in peer; struct lcdui_event event; char line[257];
     int fd, form, output, input, send, tasks, quit, port, a, b, c, d, result;
-    if (argc < 3) { printf("usage: nc-c HOST PORT\n"); return 2; }
+    if (argc < 3) return show_error("usage: nc-c HOST PORT", argc);
     port = atoi(argv[2]);
-    if (!parse_ipv4(argv[1], &a, &b, &c, &d)) { printf("nc-c: IPv4 address required\n"); return 2; }
+    if (port < 1 || port > 65535) return show_error("invalid port", port);
+    if (!parse_ipv4(argv[1], &a, &b, &c, &d)) return show_error("IPv4 address required", 2);
     sockaddr_in_init(&peer, port, a, b, c, d);
     fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (fd < 0) { printf("nc-c: socket failed: %d\n", fd); return 1; }
+    if (fd < 0) return show_error("socket failed", fd);
     result = connect(fd, &peer, sizeof(peer));
-    if (result < 0) { printf("nc-c: connect failed: %d\n", result); close(fd); return 1; }
+    if (result < 0) { close(fd); return show_error("connect failed", result); }
     form = lcdui_new(LCDUI_FORM, "nc-c", 0, 0);
     output = lcdui_append_text(form, 0, "[nc-c] Connected.\n");
     input = lcdui_append_field(form, "Remote >", "", 256, LCDUI_TEXT_ANY);
