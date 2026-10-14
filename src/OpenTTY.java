@@ -51,25 +51,12 @@ public class OpenTTY extends MIDlet implements CommandListener {
         String cfg = read("/boot/grub.cfg", globals);
 
         int count = countBootEntries(cfg);
-        if (count == 1) {
-            Hashtable entry = parseBootEntry(cfg);
-            cfg = null;
-            bootEntry(entry);
-        }
-        else if (count > 1) {
-            bootEntries = parseBootMenu(cfg);
-            cfg = null;
-            showBootMenu();
-        }
+        if (count == 1) { Hashtable entry = parseBootEntry(cfg); cfg = null; bootEntry(entry); }
+        else if (count > 1) { bootEntries = parseBootMenu(cfg); cfg = null; showBootMenu(); }
         else { cfg = null; bootEntry(null); }
         return true;
     }
-    public int countBootEntries(String cfg) {
-        int count = 0, at = 0;
-        if (cfg == null) { return 0; }
-        while ((at = cfg.indexOf("menuentry", at)) >= 0) { count++; at += 9; }
-        return count;
-    }
+    public int countBootEntries(String cfg) { int count = 0, at = 0; if (cfg == null) { return 0; } while ((at = cfg.indexOf("menuentry", at)) >= 0) { count++; at += 9; } return count; } 
     public Hashtable parseBootEntry(String cfg) {
         String title = null, root = null, init = null;
         if (cfg != null) {
@@ -377,57 +364,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public String getpattern(String text) { return text.trim().startsWith("\"") && text.trim().endsWith("\"") ? text.substring(1, text.length() - 1) : text.trim(); } // replace(text, "\"", "")
     // | (Arrays)
     public String[] split(String content, char div) { Vector lines = new Vector(); int start = 0; for (int i = 0; i < content.length(); i++) { if (content.charAt(i) == div) { lines.addElement(content.substring(start, i)); start = i + 1; } } if (start < content.length()) { lines.addElement(content.substring(start)); } String[] result = new String[lines.size()]; lines.copyInto(result); return result; }
-    public String[] splitArgs(String input) {
-        Vector result = new Vector();
-        StringBuffer current = new StringBuffer();
-        boolean inDoubleQuotes = false;
-        boolean inSingleQuotes = false;
-        boolean escaped = false;
-        
-        for (int i = 0; i < input.length(); i++) {
-            char c = input.charAt(i);
-            
-            if (escaped) {
-                current.append(c);
-                escaped = false;
-                continue;
-            }
-            
-            if (c == '\\') {
-                if (inDoubleQuotes || inSingleQuotes) { escaped = true; }
-                else { current.append(c); }
-
-                continue;
-            }
-            
-            if (c == '"' && !inSingleQuotes) { inDoubleQuotes = !inDoubleQuotes; current.append(c); continue; }
-            if (c == '\'' && !inDoubleQuotes) { inSingleQuotes = !inSingleQuotes; current.append(c); continue; }
-            if (c == ' ' && !inDoubleQuotes && !inSingleQuotes) { if (current.length() > 0) { result.addElement(current.toString()); current.setLength(0); } continue; }
-            
-            current.append(c);
-        }
-        
-        if (current.length() > 0) { result.addElement(current.toString()); }
-        
-        String[] array = new String[result.size()];
-        for (int i = 0; i < result.size(); i++) { array[i] = getpattern((String) result.elementAt(i)); }
-        
-        return array;
-    }
+    public String[] splitArgs(String input) { Vector result = new Vector(); StringBuffer current = new StringBuffer(); boolean inDoubleQuotes = false, inSingleQuotes = false, escaped = false; for (int i = 0; i < input.length(); i++) { char c = input.charAt(i); if (escaped) { current.append(c); escaped = false; continue; } if (c == '\\') { if (inDoubleQuotes || inSingleQuotes) { escaped = true; } else { current.append(c); } continue; } if (c == '"' && !inSingleQuotes) { inDoubleQuotes = !inDoubleQuotes; current.append(c); continue; } if (c == '\'' && !inDoubleQuotes) { inSingleQuotes = !inSingleQuotes; current.append(c); continue; } if (c == ' ' && !inDoubleQuotes && !inSingleQuotes) { if (current.length() > 0) { result.addElement(current.toString()); current.setLength(0); } continue; } current.append(c); } if (current.length() > 0) { result.addElement(current.toString()); } String[] array = new String[result.size()]; for (int i = 0; i < result.size(); i++) { array[i] = getpattern((String) result.elementAt(i)); } return array; }
     // |
     // | (Generators)
     public String genpid() { return String.valueOf(1000 + random.nextInt(9000)); }
     // | (User Manager)
     public int getUserID(String user) { return user.equals("root") ? 0 : user.equals(username) ? 1000 : userID.containsKey(user) ? ((Integer) userID.get(user)).intValue() : -1; }
-    public String getUser(int uid) {
-        if (uid == 0) { return "root"; } else if (uid == 1000) { return username; }
-        for (Enumeration keys = sys.keys(); keys.hasMoreElements();) {
-            String user = (String) keys.nextElement();
-            Integer id = (Integer) userID.get(user);
-            if (id.intValue() == uid) { return user; }
-        }
-        return null;
-    }
+    public String getUser(int uid) { if (uid == 0) { return "root"; } else if (uid == 1000) { return username; } for (Enumeration keys = sys.keys(); keys.hasMoreElements();) { String user = (String) keys.nextElement(); Integer id = (Integer) userID.get(user); if (id.intValue() == uid) { return user; } } return null; }
     // | (Trackers)
     public String getpid(String name) { for (Enumeration KEYS = sys.keys(); KEYS.hasMoreElements();) { String PID = (String) KEYS.nextElement(); Process process = (Process) sys.get(PID); if (process != null && process.name != null && name != null && name.equals(process.name)) { return PID; } } return null; } 
     // |
