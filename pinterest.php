@@ -3,7 +3,8 @@
  * pinterest.php — Pinterest JSON proxy for J2ME clients (CLDC/MIDP devices).
  *
  * NOW WITH SESSION/LOGIN support:
- *   - Pinterest login (POST username+password) → sets a per-IP cookie token
+ *   - login → Pinterest username/email + password (sets a per-IP cookie jar)
+ *   - qrstart / qrpoll → login by Pinterest QR code (no password/CAPTCHA)
  *   - logout → clears the token
  *   - me → returns the authenticated user's profile
  *   - home → the logged-in user's feed (pins from followed boards)
@@ -14,6 +15,19 @@
  *   as the header X-Pinterest-Session-Token on subsequent requests.
  *   The proxy then adds that header to every Pinterest API call so that
  *   Pinterest resources see the user as logged‑in.
+ *
+ * Password login can be rate-limited by Pinterest when the proxy runs on a
+ * datacenter IP. qrstart/qrpoll implement Pinterest's cross-device QR login:
+ * the user confirms the login in the Pinterest app on their phone, so the
+ * proxy never needs to solve a CAPTCHA or send the password.
+ *
+ * QR flow:
+ *   GET ?op=qrstart
+ *     → {"ok":1,"k":"qr","qr":{"token":"...","url":"https://www.pinterest.com/qr_code_login/..."}}
+ *   GET ?op=qrpoll&token=...
+ *     → {"ok":1,"k":"qr","qr":{"status":"unscanned|scanned|authenticated", ...}}
+ *     → when authenticated, the proxy saves the cookies and answers like login:
+ *       {"ok":1,"k":"login","u":{"us":"username"}}
  *
  * All existing ops (search, user, userpins, userboards, board, boardpins, pin)
  * continue to work ANONYMOUSLY — no cookies needed for those.
@@ -29,9 +43,12 @@ header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 
 const PIN_UA = 'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
-const PIN_APP_VERSION = '9710e8b';
+const PIN_APP_VERSION = 'd601c5e';
 const PIN_CACHE_TTL = 600;   // seconds
 const PIN_RATE_LIMIT = 90;   // requests per minute per client IP
+const PIN_LOGIN_HANDLER = 'www/login/index.js';
+const PIN_LOGIN_UI = 'login_page.login_form';
+const PIN_QR_TTL = 300;      // seconds a QR token stays valid
 
 // ---------------------------------------------------------------------------
 // Small helpers
@@ -127,6 +144,110 @@ function pin_cookie_header($cookies) {
     return implode('; ', $parts);
 }
 
+/**
+ * Performs one HTTP request and keeps every Set-Cookie header in $cookies.
+ * Unlike pin_curl(), this also returns the HTTP status and the raw body, so
+ * login can tell a bad password (200 + JSON error) from a Pinterest block
+ * (429 + api_error_code 3051).
+ */
+function pin_http_request($url, $method = 'GET', $cookies = array(), $headers = array(), $body = null) {
+    $jar = is_array($cookies) ? $cookies : array();
+    $send = array_merge(array(
+        'User-Agent: ' . PIN_UA,
+        'Accept-Language: pt-BR,pt;q=0.9,en;q=0.8',
+    ), $headers);
+    if (!empty($jar)) { $send[] = 'Cookie: ' . pin_cookie_header($jar); }
+
+    $opts = array(
+        CURLOPT_URL => $url,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_MAXREDIRS => 5,
+        CURLOPT_TIMEOUT => 30,
+        CURLOPT_CONNECTTIMEOUT => 10,
+        CURLOPT_ENCODING => '',
+        CURLOPT_HTTPHEADER => $send,
+        CURLOPT_HEADERFUNCTION => function ($ch, $line) use (&$jar) {
+            if (preg_match('/^Set-Cookie:\s*([^=]+)=([^;]*)/i', $line, $m)) {
+                $jar[trim($m[1])] = trim($m[2], " \t\"");
+            }
+            return strlen($line);
+        },
+    );
+    if ($method === 'POST') {
+        $opts[CURLOPT_POST] = true;
+        $opts[CURLOPT_POSTFIELDS] = ($body === null ? '' : $body);
+    }
+
+    $ch = curl_init();
+    curl_setopt_array($ch, $opts);
+    $raw = curl_exec($ch);
+    $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $err = (string)curl_error($ch);
+    curl_close($ch);
+
+    return array('body' => $raw, 'code' => $code, 'cookies' => $jar, 'error' => $err);
+}
+
+/**
+ * Calls /resource/<Resource>/create/ with the same form fields the Pinterest
+ * web app uses: source_url, data=(options,context) and module_path. This works
+ * both for UserSessionResource and for ApiResource (which wraps /v3/... URLs).
+ */
+function pin_resource_post($resource, $options, $cookies, $source_url = '/login/', $module_path = null) {
+    $data = json_encode(array('options' => $options, 'context' => array()), JSON_UNESCAPED_SLASHES);
+    $form = array('source_url' => $source_url, 'data' => $data);
+    if ($module_path !== null) { $form['module_path'] = $module_path; }
+
+    $headers = array(
+        'Content-Type: application/x-www-form-urlencoded',
+        'Accept: application/json, text/javascript, */*; q=0.01',
+        'X-CSRFToken: ' . ($cookies['csrftoken'] ?? ''),
+        'X-Requested-With: XMLHttpRequest',
+        'X-Pinterest-AppState: active',
+        'X-Pinterest-PWS-Handler: ' . PIN_LOGIN_HANDLER,
+        'X-Pinterest-Source-Url: ' . $source_url,
+        'X-APP-VERSION: ' . PIN_APP_VERSION,
+        'Origin: https://www.pinterest.com',
+        'Referer: https://www.pinterest.com' . ($source_url === '/login/' ? '/login/' : $source_url),
+    );
+    return pin_http_request(
+        'https://www.pinterest.com/resource/' . $resource . '/create/',
+        'POST', $cookies, $headers, http_build_query($form)
+    );
+}
+
+/**
+ * Translates Pinterest's internal error codes into short Portuguese messages.
+ * Code 3051 + HTTP 429 is Pinterest's anti-bot/rate-limit response; it is not
+ * a wrong password, so telling the user to check their credentials would only
+ * cause more failed attempts.
+ */
+function pin_login_error($rr, $http_code = 0) {
+    $e = (is_array($rr) && isset($rr['error']) && is_array($rr['error'])) ? $rr['error'] : array();
+    $api = (int)($e['api_error_code'] ?? 0);
+    $http = (int)($e['http_status'] ?? $http_code);
+    $msg = trim((string)($e['message_detail'] ?? ($e['message'] ?? '')));
+
+    if ($http === 429 || $api === 3051) {
+        return 'Pinterest bloqueou temporariamente o login deste servidor. Aguarde alguns minutos e tente de novo.';
+    }
+    switch ($api) {
+        case 6061: return 'Nao foi possivel gerar o QR code. Tente novamente.';
+        case 6062: return 'O QR code expirou. Gere um novo.';
+        case 6068: return 'QR code ainda nao confirmado no aplicativo do Pinterest.';
+        case 30:   return 'Conta do Pinterest nao encontrada.';
+        case 82:   return 'Esta conta do Pinterest esta desativada.';
+        case 4951: return 'Esta conta usa login SSO; entre pelo site do Pinterest.';
+    }
+    if ($msg === '' || strcasecmp($msg, 'None') === 0) { $msg = 'credenciais invalidas'; }
+    return $msg;
+}
+
+function pin_qr_url($token) {
+    return 'https://www.pinterest.com/qr_code_login/' . rawurlencode((string)$token);
+}
+
 // ---------------------------------------------------------------------------
 // Transport
 
@@ -135,6 +256,10 @@ function pin_curl($url, $extra_headers = array()) {
         'User-Agent: ' . PIN_UA,
         'Accept: */*',
     ), $extra_headers);
+    $cookies = pin_state_cookies();
+    if (!empty($cookies)) {
+        $headers[] = 'Cookie: ' . pin_cookie_header($cookies);
+    }
     for ($try = 0; $try < 2; $try++) {
         $ch = curl_init();
         $opts = array(
@@ -147,11 +272,6 @@ function pin_curl($url, $extra_headers = array()) {
             CURLOPT_ENCODING => '',
             CURLOPT_HTTPHEADER => $headers,
         );
-        $cookies = pin_state_cookies();
-        if (!empty($cookies)) {
-            $headers[] = 'Cookie: ' . pin_cookie_header($cookies);
-            $opts[CURLOPT_HTTPHEADER] = $headers;
-        }
         curl_setopt_array($ch, $opts);
         $body = curl_exec($ch);
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -294,7 +414,7 @@ if ($n > 25) { $n = 25; }
 $bm = isset($_GET['bm']) ? (string)$_GET['bm'] : '';
 $cache_key = $_SERVER['QUERY_STRING'] ?? $op;
 
-$no_cache = in_array($op, array('login', 'logout', 'me', 'home'), true) || pin_logged_user() !== '';
+$no_cache = in_array($op, array('login', 'logout', 'me', 'home', 'qrstart', 'qrpoll'), true) || pin_logged_user() !== '';
 $cached = $no_cache ? null : pin_cache_get($cache_key);
 if ($cached !== null) { echo $cached; exit; }
 
@@ -420,90 +540,179 @@ case 'login': {
     // Current Pinterest web flow: GET /login/ for csrf + cookies, then POST
     // UserSessionResource/create/. Cookies are stored per client and reused by
     // every later pin_api() call, so the feed/profile come back authenticated.
+    //
+    // Pinterest's current front-end sends extra options (get_user,
+    // app_type_from_client, ui_component, handler). Older payloads containing
+    // only username_or_email/password are treated as bot traffic and often
+    // answered with HTTP 429 / api_error_code 3051.
     $user = trim((string)($_POST['username'] ?? $_GET['username'] ?? ''));
     $pass = (string)($_POST['password'] ?? $_GET['password'] ?? '');
     if ($user === '' || $pass === '') { pin_fail('missing credentials'); }
     if (strlen($pass) > 200) { pin_fail('bad credentials'); }
 
-    $cookies = array();
-    $collect = function ($ch, $line) use (&$cookies) {
-        if (preg_match('/^Set-Cookie:\s*([^=]+)=([^;]*)/i', $line, $m)) {
-            $cookies[trim($m[1])] = trim($m[2], " \t\"");
-        }
-        return strlen($line);
-    };
-
-    $ch = curl_init();
-    curl_setopt_array($ch, array(
-        CURLOPT_URL => 'https://www.pinterest.com/login/',
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_MAXREDIRS => 5,
-        CURLOPT_TIMEOUT => 30,
-        CURLOPT_CONNECTTIMEOUT => 10,
-        CURLOPT_USERAGENT => PIN_UA,
-        CURLOPT_ENCODING => '',
-        CURLOPT_HEADERFUNCTION => $collect,
-        CURLOPT_HTTPHEADER => array(
-            'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language: pt-BR,pt;q=0.9,en;q=0.8',
-        ),
+    $page = pin_http_request('https://www.pinterest.com/login/', 'GET', array(), array(
+        'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     ));
-    curl_exec($ch);
-    curl_close($ch);
+    if ($page['body'] === false || $page['code'] >= 400) {
+        pin_fail('login: nao foi possivel abrir o Pinterest. Tente de novo.');
+    }
+    $cookies = $page['cookies'];
+    if (($cookies['csrftoken'] ?? '') === '') {
+        pin_fail('login: Pinterest nao retornou o token de seguranca. Tente de novo.');
+    }
 
-    $csrf = $cookies['csrftoken'] ?? '';
-    if ($csrf === '') { pin_fail('login: no csrf token'); }
-
-    $options = array('username_or_email' => $user, 'password' => $pass);
-    $payload = 'source_url=' . rawurlencode('/login/')
-        . '&data=' . rawurlencode(json_encode(array('options' => $options, 'context' => array())));
-
-    $ch = curl_init();
-    curl_setopt_array($ch, array(
-        CURLOPT_URL => 'https://www.pinterest.com/resource/UserSessionResource/create/',
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 30,
-        CURLOPT_CONNECTTIMEOUT => 10,
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => $payload,
-        CURLOPT_USERAGENT => PIN_UA,
-        CURLOPT_ENCODING => '',
-        CURLOPT_HEADERFUNCTION => $collect,
-        CURLOPT_HTTPHEADER => array(
-            'Content-Type: application/x-www-form-urlencoded',
-            'Accept: application/json, text/javascript, */*; q=0.01',
-            'Accept-Language: pt-BR,pt;q=0.9,en;q=0.8',
-            'Cookie: ' . pin_cookie_header($cookies),
-            'X-CSRFToken: ' . $csrf,
-            'X-Requested-With: XMLHttpRequest',
-            'X-Pinterest-AppState: active',
-            'X-Pinterest-Source-Url: /login/',
-            'Origin: https://www.pinterest.com',
-            'Referer: https://www.pinterest.com/login/',
-        ),
-    ));
-    $body = curl_exec($ch);
-    curl_close($ch);
-
-    $json = json_decode((string)$body, true);
+    $options = array(
+        'username_or_email' => $user,
+        'password' => $pass,
+        'get_user' => true,
+        'app_type_from_client' => 5,
+        'visited_pages_before_login' => '[]',
+        'ui_component' => PIN_LOGIN_UI,
+        'handler' => PIN_LOGIN_HANDLER,
+    );
+    $res = pin_resource_post(
+        'UserSessionResource', $options, $cookies, '/login/',
+        'App()>LoginPage()>Login()>Button(class_name=primary, text=Log in, type=submit, size=large)'
+    );
+    $json = json_decode((string)$res['body'], true);
     $rr = (is_array($json) && isset($json['resource_response'])) ? $json['resource_response'] : array();
     if (($rr['status'] ?? '') !== 'success') {
-        $msg = $rr['error']['message_detail'] ?? ($rr['error']['message'] ?? 'credenciais invalidas');
+        if (!is_array($json) && $res['code'] >= 400) {
+            $msg = pin_login_error(array(), $res['code']);
+        } else {
+            $msg = pin_login_error($rr, $res['code']);
+        }
         pin_fail('login: ' . $msg);
     }
 
-    if (empty($cookies['_pinterest_sess'])) {
-        pin_fail('login: sessao nao criada');
-    }
-
+    $cookies = $res['cookies'];
     $name = $user;
     $d = $rr['data'] ?? array();
+    $hasUser = is_array($d) && (!empty($d['user']['id']) || !empty($d['user']['username'])
+        || !empty($d['username']) || !empty($d['id']));
     if (is_array($d)) {
         if (!empty($d['username'])) { $name = (string)$d['username']; }
         elseif (!empty($d['user']['username'])) { $name = (string)$d['user']['username']; }
     }
+    if (($cookies['_auth'] ?? '') !== '1' && !$hasUser) {
+        pin_fail('login: Pinterest nao confirmou a sessao. Tente de novo.');
+    }
     pin_state_save(array('user' => $name, 'at' => time(), 'cookies' => $cookies));
+    pin_emit('login', array(), '', array('u' => array('us' => $name)));
+    break;
+}
+
+case 'qrstart': {
+    // Cross-device login. The proxy asks Pinterest for a QR token and returns
+    // the URL the phone should open/scan. No password or CAPTCHA is involved.
+    $page = pin_http_request('https://www.pinterest.com/login/', 'GET', array(), array(
+        'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    ));
+    if ($page['body'] === false || $page['code'] >= 400) {
+        pin_fail('qr: nao foi possivel abrir o Pinterest. Tente de novo.');
+    }
+    $cookies = $page['cookies'];
+    if (($cookies['csrftoken'] ?? '') === '') {
+        pin_fail('qr: Pinterest nao retornou o token de seguranca. Tente de novo.');
+    }
+
+    $res = pin_resource_post('ApiResource', array('url' => '/v3/qr_auth/'), $cookies);
+    $json = json_decode((string)$res['body'], true);
+    $rr = (is_array($json) && isset($json['resource_response'])) ? $json['resource_response'] : array();
+    $token = (string)($rr['data']['qr_token'] ?? '');
+    if (($rr['status'] ?? '') !== 'success' || $token === '') {
+        pin_fail('qr: ' . pin_login_error($rr, $res['code']));
+    }
+
+    $state = pin_state_load();
+    if (!is_array($state)) { $state = array(); }
+    $state['qr_token'] = $token;
+    $state['qr_at'] = time();
+    $state['qr_cookies'] = $cookies;
+    pin_state_save($state);
+
+    $url = pin_qr_url($token);
+    pin_emit('qr', array(), '', array('qr' => array(
+        'token' => $token,
+        'url' => $url,
+        'status' => 'unscanned',
+        'expires' => time() + PIN_QR_TTL,
+    )));
+    break;
+}
+
+case 'qrpoll': {
+    // Polled by the client after showing the QR code. When the phone confirms,
+    // exchange the token for an authenticated cookie jar and save it.
+    $state = pin_state_load();
+    if (!is_array($state)) { $state = array(); }
+    $stored = (string)($state['qr_token'] ?? '');
+    $token = trim((string)($_GET['token'] ?? $stored));
+    if ($stored === '' || $token === '') {
+        pin_fail('qr: nenhum codigo ativo; comece de novo.');
+    }
+    if (!hash_equals($stored, $token)) {
+        pin_fail('qr: codigo invalido.');
+    }
+
+    if (!empty($state['qr_at']) && (time() - (int)$state['qr_at']) > PIN_QR_TTL) {
+        unset($state['qr_token'], $state['qr_at'], $state['qr_cookies']);
+        pin_state_save($state);
+        pin_fail('qr: codigo expirado; gere um novo.');
+    }
+
+    $cookies = (isset($state['qr_cookies']) && is_array($state['qr_cookies']))
+        ? $state['qr_cookies'] : array();
+
+    $res = pin_resource_post('ApiResource', array(
+        'url' => '/v3/qr_auth/status/',
+        'data' => array('qr_token' => $token),
+    ), $cookies);
+    $json = json_decode((string)$res['body'], true);
+    $rr = (is_array($json) && isset($json['resource_response'])) ? $json['resource_response'] : array();
+    if (($rr['status'] ?? '') !== 'success') {
+        pin_fail('qr: ' . pin_login_error($rr, $res['code']));
+    }
+
+    $status = (string)($rr['data']['status'] ?? 'unscanned');
+    if ($status !== 'authenticated') {
+        pin_emit('qr', array(), '', array('qr' => array(
+            'token' => $token,
+            'url' => pin_qr_url($token),
+            'status' => $status,
+            'expires' => (int)($state['qr_at'] ?? time()) + PIN_QR_TTL,
+        )));
+        break;
+    }
+
+    $res = pin_resource_post('ApiResource', array(
+        'url' => '/v3/login/qr_auth/',
+        'data' => array('qr_token' => $token),
+    ), $cookies);
+    $json = json_decode((string)$res['body'], true);
+    $rr = (is_array($json) && isset($json['resource_response'])) ? $json['resource_response'] : array();
+    if (($rr['status'] ?? '') !== 'success') {
+        pin_fail('qr: ' . pin_login_error($rr, $res['code']));
+    }
+
+    $name = (string)($state['user'] ?? '');
+    $d = $rr['data'] ?? array();
+    $hasUser = is_array($d) && (!empty($d['user']['id']) || !empty($d['user']['username'])
+        || !empty($d['username']) || !empty($d['id']));
+    if (is_array($d)) {
+        if (!empty($d['username'])) { $name = (string)$d['username']; }
+        elseif (!empty($d['user']['username'])) { $name = (string)$d['user']['username']; }
+    }
+    if (($res['cookies']['_auth'] ?? '') !== '1' && !$hasUser && $name === '') {
+        pin_fail('qr: Pinterest confirmou o QR code, mas nao devolveu a sessao. Tente de novo.');
+    }
+    if ($name === '') { $name = 'qr'; }
+
+    $state['user'] = $name;
+    $state['at'] = time();
+    $state['cookies'] = $res['cookies'];
+    unset($state['qr_token'], $state['qr_at'], $state['qr_cookies']);
+    pin_state_save($state);
     pin_emit('login', array(), '', array('u' => array('us' => $name)));
     break;
 }
