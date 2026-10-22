@@ -77,6 +77,56 @@ function pin_cache_put($key, $data) {
     @file_put_contents($dir . '/' . md5($key) . '.json', $data);
 }
 
+
+function pin_guest_profile($msg) {
+    return array('us' => 'guest', 'un' => 'Guest', 'ab' => $msg,
+        'im' => '', 'fc' => 0, 'pc' => 0, 'bc' => 0);
+}
+
+// ---------------------------------------------------------------------------
+// Per-client session state (cookie jar + username)
+
+function pin_state_dir() {
+    $d = sys_get_temp_dir() . '/pinselogin';
+    if (!is_dir($d)) { @mkdir($d, 0777, true); }
+    return $d;
+}
+
+function pin_state_file() {
+    return pin_state_dir() . '/' . md5($_SERVER['REMOTE_ADDR'] ?? 'cli') . '.json';
+}
+
+function pin_state_load() {
+    $f = pin_state_file();
+    if (!is_file($f)) { return null; }
+    $j = json_decode((string)@file_get_contents($f), true);
+    return is_array($j) ? $j : null;
+}
+
+function pin_state_save($arr) {
+    @file_put_contents(pin_state_file(), json_encode($arr));
+}
+
+function pin_state_clear() {
+    @unlink(pin_state_file());
+}
+
+function pin_logged_user() {
+    $s = pin_state_load();
+    return ($s && !empty($s['user'])) ? (string)$s['user'] : '';
+}
+
+function pin_state_cookies() {
+    $s = pin_state_load();
+    return ($s && !empty($s['cookies']) && is_array($s['cookies'])) ? $s['cookies'] : array();
+}
+
+function pin_cookie_header($cookies) {
+    $parts = array();
+    foreach ($cookies as $k => $v) { $parts[] = $k . '=' . $v; }
+    return implode('; ', $parts);
+}
+
 // ---------------------------------------------------------------------------
 // Transport
 
@@ -87,15 +137,22 @@ function pin_curl($url, $extra_headers = array()) {
     ), $extra_headers);
     for ($try = 0; $try < 2; $try++) {
         $ch = curl_init();
-        curl_setopt_array($ch, array(
+        $opts = array(
             CURLOPT_URL => $url,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_MAXREDIRS => 5,
             CURLOPT_TIMEOUT => 25,
             CURLOPT_CONNECTTIMEOUT => 10,
+            CURLOPT_ENCODING => '',
             CURLOPT_HTTPHEADER => $headers,
-        ));
+        );
+        $cookies = pin_state_cookies();
+        if (!empty($cookies)) {
+            $headers[] = 'Cookie: ' . pin_cookie_header($cookies);
+            $opts[CURLOPT_HTTPHEADER] = $headers;
+        }
+        curl_setopt_array($ch, $opts);
         $body = curl_exec($ch);
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
@@ -120,14 +177,6 @@ function pin_api($resource, $handler, $options) {
         'X-Pinterest-AppState: active',
         'Referer: https://www.pinterest.com/',
     );
-    // If a session token is set for this IP, add it so Pinterest sees us as logged‑in.
-    $token_file = sys_get_temp_dir() . '/pinselogin/' . md5($_SERVER['REMOTE_ADDR'] ?? 'cli') . '.token';
-    if (is_file($token_file)) {
-        $token = trim(@file_get_contents($token_file));
-        if ($token !== '') {
-            $extra['X-Pinterest-Session-Token'] = $token;
-        }
-    }
     $body = pin_curl($url, $extra);
     if ($body === false) { pin_fail('pinterest request failed'); }
     $json = json_decode($body, true);
@@ -245,7 +294,8 @@ if ($n > 25) { $n = 25; }
 $bm = isset($_GET['bm']) ? (string)$_GET['bm'] : '';
 $cache_key = $_SERVER['QUERY_STRING'] ?? $op;
 
-$cached = pin_cache_get($cache_key);
+$no_cache = in_array($op, array('login', 'logout', 'me', 'home'), true) || pin_logged_user() !== '';
+$cached = $no_cache ? null : pin_cache_get($cache_key);
 if ($cached !== null) { echo $cached; exit; }
 
 ob_start();
@@ -367,136 +417,121 @@ case 'pin': {
 }
 
 case 'login': {
-    // POST: username and password via $_POST or query string (simple form‑auth).
-    // Pinterest does not document a public API for this, but the web login
-    // endpoint at https://www.pinterest.com/login/ saves a session cookie
-    // that we can extract and store per‑IP.
-    $user = preg_replace('/[^A-Za-z0-9_]/', '', (string)($_POST['username'] ?? $_GET['username'] ?? ''));
+    // Current Pinterest web flow: GET /login/ for csrf + cookies, then POST
+    // UserSessionResource/create/. Cookies are stored per client and reused by
+    // every later pin_api() call, so the feed/profile come back authenticated.
+    $user = trim((string)($_POST['username'] ?? $_GET['username'] ?? ''));
     $pass = (string)($_POST['password'] ?? $_GET['password'] ?? '');
     if ($user === '' || $pass === '') { pin_fail('missing credentials'); }
-    // Perform a login request that Pinterest treats as a real browser login.
-    // We follow redirects and capture the session cookie.
-    $login_url = 'https://www.pinterest.com/login/';
+    if (strlen($pass) > 200) { pin_fail('bad credentials'); }
+
+    $cookies = array();
+    $collect = function ($ch, $line) use (&$cookies) {
+        if (preg_match('/^Set-Cookie:\s*([^=]+)=([^;]*)/i', $line, $m)) {
+            $cookies[trim($m[1])] = trim($m[2], " \t\"");
+        }
+        return strlen($line);
+    };
+
     $ch = curl_init();
     curl_setopt_array($ch, array(
-        CURLOPT_URL => $login_url,
+        CURLOPT_URL => 'https://www.pinterest.com/login/',
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_MAXREDIRS => 5,
+        CURLOPT_TIMEOUT => 30,
+        CURLOPT_CONNECTTIMEOUT => 10,
+        CURLOPT_USERAGENT => PIN_UA,
+        CURLOPT_ENCODING => '',
+        CURLOPT_HEADERFUNCTION => $collect,
+        CURLOPT_HTTPHEADER => array(
+            'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language: pt-BR,pt;q=0.9,en;q=0.8',
+        ),
+    ));
+    curl_exec($ch);
+    curl_close($ch);
+
+    $csrf = $cookies['csrftoken'] ?? '';
+    if ($csrf === '') { pin_fail('login: no csrf token'); }
+
+    $options = array('username_or_email' => $user, 'password' => $pass);
+    $payload = 'source_url=' . rawurlencode('/login/')
+        . '&data=' . rawurlencode(json_encode(array('options' => $options, 'context' => array())));
+
+    $ch = curl_init();
+    curl_setopt_array($ch, array(
+        CURLOPT_URL => 'https://www.pinterest.com/resource/UserSessionResource/create/',
+        CURLOPT_RETURNTRANSFER => true,
         CURLOPT_TIMEOUT => 30,
         CURLOPT_CONNECTTIMEOUT => 10,
         CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => 'username=' . urlencode($user) . '&password=' . urlencode($pass),
+        CURLOPT_POSTFIELDS => $payload,
+        CURLOPT_USERAGENT => PIN_UA,
+        CURLOPT_ENCODING => '',
+        CURLOPT_HEADERFUNCTION => $collect,
         CURLOPT_HTTPHEADER => array(
-            'User-Agent: ' . PIN_UA,
-            'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Referer: https://www.pinterest.com/',
+            'Content-Type: application/x-www-form-urlencoded',
+            'Accept: application/json, text/javascript, */*; q=0.01',
+            'Accept-Language: pt-BR,pt;q=0.9,en;q=0.8',
+            'Cookie: ' . pin_cookie_header($cookies),
+            'X-CSRFToken: ' . $csrf,
+            'X-Requested-With: XMLHttpRequest',
+            'X-Pinterest-AppState: active',
+            'X-Pinterest-Source-Url: /login/',
+            'Origin: https://www.pinterest.com',
+            'Referer: https://www.pinterest.com/login/',
         ),
     ));
     $body = curl_exec($ch);
-    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
-    if ($http_code < 300 || $http_code >= 400) {
-        pin_fail('login failed (http ' . $http_code . ')', $http_code);
+
+    $json = json_decode((string)$body, true);
+    $rr = (is_array($json) && isset($json['resource_response'])) ? $json['resource_response'] : array();
+    if (($rr['status'] ?? '') !== 'success') {
+        $msg = $rr['error']['message_detail'] ?? ($rr['error']['message'] ?? 'credenciais invalidas');
+        pin_fail('login: ' . $msg);
     }
-    // Capture cookies returned by the login redirect.
-    $ch2 = curl_init();
-    curl_setopt_array($ch2, array(
-        CURLOPT_URL => $login_url,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_FOLLOWLOCATION => false,
-        CURLOPT_TIMEOUT => 30,
-        CURLOPT_CONNECTTIMEOUT => 10,
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => 'username=' . urlencode($user) . '&password=' . urlencode($pass),
-        CURLOPT_HTTPHEADER => array(
-            'User-Agent: ' . PIN_UA,
-            'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Referer: https://www.pinterest.com/',
-            'Cookie:',
-        ),
-        CURLOPT_COOKIEFILE => sys_get_temp_dir() . '/pinselogin/cookies.txt',
-        CURLOPT_COOKIEJAR => sys_get_temp_dir() . '/pinselogin/cookies.txt',
-    ));
-    $body2 = curl_exec($ch2);
-    curl_close($ch2);
-    // Read the cookie file and pick the first token that looks like a session cookie.
-    $token = '';
-    if (is_file(sys_get_temp_dir() . '/pinselogin/cookies.txt')) {
-        $lines = file(sys_get_temp_dir() . '/pinselogin/cookies.txt', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-        foreach ($lines as $line) {
-            // Netscape cookie format: host\tname\tpath\tsecure\texpire\tvalue\tsession
-            // or HTTP header format: Set-Cookie: name=value; ...
-            if (preg_match('/^Set-Cookie:\s*([^=]+)=([^;]+)/i', $line, $m)) {
-                $name = trim($m[1]);
-                $value = trim($m[2]);
-                if (stripos($name, 'session') !== false || stripos($name, 'auth') !== false || stripos($name, 'csrf') !== false) {
-                    $token = $value;
-                    break;
-                }
-            }
-        }
+
+    if (empty($cookies['_pinterest_sess'])) {
+        pin_fail('login: sessao nao criada');
     }
-    // Store the token per‑IP so subsequent requests are seen as logged‑in.
-    $token_file = sys_get_temp_dir() . '/pinselogin/' . md5($_SERVER['REMOTE_ADDR'] ?? 'cli') . '.token';
-    @file_put_contents($token_file, $token);
-    // Also keep the cookie jar around for possible later use.
-    @mkdir(sys_get_temp_dir() . '/pinselogin', 0777, true);
-    // Respond with success only — the client will re‑issue requests and
-    // the proxy will pick up the token from the file.
-    pin_emit('login', array(), '');
+
+    $name = $user;
+    $d = $rr['data'] ?? array();
+    if (is_array($d)) {
+        if (!empty($d['username'])) { $name = (string)$d['username']; }
+        elseif (!empty($d['user']['username'])) { $name = (string)$d['user']['username']; }
+    }
+    pin_state_save(array('user' => $name, 'at' => time(), 'cookies' => $cookies));
+    pin_emit('login', array(), '', array('u' => array('us' => $name)));
     break;
 }
 
 case 'logout': {
-    // Clear the per‑IP session token and cookie file.
-    $token_file = sys_get_temp_dir() . '/pinselogin/' . md5($_SERVER['REMOTE_ADDR'] ?? 'cli') . '.token';
-    $cookie_file = sys_get_temp_dir() . '/pinselogin/cookies.txt';
-    @unlink($token_file);
-    @unlink($cookie_file);
-    // Clean up the temp dir if empty.
-    $dir = dirname($token_file);
-    if (is_dir($dir)) {
-        $rmdir = true;
-        $entries = @ scandir($dir);
-        if ($entries && count($entries) <= 2) { // only . and ..
-            @rmdir($dir);
-        }
-    }
+    pin_state_clear();
     pin_emit('logout', array(), '');
     break;
 }
 
 case 'me': {
-    // Returns the authenticated user's profile (same shape as ?op=user).
-    // If no session token is set, returns a "guest" profile prompting to log in.
-    $token_file = sys_get_temp_dir() . '/pinselogin/' . md5($_SERVER['REMOTE_ADDR'] ?? 'cli') . '.token';
-    if (!is_file($token_file)) {
-        pin_emit('user', array(), '', array('u' => array(
-            'us' => 'guest', 'un' => 'Guest', 'ab' => 'Log in to see your profile.',
-            'im' => '', 'fc' => 0, 'pc' => 0, 'bc' => 0,
-        )));
+    // Authenticated profile; guests get a stub explaining they must log in.
+    $u = pin_logged_user();
+    if ($u === '') {
+        pin_emit('user', array(), '', array('u' => pin_guest_profile('Entre para ver seu perfil.')));
         break;
     }
-    $token = trim(@file_get_contents($token_file));
-    if ($token === '') {
-        pin_emit('user', array(), '', array('u' => array(
-            'us' => 'guest', 'un' => 'Guest', 'ab' => 'Log in to see your profile.',
-            'im' => '', 'fc' => 0, 'pc' => 0, 'bc' => 0,
-        )));
+    try {
+        $rr = pin_api('UserResource', 'www/[username].js', array('username' => $u));
+    } catch (Throwable $e) {
+        pin_state_clear();
+        pin_emit('user', array(), '', array('u' => pin_guest_profile('Sessao expirada. Entre de novo.')));
         break;
     }
-    // Use the token as a session cookie header — Pinterest will see us as logged‑in.
-    $rr = pin_api('UserResource', 'www/[username].js', array(
-        'username' => $token,
-    ));
     $d = $rr['data'] ?? array();
     if (!is_array($d) || empty($d['username'])) {
-        // Token invalid — clear it and act as logged out.
-        @unlink($token_file);
-        pin_emit('user', array(), '', array('u' => array(
-            'us' => 'guest', 'un' => 'Guest', 'ab' => 'Session expired. Log in again.',
-            'im' => '', 'fc' => 0, 'pc' => 0, 'bc' => 0,
-        )));
+        pin_state_clear();
+        pin_emit('user', array(), '', array('u' => pin_guest_profile('Sessao expirada. Entre de novo.')));
         break;
     }
     pin_emit('user', array(), '', array('u' => array(
@@ -512,31 +547,24 @@ case 'me': {
 }
 
 case 'home': {
-    // The logged‑in user's feed — same as userpins but for the authenticated user.
-    $token_file = sys_get_temp_dir() . '/pinselogin/' . md5($_SERVER['REMOTE_ADDR'] ?? 'cli') . '.token';
-    if (!is_file($token_file)) {
-        pin_emit('pins', array(), '', array('u' => array(
-            'us' => 'guest', 'un' => 'Guest', 'ab' => 'Log in to see your home feed.',
-            'im' => '', 'fc' => 0, 'pc' => 0, 'bc' => 0,
-        )));
+    // Logged-in home feed (UserHomefeedResource requires session cookies).
+    if (pin_logged_user() === '') {
+        pin_emit('pins', array(), '', array('u' => pin_guest_profile('Entre para ver seu feed.')));
         break;
     }
-    $token = trim(@file_get_contents($token_file));
-    if ($token === '') {
-        pin_emit('pins', array(), '', array('u' => array(
-            'us' => 'guest', 'un' => 'Guest', 'ab' => 'Log in to see your home feed.',
-            'im' => '', 'fc' => 0, 'pc' => 0, 'bc' => 0,
-        )));
+    try {
+        $rr = pin_api('UserHomefeedResource', 'www/index.js', array(
+            'page_size' => (int)$n,
+            'field_set_key' => 'mobile_grid_item',
+        ));
+    } catch (Throwable $e) {
+        pin_emit('pins', array(), '', array('u' => pin_guest_profile('Sessao expirada. Entre de novo.')));
         break;
     }
-    // home feed uses the same resource as userpins but with the token as username.
-    $options = array(
-        'username' => $token, 'page_size' => $n, 'field_set_key' => 'mobile_grid_item',
-        'add_vase' => false, 'gated' => true, 'is_own_profile_pins' => false,
-    );
-    $rr = pin_api('UserPinsResource', 'www/[username].js', $options);
     $items = array();
-    foreach (($rr['data'] ?? array()) as $p) { $items[] = pin_compact_pin($p); }
+    foreach (($rr['data'] ?? array()) as $p) {
+        if (is_array($p)) { $items[] = pin_compact_pin($p); }
+    }
     pin_emit('pins', $items, $rr['bookmark'] ?? '');
     break;
 }
@@ -546,5 +574,5 @@ default:
 }
 
 $output = ob_get_clean();
-pin_cache_put($cache_key, $output);
+if (!$no_cache) { pin_cache_put($cache_key, $output); }
 echo $output;
