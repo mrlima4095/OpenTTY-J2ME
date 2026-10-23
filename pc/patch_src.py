@@ -174,20 +174,43 @@ def rename_word_range(path, lo, hi, word, repl, name):
     print("renamed '%s' -> '%s' in %s lines %d..%d" % (word, repl, name, lo, hi))
 
 
-# Method-level uses of `arg` in Lua.java internals() (all single-scope spans
-# verified to NOT contain a local `arg` declaration):
-ARG_RANGES = [
-    (1417, 1417),            # the declaration itself
-    (1740, 1746),            # case READ
-    (1816, 1826),            # case CLOSE
-    (2163, 2189),            # case BASE64_ENCODE
-    (2579, 2598),            # case CHAR
-    (2708, 2710),            # case SLEEP
+# Method-level uses of `arg` in Lua.java internals() (each span is anchored by
+# text, so edits elsewhere in Lua.java never shift them):
+ARG_ANCHORS = [
+    ("Object arg;", "Object arg;"),                                                              # the declaration itself
+    ("case READ:", 'String path = toLuaString(arg);'),                                           # case READ
+    ("case CLOSE:", "proc.net.remove(arg); break;"),                                             # case CLOSE
+    ("case BASE64_ENCODE:", 'return gotbad(1, "encode", "string or table expected, got " + type(arg));'),  # case BASE64_ENCODE
+    ("case CHAR:", 'catch (Exception e) { return gotbad(1, "char", "number expected, got " + type(arg)); }'),  # case CHAR
+    ("case SLEEP:", 'else { return gotbad(1, "sleep", "number expected, got " + type(arg)); }'),  # case SLEEP
 ]
 
 
+def read_lines(path):
+    with open(path, "r", encoding="utf-8") as f:
+        return f.read().split("\n")
+
+
+def line_of(lines, needle, start=0):
+    for i in range(start, len(lines)):
+        if needle in lines[i]:
+            return i + 1
+    raise SystemExit("anchor not found in Lua.java: %r" % needle)
+
+
+def anchor_ranges(path, anchors):
+    lines = read_lines(path)
+    ranges, prev_end = [], 0
+    for start_needle, end_needle in anchors:
+        lo = line_of(lines, start_needle, prev_end)
+        hi = line_of(lines, end_needle, lo - 1)
+        ranges.append((lo, hi))
+        prev_end = hi
+    return ranges
+
+
 def fix_shadowing(path):
-    replace_arg_ranges(path, ARG_RANGES, path)
+    replace_arg_ranges(path, anchor_ranges(path, ARG_ANCHORS), path)
     patch_file(path, [
         # KERNEL case: `pid` in the multi-declaration is never used; nesting it
         # out of the way makes the three nested `String pid` locals legal.
@@ -227,9 +250,12 @@ def fix_shadowing(path):
          "kernel-daemon-arg-use"),
     ])
     # exec(): the array-local `String[] args` (now `argv`) shadows the `Vector
-    # args` parameter. Original lines 3022/3023 hold mainCommand/argv; every
-    # use of `args` after that point refers to the array on device.
-    rename_word_range(path, 3024, 3281, "args", "argv", path)
+    # args` parameter. Rename every use from the declaration to the end of
+    # exec() (anchored, so earlier/later edits do not shift the span).
+    lines = read_lines(path)
+    lo = line_of(lines, "String[] argv = midlet.splitArgs(argument);")
+    hi = line_of(lines, "public Vector splitAmpersands(String input)") - 1
+    rename_word_range(path, lo, hi, "args", "argv", path)
 
 
 open_ = SRC + "/OpenTTY.java"

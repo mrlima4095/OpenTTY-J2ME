@@ -211,3 +211,4 @@
 [2026-1.18.2-04x41]	Build #441 - ELF guest libc: time() wrapper (SYS_TIME); gc() + mem_free/mem_total/mem_used (Java heap KB)
 [2026-1.18.2-04x42] Release 1.18.2 - In Marluce's memory
 [2026-1.18.2-04x43] 1.19 Suite Case
+[2026-1.18.2-04x44]	Build #444 - Lua: full metatables (__index/__newindex/__call/__tostring/__len/comparison/arithmetic/__concat), rawget/rawset/rawequal/rawlen, debug.traceback/getinfo/getregistry, return f() forwards results

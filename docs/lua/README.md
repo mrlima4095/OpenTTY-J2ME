@@ -47,6 +47,70 @@ and standard libraries adapted for the J2ME environment.
 | `select(index, ...)` | Select arguments |
 | `type(v)` | Return the value's type |
 | `getAppProperty(key)` | Get an application property |
+| `setmetatable(t, mt)` | Attach (or clear, with `nil`) a metatable |
+| `getmetatable(t)` | Return the table's metatable |
+| `rawget(t, k)` | Read `k` without consulting `__index` |
+| `rawset(t, k, v)` | Write `k` without consulting `__newindex` |
+| `rawequal(a, b)` | Compare two values without `__eq` |
+| `rawlen(t)` | Sequence length without `__len` |
+
+## Metatables
+
+Metatables are supported with the usual Lua metamethods:
+
+| Metamethod | Used by |
+|------------|---------|
+| `__index` | `t[k]`, `t.k`, missing fields — a table to chain into, or a function `(t, k)` |
+| `__newindex` | `t[k] = v` when the key is absent — a table to write into, or a function `(t, k, v)` |
+| `__call` | `t(...)` |
+| `__tostring` | `tostring(t)` and `print(t)` |
+| `__len` | `#t` |
+| `__eq`, `__lt`, `__le` | `==`, `<`, `<=` (and `~=`, `>`, `>=`) |
+| `__add`, `__sub`, `__mul`, `__div`, `__mod`, `__pow`, `__unm`, `__concat` | arithmetic and concatenation |
+
+`>` and `>=` are rewritten as `<` and `<=` with swapped operands, and `<=`
+falls back to `not (b < a)` when only `__lt` is defined, as in Lua 5.2.
+
+```lua
+local Animal = {}
+Animal.__index = Animal
+
+Animal.new = function(name)
+    local self = setmetatable({}, Animal)
+    self.name = name
+    return self
+end
+Animal.speak = function(self) return self.name .. " speaks" end
+
+local Dog = setmetatable({}, { __index = Animal })
+Dog.__index = Dog
+
+local rex = Animal.new("rex")
+print(rex:speak())          -- rex speaks
+```
+
+Notes:
+
+- The metatable is stored inside the table under the hidden `__metatable` key.
+  It is skipped by `pairs`, `#` and the `table` library, but `rawget(t,
+  "__metatable")` still returns it.
+- Method definitions with the `function t:m() ... end` shorthand are **not**
+  supported by the parser; assign `t.m = function(self) ... end` instead.
+- Coroutines (`coroutine.*`) are not available.
+
+## `debug` Library
+
+| Function | Description |
+|----------|-------------|
+| `debug.traceback([msg [, level]])` | Return a `stack traceback:` dump starting at `level` |
+| `debug.getinfo([level])` | Table describing a stack frame (`what`, `source`, `short_src`, `currentline`, `name`, `linedefined`) |
+| `debug.getinfo(func)` | Same table for a function (`what` is `"C"` for native functions) |
+| `debug.getregistry()` | The globals table (`_G`) |
+
+`level` follows Lua: `1` is the function calling `debug.getinfo`, `0` is the
+native function itself, and a level above the stack returns the main chunk
+(`what = "main"`). `debug.getlocal`, `debug.setlocal`, `debug.sethook` and
+upvalues are not implemented.
 
 ## `os` Library
 

@@ -29,8 +29,8 @@ area; the most concrete, near-term items appear first.
 ## Lua J2ME
 
 - [ ] Coroutine support
-- [ ] Metatable support
-- [ ] `debug` table
+- [x] Metatable support
+- [x] `debug` table
 - [ ] `collectgarbage` threshold mode
 - [ ] `table.serialize` / `table.unserialize`
 - [ ] Regular expressions

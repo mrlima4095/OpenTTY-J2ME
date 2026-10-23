@@ -32,7 +32,8 @@ public class Lua {
     public int status = 0;
     public boolean silent = false;
     // | (LuaFunction)
-    public static final int PRINT = 0, ERROR = 1, PCALL = 2, REQUIRE = 3, LOADS = 4, PAIRS = 5, GC = 6, TOSTRING = 7, TONUMBER = 8, SELECT = 9, TYPE = 10, GETPROPERTY = 11, SETMETATABLE = 12, GETMETATABLE = 13, IPAIRS = 14, RANDOM = 15, ASSERT = 16;
+    public static final int PRINT = 0, ERROR = 1, PCALL = 2, REQUIRE = 3, LOADS = 4, PAIRS = 5, GC = 6, TOSTRING = 7, TONUMBER = 8, SELECT = 9, TYPE = 10, GETPROPERTY = 11, SETMETATABLE = 12, GETMETATABLE = 13, IPAIRS = 14, RANDOM = 15, ASSERT = 16, RAWGET = 17, RAWSET = 18, RAWEQUAL = 19, RAWLEN = 20;
+    public static final int DEBUG_TRACEBACK = 1100, DEBUG_GETINFO = 1101, DEBUG_GETREGISTRY = 1102;
     public static final int UPPER = 100, LOWER = 101, LEN = 102, FIND = 103, MATCH = 104, REVERSE = 105, SUB = 106, HASH = 107, BYTE = 108, CHAR = 109, TRIM = 110, SPLIT = 111, UUID = 112, GETCMD = 113, GETARGS = 114, ENV = 115, BASE64_ENCODE = 116, BASE64_DECODE = 117, GETPATTERN = 118, STARTSWITH = 119, ENDSWITH = 120;
     public static final int TB_INSERT = 200, TB_CONCAT = 201, TB_REMOVE = 202, TB_SORT = 203, TB_MOVE = 204, TB_UNPACK = 205, TB_PACK = 206, TB_DECODE = 207;
     public static final int EXEC = 300, GETENV = 301, SETENV = 302, CLOCK = 303, SETLOC = 304, EXIT = 305, DATE = 306, GETPID = 307, SETPROC = 308, GETPROC = 309, GETCWD = 310, GETUID = 311, CHDIR = 312, REQUEST = 313, START = 314, STOP = 315, PREQ = 316, SU = 318, REMOVE = 319, SCOPE = 320, JOIN = 321, MKDIR = 322;
@@ -73,7 +74,7 @@ public class Lua {
         this.midlet = midlet; this.id = id; this.PID = pid; this.proc = proc; this.stdout = stdout; this.father = scope;
         this.tokenIndex = 0; 
 
-        Hashtable os = new Hashtable(), io = new Hashtable(), string = new Hashtable(), table = new Hashtable(), pkg = new Hashtable(), graphics = new Hashtable(), socket = new Hashtable(), http = new Hashtable(), java = new Hashtable(), jdb = new Hashtable(), math = new Hashtable(), audio = new Hashtable(), push = new Hashtable(), base64 = new Hashtable();
+        Hashtable os = new Hashtable(), io = new Hashtable(), string = new Hashtable(), table = new Hashtable(), pkg = new Hashtable(), graphics = new Hashtable(), socket = new Hashtable(), http = new Hashtable(), java = new Hashtable(), jdb = new Hashtable(), math = new Hashtable(), audio = new Hashtable(), push = new Hashtable(), base64 = new Hashtable(), debug = new Hashtable();
         String[] funcs = new String[] { "getenv", "setenv", "clock", "setlocale", "exit", "date", "getpid", "setproc", "getproc", "getcwd", "request", "getuid", "chdir", "open", "su", "remove", "scope", "join", "mkdir" }; 
         int[] loaders = new int[] { GETENV, SETENV, CLOCK, SETLOC, EXIT, DATE, GETPID, SETPROC, GETPROC, GETCWD, REQUEST, GETUID, CHDIR, PREQ, SU, REMOVE, SCOPE, JOIN, MKDIR };
         for (int i = 0; i < funcs.length; i++) { os.put(funcs[i], new LuaFunction(loaders[i])); } os.put("execute", midlet.shell instanceof LuaFunction ? midlet.shell : new LuaFunction(EXEC)); globals.put("os", os);
@@ -109,9 +110,13 @@ public class Lua {
         funcs = new String[] { "upper", "lower", "len", "find", "match", "reverse", "sub", "hash", "byte", "char", "trim", "uuid", "split", "getCommand", "getArgument", "env", "getpattern", "startswith", "endswith" }; loaders = new int[] { UPPER, LOWER, LEN, FIND, MATCH, REVERSE, SUB, HASH, BYTE, CHAR, TRIM, UUID, SPLIT, GETCMD, GETARGS, ENV, GETPATTERN, STARTSWITH, ENDSWITH };
         for (int i = 0; i < funcs.length; i++) { string.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("string", string);
 
-        funcs = new String[] { "print", "error", "pcall", "assert", "require", "load", "pairs", "ipairs", "collectgarbage", "tostring", "tonumber", "select", "type", "getAppProperty", "setmetatable", "getmetatable" }; 
-        loaders = new int[] { PRINT, ERROR, PCALL, ASSERT, REQUIRE, LOADS, PAIRS, IPAIRS, GC, TOSTRING, TONUMBER, SELECT, TYPE, GETPROPERTY, SETMETATABLE, GETMETATABLE };
+        funcs = new String[] { "print", "error", "pcall", "assert", "require", "load", "pairs", "ipairs", "collectgarbage", "tostring", "tonumber", "select", "type", "getAppProperty", "setmetatable", "getmetatable", "rawget", "rawset", "rawequal", "rawlen" }; 
+        loaders = new int[] { PRINT, ERROR, PCALL, ASSERT, REQUIRE, LOADS, PAIRS, IPAIRS, GC, TOSTRING, TONUMBER, SELECT, TYPE, GETPROPERTY, SETMETATABLE, GETMETATABLE, RAWGET, RAWSET, RAWEQUAL, RAWLEN };
         for (int i = 0; i < funcs.length; i++) { globals.put(funcs[i], new LuaFunction(loaders[i])); }
+
+        funcs = new String[] { "traceback", "getinfo", "getregistry" };
+        loaders = new int[] { DEBUG_TRACEBACK, DEBUG_GETINFO, DEBUG_GETREGISTRY };
+        for (int i = 0; i < funcs.length; i++) { debug.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("debug", debug);
 
         pkg.put("loaded", requireCache); pkg.put("loadlib", new LuaFunction(REQUIRE)); globals.put("package", pkg);
         math.put("random", new LuaFunction(RANDOM)); globals.put("math", math);
@@ -249,6 +254,65 @@ public class Lua {
         Object v = tok.value;
         if (v instanceof Double) { double d = ((Double) v).doubleValue(); if (d == Math.floor(d) && !Double.isInfinite(d)) { return String.valueOf((long) d); } return String.valueOf(d); }
         return v == null ? "" : String.valueOf(v);
+    }
+    // |
+    // | (Human readable value: honors __tostring, falls back to the type formatter)
+    private Object toDisplayValue(Object value) throws Exception {
+        if (hasMeta(value, "__tostring")) { return toLuaString(callMeta("__tostring", new Object[] { value })); }
+        return toLuaString(value);
+    }
+    // | (Line of the token being evaluated, used to keep frame call sites fresh)
+    private int currentLine() {
+        if (tokens == null || tokenIndex <= 0 || tokenIndex > tokens.size()) { return -1; }
+        Token tok = (Token) tokens.elementAt(tokenIndex - 1);
+        if (tok == null || tok.offset < 0) { return -1; }
+        return lineFromOffsets(lineOffsets, tok.offset);
+    }
+    // | (Stack dump for debug.traceback: innermost frame first, `level` frames skipped)
+    private String tracebackString(String message, int level) {
+        StringBuffer sb = new StringBuffer();
+        if (message != null && message.length() > 0) { sb.append(message).append('\n'); }
+
+        sb.append("stack traceback:");
+        int skip = level - 1;
+        if (skip >= frameStack.size()) { sb.append("\n\t[C]: in ?"); return sb.toString(); }
+
+        for (int i = frameStack.size() - 1 - skip; i >= 0; i--) {
+            Frame f = (Frame) frameStack.elementAt(i);
+
+            sb.append("\n\t").append(f.source == null || f.source.length() == 0 ? "?" : f.source);
+            if (f.line > 0) { sb.append(':').append(f.line); }
+            sb.append(": in function '").append(f.name == null ? "[anonymous]" : f.name).append('\'');
+        }
+        return sb.toString();
+    }
+    // | (debug.getinfo: describe a function or a live stack frame)
+    private void fillInfo(Hashtable info, LuaFunction func, int frameIndex) {
+        if (func != null) {
+            String source = func.defSource == null || func.defSource.length() == 0 ? "=[C]" : (func.defSource.startsWith("@") || func.defSource.startsWith("=") ? func.defSource : "@" + func.defSource);
+
+            info.put("what", func.MOD == -1 ? "Lua" : "C");
+            info.put("source", source);
+            info.put("short_src", func.defSource == null || func.defSource.length() == 0 ? "[C]" : func.defSource);
+            info.put("linedefined", luaNumber(func.MOD == -1 && func.defLine > 0 ? func.defLine : -1));
+            info.put("lastlinedefined", luaNumber(func.MOD == -1 && func.defLine > 0 ? func.defLine : -1));
+            info.put("nparams", luaNumber(func.params == null ? 0 : func.params.size()));
+            info.put("name", func.name);
+            info.put("currentline", luaNumber(-1));
+            return;
+        }
+
+        Frame f = (Frame) frameStack.elementAt(frameIndex);
+        String source = f.source == null || f.source.length() == 0 ? "=?" : (f.source.startsWith("@") || f.source.startsWith("=") ? f.source : "@" + f.source);
+
+        info.put("what", "Lua");
+        info.put("source", source);
+        info.put("short_src", f.source == null || f.source.length() == 0 ? "?" : f.source);
+        info.put("linedefined", luaNumber(-1));
+        info.put("lastlinedefined", luaNumber(-1));
+        info.put("nparams", luaNumber(0));
+        info.put("name", f.name);
+        info.put("currentline", luaNumber(f.line));
     }
     // |
     // Tokenizer
@@ -426,11 +490,11 @@ public class Lua {
                 if (peek().type == ASSIGN) {
                     consume(ASSIGN);
                     Object value = expression(scope);
-                    ((Hashtable) targetTable).put(key, value == null ? LUA_NIL : value);
+                    indexSet(targetTable, key, value);
                     return null;
                 } 
-                else if (peek().type == LPAREN) { return callFunctionObject(unwrap(((Hashtable) targetTable).get(key)), scope); }
-                else { return unwrap(((Hashtable) targetTable).get(key)); }
+                else if (peek().type == LPAREN) { return callFunctionObject(indexValue(targetTable, key), scope); }
+                else { return indexValue(targetTable, key); }
             } 
             else if (peek().type == COLON) {
                 Object self = unwrap(scope.get(varName));
@@ -439,17 +503,13 @@ public class Lua {
 
                 consume(COLON);
                 String methodName = (String) consume(IDENTIFIER).value;
-                Object methodObj = resolveMethod(self);
+                Object fn = fieldValue(self, methodName);
 
-                if (methodObj instanceof Hashtable) {
-                    Hashtable table = (Hashtable) methodObj;
-                    Object fn = unwrap(table.get(methodName));
-                    if (fn == null) { throw new Exception("method '" + methodName + "' not found " + ((methodObj == self && self instanceof Hashtable) ? "in table: " + varName : "for type: " + LuaFunction.type(self))); }
-                    
+                if (fn != null) {
                     return callMethod(self, varName, fn, methodName, scope);
                 }
 
-                throw new Exception("attempt to call method on unsupported type: " + LuaFunction.type(self));
+                throw new Exception("method '" + methodName + "' not found " + (self instanceof Hashtable ? "in table: " + varName : "for type: " + LuaFunction.type(self)));
             }
             else {
                 if (peek().type == ASSIGN) {
@@ -650,6 +710,7 @@ public class Lua {
                         Hashtable ht = (Hashtable) iterSrc;
                         for (Enumeration e = ht.keys(); e.hasMoreElements();) {
                             Object k = e.nextElement();
+                            if ("__metatable".equals(k)) { continue; }
                             Object v = unwrap(ht.get(k));
                             if (names.size() >= 1) scope.put((String) names.elementAt(0), (k == null ? LUA_NIL : k));
                             if (names.size() >= 2) scope.put((String) names.elementAt(1), (v == null ? LUA_NIL : v));
@@ -786,13 +847,21 @@ public class Lua {
         }
         else if (current.type == RETURN) {
             consume(RETURN);
-            doreturn = true;
 
-            if (peek().type == EOF || peek().type == END) { return new Vector(); }
+            if (peek().type == EOF || peek().type == END) { doreturn = true; return new Vector(); }
 
+            // The expressions run first: `return f()` must not abort f's body
             Vector results = new Vector();
-            results.addElement(expression(scope));
-            while (peek().type == COMMA) { consume(COMMA); results.addElement(expression(scope)); }
+            Object first = expression(scope);
+            if (peek().type != COMMA && first instanceof Vector) {
+                // `return f()` forwards every result of the call, as in Lua
+                Vector list = (Vector) first;
+                for (int i = 0; i < list.size(); i++) { results.addElement(list.elementAt(i)); }
+            } else {
+                results.addElement(first);
+                while (peek().type == COMMA) { consume(COMMA); results.addElement(expression(scope)); }
+            }
+            doreturn = true;
             return results;
         }
 
@@ -981,11 +1050,50 @@ public class Lua {
     private Object expression(Hashtable scope) throws Exception { return logicalOr(scope); }
     private Object logicalOr(Hashtable scope) throws Exception { Object left = logicalAnd(scope); while (peek().type == OR) { consume(OR); Object right = logicalAnd(scope); left = isTruthy(left) ? left : right; } return left; }
     private Object logicalAnd(Hashtable scope) throws Exception { Object left = comparison(scope); while (peek().type == AND) { consume(AND); Object right = comparison(scope); left = isTruthy(left) ? right : left; } return left; }
-    private Object comparison(Hashtable scope) throws Exception { Object left = concatenation(scope); while (peek().type == EQ || peek().type == NE || peek().type == LT || peek().type == GT || peek().type == LE || peek().type == GE) { Token op = consume(); Object right = concatenation(scope); if (op.type == EQ) { left = ((left == null && right == null) || (left != null && left.equals(right))) ? TRUE : FALSE; } else if (op.type == NE) { left = !((left == null && right == null) || (left != null && left.equals(right))) ? TRUE : FALSE; } else if (op.type == LT) { left = ((Double) left).doubleValue() < ((Double) right).doubleValue() ? TRUE : FALSE; } else if (op.type == GT) { left = ((Double) left).doubleValue() > ((Double) right).doubleValue() ? TRUE : FALSE; } else if (op.type == LE) { left = ((Double) left).doubleValue() <= ((Double) right).doubleValue() ? TRUE : FALSE; } else if (op.type == GE) { left = ((Double) left).doubleValue() >= ((Double) right).doubleValue() ? TRUE : FALSE; } } return left; }
+    private Object comparison(Hashtable scope) throws Exception {
+        Object left = concatenation(scope);
+        while (peek().type == EQ || peek().type == NE || peek().type == LT || peek().type == GT || peek().type == LE || peek().type == GE) {
+            Token op = consume();
+            Object right = concatenation(scope);
+            if (op.type == EQ || op.type == NE) {
+                boolean equal = (left == null && right == null) || (left != null && left.equals(right));
+                if (!equal && left instanceof Hashtable && right instanceof Hashtable && hasAnyMeta(left, right, "__eq")) { equal = isTruthy(metaBinary("__eq", left, right)); }
+                left = (op.type == EQ) == equal ? TRUE : FALSE;
+            }
+            else if (op.type == LT) { left = luaCompare(left, right, "__lt", -1) ? TRUE : FALSE; }
+            else if (op.type == GT) { left = luaCompare(right, left, "__lt", -1) ? TRUE : FALSE; }
+            else if (op.type == LE) { left = luaCompare(left, right, "__le", 0) ? TRUE : FALSE; }
+            else if (op.type == GE) { left = luaCompare(right, left, "__le", 0) ? TRUE : FALSE; }
+        }
+        return left;
+    }
+    // | (Ordering: numbers, then strings, then __lt/__le — result <= fallback > 0 means "swap and negate")
+    private boolean luaCompare(Object left, Object right, String event, int fallback) throws Exception {
+        if (left instanceof Double && right instanceof Double) { return ((Double) left).doubleValue() < ((Double) right).doubleValue(); }
+        if (left instanceof String && right instanceof String) { return ((String) left).compareTo((String) right) < 0; }
+
+        if (hasAnyMeta(left, right, event)) { return isTruthy(metaBinary(event, left, right)); }
+        // Lua's `a <= b` falls back to `not (b < a)` when only `__lt` exists
+        if (fallback == 0 && hasAnyMeta(left, right, "__lt")) { return !isTruthy(metaBinary("__lt", right, left)); }
+
+        throw new Exception("attempt to compare " + LuaFunction.type(left) + " with " + LuaFunction.type(right));
+    }
     // |
     // Strings
     private String toLuaString(Object obj) { if (obj == null || obj == LUA_NIL) { return "nil"; } if (obj instanceof Boolean) { return ((Boolean)obj).booleanValue() ? "true" : "false"; } if (obj instanceof Double) { double d = ((Double)obj).doubleValue(); if (d == (long)d) return String.valueOf((long)d); return String.valueOf(d); } return midlet.escape(obj.toString()); }
-    private Object concatenation(Hashtable scope) throws Exception { Object left = arithmetic(scope); if (peek().type == CONCAT) { StringBuffer sb = new StringBuffer(toLuaString(left)); while (peek().type == CONCAT) { consume(CONCAT); Object right = arithmetic(scope); sb.append(toLuaString(right)); } left = sb.toString(); } return left; }
+    private Object concatenation(Hashtable scope) throws Exception {
+        Object left = arithmetic(scope);
+
+        while (peek().type == CONCAT) {
+            consume(CONCAT);
+            Object right = arithmetic(scope);
+
+            if ((left instanceof String || left instanceof Double) && (right instanceof String || right instanceof Double)) { left = toLuaString(left) + toLuaString(right); }
+            else if (hasAnyMeta(left, right, "__concat")) { left = metaBinary("__concat", left, right); }
+            else { left = toLuaString(left) + toLuaString(right); }
+        }
+        return left;
+    }
     // |
     // Arithmetic
     private Object arithmetic(Hashtable scope) throws Exception {
@@ -993,11 +1101,14 @@ public class Lua {
         while (peek().type == PLUS || peek().type == MINUS) {
             Token op = consume();
             Object right = term(scope); 
-            if (!(left instanceof Double) || !(right instanceof Double)) { throw new ArithmeticException("Arithmetic operation on non-number types."); }
+            String event = op.type == PLUS ? "__add" : "__sub";
 
-            double lVal = ((Double) left).doubleValue(), rVal = ((Double) right).doubleValue();
-            if (op.type == PLUS) { left = new Double(lVal + rVal); } 
-            else if (op.type == MINUS) { left = new Double(lVal - rVal); }
+            if (left instanceof Double && right instanceof Double) {
+                double lVal = ((Double) left).doubleValue(), rVal = ((Double) right).doubleValue();
+                left = luaNumber(op.type == PLUS ? lVal + rVal : lVal - rVal); 
+            }
+            else if (hasAnyMeta(left, right, event)) { left = metaBinary(event, left, right); }
+            else { throw new ArithmeticException("Arithmetic operation on non-number types."); }
         }
         return left;
     }
@@ -1006,12 +1117,17 @@ public class Lua {
         while (peek().type == MULTIPLY || peek().type == DIVIDE || peek().type == MODULO) {
             Token op = consume();
             Object right = exponentiation(scope);
-            if (!(left instanceof Double) || !(right instanceof Double)) { throw new ArithmeticException("Arithmetic operation on non-number types."); }
-            double lVal = ((Double) left).doubleValue(), rVal = ((Double) right).doubleValue();
+            String event = op.type == MULTIPLY ? "__mul" : op.type == DIVIDE ? "__div" : "__mod";
 
-            if (op.type == MULTIPLY) { left = new Double(lVal * rVal); } 
-            else if (op.type == DIVIDE) { if (rVal == 0) { throw new Exception("Division by zero."); } left = new Double(lVal / rVal); } 
-            else if (op.type == MODULO) { if (rVal == 0) { throw new Exception("Modulo by zero."); } left = new Double(lVal % rVal); }
+            if (left instanceof Double && right instanceof Double) {
+                double lVal = ((Double) left).doubleValue(), rVal = ((Double) right).doubleValue();
+
+                if (op.type == MULTIPLY) { left = luaNumber(lVal * rVal); } 
+                else if (op.type == DIVIDE) { if (rVal == 0) { throw new Exception("Division by zero."); } left = luaNumber(lVal / rVal); } 
+                else if (op.type == MODULO) { if (rVal == 0) { throw new Exception("Modulo by zero."); } left = luaNumber(lVal % rVal); }
+            }
+            else if (hasAnyMeta(left, right, event)) { left = metaBinary(event, left, right); }
+            else { throw new ArithmeticException("Arithmetic operation on non-number types."); }
         }
         return left;
     }
@@ -1020,7 +1136,11 @@ public class Lua {
         while (peek().type == POWER) {
             consume(POWER);
             Object right = factor(scope);
-            if (!(left instanceof Double) || !(right instanceof Double)) { throw new ArithmeticException("Arithmetic operation on non-number types.");  }
+
+            if (!(left instanceof Double) || !(right instanceof Double)) {
+                if (hasAnyMeta(left, right, "__pow")) { left = metaBinary("__pow", left, right); continue; }
+                throw new ArithmeticException("Arithmetic operation on non-number types.");  
+            }
 
             double base = ((Double) left).doubleValue(), exponent = ((Double) right).doubleValue(), result;
 
@@ -1035,7 +1155,7 @@ public class Lua {
             else if (Math.floor(exponent) == exponent) { result = 1; for (int i = 0; i < (int) exponent; i++) { result *= base; } } 
             else { throw new ArithmeticException("Fractional exponent not supported: " + exponent); }
 
-            left = new Double(result);
+            left = luaNumber(result);
         }
         return left;
     }
@@ -1057,18 +1177,14 @@ public class Lua {
                     consume(DOT);
                     String field = (String) consume(IDENTIFIER).value;
 
-                    Object module = resolveMethod(base);
-                    if (!(module instanceof Hashtable)) { throw new Exception("attempt to index non-table value after literal"); }
-                    base = unwrap(((Hashtable) module).get(field));
+                    if (base == null) { throw new Exception("attempt to index a nil value after literal"); }
+                    base = fieldValue(base, field);
                 } 
                 else if (peek().type == COLON) {
                     consume(COLON);
                     String method = (String) consume(IDENTIFIER).value;
 
-                    Object module = resolveMethod(base);
-                    if (!(module instanceof Hashtable)) { throw new Exception("attempt to call method on non-table after literal"); }
-
-                    Object func = unwrap(((Hashtable) module).get(method));
+                    Object func = base == null ? null : fieldValue(base, method);
                     if (func == null) { throw new Exception("method '" + method + "' not found for type: " + LuaFunction.type(base)); }
 
                     base = callMethod(base, null, func, method, scope);
@@ -1077,9 +1193,16 @@ public class Lua {
 
             return base;
         }
+        else if (current.type == MINUS) {
+            consume(MINUS);
+            Object val = factor(scope);
+            if (val instanceof Double) { return luaNumber(-((Double) val).doubleValue()); }
+            if (hasMeta(val, "__unm")) { return callMeta("__unm", new Object[] { val }); }
+            throw new RuntimeException("attempt to perform arithmetic on a " + LuaFunction.type(val) + " value");
+        }
         else if (current.type == NOT) { consume(NOT); return new Boolean(!isTruthy(factor(scope))); } 
         else if (current.type == LPAREN) { consume(LPAREN); Object value = expression(scope); consume(RPAREN); return value; } 
-        else if (current.type == LENGTH) { consume(LENGTH); Object val = factor(scope); if (val == null || val instanceof Boolean) { throw new RuntimeException("attempt to get length of a " + (val == null ? "nil" : "boolean") + " value"); } else if (val instanceof String) { return luaNumber(((String) val).length()); } else if (val instanceof Hashtable) { int size = ((Hashtable) val).size(); if (val == globals.get("arg") && size > 0) { size -= 1; } return luaNumber(size); } else if (val instanceof Vector) { return luaNumber(((Vector) val).size()); } else if (val instanceof InputStream) { return luaNumber(((InputStream) val).available()); } else { return luaNumber(0); } }
+        else if (current.type == LENGTH) { consume(LENGTH); Object val = factor(scope); if (hasMeta(val, "__len")) { return callMeta("__len", new Object[] { val }); } else if (val == null || val instanceof Boolean) { throw new RuntimeException("attempt to get length of a " + (val == null ? "nil" : "boolean") + " value"); } else if (val instanceof String) { return luaNumber(((String) val).length()); } else if (val instanceof Hashtable) { int size = luaLength((Hashtable) val); if (val == globals.get("arg") && size > 0) { size -= 1; } return luaNumber(size); } else if (val instanceof Vector) { return luaNumber(((Vector) val).size()); } else if (val instanceof InputStream) { return luaNumber(((InputStream) val).available()); } else { return luaNumber(0); } }
         else if (current.type == IDENTIFIER) {
             String name = (String) consume(IDENTIFIER).value;
             Object value = unwrap(scope.get(name));
@@ -1093,7 +1216,8 @@ public class Lua {
                 if (value == null) { return null; }
                 if (!(value instanceof Hashtable)) { throw new Exception("attempt to index a non-table value"); }
 
-                value = unwrap(((Hashtable)value).get(key));
+                value = indexValue(value, key);
+                if (value == null) { break; }
             }
 
             if (peek().type == COLON) {
@@ -1106,11 +1230,7 @@ public class Lua {
                 consume(COLON);
                 String methodName = (String) consume(IDENTIFIER).value;
             
-                Object module = resolveMethod(self), func = null;
-            
-                if (module == self && self instanceof Hashtable) { func = unwrap(((Hashtable) self).get(methodName)); } 
-                else if (module instanceof Hashtable) { func = unwrap(((Hashtable) module).get(methodName)); }
-            
+                Object func = fieldValue(self, methodName);
                 if (func == null) { throw new Exception("method '" + methodName + "' not found for type: " + LuaFunction.type(self)); }
             
                 return callMethod(self, objectName, func, methodName, scope);
@@ -1217,7 +1337,7 @@ public class Lua {
         Object  funcObj = unwrap(scope.get(funcName));
         if (funcObj == null && globals.containsKey(funcName)) { funcObj = unwrap(globals.get(funcName)); }
 
-        if (funcObj instanceof LuaFunction) { return ((LuaFunction) funcObj).call(args); }
+        if (isCallable(funcObj)) { return callValue(funcObj, args); }
         else { throw new RuntimeException("Attempt to call a non-function value: " + funcName); }
     }
     private Object callFunctionObject(Object funcObj, Hashtable scope) throws Exception {
@@ -1229,7 +1349,7 @@ public class Lua {
         }
         consume(RPAREN);
 
-        if (funcObj instanceof LuaFunction) { return ((LuaFunction) funcObj).call(args); }
+        if (isCallable(funcObj)) { return callValue(funcObj, args); }
         else { throw new Exception("Attempt to call a non-function value (by object)."); }
     }
     // |
@@ -1243,6 +1363,83 @@ public class Lua {
 
         String type = LuaFunction.type(obj);
         return type.equals("string") ? globals.get("string") : type.equals("table") ? globals.get("table") : type.equals("stream") ? globals.get("io") : type.equals("connection") || type.equals("server") ? globals.get("socket") : type.equals("screen") || type.equals("image") ? globals.get("graphics") : obj;
+    }
+    // | (Metatables)
+    // | (Metatables live in the table itself under "__metatable": no registry, no per-table leak)
+    private static int luaLength(Hashtable table) {
+        if (table == null) { return 0; }
+        int size = table.size() - (table.containsKey("__metatable") ? 1 : 0);
+        return size < 0 ? 0 : size;
+    }
+    private Hashtable getMetatable(Object obj) {
+        if (!(obj instanceof Hashtable)) { return null; }
+        Object mt = ((Hashtable) obj).get("__metatable");
+        return (mt instanceof Hashtable) ? (Hashtable) mt : null;
+    }
+    private Object metaField(Object obj, String event) {
+        Hashtable mt = getMetatable(obj);
+        return mt == null ? null : unwrap(mt.get(event));
+    }
+    private boolean hasMeta(Object obj, String event) { return metaField(obj, event) instanceof LuaFunction; }
+    private boolean hasAnyMeta(Object a, Object b, String event) { return hasMeta(a, event) || hasMeta(b, event); }
+    private Object callMeta(String event, Object[] values) throws Exception {
+        Object handler = null;
+        for (int i = 0; i < values.length && handler == null; i++) { if (hasMeta(values[i], event)) { handler = metaField(values[i], event); } }
+        if (!(handler instanceof LuaFunction)) { throw new Exception("metamethod '" + event + "' is not a function"); }
+
+        Vector args = new Vector();
+        for (int i = 0; i < values.length; i++) { args.addElement(values[i] == null ? LUA_NIL : values[i]); }
+
+        // A metamethod is a plain expression: only its first result counts.
+        Object result = ((LuaFunction) handler).call(args);
+        if (result instanceof Vector) { Vector list = (Vector) result; return list.isEmpty() ? LUA_NIL : wrap(list.elementAt(0)); }
+        return wrap(result);
+    }
+    private Object metaBinary(String event, Object left, Object right) throws Exception { return callMeta(event, new Object[] { left, right }); }
+    // | (Reads honor __index: own key first, then a table chain or a function)
+    private Object indexValue(Object obj, Object key) throws Exception {
+        if (!(obj instanceof Hashtable)) { throw new Exception("attempt to index a " + LuaFunction.type(obj) + " value"); }
+
+        Hashtable table = (Hashtable) obj;
+        Object value = unwrap(table.get(key));
+        if (value != null) { return value; }
+
+        Object handler = metaField(table, "__index");
+        if (handler instanceof Hashtable) { return indexValue(handler, key); }
+        if (handler instanceof LuaFunction) { return wrap(callMeta("__index", new Object[] { table, key })); }
+        return null;
+    }
+    // | (Writes honor __newindex only when the key is absent, as in Lua)
+    private void indexSet(Object obj, Object key, Object value) throws Exception {
+        if (!(obj instanceof Hashtable)) { throw new Exception("attempt to index a " + LuaFunction.type(obj) + " value"); }
+
+        Hashtable table = (Hashtable) obj;
+        Object current = table.get(key);
+        if (current == null || current == LUA_NIL) {
+            Object handler = metaField(table, "__newindex");
+            if (handler instanceof Hashtable) { indexSet(handler, key, value); return; }
+            if (handler instanceof LuaFunction) { callMeta("__newindex", new Object[] { table, key, value }); return; }
+        }
+        table.put(key, value == null ? LUA_NIL : value);
+    }
+    // | (Field/method lookup: tables go through __index, primitives through their module)
+    private Object fieldValue(Object self, String name) throws Exception {
+        if (self instanceof Hashtable) { return indexValue(self, name); }
+
+        Object module = resolveMethod(self);
+        return module instanceof Hashtable ? unwrap(((Hashtable) module).get(name)) : null;
+    }
+    private boolean isCallable(Object fn) { return fn instanceof LuaFunction || hasMeta(fn, "__call"); }
+    private Object callValue(Object fn, Vector args) throws Exception {
+        if (fn instanceof LuaFunction) { return ((LuaFunction) fn).call(args); }
+
+        Object handler = metaField(fn, "__call");
+        if (!(handler instanceof LuaFunction)) { throw new Exception("attempt to call a " + LuaFunction.type(fn) + " value"); }
+
+        Vector full = new Vector();
+        full.addElement(fn);
+        for (int i = 0; i < args.size(); i++) { full.addElement(args.elementAt(i)); }
+        return wrap(((LuaFunction) handler).call(full));
     }
     private Object callMethod(Object self, String varName, Object methodObj, String methodName, Hashtable scope) throws Exception {
         if (methodObj == null) {
@@ -1269,7 +1466,7 @@ public class Lua {
             while (peek().type == COMMA) { consume(COMMA); args.addElement(expression(scope)); }
         }
         consume(RPAREN);
-        if (methodObj instanceof LuaFunction) { return ((LuaFunction) methodObj).call(args); } 
+        if (isCallable(methodObj)) { return callValue(methodObj, args); } 
         else { throw new Exception("attempt to call non-function as method: " + methodName); }
     }
     // |
@@ -1293,7 +1490,7 @@ public class Lua {
 
             if (table == null) { throw new Exception("attempt to index a nil value"); }
             if (!(table instanceof Hashtable)) { throw new Exception("attempt to index a non-table value"); }
-            if (peek().type == DOT || peek().type == LBRACKET) { table = unwrap(((Hashtable)table).get(key)); }
+            if (peek().type == DOT || peek().type == LBRACKET) { table = indexValue(table, key); }
         }
         return new Object[]{table, key};
     }
@@ -1383,6 +1580,9 @@ public class Lua {
             tokenIndex = 0;
 
             Object returnValue = null;
+            int callLine = currentLine();
+            if (!frameStack.isEmpty()) { Frame parent = (Frame) frameStack.lastElement(); if (callLine > 0) { parent.line = callLine; } }
+
             frameStack.addElement(new Frame(name == null ? "[anonymous]" : name, currentSource, defLine));
             try {
                 while (peek().type != EOF) {
@@ -1396,6 +1596,9 @@ public class Lua {
                 }
             }
             catch (Exception e) {
+                int throwLine = currentLine();
+                if (!frameStack.isEmpty() && throwLine > 0) { ((Frame) frameStack.lastElement()).line = throwLine; }
+
                 Vector snapshot = new Vector();
                 for (int f = 0; f < frameStack.size(); f++) { snapshot.addElement(frameStack.elementAt(f)); }
                 if (thrownFrames.isEmpty()) { thrownFrames = snapshot; }
@@ -1428,11 +1631,11 @@ public class Lua {
                             if (a instanceof Vector) {
                                 Vector vv = (Vector) a;
                                 for (int j = 0; j < vv.size(); j++) {
-                                    buffer.append(toLuaString(vv.elementAt(j)));
+                                    buffer.append(toDisplayValue(vv.elementAt(j)));
                                     if (j < vv.size() - 1) { buffer.append("\t"); }
                                 }
                             } 
-                            else { buffer.append(toLuaString(a)); }
+                            else { buffer.append(toDisplayValue(a)); }
 
                             if (i < args.size() - 1) buffer.append("\t");
                         }
@@ -1529,14 +1732,14 @@ public class Lua {
 
                         return new Double(0);
                     }
-                case TOSTRING: return toLuaString(args.isEmpty() ? gotbad(1, "tostring", "value expected") : args.elementAt(0));
+                case TOSTRING: return toDisplayValue(args.isEmpty() ? gotbad(1, "tostring", "value expected") : args.elementAt(0));
                 case TONUMBER: return args.isEmpty() ? gotbad(1, "tonumber", "value expected") : luaNumber(Double.parseDouble(toLuaString(args.elementAt(0))));
                 case SELECT:
                     if (args.isEmpty() || args.elementAt(0) == null) { return gotbad(1, "select", "number expected, got no value"); } 
                     else {
                         String idx = toLuaString(args.elementAt(0));
                         if (idx.equals("#")) {
-                            if (args.size() > 1 && args.elementAt(1) instanceof Hashtable) { return luaNumber(((Hashtable) args.elementAt(1)).size()); } 
+                            if (args.size() > 1 && args.elementAt(1) instanceof Hashtable) { return luaNumber(luaLength((Hashtable) args.elementAt(1))); } 
                             else { return luaNumber(args.size() - 1); }
                         } else {
                             if (args.size() == 1) { return null; }
@@ -1598,6 +1801,52 @@ public class Lua {
                         Object mt = ((Hashtable) table).get("__metatable");
                         return (mt == LUA_NIL || mt == null) ? null : mt;
                     }
+                // Raw access [bypasses metatables]
+                case RAWGET:
+                    if (args.size() < 2) { return gotbad(1, "rawget", "table expected, got no value"); }
+                    else if (!(args.elementAt(0) instanceof Hashtable)) { return gotbad(1, "rawget", "table expected, got " + type(args.elementAt(0))); }
+                    else { return ((Hashtable) args.elementAt(0)).get(unwrap(args.elementAt(1))); }
+                case RAWSET:
+                    if (args.size() < 3) { return gotbad(1, "rawset", "table expected, got no value"); }
+                    else if (!(args.elementAt(0) instanceof Hashtable)) { return gotbad(1, "rawset", "table expected, got " + type(args.elementAt(0))); }
+                    else {
+                        Hashtable target = (Hashtable) args.elementAt(0);
+                        target.put(unwrap(args.elementAt(1)), args.elementAt(2));
+                        return target;
+                    }
+                case RAWEQUAL:
+                    if (args.size() < 2) { return gotbad(1, "rawequal", "value expected"); }
+                    else { return args.elementAt(0) == args.elementAt(1) || (args.elementAt(0) != null && args.elementAt(0).equals(args.elementAt(1))) ? TRUE : FALSE; }
+                case RAWLEN:
+                    if (args.isEmpty() || !(args.elementAt(0) instanceof Hashtable)) { return gotbad(1, "rawlen", "table expected, got " + (args.isEmpty() ? "no value" : type(args.elementAt(0)))); }
+                    else { return luaNumber(luaLength((Hashtable) args.elementAt(0))); }
+                // Debug
+                case DEBUG_TRACEBACK:
+                    String message = args.isEmpty() || unwrap(args.elementAt(0)) == null ? null : toLuaString(args.elementAt(0));
+                    int traceLevel = args.size() > 1 && args.elementAt(1) instanceof Double ? ((Double) args.elementAt(1)).intValue() : 1;
+                    return tracebackString(message, traceLevel < 1 ? 1 : traceLevel);
+                case DEBUG_GETINFO:
+                    if (args.isEmpty()) { return gotbad(1, "getinfo", "function or level expected"); }
+                    else {
+                        Object target = unwrap(args.elementAt(0));
+                        Hashtable info = new Hashtable();
+
+                        if (target instanceof LuaFunction) { fillInfo(info, (LuaFunction) target, -1); } 
+                        else {
+                            int level = target instanceof Double ? ((Double) target).intValue() : 1;
+                            if (level < 1) {
+                                info.put("what", "C"); info.put("source", "=[C]"); info.put("short_src", "[C]"); info.put("currentline", luaNumber(-1));
+                            } else if (level > frameStack.size()) {
+                                // main chunk: there is no Frame for top-level code
+                                info.put("what", "main"); info.put("source", currentSource == null || currentSource.length() == 0 ? "=?" : "@" + currentSource);
+                                info.put("short_src", currentSource == null ? "?" : currentSource); info.put("currentline", luaNumber(currentLine())); info.put("linedefined", luaNumber(0));
+                            } else {
+                                fillInfo(info, null, frameStack.size() - level);
+                            }
+                        }
+                        return info;
+                    }
+                case DEBUG_GETREGISTRY: return globals;
                 // Package [os]
                 case EXEC: return exec(args); 
                 case GETENV: return args.isEmpty() ? midlet.attributes : midlet.attributes.get(toLuaString(args.elementAt(0)));
@@ -1958,17 +2207,17 @@ public class Lua {
                         if (tObj instanceof Hashtable) {
                             Hashtable table = (Hashtable) tObj;
                             if (isListTable(table)) {
-                                int pos = table.size() + 1; // default: append
+                                int pos = luaLength(table) + 1; // default: append
                                 Object value = unwrap(args.elementAt(1));
                                 if (args.size() >= 3) {
                                     Object posObj = unwrap(args.elementAt(2));
                                     if (!(posObj instanceof Double)) { return gotbad(3, "insert", "number expected, got " + type(posObj)); }
                                     pos = ((Double) posObj).intValue();
-                                    if (pos < 0 || pos > table.size() + 1) { return gotbad(3, "insert", "position out of bounds"); }
+                                    if (pos < 0 || pos > luaLength(table) + 1) { return gotbad(3, "insert", "position out of bounds"); }
                                     // value is still args[1]
                                 }
                                 // Shift elements to make room (shift right)
-                                for (int i = table.size(); i >= pos; i--) {
+                                for (int i = luaLength(table); i >= pos; i--) {
                                     Object val = table.get(new Double(i));
                                     if (val != null) { table.put(new Double(i + 1), val); }
                                     else { table.remove(new Double(i)); }
@@ -2006,18 +2255,18 @@ public class Lua {
                         if (tObj instanceof Hashtable) {
                             Hashtable table = (Hashtable) tObj;
                             if (isListTable(table)) {
-                                int pos = table.size(); // default: remove the last
+                                int pos = luaLength(table); // default: remove the last
                                 if (args.size() >= 2) {
                                     Object posObj = unwrap(args.elementAt(1));
                                     if (!(posObj instanceof Double)) { return gotbad(2, "remove", "number expected, got " + type(posObj)); }
                                     pos = ((Double) posObj).intValue();
-                                    if (pos < 1 || pos > table.size()) { return gotbad(2, "remove", "position out of bounds"); }
+                                    if (pos < 1 || pos > luaLength(table)) { return gotbad(2, "remove", "position out of bounds"); }
                                 }
                                 Object removed = table.get(new Double(pos));
                                 if (removed != null) {
                                     table.remove(new Double(pos));
                                     // Shift elements to fill the gap (shift left)
-                                    for (int i = pos; i < table.size(); i++) {
+                                    for (int i = pos; i < luaLength(table); i++) {
                                         Object val = table.get(new Double(i + 1));
                                         if (val != null) {
                                             table.put(new Double(i), val);
@@ -2026,8 +2275,8 @@ public class Lua {
                                         }
                                     }
                                     // Remove the last index if empty
-                                    if (table.containsKey(new Double(table.size()))) {
-                                        table.remove(new Double(table.size()));
+                                    if (table.containsKey(new Double(luaLength(table)))) {
+                                        table.remove(new Double(luaLength(table)));
                                     }
                                 }
                                 return removed == null ? LUA_NIL : removed;
@@ -2053,8 +2302,10 @@ public class Lua {
                                         }
                                     }
                                 }
-                                // Rebuild the sorted table
+                                // Rebuild the sorted table (the metatable lives in the table, so keep it)
+                                Hashtable guard = getMetatable(table);
                                 table.clear();
+                                if (guard != null) { table.put("__metatable", guard); }
                                 for (int i = 0; i < list.size(); i++) {
                                     table.put(new Double(i + 1), list.elementAt(i));
                                 }
@@ -2080,7 +2331,7 @@ public class Lua {
                                 int len = ((Double) lenObj).intValue();
                                 int a = args.size() > 4 ? ((Double) unwrap(args.elementAt(4))).intValue() : 1;
                                 int b = a + len - 1;
-                                if (from < 1 || to < 1 || len < 0 || a < 1 || b > table.size()) {
+                                if (from < 1 || to < 1 || len < 0 || a < 1 || b > luaLength(table)) {
                                     return gotbad(1, "move", "bounds out of range");
                                 }
                                 Vector list = toVector(table);
@@ -2102,8 +2353,10 @@ public class Lua {
                                 for (int i = 0; i < slice.size(); i++) {
                                     list.insertElementAt(slice.elementAt(i), to + i - 1);
                                 }
-                                // Rebuild the table
+                                // Rebuild the table (keep the metatable)
+                                Hashtable guard = getMetatable(table);
                                 table.clear();
+                                if (guard != null) { table.put("__metatable", guard); }
                                 for (int i = 0; i < list.size(); i++) {
                                     table.put(new Double(i + 1), list.elementAt(i));
                                 }
@@ -2575,7 +2828,7 @@ public class Lua {
                         if (firstArg instanceof Hashtable) {
                             Hashtable table = (Hashtable) firstArg;
                             StringBuffer sb = new StringBuffer();
-                            for (int i = 0; i <= table.size(); i++) {
+                            for (int i = 0; i <= luaLength(table); i++) {
                                 arg = table.get(new Double(i + 1));
                                 if (arg == null) { continue; }
                                 double num;
@@ -2948,19 +3201,20 @@ public class Lua {
             if (table == null) { return false; }
             else if (table.isEmpty()) { return true; }
 
-            int size = table.size();
+            int size = luaLength(table);
             for (int i = 1; i <= size; i++) {
                 if (!table.containsKey(new Double(i))) { return false; }
             }
             for (Enumeration e = table.keys(); e.hasMoreElements();) {
                 Object key = e.nextElement();
+                if ("__metatable".equals(key)) { continue; }
                 if (!(key instanceof Double)) { return false; }
                 double d = ((Double) key).doubleValue();
                 if (d != Math.floor(d) || d < 1 || d > size) { return false; }
             }
             return true;
         }
-        public static Vector toVector(Hashtable table) throws Exception { Vector vec = new Vector(); if (table == null) { return vec; } for (int i = 1; i <= table.size(); i++) { vec.addElement(table.get(new Double(i))); } return vec; }
+        public static Vector toVector(Hashtable table) throws Exception { Vector vec = new Vector(); if (table == null) { return vec; } for (int i = 1; i <= luaLength(table); i++) { vec.addElement(table.get(new Double(i))); } return vec; }
 
         private int getFieldNumber(Hashtable table, String key, int fallback) { Object val = table.get(key); if (val instanceof Double) { return ((Double) val).intValue(); } try { return Integer.parseInt(toLuaString(val)); } catch (Exception e) { return fallback; } }
         private boolean getFieldBoolean(Hashtable table, String key, boolean fallback) { Object val = table.get(key); if (val instanceof Boolean) { return ((Boolean) val).booleanValue(); } return toLuaString(val).equalsIgnoreCase("true") ? true : fallback; } 
