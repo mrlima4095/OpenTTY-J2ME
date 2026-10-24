@@ -23,6 +23,12 @@
  *
  * Posts are paginated by the created_utc of the oldest item of the page: the
  * client sends it back as bm, the proxy maps it to Arctic Shift's before param.
+ *
+ * The archive takes a while to ingest brand-new posts and their comments, so
+ * when a post has no comments in the archive yet the comments op falls back to
+ * Reddit's public comment RSS (flat, newest page only). Reddit rate limits that
+ * feed hard, so the fallback is cached per post and throttled to one upstream
+ * request per minute across all clients.
  */
 
 header('Content-Type: application/json; charset=utf-8');
@@ -103,6 +109,104 @@ function rs_fetch($url) {
  * load dependent and often answers with a fast "Timeout" error, so a couple of
  * quick retries make keyword searches usable without stalling the client.
  */
+/** Fetches a URL as text (RSS/XML), or null on failure. */
+function rs_fetch_text($url, $accept) {
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+    curl_setopt($ch, CURLOPT_USERAGENT, RS_UA);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, array('Accept: ' . $accept));
+    $body = curl_exec($ch);
+    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    if ($body === false || $code < 200 || $code >= 300) { return null; }
+    return $body;
+}
+
+/**
+ * Reddit's comment RSS returns the newest page of comments as flat entries, with
+ * HTML bodies. It is the only public Reddit endpoint reachable from the server
+ * for posts that the archive has not ingested yet, so it is used as a fallback.
+ */
+function rs_rss_comments($id) {
+    $key = 'rss_comments:' . $id;
+    $cached = rs_cache_get($key);
+    if ($cached !== null) {
+        $rows = json_decode($cached, true);
+        return is_array($rows) ? $rows : array();
+    }
+    if (!rs_rss_throttle_ok()) { return null; }
+    $url = 'https://www.reddit.com/comments/' . rawurlencode($id) . '.rss';
+    $body = rs_fetch_text($url, 'application/atom+xml, application/xml, text/xml');
+    if ($body === null) {
+        // Negative-cache the failure briefly so a removed post or a rate limit
+        // does not keep burning the fallback budget.
+        rs_cache_put($key, '[]');
+        return array();
+    }
+    $rows = rs_parse_rss_comments($body);
+    rs_cache_put($key, json_encode($rows));
+    return $rows;
+}
+
+/** One upstream request per minute, shared by every client, to respect Reddit's limit. */
+function rs_rss_throttle_ok() {
+    $file = sys_get_temp_dir() . '/redditrss_last';
+    $fp = @fopen($file, 'c+');
+    if (!$fp) { return true; }
+    $ok = false;
+    if (flock($fp, LOCK_EX)) {
+        $last = (int)trim((string)stream_get_contents($fp));
+        $now = time();
+        if ($last === 0 || ($now - $last) >= 60) {
+            rewind($fp);
+            ftruncate($fp, 0);
+            fwrite($fp, (string)$now);
+            $ok = true;
+        }
+        flock($fp, LOCK_UN);
+    }
+    fclose($fp);
+    return $ok;
+}
+
+function rs_parse_rss_comments($body) {
+    $xml = @simplexml_load_string($body);
+    if ($xml === false) { return array(); }
+    $rows = array();
+    foreach ($xml->entry as $entry) {
+        $eid = (string)$entry->id;
+        if (strpos($eid, 't1_') !== 0) { continue; }
+        $author = (string)$entry->author->name;
+        if (strpos($author, '/u/') === 0) { $author = substr($author, 3); }
+        $text = rs_html_text((string)$entry->content);
+        if ($text === '') { continue; }
+        $created = strtotime((string)$entry->updated);
+        $rows[] = array(
+            'b' => $text,
+            'a' => $author,
+            'sc' => 0,
+            'dp' => 0,
+            'ct' => $created === false ? time() : $created,
+        );
+    }
+    return $rows;
+}
+
+/** Turns the escaped HTML in an RSS comment into plain text, keeping paragraphs. */
+function rs_html_text($html) {
+    $s = html_entity_decode((string)$html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $s = preg_replace('#<br\s*/?>#i', "\n", $s);
+    $s = preg_replace('#</p>#i', "\n\n", $s);
+    $s = strip_tags($s);
+    $s = html_entity_decode($s, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $s = trim(preg_replace("/\n{3,}/", "\n\n", $s));
+    if ($s === '[removed]' || $s === '[deleted]') { return ''; }
+    return $s;
+}
+
 function rs_fetch_retry($url, $attempts = 2) {
     for ($i = 0; $i < $attempts; $i++) {
         $data = rs_fetch($url);
@@ -427,9 +531,22 @@ case 'comments': {
     $linkId = 't3_' . $id;
     $url = RS_BASE . '/api/comments/search?limit=' . $n . '&link_id=' . urlencode($linkId);
     $data = rs_fetch($url);
-    if ($data === null || !isset($data['data'])) { rs_fail('upstream error'); }
-    $thread = rs_thread($data['data'], $linkId, $n);
-    echo json_encode(array('ok' => 1, 'it' => $thread, 'nx' => ''));
+    $thread = array();
+    if ($data !== null && isset($data['data'])) {
+        $thread = rs_thread($data['data'], $linkId, $n);
+    }
+    $pending = 0;
+    if (count($thread) === 0) {
+        // Brand-new posts are often not in the archive yet; use Reddit's public
+        // comment RSS instead. null means the throttled feed was not consulted.
+        $rss = rs_rss_comments($id);
+        if ($rss === null) {
+            $pending = 1;
+        } else {
+            $thread = $rss;
+        }
+    }
+    echo json_encode(array('ok' => 1, 'it' => $thread, 'nx' => '', 'pd' => $pending));
     exit;
 }
 
