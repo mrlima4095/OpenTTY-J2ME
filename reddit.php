@@ -19,6 +19,7 @@
  *   userposts &u=... [&n=] [&bm=]
  *   post      &id=...
  *   comments  &id=... [&n=]
+ *   translate &tl=<lang> &q=...
  *
  * Posts are paginated by the created_utc of the oldest item of the page: the
  * client sends it back as bm, the proxy maps it to Arctic Shift's before param.
@@ -111,6 +112,41 @@ function rs_fetch_retry($url, $attempts = 2) {
         usleep(250000);
     }
     return null;
+}
+
+/**
+ * Translates text into $tl. Uses Google's public dictionary endpoint (the one
+ * browser extensions call, no key) and falls back to MyMemory. Multi-line input
+ * (titles joined by "\n") keeps its line breaks, so one call can translate a
+ * whole page of titles.
+ */
+function rs_translate($text, $tl) {
+    $text = trim((string)$text);
+    if ($text === '') { return ''; }
+    if ($tl === '') { $tl = 'en'; }
+    $g = rs_fetch('https://clients5.google.com/translate_a/t?client=dict-chrome-ex'
+        . '&sl=auto&tl=' . urlencode($tl) . '&q=' . urlencode($text));
+    if (is_array($g)) {
+        $out = rs_translate_segments($g);
+        if ($out !== '') { return $out; }
+    }
+    $m = rs_fetch('https://api.mymemory.translated.net/get?q=' . urlencode($text)
+        . '&langpair=Autodetect|' . urlencode($tl));
+    if (is_array($m) && isset($m['responseData']['translatedText'])) {
+        $t = (string)$m['responseData']['translatedText'];
+        if ($t !== '') { return $t; }
+    }
+    return '';
+}
+
+/** Joins the segments of a Google translate response ([["seg","en"],...]). */
+function rs_translate_segments($data) {
+    $out = '';
+    if (!is_array($data)) { return ''; }
+    foreach ($data as $seg) {
+        if (is_array($seg) && isset($seg[0]) && is_string($seg[0])) { $out .= $seg[0]; }
+    }
+    return $out;
 }
 
 function rs_n($name, $default = RS_DEFAULT_N) {
@@ -214,12 +250,17 @@ function rs_thread($flat, $linkId, $max) {
     foreach ($flat as $c) {
         if (isset($c['id'])) { $byId[(string)$c['id']] = $c; }
     }
+    // Arctic Shift stores ids bare ("abc123") but parent_id is a fullname
+    // ("t1_abc123", or "t3_<post>" for top level), so strip the prefix before
+    // matching or every comment would look like a root and lose its depth.
+    $bareLink = (strpos($linkId, 't3_') === 0) ? substr($linkId, 3) : $linkId;
     $children = array();
     $roots = array();
     foreach ($flat as $c) {
         if (!isset($c['id'])) { continue; }
         $pid = (string)($c['parent_id'] ?? '');
-        if ($pid === $linkId || !isset($byId[$pid])) {
+        if (strpos($pid, 't1_') === 0 || strpos($pid, 't3_') === 0) { $pid = substr($pid, 3); }
+        if ($pid === $bareLink || !isset($byId[$pid])) {
             $roots[] = $c;
         } else {
             $children[$pid][] = $c;
@@ -392,6 +433,15 @@ case 'comments': {
     exit;
 }
 
+case 'translate': {
+    $tl = rs_str('tl', 10);
+    $q = rs_str('q', 6000);
+    if ($q === '') { echo json_encode(array('ok' => 1, 't' => '', 'nx' => '')); exit; }
+    $t = rs_translate($q, $tl);
+    echo json_encode(array('ok' => 1, 't' => $t, 'nx' => ''));
+    exit;
+}
+
 default:
-    rs_fail('unknown op (search, subposts, userposts, post, comments)');
+    rs_fail('unknown op (search, subposts, userposts, post, comments, translate)');
 }
