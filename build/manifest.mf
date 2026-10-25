@@ -9,4 +9,6 @@ MIDlet-Description: Terminal Emulator for J2ME
 MIDlet-Icon: /icon.png
 MIDlet-Info-URL: https://github.com/mrlima4095/OpenTTY-J2ME
 MIDlet-Proxy: http://opentty.fun/proxy.php?
+LGE-MIDlet-Allowed-background: YES
+LGE-MIDlet-Exit: MINIMIZE
 
