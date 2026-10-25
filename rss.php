@@ -879,6 +879,9 @@ function rss_to_utf8($body, $contentType) {
             }
         }
     }
+    if (!mb_check_encoding($body, 'UTF-8')) {
+        $body = @mb_convert_encoding($body, 'UTF-8', 'UTF-8');
+    }
     return preg_replace('/^\xEF\xBB\xBF/', '', $body);
 }
 
@@ -1022,6 +1025,9 @@ function rss_fail($code) {
 }
 
 function rss_send(array $data) {
-    echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    echo json_encode(
+        $data,
+        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE
+    );
     exit;
 }
