@@ -19,6 +19,8 @@
  *   userposts &u=... [&n=] [&bm=]
  *   post      &id=...
  *   comments  &id=... [&n=]
+ *   subreddit &s=...
+ *   user      &u=...
  *   translate &tl=<lang> &q=...
  *
  * Posts are paginated by the created_utc of the oldest item of the page: the
@@ -335,6 +337,41 @@ function rs_user($u) {
     );
 }
 
+/**
+ * Full profile of a subreddit. Reddit models user profiles as pseudo-subreddits
+ * named u_<username>, so the same function serves both: the bio is the public
+ * description and the picture is the community icon.
+ */
+function rs_profile($s) {
+    $icon = (string)($s['community_icon'] ?? '');
+    if ($icon === '') { $icon = (string)($s['icon_img'] ?? ''); }
+    $banner = (string)($s['banner_img'] ?? '');
+    if ($banner === '') { $banner = (string)($s['banner_background_image'] ?? ''); }
+    $bio = (string)($s['public_description'] ?? '');
+    if (trim($bio) === '') { $bio = (string)($s['description'] ?? ''); }
+    return array(
+        'n'  => (string)($s['display_name'] ?? ''),
+        'ti' => (string)($s['title'] ?? ''),
+        'pd' => rs_trim(trim($bio), 4000),
+        'ic' => $icon,
+        'bn' => $banner,
+        'sc' => (int)($s['subscribers'] ?? 0),
+        'ct' => (int)($s['created_utc'] ?? 0),
+        'ns' => !empty($s['over18']) ? 1 : 0,
+    );
+}
+
+/** Finds a subreddit (or u_<name> profile) by its exact display name. */
+function rs_sub_by_name($name, $prefix) {
+    $url = RS_BASE . '/api/subreddits/search?limit=10&subreddit_prefix=' . urlencode($prefix);
+    $data = rs_fetch($url);
+    if ($data === null || !isset($data['data']) || !is_array($data['data'])) { return null; }
+    foreach ($data['data'] as $s) {
+        if (strcasecmp((string)($s['display_name'] ?? ''), $name) === 0) { return $s; }
+    }
+    return null;
+}
+
 function rs_comment($c, $depth) {
     return array(
         'b'  => rs_trim(rs_clean_text($c['body'] ?? ''), 4000),
@@ -550,6 +587,59 @@ case 'comments': {
     exit;
 }
 
+case 'subreddit': {
+    $s = rs_str('s', 100);
+    if ($s === '') { rs_fail('missing subreddit'); }
+    $key = 'profile_sub:' . strtolower($s);
+    $cached = rs_cache_get($key);
+    if ($cached !== null) { echo $cached; exit; }
+    $doc = rs_sub_by_name($s, $s);
+    if ($doc === null) { rs_fail('subreddit not found'); }
+    $json = json_encode(array('ok' => 1, 'p' => rs_profile($doc), 'nx' => ''));
+    rs_cache_put($key, $json);
+    echo $json;
+    exit;
+}
+
+case 'user': {
+    $u = rs_str('u', 100);
+    if ($u === '') { rs_fail('missing user'); }
+    $key = 'profile_user:' . strtolower($u);
+    $cached = rs_cache_get($key);
+    if ($cached !== null) { echo $cached; exit; }
+    $profile = array(
+        'n' => $u, 'ti' => '', 'pd' => '', 'ic' => '', 'bn' => '',
+        'sc' => 0, 'ct' => 0, 'ns' => 0,
+        'ka' => 0, 'pc' => 0, 'cc' => 0, 'fa' => 0, 'la' => 0,
+    );
+    $doc = rs_sub_by_name('u_' . $u, 'u_' . $u);
+    if ($doc !== null) {
+        // Reddit names the profile pseudo-subreddit u_<name>; the client wants
+        // the plain username back.
+        $profile = array_merge($profile, rs_profile($doc));
+        $profile['n'] = $u;
+    }
+    $data = rs_fetch(RS_BASE . '/api/users/search?limit=1&author=' . urlencode($u));
+    if ($data !== null && isset($data['data'][0]['_meta']) && is_array($data['data'][0]['_meta'])) {
+        $meta = $data['data'][0]['_meta'];
+        $profile['ka'] = (int)($meta['total_karma'] ?? 0);
+        $profile['pc'] = (int)($meta['num_posts'] ?? 0);
+        $profile['cc'] = (int)($meta['num_comments'] ?? 0);
+        $first = (int)($meta['earliest_post_at'] ?? 0);
+        $firstComment = (int)($meta['earliest_comment_at'] ?? 0);
+        if ($first === 0 || ($firstComment > 0 && $firstComment < $first)) { $first = $firstComment; }
+        $last = (int)($meta['last_post_at'] ?? 0);
+        $lastComment = (int)($meta['last_comment_at'] ?? 0);
+        if ($lastComment > $last) { $last = $lastComment; }
+        $profile['fa'] = $first;
+        $profile['la'] = $last;
+    }
+    $json = json_encode(array('ok' => 1, 'p' => $profile, 'nx' => ''));
+    rs_cache_put($key, $json);
+    echo $json;
+    exit;
+}
+
 case 'translate': {
     $tl = rs_str('tl', 10);
     $q = rs_str('q', 6000);
@@ -560,5 +650,5 @@ case 'translate': {
 }
 
 default:
-    rs_fail('unknown op (search, subposts, userposts, post, comments, translate)');
+    rs_fail('unknown op (search, subposts, userposts, post, comments, subreddit, user, translate)');
 }
