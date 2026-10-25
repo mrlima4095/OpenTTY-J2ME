@@ -223,8 +223,7 @@ function rss_parse_xml_feed($body, $final, $includeContent, $wantId) {
     libxml_use_internal_errors(true);
     $ok = $dom->loadXML(
         $body,
-        LIBXML_NOERROR | LIBXML_NOWARNING | LIBXML_COMPACT | LIBXML_NONET
-            | LIBXML_NOCDATA | LIBXML_RECOVER
+        LIBXML_NOERROR | LIBXML_NOWARNING | LIBXML_COMPACT | LIBXML_NONET | LIBXML_NOCDATA
     );
     libxml_clear_errors();
     if (!$ok || $dom->documentElement === null) {
