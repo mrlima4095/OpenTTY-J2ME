@@ -6,6 +6,13 @@
  *     → {"ok":1,"a":"Legião Urbana","t":"Tempo Perdido","l":"...","src":"letras"}
  *     → {"ok":0,"e":"not found"}
  *
+ *   GET ?op=lyrics&p=<artist-slug>/<song-id>/&a=<artist>&t=<title>
+ *     Same reply, but reads the exact page the user picked in a manual search.
+ *
+ *   GET ?op=search&q=<text>&n=<1..25>
+ *     → {"ok":1,"r":[["Legião Urbana","Tempo Perdido","legiao-urbana/22489/"], ...]}
+ *     → {"ok":0,"e":"not found"}
+ *
  * The song is resolved through letras.mus.br's public search index
  * (solr.sscdn.co). The site itself refuses requests from this server, so the
  * page is read through r.jina.ai, which returns the rendered HTML. When that
@@ -153,25 +160,44 @@ function lyr_artist_score($query, $candidate) {
     return 0;
 }
 
-/** Queries the letras.mus.br search index and returns {artist,title,path} or null. */
-function lyr_resolve($artist, $title) {
-    $query = lyr_norm(trim($artist . ' ' . $title));
-    if ($query === '') { return null; }
-    $url = LYR_SOLR . '?q=' . urlencode($query) . '&limit=10';
+/** Queries the letras.mus.br search index and returns its raw docs (may be empty). */
+function lyr_search_docs($query, $limit = 10) {
+    $query = lyr_norm($query);
+    if ($query === '') { return array(); }
+    $limit = (int)$limit;
+    if ($limit < 1) { $limit = 10; }
+    if ($limit > 25) { $limit = 25; }
+    $url = LYR_SOLR . '?q=' . urlencode($query) . '&limit=' . $limit;
     $body = lyr_fetch($url, 'application/json, text/javascript, */*', 15);
-    if ($body === null) { return null; }
+    if ($body === null) { return array(); }
     $open = strpos($body, '(');
     $close = strrpos($body, ')');
-    if ($open === false || $close === false || $close <= $open) { return null; }
+    if ($open === false || $close === false || $close <= $open) { return array(); }
     $data = json_decode(substr($body, $open + 1, $close - $open - 1), true);
     if (!is_array($data) || !isset($data['response']['docs']) || !is_array($data['response']['docs'])) {
-        return null;
+        return array();
     }
+    return $data['response']['docs'];
+}
+
+/** Builds the "artist-slug/song-id/" page path of a search doc, or '' when unusable. */
+function lyr_doc_path($doc) {
+    if (!isset($doc['dns'], $doc['url'])) { return ''; }
+    $dns = preg_replace('/[^a-z0-9\-]/', '', strtolower((string)$doc['dns']));
+    $id = preg_replace('/[^a-z0-9\-]/', '', strtolower((string)$doc['url']));
+    if ($dns === '' || $id === '' || !preg_match('/^\d+$/', $id)) { return ''; }
+    return $dns . '/' . $id . '/';
+}
+
+/** Queries the letras.mus.br search index and returns {artist,title,path} or null. */
+function lyr_resolve($artist, $title) {
+    $query = trim($artist . ' ' . $title);
+    if (lyr_norm($query) === '') { return null; }
     $wantArtist = lyr_norm($artist);
     $wantTitle = lyr_norm($title);
     $best = null;
     $bestScore = -1.0;
-    foreach ($data['response']['docs'] as $doc) {
+    foreach (lyr_search_docs($query, 10) as $doc) {
         if (!isset($doc['art'], $doc['txt'], $doc['dns'], $doc['url'])) { continue; }
         $titleScore = lyr_title_score($wantTitle, lyr_norm($doc['txt']));
         if ($titleScore < 0) { continue; }
@@ -183,13 +209,12 @@ function lyr_resolve($artist, $title) {
         }
     }
     if ($best === null) { return null; }
-    $dns = preg_replace('/[^a-z0-9\-]/', '', strtolower((string)$best['dns']));
-    $id = preg_replace('/[^a-z0-9\-]/', '', strtolower((string)$best['url']));
-    if ($dns === '' || $id === '') { return null; }
+    $path = lyr_doc_path($best);
+    if ($path === '') { return null; }
     return array(
         'artist' => (string)$best['art'],
         'title' => (string)$best['txt'],
-        'path' => $dns . '/' . $id . '/',
+        'path' => $path,
     );
 }
 
@@ -244,12 +269,82 @@ function lyr_fetch_ovh($artist, $title) {
 // Request
 
 $op = isset($_GET['op']) ? (string)$_GET['op'] : 'lyrics';
-if ($op !== 'lyrics') {
-    lyr_fail('unknown op (lyrics)');
+if ($op !== 'lyrics' && $op !== 'search') {
+    lyr_fail('unknown op (lyrics, search)');
 }
 
-$artist = lyr_clean(lyr_str('a', 160));
-$title = lyr_clean(lyr_str('t', 200));
+if ($op === 'search') {
+    $query = lyr_str('q', 200);
+    if (lyr_norm($query) === '') { lyr_fail('missing query'); }
+    $limit = isset($_GET['n']) ? (int)$_GET['n'] : 15;
+    if ($limit < 1) { $limit = 15; }
+    if ($limit > 25) { $limit = 25; }
+    $cacheKey = 's|' . lyr_norm($query) . '|' . $limit;
+    $cached = lyr_cache_get($cacheKey);
+    if ($cached !== null) { echo $cached; exit; }
+    lyr_rate_limit();
+    $rows = array();
+    $seen = array();
+    foreach (lyr_search_docs($query, $limit) as $doc) {
+        if (!isset($doc['art'], $doc['txt'])) { continue; }
+        $path = lyr_doc_path($doc);
+        if ($path === '' || isset($seen[$path])) { continue; }
+        $seen[$path] = true;
+        $rows[] = array((string)$doc['art'], (string)$doc['txt'], $path);
+    }
+    if (count($rows) === 0) {
+        $json = json_encode(array('ok' => 0, 'e' => 'not found'));
+        lyr_cache_put($cacheKey, $json, LYR_MISS_TTL);
+        echo $json;
+        exit;
+    }
+    $json = json_encode(array('ok' => 1, 'r' => $rows));
+    lyr_cache_put($cacheKey, $json, LYR_CACHE_TTL);
+    echo $json;
+    exit;
+}
+
+$rawArtist = lyr_str('a', 160);
+$rawTitle = lyr_str('t', 200);
+$path = isset($_GET['p']) ? trim((string)$_GET['p']) : '';
+
+// A song picked from a manual search comes with its letras.mus.br page path.
+if ($path !== '') {
+    if (!preg_match('#^[a-z0-9\-]+/[0-9]+/$#', $path)) {
+        lyr_fail('bad path');
+    }
+    $cacheKey = 'p|' . $path;
+    $cached = lyr_cache_get($cacheKey);
+    if ($cached !== null) { echo $cached; exit; }
+    lyr_rate_limit();
+
+    $lyrics = lyr_fetch_letras(array('path' => $path));
+    $source = $lyrics !== '' ? 'letras' : '';
+    if ($lyrics === '') {
+        $lyrics = lyr_fetch_ovh(lyr_clean($rawArtist), lyr_clean($rawTitle));
+        if ($lyrics !== '') { $source = 'ovh'; }
+    }
+
+    if ($lyrics === '') {
+        $json = json_encode(array('ok' => 0, 'e' => 'not found'));
+        lyr_cache_put($cacheKey, $json, LYR_MISS_TTL);
+        echo $json;
+        exit;
+    }
+    $json = json_encode(array(
+        'ok' => 1,
+        'a' => $rawArtist,
+        't' => $rawTitle,
+        'l' => $lyrics,
+        'src' => $source,
+    ));
+    lyr_cache_put($cacheKey, $json, $source === 'letras' ? LYR_CACHE_TTL : LYR_OVH_TTL);
+    echo $json;
+    exit;
+}
+
+$artist = lyr_clean($rawArtist);
+$title = lyr_clean($rawTitle);
 
 // Most downloaded files without tags are named "Artist - Title".
 if (lyr_norm($artist) === '' && strpos($title, ' - ') !== false) {
