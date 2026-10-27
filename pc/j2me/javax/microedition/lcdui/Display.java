@@ -41,6 +41,9 @@ import javax.swing.Timer;
  * safe from any thread (they marshal to the EDT).
  */
 public class Display {
+    /** Headless runs (-Dopentty.headless=1, or java.awt.headless=true) skip the
+     *  window: screens and canvases still work, they just are not drawn. */
+    static final boolean HEADLESS = Boolean.getBoolean("opentty.headless") || java.awt.GraphicsEnvironment.isHeadless();
     private static Display instance = null;
     private MIDlet owner = null;
     private Displayable current = null;
@@ -62,7 +65,7 @@ public class Display {
 
     public void callSerially(Runnable runnable) { SwingUtilities.invokeLater(runnable); }
 
-    private final JFrame frame = new JFrame("OpenTTY");
+    private final JFrame frame;
     private final JPanel body = new JPanel();
     private java.awt.GridBagConstraints bodyGbc = new java.awt.GridBagConstraints();
 
@@ -102,27 +105,34 @@ public class Display {
     private final JScrollPane scroll = new JScrollPane(body);
     // Reused across rebuilds so typing focus survives output updates.
     private final Map widgetCache = new HashMap();
+    // One live view per Canvas screen (kept while it is displayed).
+    private final Map canvasViews = new HashMap();
     private Timer alertTimer = null;
 
     {
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setLayout(new BorderLayout());
-        JPanel top = new JPanel(new BorderLayout());
-        top.add(titleLabel, BorderLayout.CENTER);
-        frame.add(top, BorderLayout.NORTH);
-        frame.add(scroll, BorderLayout.CENTER);
-        commands.setLayout(new FlowLayout(FlowLayout.CENTER, 6, 4));
-        frame.add(commands, BorderLayout.SOUTH);
-        frame.setSize(560, 640);
-        frame.setMinimumSize(new Dimension(360, 320));
-        frame.setLocationRelativeTo(null);
-        // Tiling WMs (bspwm, i3...) resize the toplevel behind our back (and
-        // without a compositor they may not send Expose). Re-run a full pass
-        // so Swing revalidates and paints the content at the real size.
-        frame.addComponentListener(new java.awt.event.ComponentAdapter() {
-            public void componentResized(java.awt.event.ComponentEvent ev) { repaintAll(); }
-            public void componentShown(java.awt.event.ComponentEvent ev) { repaintAll(); }
-        });
+        if (HEADLESS) {
+            frame = null;
+        } else {
+            frame = new JFrame("OpenTTY");
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setLayout(new BorderLayout());
+            JPanel top = new JPanel(new BorderLayout());
+            top.add(titleLabel, BorderLayout.CENTER);
+            frame.add(top, BorderLayout.NORTH);
+            frame.add(scroll, BorderLayout.CENTER);
+            commands.setLayout(new FlowLayout(FlowLayout.CENTER, 6, 4));
+            frame.add(commands, BorderLayout.SOUTH);
+            frame.setSize(560, 640);
+            frame.setMinimumSize(new Dimension(360, 320));
+            frame.setLocationRelativeTo(null);
+            // Tiling WMs (bspwm, i3...) resize the toplevel behind our back (and
+            // without a compositor they may not send Expose). Re-run a full pass
+            // so Swing revalidates and paints the content at the real size.
+            frame.addComponentListener(new java.awt.event.ComponentAdapter() {
+                public void componentResized(java.awt.event.ComponentEvent ev) { repaintAll(); }
+                public void componentShown(java.awt.event.ComponentEvent ev) { repaintAll(); }
+            });
+        }
     }
 
     public void setCurrent(Displayable d) {
@@ -177,6 +187,35 @@ public class Display {
         instance.repaintAll();
     }
 
+    // | (Canvas screens repaint only their own view, never the whole window)
+    static void repaintCanvas(Canvas c) {
+        if (instance == null) { return; }
+        instance.repaintCanvasInstance(c);
+    }
+
+    // serviceRepaints(): paint the current frame before returning, so a canvas
+    // game loop sees its output immediately (and never tears).
+    static void flushCanvas(Canvas c) {
+        if (instance == null) { return; }
+        instance.flushCanvasInstance(c);
+    }
+
+    private void repaintCanvasInstance(Canvas c) {
+        if (HEADLESS || current != c) { return; }
+        final JPanel view = (JPanel) canvasViews.get(c);
+        if (view == null) { repaintAll(); return; }
+        view.repaint();
+    }
+
+    private void flushCanvasInstance(Canvas c) {
+        if (HEADLESS || current != c) { return; }
+        final JPanel view = (JPanel) canvasViews.get(c);
+        if (view == null) { return; }
+        Runnable paint = new Runnable() { public void run() { view.paintImmediately(0, 0, view.getWidth(), view.getHeight()); } };
+        if (SwingUtilities.isEventDispatchThread()) { paint.run(); }
+        else { try { SwingUtilities.invokeAndWait(paint); } catch (Throwable t) { } }
+    }
+
     // All rebuilds run on the EDT. touch()/setCurrent may be called from any
     // thread (the Lua boot touches StringItems on its own thread), so marshal
     // every request and coalesce storms. A request arriving while a rebuild is
@@ -186,13 +225,14 @@ public class Display {
     private boolean rebuildQueued = false;
 
     private void repaintAll() {
-        if (rebuildQueued) { return; }
+        if (HEADLESS || rebuildQueued) { return; }
         rebuildQueued = true;
         SwingUtilities.invokeLater(new Runnable() { public void run() { rebuild(); } });
     }
 
     private void rebuild() {
         rebuildQueued = false;
+        if (frame == null) { return; }
         if (frame.isVisible()) {
             coreRebuild();
         } else {
@@ -211,11 +251,13 @@ public class Display {
         titleLabel.setText(d == null ? "" : d.getTitle());
         body.removeAll();
         commands.removeAll();
+        if (!(d instanceof Canvas)) { canvasViews.clear(); }
 
         if (d instanceof Alert) { renderAlert((Alert) d); }
         else if (d instanceof Form) { renderForm((Form) d); }
         else if (d instanceof List) { renderList((List) d); }
         else if (d instanceof TextBox) { renderTextBox((TextBox) d); }
+        else if (d instanceof Canvas) { renderCanvas((Canvas) d); }
         else if (d != null) { body.add(new JLabel("Unsupported screen: " + d.getClass().getName())); }
         else { body.add(new JLabel(" ")); }
 
@@ -246,9 +288,11 @@ public class Display {
 
         body.validate();
         body.repaint();
-frame.revalidate();
+        if (frame != null) {
+            frame.revalidate();
             frame.repaint();
-            JTextField f = focusTarget();
+        }
+        JTextField f = focusTarget();
             if (f != null) { f.requestFocusInWindow(); }
     }
 
@@ -484,5 +528,101 @@ frame.revalidate();
         msg.setAlignmentX(Component.LEFT_ALIGNMENT);
         p.add(msg);
         body.add(p);
+    }
+
+    // | (Canvas)
+    //
+    // The canvas owns its own off-screen buffer, so the view only has to call
+    // Canvas.paint(Graphics) into the window; input is translated to MIDP key
+    // codes / pointer coordinates and forwarded from the AWT event thread.
+    private void renderCanvas(final Canvas canvas) {
+        resetBody();
+        body.setLayout(new java.awt.GridBagLayout());
+        body.setBackground(java.awt.Color.DARK_GRAY);
+        JPanel view = (JPanel) canvasViews.get(canvas);
+        if (view == null) { view = new CanvasView(canvas); canvasViews.put(canvas, view); }
+        java.awt.GridBagConstraints gbc = new java.awt.GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        gbc.anchor = java.awt.GridBagConstraints.CENTER;
+        body.add(view, gbc);
+        body.validate();
+        body.repaint();
+        final JPanel target = view;
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                target.requestFocusInWindow();
+                target.repaint();
+            }
+        });
+    }
+
+    private class CanvasView extends JPanel {
+        private final Canvas canvas;
+
+        CanvasView(final Canvas canvas) {
+            this.canvas = canvas;
+            setOpaque(true);
+            setBackground(java.awt.Color.BLACK);
+            setFocusable(true);
+            setPreferredSize(new Dimension(canvas.getWidth(), canvas.getHeight()));
+            setMinimumSize(new Dimension(canvas.getWidth(), canvas.getHeight()));
+            addKeyListener(new KeyAdapter() {
+                public void keyPressed(KeyEvent ev) { dispatchKey(ev, true); }
+                public void keyReleased(KeyEvent ev) { dispatchKey(ev, false); }
+            });
+            addMouseListener(new MouseAdapter() {
+                public void mousePressed(MouseEvent ev) { requestFocusInWindow(); canvas.pointerPressed(pointX(ev), pointY(ev)); }
+                public void mouseReleased(MouseEvent ev) { canvas.pointerReleased(pointX(ev), pointY(ev)); }
+            });
+            addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
+                public void mouseDragged(MouseEvent ev) { canvas.pointerDragged(pointX(ev), pointY(ev)); }
+            });
+        }
+
+        private int pointX(MouseEvent ev) { return canvas.getWidth() <= 0 ? ev.getX() : ev.getX() * canvas.getWidth() / Math.max(1, getWidth()); }
+        private int pointY(MouseEvent ev) { return canvas.getHeight() <= 0 ? ev.getY() : ev.getY() * canvas.getHeight() / Math.max(1, getHeight()); }
+
+        private void dispatchKey(KeyEvent ev, boolean pressed) {
+            int code = keyCode(ev);
+            if (code == 0) { return; }
+            if (pressed) { canvas.keyPressed(code); }
+            else { canvas.keyReleased(code); }
+        }
+
+        protected void paintComponent(java.awt.Graphics graphics) {
+            super.paintComponent(graphics);
+            java.awt.Graphics2D g2 = (java.awt.Graphics2D) graphics.create();
+            try {
+                g2.setColor(java.awt.Color.BLACK);
+                canvas.paint(new Graphics(g2));
+            } catch (Throwable t) { }
+            finally { g2.dispose(); }
+        }
+    }
+
+    // Arrow keys and Enter/Space become the MIDP game keys; printable
+    // characters use their own code (as most devices do for letters), so
+    // `canvas:keyName(k)` stays readable.
+    private static int keyCode(KeyEvent ev) {
+        switch (ev.getKeyCode()) {
+            case KeyEvent.VK_UP: return Canvas.UP;
+            case KeyEvent.VK_DOWN: return Canvas.DOWN;
+            case KeyEvent.VK_LEFT: return Canvas.LEFT;
+            case KeyEvent.VK_RIGHT: return Canvas.RIGHT;
+            case KeyEvent.VK_ENTER: return Canvas.FIRE;
+            case KeyEvent.VK_SPACE: return Canvas.FIRE;
+            default: break;
+        }
+        char ch = ev.getKeyChar();
+        if (ch >= '0' && ch <= '9') { return ch; }
+        if (ch >= 32 && ch < 127) { return ch; }
+        if (ev.getKeyCode() == KeyEvent.VK_F1) { return Canvas.GAME_A; }
+        if (ev.getKeyCode() == KeyEvent.VK_F2) { return Canvas.GAME_B; }
+        if (ev.getKeyCode() == KeyEvent.VK_F3) { return Canvas.GAME_C; }
+        if (ev.getKeyCode() == KeyEvent.VK_F4) { return Canvas.GAME_D; }
+        return 0;
     }
 }

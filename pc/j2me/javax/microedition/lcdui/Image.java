@@ -44,6 +44,14 @@ public class Image {
 
     public static Image createImage(Image source) { return new Image(source.awt, source.raw); }
 
+    public Graphics getGraphics() {
+        if (awt instanceof java.awt.image.BufferedImage) {
+            java.awt.Graphics2D g2 = ((java.awt.image.BufferedImage) awt).createGraphics();
+            return new Graphics(g2);
+        }
+        return null;
+    }
+
     public java.awt.Image awt() { return awt; }
     public byte[] getBytes() { return raw; }
     public int getWidth() { return awt != null ? awt.getWidth(null) : 1; }

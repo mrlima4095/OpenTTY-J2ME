@@ -15,7 +15,7 @@ stage.
 | Suite | Command | Guards |
 |---|---|---|
 | Lua syntax | `tests/check_syntax.sh` | every `.lua` and every `#!/bin/lua` script in `src/`, `apps/`, `res/` parses (the maintainers' `assert(loadfile(...))` convention). |
-| Appstore DB | `tests/check_sources.py` | each `apps/<major>/sources.lua`: `remote` files exist, `depends` resolve, `riscv=true` apps ship a real ELF, and `src/etc/sources` matches the catalog of the release in `src/OpenTTY.java`. |
+| Appstore DB | `tests/check_sources.py` | each `apps/<major>/sources.lua`: `remote` files exist, `depends` resolve, `riscv=true` apps ship a real ELF, and `src/etc/sources` matches the newest catalog (`apps/<major>/sources.lua`). |
 | ELF headers | `tests/check_elves.py` | every shipped RISC-V binary is ELF32 LE, `EM_RISCV` (243), `ET_EXEC`/`ET_DYN`, and `ET_EXEC` entry < 1 MB (the emulator's guest RAM). |
 | ELF emulator | `tests/java/run_java.sh` | runs the **real** `src/ELF.java` on the JVM against small J2ME stubs and executes the shipped `res/apps/dist` binaries (`rev`, `tac`, `seq`, `factor`, `cal`, `rot13`, `memtest`) checking exact stdout. |
 | Device build | `tests/build/run_j2me_build.sh` | real `sdkcli.jar` build; verifies the jar has `MIDlet-Version: 1.18.2`, the full `ELF.class` emulator, and the `/boot`, `/bin`, `/lib`, `/etc/sources` seeds. |

@@ -10,6 +10,7 @@ return {
         ["c4cc"] = { remote = "dev/c4cc", here = "/bin/c4cc", riscv = true, description = "Small on-device C subset compiler" },
         ["chroot"] = { remote = "sys/chroot.lua", here = "/bin/chroot", description = "Change to a real File System" },
         ["cal"] = { remote = "file/cal", here = "/bin/cal", riscv = true, description = "Print a calendar" },
+        ["canvasdemo"] = { remote = "games/canvasdemo", here = "/bin/canvasdemo", description = "Canvas API demo game" },
         ["cmatrix"] = { remote = "games/cmatrix", here = "/bin/cmatrix", description = "The Matrix Effect" },
         ["cowsay"] = { remote = "games/cowsay", here = "/bin/cowsay", riscv = true, description = "ASCII cow with speech bubble" },
         ["curl"] = { remote = "net/curl.lua", here = "/bin/curl", description = "Connect with a Server" },

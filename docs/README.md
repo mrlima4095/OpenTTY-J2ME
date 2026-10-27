@@ -158,6 +158,9 @@ local listing = io.dirs("/bin")
 - `screen` / `buffer` — terminal-style screens
 - `command` — action buttons
 - `image`, `gauge`, `choice` — additional field types
+- `graphics.canvas` — free-form drawing surface (shapes, text, keys, game loop)
+
+See the [Canvas guide](LUACANVAS.md) for the `graphics.canvas` API.
 
 ### Example
 

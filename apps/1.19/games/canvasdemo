@@ -1,0 +1,147 @@
+#!/bin/lua
+-- canvasdemo - a small paddle game that exercises the graphics.canvas API.
+--
+-- It shows the usual game shape on OpenTTY:
+--   * one canvas handle, drawn every frame with the buffer primitives
+--   * a fixed-step loop (background thread, so the shell stays responsive)
+--   * held keys polled with canvas:keys() and presses handled by callbacks
+--   * commands for quitting, and a clean shutdown through canvas:close()
+--
+-- Usage:
+--   canvasdemo          play
+--   canvasdemo 60       run 60 frames and return (used by the test suite)
+
+local canvas = graphics.canvas.new({
+    title = "Canvas Demo",
+    background = 0x000018,
+    foreground = 0xFFFFFF,
+    font = "monospace medium"
+})
+
+local key = graphics.canvas.key
+local W, H = canvas:size()
+local PADDLE_W, PADDLE_H = 44, 6
+local PADDLE_SPEED, BALL_SPEED = 7, 3
+
+local game = {
+    paddleX = W / 2 - PADDLE_W / 2,
+    ballX = W / 2,
+    ballY = H / 3,
+    vx = BALL_SPEED,
+    vy = BALL_SPEED,
+    score = 0,
+    lives = 3,
+    over = false,
+    frames = 0
+}
+
+local function resetBall()
+    game.ballX = W / 2
+    game.ballY = H / 3
+    game.vx = (math.random(2) == 1) and BALL_SPEED or -BALL_SPEED
+    game.vy = BALL_SPEED
+end
+
+local function restart()
+    game.score = 0
+    game.lives = 3
+    game.over = false
+    game.paddleX = W / 2 - PADDLE_W / 2
+    resetBall()
+end
+
+-- True while any of the given key codes is held down.
+local function held(a, b, c)
+    local keys = canvas:keys()
+    for i = 1, #keys do
+        local code = keys[i]
+        if code == a or code == b or code == c then return true end
+    end
+    return false
+end
+
+local function draw()
+    canvas:clear()
+
+    -- Decorative grid: cheap way to show translated drawing state.
+    canvas:color(0x101040)
+    for x = 0, W, 24 do canvas:line(x, 0, x, H) end
+    for y = 0, H, 24 do canvas:line(0, y, W, y) end
+
+    canvas:color(0x00FF88)
+    canvas:rect(game.paddleX, H - 24, PADDLE_W, PADDLE_H, true)
+
+    canvas:color(0xFFFF40)
+    canvas:circle(game.ballX, game.ballY, 4, true)
+
+    canvas:color(0xFFFFFF)
+    canvas:text("SCORE " .. game.score, 4, 4)
+    canvas:text("LIVES " .. game.lives, W - 4, 4, "right")
+
+    if game.over then
+        canvas:font("proportional bold large")
+        canvas:color(0xFF4040)
+        canvas:text("GAME OVER", W / 2, H / 2 - 10, "center")
+        canvas:font("monospace medium")
+        canvas:color(0xFFFFFF)
+        canvas:text("press FIRE to play again", W / 2, H / 2 + 16, "center")
+    end
+end
+
+local function step(c, dt)
+    game.frames = game.frames + 1
+
+    if not game.over then
+        if held(key.LEFT, key.NUM4) then game.paddleX = game.paddleX - PADDLE_SPEED end
+        if held(key.RIGHT, key.NUM6) then game.paddleX = game.paddleX + PADDLE_SPEED end
+        if game.paddleX < 0 then game.paddleX = 0 end
+        if game.paddleX > W - PADDLE_W then game.paddleX = W - PADDLE_W end
+
+        game.ballX = game.ballX + game.vx
+        game.ballY = game.ballY + game.vy
+
+        if game.ballX < 4 or game.ballX > W - 4 then game.vx = -game.vx end
+        if game.ballY < 4 then game.vy = -game.vy end
+
+        -- Paddle hit: bounce and score.
+        if game.ballY >= H - 26 and game.ballY <= H - 18 and game.ballX >= game.paddleX and game.ballX <= game.paddleX + PADDLE_W then
+            game.vy = -BALL_SPEED - math.floor(game.score / 5)
+            game.score = game.score + 1
+        end
+
+        -- Missed: lose a life, restart the ball.
+        if game.ballY > H - 4 then
+            game.lives = game.lives - 1
+            if game.lives <= 0 then game.over = true else resetBall() end
+        end
+    end
+
+    draw()
+    return true
+end
+
+canvas.keyPressed = function(c, code, action)
+    if action == key.FIRE and game.over then restart() end
+end
+
+canvas:command("Exit", "exit", function(c)
+    c:stop()
+    c:close()
+end)
+
+local frames = tonumber(arg[1] or "")
+canvas:display()
+
+if frames and frames > 0 then
+    -- Test mode: run inline and return after N frames.
+    local stepFn = step
+    canvas:loop(function(c, dt)
+        if game.frames >= frames then return false end
+        return stepFn(c, dt)
+    end, 16)
+    print("canvasdemo: " .. game.frames .. " frames, score " .. game.score)
+else
+    -- Interactive mode: the loop owns a background thread, so the shell and
+    -- the Exit command keep working while the game runs.
+    java.run(function() canvas:loop(step, 33) end)
+end

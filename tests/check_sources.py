@@ -118,25 +118,21 @@ def main():
             print("  - " + msg)
             problems.append(msg)
 
-    # Release version from the MIDlet build string, e.g. 2026-1.18.2-04x41.
-    opentty = os.path.join(ROOT, "src", "OpenTTY.java")
-    build_m = re.search(r'build\s*=\s*"(\d+)-([0-9.]+)-', open(opentty, encoding="utf-8", errors="replace").read())
-    release = build_m.group(2) if build_m else None
+    # The on-device seed (/etc/sources) ships the newest catalog, which is the
+    # one the next release pulls from: apps/<major>/sources.lua.
+    versioned = [d for d in catalogs if re.match(r"^\d+(\.\d+)*$", d)]
+    newest = max(versioned, key=lambda v: tuple(int(p) for p in v.split("."))) if versioned else None
     seed = os.path.join(ROOT, "src", "etc", "sources")
-    if release:
-        catalog = os.path.join(ROOT, "apps", release)
-        if os.path.isfile(catalog + "/sources.lua"):
-            same = open(seed, encoding="utf-8", errors="replace").read() == \
-                   open(catalog + "/sources.lua", encoding="utf-8", errors="replace").read()
-            print("check_sources: src/etc/sources %s apps/%s/sources.lua" % ("matches" if same else "DIFFERS from", release))
-            if not same:
-                problems.append("src/etc/sources out of sync with apps/%s" % release)
-        else:
-            print("check_sources: no catalog for release %s" % release)
-            problems.append("no apps/%s catalog" % release)
+    if newest:
+        catalog = os.path.join(ROOT, "apps", newest, "sources.lua")
+        same = open(seed, encoding="utf-8", errors="replace").read() == \
+               open(catalog, encoding="utf-8", errors="replace").read()
+        print("check_sources: src/etc/sources %s apps/%s/sources.lua" % ("matches" if same else "DIFFERS from", newest))
+        if not same:
+            problems.append("src/etc/sources out of sync with apps/%s" % newest)
     else:
-        print("check_sources: could not read build string from src/OpenTTY.java")
-        problems.append("build string unreadable")
+        print("check_sources: no versioned app catalog found under apps/")
+        problems.append("no apps/<major> catalog")
 
     print("check_sources: %d problem group(s)" % len(problems))
     sys.exit(1 if problems else 0)

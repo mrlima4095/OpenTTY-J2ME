@@ -209,6 +209,24 @@ upvalues are not implemented.
 | `graphics.vibrate(ms)` | Vibrate the device |
 | `graphics.db` | Screens database |
 
+### `graphics.canvas`
+
+A free-form drawing surface for games and custom screens: shapes, text, fonts,
+cursor, held keys, pointer input, LCDUI commands and a frame loop.
+
+```lua
+local c = graphics.canvas.new({ title = "Game", background = 0x000018 })
+c:display()
+c:loop(function(canvas, dt)
+    canvas:clear()
+    canvas:color(0x00FF88)
+    canvas:circle(120, 160, 10, true)
+end, 33)
+```
+
+See the [Canvas guide](../LUACANVAS.md) for the full API, callbacks, threading
+rules and the `canvasdemo` example app.
+
 ## `socket` Library
 
 | Function | Description |

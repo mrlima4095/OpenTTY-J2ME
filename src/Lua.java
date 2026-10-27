@@ -39,7 +39,7 @@ public class Lua {
     public static final int EXEC = 300, GETENV = 301, SETENV = 302, CLOCK = 303, SETLOC = 304, EXIT = 305, DATE = 306, GETPID = 307, SETPROC = 308, GETPROC = 309, GETCWD = 310, GETUID = 311, CHDIR = 312, REQUEST = 313, START = 314, STOP = 315, PREQ = 316, SU = 318, REMOVE = 319, SCOPE = 320, JOIN = 321, MKDIR = 322;
     public static final int READ = 400, WRITE = 401, CLOSE = 402, OPEN = 403, POPEN = 404, DIRS = 405, SETOUT = 406, MOUNT = 407, GEN = 408, COPY = 409;
     public static final int HTTP_GET = 500, HTTP_POST = 501, CONNECT = 502, PEER = 503, DEVICE = 504, SERVER = 505, ACCEPT = 506, HTTP_RGET = 507, HTTP_RPOST = 508;
-    public static final int DISPLAY = 600, NEW = 601, RENDER = 602, APPEND = 603, ADDCMD = 604, HANDLER = 605, GETCURRENT = 606, TITLE = 607, TICKER = 608, VIBRATE = 609, SETLABEL = 610, SETTEXT = 611, GETLABEL = 612, GETTEXT = 613, CLEAR_SCREEN = 614, TASKMNGR = 615;
+    public static final int DISPLAY = 600, NEW = 601, RENDER = 602, APPEND = 603, ADDCMD = 604, HANDLER = 605, GETCURRENT = 606, TITLE = 607, TICKER = 608, VIBRATE = 609, SETLABEL = 610, SETTEXT = 611, GETLABEL = 612, GETTEXT = 613, CLEAR_SCREEN = 614, TASKMNGR = 615, CANVAS = 616, CANVAS_ASSIGN = 617;
     public static final int CLASS = 700, NAME = 701, DELETE = 702, UPTIME = 703, RUN = 704, THREAD = 705, SLEEP = 706, KERNEL = 1000;
     public static final int AUDIO_LOAD = 800, AUDIO_PLAY = 801, AUDIO_PAUSE = 802, AUDIO_VOLUME = 803, AUDIO_DURATION = 804, AUDIO_TIME = 805;
     public static final int PUSH_REGISTER = 900, PUSH_UNREGISTER = 901, PUSH_LIST = 902, PUSH_PENDING = 903, PUSH_SET_ALARM = 904;
@@ -52,6 +52,17 @@ public class Lua {
     private static final Double[] SMALL_NUMBERS = new Double[NUM_MAX - NUM_MIN + 1];
     static { for (int i = NUM_MIN; i <= NUM_MAX; i++) { SMALL_NUMBERS[i - NUM_MIN] = new Double(i); } }
     private static Double luaNumber(double d) { if (d == Math.floor(d) && d >= NUM_MIN && d <= NUM_MAX) { return SMALL_NUMBERS[(int) d - NUM_MIN]; } return new Double(d); }
+    // Accepts decimal text and Lua 5.1 style hexadecimal literals ("0x1F", "-0x10").
+    static double parseLuaNumber(String text) {
+        String s = text == null ? "" : text.trim();
+        boolean negative = s.startsWith("-");
+        String digits = negative || s.startsWith("+") ? s.substring(1) : s;
+        if (digits.length() > 2 && digits.charAt(0) == '0' && (digits.charAt(1) == 'x' || digits.charAt(1) == 'X')) {
+            double value = (double) Long.parseLong(digits.substring(2), 16);
+            return negative ? -value : value;
+        }
+        return Double.parseDouble(s);
+    }
     // |
     public static class Token { int type; Object value; int offset; Token(int type, Object value) { this.type = type; this.value = value; this.offset = -1; } Token(int type, Object value, int offset) { this.type = type; this.value = value; this.offset = offset; } public String toString() { return "Token(type=" + type + ", value=" + value + ")"; } }
     // |
@@ -67,6 +78,8 @@ public class Lua {
             if (globals != null) { v = globals.get(key); if (v != null) { return v; } }
             return null;
         }
+        // | (True only when this frame declares the name; used by assignment)
+        boolean hasOwn(Object key) { return super.containsKey(key); }
     }
     // |
     // Main
@@ -106,6 +119,38 @@ public class Lua {
         funcs = new String[] { "display", "new", "render", "append", "addCommand", "handler", "getCurrent", "SetTitle", "SetTicker", "vibrate", "SetLabel", "SetText", "GetLabel", "GetText", "clear", "taskmngr" }; 
         loaders = new int[] { DISPLAY, NEW, RENDER, APPEND, ADDCMD, HANDLER, GETCURRENT, TITLE, TICKER, VIBRATE, SETLABEL, SETTEXT, GETLABEL, GETTEXT, CLEAR_SCREEN, TASKMNGR };
         for (int i = 0; i < funcs.length; i++) { graphics.put(funcs[i], new LuaFunction(loaders[i])); } graphics.put("db", midlet.graphics); graphics.put("fire", List.SELECT_COMMAND); globals.put("graphics", graphics);
+
+        // Package [graphics.canvas] - free-form drawing surface (see LuaCanvas).
+        // Every entry is a native tagged with its method name; the canvas table
+        // doubles as the __index of each canvas handle, so `c:text(...)` and
+        // `graphics.canvas.text(c, ...)` are the same call.
+        funcs = new String[] { "new", "rgb", "on", "off", "display", "close", "title", "fullscreen", "size", "repaint", "flush", "clear",
+            "color", "background", "foreground", "font", "metrics", "textWidth", "charWidth", "text", "print", "nl", "backspace", "cursor", "caret",
+            "line", "rect", "roundRect", "arc", "circle", "ellipse", "triangle", "polygon", "pixel", "image",
+            "clip", "resetClip", "clipRect", "translate", "save", "restore", "reset",
+            "keyDown", "keyName", "gameAction", "keys", "resetKeys", "waitKey", "pointer",
+            "loop", "animate", "stop", "running", "age", "command", "clearCommands" };
+        Hashtable canvas = new Hashtable();
+        for (int i = 0; i < funcs.length; i++) { LuaFunction method = new LuaFunction(CANVAS); method.nativeName = funcs[i]; canvas.put(funcs[i], method); }
+
+        Hashtable anchor = new Hashtable(), key = new Hashtable(), action = new Hashtable(), fontTable = new Hashtable(), colors = new Hashtable();
+        anchor.put("LEFT", luaNumber(Graphics.LEFT)); anchor.put("RIGHT", luaNumber(Graphics.RIGHT)); anchor.put("HCENTER", luaNumber(Graphics.HCENTER));
+        anchor.put("TOP", luaNumber(Graphics.TOP)); anchor.put("BOTTOM", luaNumber(Graphics.BOTTOM)); anchor.put("VCENTER", luaNumber(Graphics.VCENTER)); anchor.put("BASELINE", luaNumber(Graphics.BASELINE));
+        anchor.put("CENTER", luaNumber(Graphics.HCENTER | Graphics.VCENTER));
+        key.put("UP", luaNumber(Canvas.UP)); key.put("DOWN", luaNumber(Canvas.DOWN)); key.put("LEFT", luaNumber(Canvas.LEFT)); key.put("RIGHT", luaNumber(Canvas.RIGHT));
+        key.put("FIRE", luaNumber(Canvas.FIRE)); key.put("GAME_A", luaNumber(Canvas.GAME_A)); key.put("GAME_B", luaNumber(Canvas.GAME_B)); key.put("GAME_C", luaNumber(Canvas.GAME_C)); key.put("GAME_D", luaNumber(Canvas.GAME_D));
+        key.put("NUM0", luaNumber(Canvas.KEY_NUM0)); key.put("NUM1", luaNumber(Canvas.KEY_NUM1)); key.put("NUM2", luaNumber(Canvas.KEY_NUM2)); key.put("NUM3", luaNumber(Canvas.KEY_NUM3));
+        key.put("NUM4", luaNumber(Canvas.KEY_NUM4)); key.put("NUM5", luaNumber(Canvas.KEY_NUM5)); key.put("NUM6", luaNumber(Canvas.KEY_NUM6)); key.put("NUM7", luaNumber(Canvas.KEY_NUM7));
+        key.put("NUM8", luaNumber(Canvas.KEY_NUM8)); key.put("NUM9", luaNumber(Canvas.KEY_NUM9)); key.put("STAR", luaNumber(Canvas.KEY_STAR)); key.put("POUND", luaNumber(Canvas.KEY_POUND));
+        action.put("UP", luaNumber(Canvas.UP)); action.put("DOWN", luaNumber(Canvas.DOWN)); action.put("LEFT", luaNumber(Canvas.LEFT)); action.put("RIGHT", luaNumber(Canvas.RIGHT));
+        action.put("FIRE", luaNumber(Canvas.FIRE)); action.put("GAME_A", luaNumber(Canvas.GAME_A)); action.put("GAME_B", luaNumber(Canvas.GAME_B)); action.put("GAME_C", luaNumber(Canvas.GAME_C)); action.put("GAME_D", luaNumber(Canvas.GAME_D));
+        fontTable.put("SYSTEM", luaNumber(Font.FACE_SYSTEM)); fontTable.put("MONOSPACE", luaNumber(Font.FACE_MONOSPACE)); fontTable.put("PROPORTIONAL", luaNumber(Font.FACE_PROPORTIONAL));
+        fontTable.put("PLAIN", luaNumber(Font.STYLE_PLAIN)); fontTable.put("BOLD", luaNumber(Font.STYLE_BOLD)); fontTable.put("ITALIC", luaNumber(Font.STYLE_ITALIC)); fontTable.put("UNDERLINED", luaNumber(Font.STYLE_UNDERLINED));
+        fontTable.put("SMALL", luaNumber(Font.SIZE_SMALL)); fontTable.put("MEDIUM", luaNumber(Font.SIZE_MEDIUM)); fontTable.put("LARGE", luaNumber(Font.SIZE_LARGE));
+        String[] colorNames = { "black", "white", "red", "green", "blue", "yellow", "cyan", "magenta", "gray", "grey", "orange", "purple", "brown", "pink", "lime", "navy", "teal", "silver", "maroon", "olive" };
+        for (int i = 0; i < colorNames.length; i++) { colors.put(colorNames[i], luaNumber(LuaCanvas.namedColor(colorNames[i]))); }
+        canvas.put("anchor", anchor); canvas.put("key", key); canvas.put("action", action); canvas.put("fonts", fontTable); canvas.put("colors", colors);
+        graphics.put("canvas", canvas);
 
         funcs = new String[] { "upper", "lower", "len", "find", "match", "reverse", "sub", "hash", "byte", "char", "trim", "uuid", "split", "getCommand", "getArgument", "env", "getpattern", "startswith", "endswith" }; loaders = new int[] { UPPER, LOWER, LEN, FIND, MATCH, REVERSE, SUB, HASH, BYTE, CHAR, TRIM, UUID, SPLIT, GETCMD, GETARGS, ENV, GETPATTERN, STARTSWITH, ENDSWITH };
         for (int i = 0; i < funcs.length; i++) { string.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("string", string);
@@ -189,6 +234,15 @@ public class Lua {
         return line;
     }
     // |
+    // |
+    // | (Call a Lua callback from a UI/loop thread, reporting errors on stdout)
+    public Object invokeCallback(Object fn, Vector args) {
+        if (!(fn instanceof LuaFunction)) { return null; }
+        try { return ((LuaFunction) fn).call(args); }
+        catch (Exception e) { String traceback = getTraceback(e); clearThrown(); midlet.print(traceback, stdout, id, father); status = 1; }
+        catch (Error e) { if (!silent) { midlet.print(midlet.getCatch(e), stdout, id, father); } }
+        return null;
+    }
     public String getTraceback(Throwable e) {
         StringBuffer sb = new StringBuffer(midlet.getCatch(e));
 
@@ -357,6 +411,15 @@ public class Lua {
                 } else { tokens.addElement(new Token(COLON, ":", start)); i++; }
             }
 
+            else if (c == '0' && i + 1 < code.length() && (code.charAt(i + 1) == 'x' || code.charAt(i + 1) == 'X')) {
+                i += 2;
+                int hexStart = i;
+                while (i < code.length() && isHexDigit(code.charAt(i))) { i++; }
+                if (i == hexStart) { throw new RuntimeException("Malformed number near '" + code.substring(start, Math.min(i + 1, code.length())) + "'"); }
+                try { double numValue = (double) Long.parseLong(code.substring(hexStart, i), 16); tokens.addElement(new Token(NUMBER, luaNumber(numValue), start)); }
+                catch (NumberFormatException e) { throw new RuntimeException("Invalid number format '" + code.substring(start, i) + "'"); }
+                continue;
+            }
             else if (isDigit(c) || (c == '.' && i + 1 < code.length() && isDigit(code.charAt(i + 1)))) {
                 boolean hasDecimal = false;
                 while (i < code.length() && (isDigit(code.charAt(i)) || code.charAt(i) == '.')) {
@@ -373,7 +436,16 @@ public class Lua {
             }
             else if (c == '-' && i + 1 < code.length() && (isDigit(code.charAt(i + 1)) || (code.charAt(i + 1) == '.' && i + 2 < code.length() && isDigit(code.charAt(i + 2))))) {
                 i++; 
-                
+                if (i + 1 < code.length() && code.charAt(i) == '0' && (code.charAt(i + 1) == 'x' || code.charAt(i + 1) == 'X')) {
+                    i += 2;
+                    int negHexStart = i;
+                    while (i < code.length() && isHexDigit(code.charAt(i))) { i++; }
+                    if (i == negHexStart) { throw new RuntimeException("Malformed number near '" + code.substring(start, Math.min(i + 1, code.length())) + "'"); }
+                    try { double numValue = -(double) Long.parseLong(code.substring(negHexStart, i), 16); tokens.addElement(new Token(NUMBER, luaNumber(numValue), start)); }
+                    catch (NumberFormatException e) { throw new RuntimeException("Invalid number format '" + code.substring(start, i) + "'"); }
+                    continue;
+                }
+
                 boolean hasDecimal = false;
                 while (i < code.length() && (isDigit(code.charAt(i)) || code.charAt(i) == '.')) {
                     if (code.charAt(i) == '.') {
@@ -475,7 +547,7 @@ public class Lua {
                 for (int i = 0; i < varNames.size(); i++) {
                     String v = (String) varNames.elementAt(i);
                     Object val = i < assignValues.size() ? assignValues.elementAt(i) : null;
-                    scope.put(v, val == null ? LUA_NIL : val);
+                    assignVariable(scope, v, val);
                 }
                 return null;
             }
@@ -515,7 +587,7 @@ public class Lua {
                 if (peek().type == ASSIGN) {
                     consume(ASSIGN);
                     Object value = expression(scope);
-                    scope.put(varName, value == null ? LUA_NIL : value);
+                    assignVariable(scope, varName, value);
                     return null;
                 } 
                 else if (peek().type == LPAREN) { return callFunction(varName, scope); } 
@@ -1048,6 +1120,12 @@ public class Lua {
     // |
     // Expressions
     private Object expression(Hashtable scope) throws Exception { return logicalOr(scope); }
+    // | (A call yields its results as a Vector; operators use the first one)
+    private Object firstValue(Object value) {
+        if (value instanceof Vector) { Vector list = (Vector) value; return list.isEmpty() ? null : list.elementAt(0); }
+        return value;
+    }
+
     private Object logicalOr(Hashtable scope) throws Exception { Object left = logicalAnd(scope); while (peek().type == OR) { consume(OR); Object right = logicalAnd(scope); left = isTruthy(left) ? left : right; } return left; }
     private Object logicalAnd(Hashtable scope) throws Exception { Object left = comparison(scope); while (peek().type == AND) { consume(AND); Object right = comparison(scope); left = isTruthy(left) ? right : left; } return left; }
     private Object comparison(Hashtable scope) throws Exception {
@@ -1055,26 +1133,36 @@ public class Lua {
         while (peek().type == EQ || peek().type == NE || peek().type == LT || peek().type == GT || peek().type == LE || peek().type == GE) {
             Token op = consume();
             Object right = concatenation(scope);
+            left = firstValue(left);
+            right = firstValue(right);
             if (op.type == EQ || op.type == NE) {
                 boolean equal = (left == null && right == null) || (left != null && left.equals(right));
                 if (!equal && left instanceof Hashtable && right instanceof Hashtable && hasAnyMeta(left, right, "__eq")) { equal = isTruthy(metaBinary("__eq", left, right)); }
                 left = (op.type == EQ) == equal ? TRUE : FALSE;
             }
-            else if (op.type == LT) { left = luaCompare(left, right, "__lt", -1) ? TRUE : FALSE; }
-            else if (op.type == GT) { left = luaCompare(right, left, "__lt", -1) ? TRUE : FALSE; }
-            else if (op.type == LE) { left = luaCompare(left, right, "__le", 0) ? TRUE : FALSE; }
-            else if (op.type == GE) { left = luaCompare(right, left, "__le", 0) ? TRUE : FALSE; }
+            else if (op.type == LT) { left = luaLessThan(left, right) ? TRUE : FALSE; }
+            else if (op.type == GT) { left = luaLessThan(right, left) ? TRUE : FALSE; }
+            else if (op.type == LE) { left = luaLessEqual(left, right) ? TRUE : FALSE; }
+            else if (op.type == GE) { left = luaLessEqual(right, left) ? TRUE : FALSE; }
         }
         return left;
     }
-    // | (Ordering: numbers, then strings, then __lt/__le — result <= fallback > 0 means "swap and negate")
-    private boolean luaCompare(Object left, Object right, String event, int fallback) throws Exception {
+    // | (Ordering: numbers, then strings, then __lt/__le)
+    private boolean luaLessThan(Object left, Object right) throws Exception {
         if (left instanceof Double && right instanceof Double) { return ((Double) left).doubleValue() < ((Double) right).doubleValue(); }
         if (left instanceof String && right instanceof String) { return ((String) left).compareTo((String) right) < 0; }
 
-        if (hasAnyMeta(left, right, event)) { return isTruthy(metaBinary(event, left, right)); }
-        // Lua's `a <= b` falls back to `not (b < a)` when only `__lt` exists
-        if (fallback == 0 && hasAnyMeta(left, right, "__lt")) { return !isTruthy(metaBinary("__lt", right, left)); }
+        if (hasAnyMeta(left, right, "__lt")) { return isTruthy(metaBinary("__lt", left, right)); }
+
+        throw new Exception("attempt to compare " + LuaFunction.type(left) + " with " + LuaFunction.type(right));
+    }
+    private boolean luaLessEqual(Object left, Object right) throws Exception {
+        if (left instanceof Double && right instanceof Double) { return ((Double) left).doubleValue() <= ((Double) right).doubleValue(); }
+        if (left instanceof String && right instanceof String) { return ((String) left).compareTo((String) right) <= 0; }
+
+        if (hasAnyMeta(left, right, "__le")) { return isTruthy(metaBinary("__le", left, right)); }
+        // Lua's `a <= b` falls back to `not (b < a)` when only __lt exists
+        if (hasAnyMeta(left, right, "__lt")) { return !isTruthy(metaBinary("__lt", right, left)); }
 
         throw new Exception("attempt to compare " + LuaFunction.type(left) + " with " + LuaFunction.type(right));
     }
@@ -1087,6 +1175,8 @@ public class Lua {
         while (peek().type == CONCAT) {
             consume(CONCAT);
             Object right = arithmetic(scope);
+            left = firstValue(left);
+            right = firstValue(right);
 
             if ((left instanceof String || left instanceof Double) && (right instanceof String || right instanceof Double)) { left = toLuaString(left) + toLuaString(right); }
             else if (hasAnyMeta(left, right, "__concat")) { left = metaBinary("__concat", left, right); }
@@ -1101,6 +1191,8 @@ public class Lua {
         while (peek().type == PLUS || peek().type == MINUS) {
             Token op = consume();
             Object right = term(scope); 
+            left = firstValue(left);
+            right = firstValue(right);
             String event = op.type == PLUS ? "__add" : "__sub";
 
             if (left instanceof Double && right instanceof Double) {
@@ -1117,6 +1209,8 @@ public class Lua {
         while (peek().type == MULTIPLY || peek().type == DIVIDE || peek().type == MODULO) {
             Token op = consume();
             Object right = exponentiation(scope);
+            left = firstValue(left);
+            right = firstValue(right);
             String event = op.type == MULTIPLY ? "__mul" : op.type == DIVIDE ? "__div" : "__mod";
 
             if (left instanceof Double && right instanceof Double) {
@@ -1325,14 +1419,28 @@ public class Lua {
     }
     // |
     // Call LuaFunction
-    private Object callFunction(String funcName, Hashtable scope) throws Exception {
+    // | (Call arguments: every expression but the last yields its first value,
+    // |  the last one expands all of its results, as in Lua)
+    private void readCallArgs(Vector target, Hashtable scope) throws Exception {
         consume(LPAREN);
-        Vector args = new Vector();
+        Vector raw = new Vector();
         if (peek().type != RPAREN) {
-            args.addElement(expression(scope));
-            while (peek().type == COMMA) { consume(COMMA); args.addElement(expression(scope)); }
+            raw.addElement(expression(scope));
+            while (peek().type == COMMA) { consume(COMMA); raw.addElement(expression(scope)); }
         }
         consume(RPAREN);
+
+        for (int i = 0; i < raw.size(); i++) {
+            Object value = raw.elementAt(i);
+            if (i == raw.size() - 1 && value instanceof Vector) {
+                Vector list = (Vector) value;
+                for (int j = 0; j < list.size(); j++) { target.addElement(list.elementAt(j)); }
+            } else { target.addElement(firstValue(value)); }
+        }
+    }
+    private Object callFunction(String funcName, Hashtable scope) throws Exception {
+        Vector args = new Vector();
+        readCallArgs(args, scope);
 
         Object  funcObj = unwrap(scope.get(funcName));
         if (funcObj == null && globals.containsKey(funcName)) { funcObj = unwrap(globals.get(funcName)); }
@@ -1341,13 +1449,8 @@ public class Lua {
         else { throw new RuntimeException("Attempt to call a non-function value: " + funcName); }
     }
     private Object callFunctionObject(Object funcObj, Hashtable scope) throws Exception {
-        consume(LPAREN);
         Vector args = new Vector();
-        if (peek().type != RPAREN) {
-            args.addElement(expression(scope));
-            while (peek().type == COMMA) { consume(COMMA); args.addElement(expression(scope)); }
-        }
-        consume(RPAREN);
+        readCallArgs(args, scope);
 
         if (isCallable(funcObj)) { return callValue(funcObj, args); }
         else { throw new Exception("Attempt to call a non-function value (by object)."); }
@@ -1457,15 +1560,9 @@ public class Lua {
                 if (peek().type == DOT || peek().type == LBRACKET) { methodObj = unwrap(((Hashtable)table).get(key)); }
             }
         }
-        consume(LPAREN);
         Vector args = new Vector();
-        
         args.addElement(self);
-        if (peek().type != RPAREN) {
-            args.addElement(expression(scope));
-            while (peek().type == COMMA) { consume(COMMA); args.addElement(expression(scope)); }
-        }
-        consume(RPAREN);
+        readCallArgs(args, scope);
         if (isCallable(methodObj)) { return callValue(methodObj, args); } 
         else { throw new Exception("attempt to call non-function as method: " + methodName); }
     }
@@ -1479,6 +1576,21 @@ public class Lua {
     // |
     private boolean isTruthy(Object value) { if (value == null || value == LUA_NIL) { return false; } if (value instanceof Boolean) { return ((Boolean) value).booleanValue(); } return true; }
     // |
+    // |
+    // | (Plain assignment: write to the nearest frame that already declares the
+    // |  name (locals and upvalues), else to the script scope. Without this a
+    // |  function-local write would shadow its upvalue for the rest of the call
+    // |  and vanish on return, so closures could not keep state.)
+    private void assignVariable(Hashtable scope, String name, Object value) {
+        Object stored = value == null ? LUA_NIL : value;
+        Hashtable current = scope;
+        while (current instanceof ScopeTable) {
+            if (((ScopeTable) current).hasOwn(name)) { current.put(name, stored); return; }
+            current = ((ScopeTable) current).parent;
+        }
+        if (current != null) { current.put(name, stored); }
+        else { globals.put(name, stored); }
+    }
     private Object[] resolveTableAndKey(String varName, Hashtable scope) throws Exception {
         Object table = unwrap(scope.get(varName));
         if (table == null && globals.containsKey(varName)) table = unwrap(globals.get(varName));
@@ -1512,6 +1624,7 @@ public class Lua {
     // |
     private static boolean isWhitespace(char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\r'; }
     private static boolean isDigit(char c) { return c >= '0' && c <= '9'; }
+    private static boolean isHexDigit(char c) { return isDigit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'); }
     private static boolean isLetter(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'; }
     private static boolean isLetterOrDigit(char c) { return isLetter(c) || isDigit(c); }
     // |
@@ -1523,6 +1636,7 @@ public class Lua {
         private Hashtable closureScope, cmds = null; 
         private int MOD = -1;
         public String name = null;
+        public String nativeName = null;
         public String defSource = null;
         public String defCode = null;
         public Vector defLineOffsets = null;
@@ -1733,7 +1847,7 @@ public class Lua {
                         return new Double(0);
                     }
                 case TOSTRING: return toDisplayValue(args.isEmpty() ? gotbad(1, "tostring", "value expected") : args.elementAt(0));
-                case TONUMBER: return args.isEmpty() ? gotbad(1, "tonumber", "value expected") : luaNumber(Double.parseDouble(toLuaString(args.elementAt(0))));
+                case TONUMBER: return args.isEmpty() ? gotbad(1, "tonumber", "value expected") : luaNumber(parseLuaNumber(toLuaString(args.elementAt(0))));
                 case SELECT:
                     if (args.isEmpty() || args.elementAt(0) == null) { return gotbad(1, "select", "number expected, got no value"); } 
                     else {
@@ -2744,6 +2858,8 @@ public class Lua {
                         break;
                     }
                 case TASKMNGR: midlet.showTaskManager(); break;
+                case CANVAS: return canvasApi(nativeName, args);
+                case CANVAS_ASSIGN: return canvasAssign(args);
                 // Package [string]
                 case LOWER: case UPPER: if (args.isEmpty()) { return gotbad(1, MOD == LOWER ? "lower" : "upper", "string expected, got no value"); } else { String text = toLuaString(args.elementAt(0)); return MOD == LOWER ? text.toLowerCase() : text.toUpperCase(); }
                 case FIND: case MATCH: case LEN:
@@ -3121,6 +3237,399 @@ public class Lua {
 
             }
             return null;
+        }
+        // |
+        // | -=-=-=-=-=-=-=-=-=-=-
+        // | API 004 - Lua Canvas [graphics.canvas]
+        // |
+        // Every canvas function is a native tagged with nativeName (see the
+        // graphics.canvas registration in the Lua constructor) and takes the
+        // canvas handle as its first argument, so both call styles work:
+        //   graphics.canvas.text(c, "hi", 4, 4)   and   c:text("hi", 4, 4)
+        private Object canvasApi(String method, Vector args) throws Exception {
+            String where = "graphics.canvas." + method;
+
+            if (method.equals("new")) { return canvasNew(args, where); }
+            if (method.equals("rgb")) { return args.isEmpty() ? gotbad(1, where, "color expected, got no value") : luaNumber(canvasColor(args.elementAt(0), where)); }
+
+            LuaCanvas canvas = canvasArg(args, where);
+            Hashtable handle = canvas.getScreen();
+
+            if (method.equals("on")) {
+                if (args.size() < 3 || !(args.elementAt(1) instanceof String) || !(args.elementAt(2) instanceof LuaFunction)) { return gotbad(2, where, "event name and function expected"); }
+                canvas.setCallback((String) args.elementAt(1), args.elementAt(2));
+                return handle;
+            }
+            if (method.equals("off")) {
+                if (args.size() < 2 || !(args.elementAt(1) instanceof String)) { return gotbad(2, where, "event name expected"); }
+                canvas.setCallback((String) args.elementAt(1), null);
+                return handle;
+            }
+            if (method.equals("display")) { canvas.present(); return handle; }
+            if (method.equals("close")) { canvas.close(); return handle; }
+            if (method.equals("title")) {
+                if (args.size() < 2) { return canvas.getTitle(); }
+                canvas.setTitle(toLuaString(args.elementAt(1)));
+                return handle;
+            }
+            if (method.equals("fullscreen")) {
+                if (args.size() < 2) { return canvas.isFullscreen() ? TRUE : FALSE; }
+                canvas.setFullscreen(isTruthy(args.elementAt(1)));
+                return canvas.isFullscreen() ? TRUE : FALSE;
+            }
+            if (method.equals("size")) {
+                Vector result = new Vector();
+                result.addElement(luaNumber(canvas.getCanvasWidth()));
+                result.addElement(luaNumber(canvas.getCanvasHeight()));
+                return result;
+            }
+            if (method.equals("repaint")) {
+                if (args.size() >= 5) { canvas.repaint(canvasInt(args, 1, where), canvasInt(args, 2, where), canvasInt(args, 3, where), canvasInt(args, 4, where)); }
+                else { canvas.repaint(); }
+                return handle;
+            }
+            if (method.equals("flush")) { canvas.flush(); return handle; }
+            if (method.equals("clear")) {
+                if (args.size() >= 5) { canvas.clear(canvasInt(args, 1, where), canvasInt(args, 2, where), canvasInt(args, 3, where), canvasInt(args, 4, where)); }
+                else { canvas.clear(); }
+                return handle;
+            }
+            if (method.equals("color")) {
+                if (args.size() < 2) { return luaNumber(canvas.getColorValue()); }
+                if (args.size() >= 4) { canvas.setColorValue(canvasRgb(canvasInt(args, 1, where), canvasInt(args, 2, where), canvasInt(args, 3, where))); }
+                else { canvas.setColorValue(canvasColor(args.elementAt(1), where)); }
+                return handle;
+            }
+            if (method.equals("background")) {
+                if (args.size() < 2) { return luaNumber(canvas.getBackgroundValue()); }
+                canvas.setBackgroundValue(canvasColor(args.elementAt(1), where));
+                return handle;
+            }
+            if (method.equals("foreground")) {
+                if (args.size() < 2) { return luaNumber(canvas.getForegroundValue()); }
+                canvas.setForegroundValue(canvasColor(args.elementAt(1), where));
+                return handle;
+            }
+            if (method.equals("font")) {
+                if (args.size() < 2) { return canvas.getFontSpec(); }
+                Object spec = args.elementAt(1);
+                if (spec instanceof String) { String text = (String) spec; canvas.setFontValue(genFont(text), text); }
+                else if (spec instanceof Double) {
+                    int face = ((Double) spec).intValue();
+                    int style = args.size() > 2 && args.elementAt(2) instanceof Double ? ((Double) args.elementAt(2)).intValue() : Font.STYLE_PLAIN;
+                    int size = args.size() > 3 && args.elementAt(3) instanceof Double ? ((Double) args.elementAt(3)).intValue() : Font.SIZE_MEDIUM;
+                    Font value = Font.getFont(face, style, size);
+                    canvas.setFontValue(value == null ? Font.getDefaultFont() : value, "custom");
+                }
+                else { return gotbad(2, where, "font spec string or face number expected, got " + type(spec)); }
+                return handle;
+            }
+            if (method.equals("metrics")) {
+                Vector result = new Vector();
+                result.addElement(luaNumber(canvas.getFontHeight()));
+                result.addElement(luaNumber(canvas.getBaseline()));
+                return result;
+            }
+            if (method.equals("textWidth")) { return luaNumber(canvas.getTextWidth(toLuaString(args.elementAt(1)))); }
+            if (method.equals("charWidth")) {
+                Object value = args.size() > 1 ? args.elementAt(1) : null;
+                if (value instanceof String && ((String) value).length() > 0) { return luaNumber(canvas.getCharWidth(((String) value).charAt(0))); }
+                if (value instanceof Double) { return luaNumber(canvas.getCharWidth((char) ((Double) value).intValue())); }
+                return gotbad(2, where, "character expected, got " + type(value));
+            }
+            if (method.equals("text")) {
+                if (args.size() < 4 || !(args.elementAt(1) instanceof String)) { return gotbad(2, where, "text, x and y expected"); }
+                int anchor = args.size() > 4 ? canvasAnchor(args.elementAt(4), where) : (Graphics.TOP | Graphics.LEFT);
+                canvas.drawText((String) args.elementAt(1), canvasInt(args, 2, where), canvasInt(args, 3, where), anchor);
+                return handle;
+            }
+            if (method.equals("print")) { canvas.printText(toLuaString(args.size() > 1 ? args.elementAt(1) : null)); return handle; }
+            if (method.equals("nl")) { canvas.newLine(); return handle; }
+            if (method.equals("backspace")) { canvas.backspace(args.size() > 1 ? canvasInt(args, 1, where) : 1); return handle; }
+            if (method.equals("cursor")) {
+                if (args.size() >= 3) { canvas.setCursor(canvasInt(args, 1, where), canvasInt(args, 2, where)); return handle; }
+                Vector result = new Vector();
+                result.addElement(luaNumber(canvas.getCursor()[0]));
+                result.addElement(luaNumber(canvas.getCursor()[1]));
+                return result;
+            }
+            if (method.equals("caret")) { canvas.drawCaret(); return handle; }
+            if (method.equals("line")) { canvas.drawLine(canvasInt(args, 1, where), canvasInt(args, 2, where), canvasInt(args, 3, where), canvasInt(args, 4, where)); return handle; }
+            if (method.equals("rect")) {
+                int x = canvasInt(args, 1, where), y = canvasInt(args, 2, where), w = canvasInt(args, 3, where), h = canvasInt(args, 4, where);
+                if (args.size() > 5 && isTruthy(args.elementAt(5))) { canvas.fillRect(x, y, w, h); } else { canvas.drawRect(x, y, w, h); }
+                return handle;
+            }
+            if (method.equals("roundRect")) {
+                int x = canvasInt(args, 1, where), y = canvasInt(args, 2, where), w = canvasInt(args, 3, where), h = canvasInt(args, 4, where), aw = canvasInt(args, 5, where), ah = canvasInt(args, 6, where);
+                if (args.size() > 7 && isTruthy(args.elementAt(7))) { canvas.fillRoundRect(x, y, w, h, aw, ah); } else { canvas.drawRoundRect(x, y, w, h, aw, ah); }
+                return handle;
+            }
+            if (method.equals("arc")) {
+                int x = canvasInt(args, 1, where), y = canvasInt(args, 2, where), w = canvasInt(args, 3, where), h = canvasInt(args, 4, where), start = canvasInt(args, 5, where), angle = canvasInt(args, 6, where);
+                if (args.size() > 7 && isTruthy(args.elementAt(7))) { canvas.fillArc(x, y, w, h, start, angle); } else { canvas.drawArc(x, y, w, h, start, angle); }
+                return handle;
+            }
+            if (method.equals("circle")) {
+                int cx = canvasInt(args, 1, where), cy = canvasInt(args, 2, where), radius = canvasInt(args, 3, where);
+                if (args.size() > 4 && isTruthy(args.elementAt(4))) { canvas.fillArc(cx - radius, cy - radius, radius * 2, radius * 2, 0, 360); }
+                else { canvas.drawArc(cx - radius, cy - radius, radius * 2, radius * 2, 0, 360); }
+                return handle;
+            }
+            if (method.equals("ellipse")) {
+                int x = canvasInt(args, 1, where), y = canvasInt(args, 2, where), w = canvasInt(args, 3, where), h = canvasInt(args, 4, where);
+                if (args.size() > 5 && isTruthy(args.elementAt(5))) { canvas.fillArc(x, y, w, h, 0, 360); } else { canvas.drawArc(x, y, w, h, 0, 360); }
+                return handle;
+            }
+            if (method.equals("triangle")) {
+                int[] xs = { canvasInt(args, 1, where), canvasInt(args, 3, where), canvasInt(args, 5, where) };
+                int[] ys = { canvasInt(args, 2, where), canvasInt(args, 4, where), canvasInt(args, 6, where) };
+                if (args.size() > 7 && isTruthy(args.elementAt(7))) { canvas.fillPolygon(xs, ys); } else { canvas.drawPolygon(xs, ys); }
+                return handle;
+            }
+            if (method.equals("polygon")) {
+                int[][] points = canvasPoints(args.size() > 1 ? args.elementAt(1) : null, where);
+                if (args.size() > 2 && isTruthy(args.elementAt(2))) { canvas.fillPolygon(points[0], points[1]); } else { canvas.drawPolygon(points[0], points[1]); }
+                return handle;
+            }
+            if (method.equals("pixel")) { canvas.drawPixel(canvasInt(args, 1, where), canvasInt(args, 2, where)); return handle; }
+            if (method.equals("image")) {
+                if (args.size() < 4) { return gotbad(2, where, "image and x, y expected"); }
+                Object source = args.elementAt(1);
+                Image image = source instanceof Image ? (Image) source : source instanceof String ? midlet.readImg((String) source, father) : null;
+                if (image == null) { return gotbad(2, where, "image or path expected, got " + type(source)); }
+                canvas.drawImage(image, canvasInt(args, 2, where), canvasInt(args, 3, where), args.size() > 4 ? canvasAnchor(args.elementAt(4), where) : (Graphics.TOP | Graphics.LEFT));
+                return handle;
+            }
+            if (method.equals("clip")) { canvas.setClip(canvasInt(args, 1, where), canvasInt(args, 2, where), canvasInt(args, 3, where), canvasInt(args, 4, where)); return handle; }
+            if (method.equals("resetClip")) { canvas.resetClip(); return handle; }
+            if (method.equals("clipRect")) {
+                int[] clip = canvas.getClip();
+                Vector result = new Vector();
+                for (int i = 0; i < clip.length; i++) { result.addElement(luaNumber(clip[i])); }
+                return result;
+            }
+            if (method.equals("translate")) { canvas.translate(canvasInt(args, 1, where), canvasInt(args, 2, where)); return handle; }
+            if (method.equals("save")) { canvas.saveState(); return handle; }
+            if (method.equals("restore")) { canvas.restoreState(); return handle; }
+            if (method.equals("reset")) { canvas.resetState(); return handle; }
+            if (method.equals("keyDown")) { return canvas.isKeyDown(canvasInt(args, 1, where)) ? TRUE : FALSE; }
+            if (method.equals("keyName")) { return canvas.keyName(canvasInt(args, 1, where)); }
+            if (method.equals("gameAction")) { return luaNumber(canvas.gameAction(canvasInt(args, 1, where))); }
+            if (method.equals("keys")) { return canvas.getPressedKeys(); }
+            if (method.equals("resetKeys")) { canvas.resetKeys(); return handle; }
+            if (method.equals("pointer")) {
+                Vector result = new Vector();
+                result.addElement(luaNumber(canvas.getPointerX()));
+                result.addElement(luaNumber(canvas.getPointerY()));
+                return result;
+            }
+            if (method.equals("waitKey")) {
+                int[] key = canvas.waitKey(args.size() > 1 ? canvasInt(args, 1, where) : 0);
+                if (key == null) { return null; }
+                Vector result = new Vector();
+                result.addElement(luaNumber(key[0]));
+                result.addElement(luaNumber(key[1]));
+                return result;
+            }
+            if (method.equals("loop")) {
+                LuaFunction step = null;
+                int delay = 20;
+                for (int i = 1; i < args.size(); i++) {
+                    Object value = args.elementAt(i);
+                    if (value instanceof LuaFunction) { step = (LuaFunction) value; }
+                    else if (value instanceof Double) { delay = ((Double) value).intValue(); }
+                    else if (value != null && value != LUA_NIL) { return gotbad(i + 1, where, "function or frame delay expected, got " + type(value)); }
+                }
+                canvas.runLoop(step, delay);
+                return handle;
+            }
+            if (method.equals("animate")) {
+                LuaFunction step = null;
+                int delay = 20;
+                for (int i = 1; i < args.size(); i++) {
+                    Object value = args.elementAt(i);
+                    if (value instanceof LuaFunction) { step = (LuaFunction) value; }
+                    else if (value instanceof Double) { delay = ((Double) value).intValue(); }
+                    else if (value != null && value != LUA_NIL) { return gotbad(i + 1, where, "function or frame delay expected, got " + type(value)); }
+                }
+                canvas.animate(step, delay);
+                return handle;
+            }
+            if (method.equals("stop")) { canvas.stop(); return handle; }
+            if (method.equals("running")) { return canvas.isRunning() ? TRUE : FALSE; }
+            if (method.equals("age")) { return luaNumber(canvas.getAge()); }
+            if (method.equals("command")) {
+                if (args.size() < 2 || !(args.elementAt(1) instanceof String)) { return gotbad(2, where, "label expected"); }
+                String label = (String) args.elementAt(1), kind = "screen";
+                int priority = 1;
+                LuaFunction handler = null;
+                for (int i = 2; i < args.size(); i++) {
+                    Object value = args.elementAt(i);
+                    if (value instanceof LuaFunction) { handler = (LuaFunction) value; }
+                    else if (value instanceof Double) { priority = ((Double) value).intValue(); }
+                    else if (value instanceof String) { kind = ((String) value).toLowerCase(); }
+                }
+                canvas.addCommandHandler(new Command(label, canvasCommandType(kind), priority), handler);
+                return handle;
+            }
+            if (method.equals("clearCommands")) { canvas.clearCommands(); return handle; }
+
+            return gotbad(1, where, "unknown canvas method");
+        }
+        // | (Create a canvas handle: a table with the Java object in its metatable)
+        private Object canvasNew(Vector args, String where) throws Exception {
+            Hashtable options = new Hashtable();
+            if (args.size() > 0 && args.elementAt(0) != null) {
+                if (!(args.elementAt(0) instanceof Hashtable)) { return gotbad(1, where, "table expected, got " + type(args.elementAt(0))); }
+                options = (Hashtable) args.elementAt(0);
+            }
+            int background = options.get("background") == null ? 0xFFFFFF : canvasColor(options.get("background"), where);
+            int foreground = options.get("foreground") == null ? 0x000000 : canvasColor(options.get("foreground"), where);
+            String spec = options.get("font") instanceof String ? (String) options.get("font") : "medium";
+            String title = options.get("title") instanceof String ? (String) options.get("title") : "Canvas";
+
+            LuaCanvas canvas = new LuaCanvas(midlet, Lua.this, background, foreground, spec);
+            canvas.setTitle(title);
+
+            Hashtable handle = new Hashtable();
+            Hashtable meta = new Hashtable();
+            meta.put("__index", canvasModule());
+            meta.put("__canvas", canvas);
+            LuaFunction assign = new LuaFunction(CANVAS_ASSIGN);
+            assign.name = "canvas.__newindex";
+            meta.put("__newindex", assign);
+            handle.put("__metatable", meta);
+            canvas.setScreen(handle);
+
+            String[] events = { "paint", "keyPressed", "keyReleased", "keyRepeated", "pointerPressed", "pointerReleased", "pointerDragged", "show", "hide", "size", "tick", "command" };
+            for (int i = 0; i < events.length; i++) {
+                Object fn = options.get(events[i]);
+                if (fn instanceof LuaFunction) { canvas.setCallback(events[i], fn); }
+            }
+
+            if (isTruthy(options.get("fullscreen"))) { canvas.setFullscreen(true); }
+            return handle;
+        }
+        // | (__newindex for a canvas handle: callbacks and writable properties)
+        private Object canvasAssign(Vector args) throws Exception {
+            if (args.size() < 3) { return null; }
+            Object key = args.elementAt(1), value = args.elementAt(2);
+            if (!(key instanceof String)) { return null; }
+            String name = (String) key;
+            LuaCanvas canvas = canvasOf(args.elementAt(0));
+            if (canvas == null) { return null; }
+
+            if (value instanceof LuaFunction) { canvas.setCallback(name, value); return null; }
+            canvas.setCallback(name, null);
+
+            String text = value == null || value == LUA_NIL ? null : toLuaString(value);
+            if (name.equals("title")) { canvas.setTitle(text == null ? "" : text); }
+            else if (name.equals("font")) { canvas.setFontValue(LuaCanvas.parseFont(text), text); }
+            else if (name.equals("background")) { canvas.setBackgroundValue(canvasColor(value, "graphics.canvas.background")); }
+            else if (name.equals("foreground")) { canvas.setForegroundValue(canvasColor(value, "graphics.canvas.foreground")); }
+            else if (name.equals("color")) { canvas.setColorValue(canvasColor(value, "graphics.canvas.color")); }
+            return null;
+        }
+        // | (Java object behind a handle, if it is a canvas handle)
+        private LuaCanvas canvasOf(Object value) {
+            if (value instanceof LuaCanvas) { return (LuaCanvas) value; }
+            if (value instanceof Hashtable) {
+                Object meta = ((Hashtable) value).get("__metatable");
+                if (meta instanceof Hashtable) {
+                    Object canvas = ((Hashtable) meta).get("__canvas");
+                    if (canvas instanceof LuaCanvas) { return (LuaCanvas) canvas; }
+                }
+            }
+            return null;
+        }
+        // | (Accept a handle, a raw LuaCanvas, or a table carrying "canvas")
+        private LuaCanvas canvasArg(Vector args, String where) throws Exception {
+            Object value = args.isEmpty() ? null : args.elementAt(0);
+            LuaCanvas canvas = canvasOf(value);
+            if (canvas != null) { return canvas; }
+            return (LuaCanvas) gotbad(1, where, "canvas expected, got " + (args.isEmpty() ? "no value" : type(value)));
+        }
+        private Hashtable canvasModule() {
+            Object graphics = globals.get("graphics");
+            if (graphics instanceof Hashtable) { Object module = ((Hashtable) graphics).get("canvas"); if (module instanceof Hashtable) { return (Hashtable) module; } }
+            return new Hashtable();
+        }
+        // | (Colors: 0xRRGGBB numbers, "#RRGGBB" strings or names such as "red")
+        private int canvasColor(Object value, String where) throws Exception {
+            if (value instanceof Double) { return ((Double) value).intValue() & 0xFFFFFF; }
+            if (value instanceof String) {
+                int named = LuaCanvas.namedColor((String) value);
+                if (named >= 0) { return named; }
+                try { return Integer.parseInt(((String) value).trim()) & 0xFFFFFF; } catch (Exception e) { }
+                return ((Integer) gotbad(1, where, "unknown color '" + value + "'")).intValue();
+            }
+            return ((Integer) gotbad(1, where, "color expected, got " + type(value))).intValue();
+        }
+        private int canvasRgb(int r, int g, int b) {
+            if (r < 0) { r = 0; } if (r > 255) { r = 255; }
+            if (g < 0) { g = 0; } if (g > 255) { g = 255; }
+            if (b < 0) { b = 0; } if (b > 255) { b = 255; }
+            return (r << 16) | (g << 8) | b;
+        }
+        private int canvasInt(Vector args, int index, String where) throws Exception {
+            Object value = index < args.size() ? args.elementAt(index) : null;
+            if (!(value instanceof Double)) { return ((Integer) gotbad(index + 1, where, "number expected, got " + (index < args.size() ? type(value) : "no value"))).intValue(); }
+            return ((Double) value).intValue();
+        }
+        // | (Anchor numbers or "center", "top left", "bottom right"...)
+        private int canvasAnchor(Object value, String where) throws Exception {
+            if (value instanceof Double) { return LuaCanvas.normalizeAnchor(((Double) value).intValue()); }
+            if (value instanceof String) {
+                String text = ((String) value).toLowerCase();
+                int anchor = 0;
+                if (text.indexOf("center") >= 0) { anchor |= Graphics.HCENTER | Graphics.VCENTER; }
+                if (text.indexOf("left") >= 0) { anchor |= Graphics.LEFT; }
+                if (text.indexOf("right") >= 0) { anchor |= Graphics.RIGHT; }
+                if (text.indexOf("top") >= 0) { anchor |= Graphics.TOP; }
+                if (text.indexOf("bottom") >= 0) { anchor |= Graphics.BOTTOM; }
+                if (text.indexOf("baseline") >= 0) { anchor |= Graphics.BASELINE; }
+                return LuaCanvas.normalizeAnchor(anchor);
+            }
+            return ((Integer) gotbad(2, where, "anchor expected, got " + type(value))).intValue();
+        }
+        private int canvasCommandType(String kind) {
+            if (kind.equals("back")) { return Command.BACK; }
+            if (kind.equals("cancel")) { return Command.CANCEL; }
+            if (kind.equals("ok")) { return Command.OK; }
+            if (kind.equals("help")) { return Command.HELP; }
+            if (kind.equals("stop")) { return Command.STOP; }
+            if (kind.equals("exit")) { return Command.EXIT; }
+            if (kind.equals("item")) { return Command.ITEM; }
+            return Command.SCREEN;
+        }
+        // | (Polygon points: {x1, y1, x2, y2...} or {{x=, y=}, ...} / {{x, y}, ...})
+        private int[][] canvasPoints(Object value, String where) throws Exception {
+            if (!(value instanceof Hashtable)) { return (int[][]) gotbad(2, where, "table of points expected, got " + type(value)); }
+            Hashtable table = (Hashtable) value;
+            Vector xs = new Vector(), ys = new Vector();
+            int count = luaLength(table);
+            for (int i = 1; i <= count; i++) {
+                Object item = table.get(new Double(i));
+                if (item instanceof Hashtable) {
+                    Hashtable point = (Hashtable) item;
+                    Object x = point.get("x"), y = point.get("y");
+                    if (x == null) { x = point.get(new Double(1)); }
+                    if (y == null) { y = point.get(new Double(2)); }
+                    if (!(x instanceof Double) || !(y instanceof Double)) { return (int[][]) gotbad(2, where, "point table must hold x and y numbers"); }
+                    xs.addElement(x); ys.addElement(y);
+                }
+                else if (item instanceof Double) {
+                    Object next = i < count ? table.get(new Double(i + 1)) : null;
+                    if (!(next instanceof Double)) { return (int[][]) gotbad(2, where, "flat point list must hold x, y pairs"); }
+                    xs.addElement(item); ys.addElement(next);
+                    i++;
+                }
+                else { return (int[][]) gotbad(2, where, "point expected, got " + type(item)); }
+            }
+            int[] px = new int[xs.size()], py = new int[ys.size()];
+            for (int i = 0; i < xs.size(); i++) { px[i] = ((Double) xs.elementAt(i)).intValue(); py[i] = ((Double) ys.elementAt(i)).intValue(); }
+            return new int[][] { px, py };
         }
         // |
         private Object exec(String code, Hashtable scope) throws Exception { return exec(code, scope, "[string]"); }

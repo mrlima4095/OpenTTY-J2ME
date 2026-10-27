@@ -26,6 +26,22 @@ public class Font {
     public int getFace() { return face; }
     public int getStyle() { return style; }
     public int getSize() { return size; }
-    public int getHeight() { return awt.getSize() + 4; }
-    public int stringWidth(String s) { return s == null ? 0 : awt.getSize() * s.length() / 2; }
+
+    private static java.awt.image.BufferedImage metricsImage;
+    private java.awt.FontMetrics metricsCache;
+    private java.awt.FontMetrics metrics() {
+        if (metricsCache == null) {
+            if (metricsImage == null) { metricsImage = new java.awt.image.BufferedImage(1, 1, java.awt.image.BufferedImage.TYPE_INT_ARGB); }
+            java.awt.Graphics2D g = metricsImage.createGraphics();
+            metricsCache = g.getFontMetrics(awt);
+            g.dispose();
+        }
+        return metricsCache;
+    }
+
+    public int getHeight() { return metrics().getHeight(); }
+    public int getBaselinePosition() { return metrics().getAscent(); }
+    public int stringWidth(String s) { return s == null ? 0 : metrics().stringWidth(s); }
+    public int charWidth(char c) { return metrics().charWidth(c); }
+    public int charsWidth(char[] ch, int offset, int length) { int total = 0; for (int i = 0; i < length; i++) { total += metrics().charWidth(ch[offset + i]); } return total; }
 }
