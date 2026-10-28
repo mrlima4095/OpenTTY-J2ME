@@ -10,8 +10,8 @@
 --   -i, --interactive         let the user drag the gauge
 --   -t, --type kind           info, warning, error, alarm or confirm
 --                             (alerts only)
---   -m, --timeout ms          alert timeout; 0 (default) waits for a command
---                             and the alert returns to the previous screen
+--   -m, --timeout ms          alert timeout in milliseconds; 0 (default)
+--                             keeps the alert until the user dismisses it
 --   -k, --ticker text         scrolling ticker on the screen
 --   -b, --button label        extra command button, repeatable
 --   -v, --vibrate ms          vibrate when the screen opens
@@ -147,7 +147,8 @@ if gaugeValue == nil then
         else
             graphics.display(screen)
         end
-        return 0
+        -- The alert dismisses itself, so the process is not needed anymore.
+        os.exit(0)
     end
 
     local handler = {}
