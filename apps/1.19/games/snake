@@ -60,10 +60,47 @@ local function newFood(x, y)
     game.foodTick = 0
 end
 
-local function placeFood()
-    for attempt = 1, 200 do
+-- Relocate the apple somewhere fresh: not on the snake, and not on a board
+-- corner (the corner is a hard-to-reach, hard-to-see cell).
+local corners = {
+    { 0, 0 }, { COLS - 1, 0 }, { 0, ROWS - 1 }, { COLS - 1, ROWS - 1 }
+}
+
+local function relocateFood()
+    for attempt = 1, 400 do
         local x, y = math.random(COLS), math.random(ROWS)
-        if not occupied(x, y) then newFood(x, y) return end
+        if not occupied(x, y) then
+            local corner = false
+            for i = 1, #corners do
+                if corners[i][1] == x and corners[i][2] == y then corner = true end
+            end
+            if not corner then newFood(x, y) return end
+        end
+    end
+    -- Fallback: first free cell that is not a corner.
+    for y = 0, ROWS - 1 do
+        for x = 0, COLS - 1 do
+            if not occupied(x, y) then
+                local corner = false
+                for i = 1, #corners do
+                    if corners[i][1] == x and corners[i][2] == y then corner = true end
+                end
+                if not corner then newFood(x, y) return end
+            end
+        end
+    end
+end
+
+local function placeFood()
+    for attempt = 1, 400 do
+        local x, y = math.random(COLS), math.random(ROWS)
+        if not occupied(x, y) then
+            local corner = false
+            for i = 1, #corners do
+                if corners[i][1] == x and corners[i][2] == y then corner = true end
+            end
+            if not corner then newFood(x, y) return end
+        end
     end
     -- Board almost full: take the first free cell.
     for y = 0, ROWS - 1 do
@@ -227,6 +264,7 @@ local function frame(canvas, dt)
     if game.foodTick >= FOOD_STEP then
         game.foodTick = 0
         game.foodColor = game.foodColor % #FOOD_COLORS + 1
+        relocateFood()
     end
     update(dt)
     -- Attract mode: after a few seconds the game over screen goes back to the
