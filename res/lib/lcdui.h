@@ -98,6 +98,7 @@ int lcdui_set_text(int item, const char *text);
 int lcdui_get_text(int item, char *buffer, int size);
 int lcdui_set_label(int item, const char *label);
 int lcdui_get_label(int item, char *buffer, int size);
+/* Fonts: MIDP only supports them on StringItem (text/button items). */
 int lcdui_set_font(int item, const char *style);
 int lcdui_set_layout(int item, int layout);
 

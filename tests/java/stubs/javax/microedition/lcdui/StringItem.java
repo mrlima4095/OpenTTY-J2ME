@@ -6,4 +6,6 @@ public class StringItem extends Item {
     public StringItem(String label, String text, int appearance) { this.label = label == null ? "" : label; this.text = text; }
     public void setText(String t) { text = t; }
     public String getText() { return text; }
+    public void setFont(Font f) { font = f; }
+    public Font getFont() { return font != null ? font : Font.getDefaultFont(); }
 }

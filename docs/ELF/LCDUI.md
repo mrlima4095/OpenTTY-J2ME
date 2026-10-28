@@ -117,7 +117,7 @@ int bump   = lcdui_append_button(form, "Advance gauge");
 | `lcdui_append_image(form, path)` | Decodes an image through the OpenTTY VFS. |
 | `lcdui_append_choice(form, label, mode)` | `LCDUI_CHOICE_EXCLUSIVE`, `LCDUI_CHOICE_MULTIPLE` or `LCDUI_CHOICE_POPUP`. Add entries with `lcdui_choice_append`, read with `lcdui_choice_count` / `lcdui_choice_selected` / `lcdui_choice_set_selected`. |
 | `lcdui_append_button(form, label)` | A `StringItem.BUTTON`; attach an `LCDUI_COMMAND_ITEM` command with `lcdui_item_command` / `lcdui_set_default_command`. |
-| `lcdui_set_font(item, style)` | Lua style string: `"default"`, `"bold"`, `"italic"`, `"underlined"`, `"small"`, `"medium"`, `"large"`, `"monospace"`, `"proportional"`, combined with spaces. |
+| `lcdui_set_font(item, style)` | Lua style string: `"default"`, `"bold"`, `"italic"`, `"underlined"`, `"small"`, `"medium"`, `"large"`, `"monospace"`, `"proportional"`, combined with spaces. MIDP only gives `StringItem` a font, so text/button items accept it and other items return `-1`. |
 | `lcdui_set_layout(item, layout)` | MIDP `Item.LAYOUT_*` bits, mirrored as `LCDUI_LAYOUT_*`. |
 
 Other item helpers: `lcdui_get_label`, `lcdui_size` (form/list/choice count),

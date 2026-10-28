@@ -1188,8 +1188,9 @@ public class ELF implements CommandListener, ItemCommandListener, ItemStateListe
         if (!(object instanceof Form)) { return -1; }
         Image image = midlet.readImg(uiString(pathPtr), scope);
         if (image == null) { return -1; }
-        ((Form) object).append(image);
-        return uiStore(image);
+        ImageItem item = new ImageItem(null, image, ImageItem.LAYOUT_CENTER | Item.LAYOUT_NEWLINE_BEFORE | Item.LAYOUT_NEWLINE_AFTER, "");
+        ((Form) object).append(item);
+        return uiStore(item);
     }
     private int uiListAppendImage(int listHandle, int textPtr, int pathPtr) {
         Object object = uiObject(listHandle);
@@ -1296,11 +1297,12 @@ public class ELF implements CommandListener, ItemCommandListener, ItemStateListe
         Object object = uiObject(handle);
         return object instanceof List ? ((List) object).getSelectedIndex() : -1;
     }
+    // MIDP only gives StringItem a font; gauges, spacers, images and choice
+    // groups have no setFont, so they report -1 here.
     private int uiSetFont(int handle, int specPtr) {
         Object object = uiObject(handle);
-        if (!(object instanceof Item)) { return -1; }
-        try { ((Item) object).setFont(uiFont(specPtr)); }
-        catch (IllegalStateException e) { return -1; }
+        if (!(object instanceof StringItem)) { return -1; }
+        ((StringItem) object).setFont(uiFont(specPtr));
         return 0;
     }
     private int uiSetLayout(int handle, int layout) {

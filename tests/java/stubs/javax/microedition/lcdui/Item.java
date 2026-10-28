@@ -8,8 +8,8 @@ public abstract class Item {
     protected String label = "";
     protected Command defaultCommand;
     protected ItemCommandListener itemCommandListener;
-    protected Font font;
     protected int layout;
+    protected Font font;
 
     public void setLabel(String l) { label = l == null ? "" : l; }
     public String getLabel() { return label; }
@@ -17,8 +17,6 @@ public abstract class Item {
     public void removeCommand(Command c) { }
     public void setDefaultCommand(Command c) { defaultCommand = c; }
     public void setItemCommandListener(ItemCommandListener l) { itemCommandListener = l; }
-    public void setFont(Font f) { font = f; }
-    public Font getFont() { return font; }
     public void setLayout(int l) { layout = l; }
     public int getLayout() { return layout; }
 }
