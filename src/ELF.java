@@ -7,7 +7,7 @@ import java.util.*;
 import java.io.*;
 // |
 // ELF RISC-V 32 Emulator (RV32IM)
-public class ELF implements CommandListener {
+public class ELF implements CommandListener, ItemCommandListener, ItemStateListener {
     private static final boolean LITE_EDITION = false;
 
     public static boolean isLiteEdition() { return LITE_EDITION; }
@@ -52,7 +52,7 @@ public class ELF implements CommandListener {
 
     // stdlib heap (malloc/calloc/realloc/free): first-fit allocator with
     // blocks written into guest RAM: { int size; int next; ...payload }
-    private int libcHeapFree, libcHeapTop, libcHeapRegionEnd;
+    private int libcHeapFree, libcHeapTop, libcHeapRegionEnd, libcHeapRegionStart;
 
     // LCDUI guest objects live in Java; the guest accesses them through handles.
     private Hashtable uiObjects, uiHandles;
@@ -135,7 +135,23 @@ public class ELF implements CommandListener {
         LIB_PROC_EXPAND_ENV = LIB_BASE + 59,
         LIB_GC = LIB_BASE + 60, LIB_MEM_FREE = LIB_BASE + 61,
         LIB_MEM_TOTAL = LIB_BASE + 62, LIB_MEM_USED = LIB_BASE + 63,
-        LIB_SOCKET_READER_START = LIB_BASE + 64, LIB_SOCKET_READER_STOP = LIB_BASE + 65;
+        LIB_SOCKET_READER_START = LIB_BASE + 64, LIB_SOCKET_READER_STOP = LIB_BASE + 65,
+        LIB_STRSTR = LIB_BASE + 66, LIB_STRRCHR = LIB_BASE + 67,
+        LIB_STRCASECMP = LIB_BASE + 68, LIB_STRNCASECMP = LIB_BASE + 69,
+        LIB_STRTOL = LIB_BASE + 70, LIB_STRTOUL = LIB_BASE + 71,
+        LIB_UI_ALERT = LIB_BASE + 72, LIB_UI_SET_TICKER = LIB_BASE + 73,
+        LIB_UI_APPEND_GAUGE = LIB_BASE + 74, LIB_UI_SET_GAUGE = LIB_BASE + 75,
+        LIB_UI_GET_GAUGE = LIB_BASE + 76, LIB_UI_APPEND_SPACER = LIB_BASE + 77,
+        LIB_UI_APPEND_IMAGE = LIB_BASE + 78, LIB_UI_LIST_APPEND_IMAGE = LIB_BASE + 79,
+        LIB_UI_APPEND_CHOICE = LIB_BASE + 80, LIB_UI_CHOICE_APPEND = LIB_BASE + 81,
+        LIB_UI_CHOICE_SELECTED = LIB_BASE + 82, LIB_UI_CHOICE_SET_SELECTED = LIB_BASE + 83,
+        LIB_UI_CHOICE_COUNT = LIB_BASE + 84, LIB_UI_APPEND_BUTTON = LIB_BASE + 85,
+        LIB_UI_ITEM_COMMAND = LIB_BASE + 86, LIB_UI_SET_DEFAULT_COMMAND = LIB_BASE + 87,
+        LIB_UI_GET_CURRENT = LIB_BASE + 88, LIB_UI_VIBRATE = LIB_BASE + 89,
+        LIB_UI_GET_LABEL = LIB_BASE + 90, LIB_UI_DELETE = LIB_BASE + 91,
+        LIB_UI_INSERT_TEXT = LIB_BASE + 92, LIB_UI_SIZE = LIB_BASE + 93,
+        LIB_UI_LIST_SELECTED = LIB_BASE + 94, LIB_UI_SET_FONT = LIB_BASE + 95,
+        LIB_UI_SET_LAYOUT = LIB_BASE + 96, LIB_UI_SHOW_ALERT = LIB_BASE + 97;
 
     // Relocation types
     private static final int R_RISCV_NONE = 0, R_RISCV_32 = 1, R_RISCV_RELATIVE = 3, R_RISCV_COPY = 4, R_RISCV_JUMP_SLOT = 5, R_RISCV_GLOB_DAT = 6;
@@ -187,6 +203,7 @@ public class ELF implements CommandListener {
         this.libcHeapFree = 0;
         this.libcHeapTop = 0;
         this.libcHeapRegionEnd = 0;
+        this.libcHeapRegionStart = 0;
         this.uiObjects = new Hashtable();
         this.uiHandles = new Hashtable();
         this.uiEvents = new Vector();
@@ -668,6 +685,42 @@ public class ELF implements CommandListener {
         libc.put("opentty_socket_reader_start", new Integer(createLibraryStub(LIB_SOCKET_READER_START)));
         libc.put("opentty_socket_reader_stop", new Integer(createLibraryStub(LIB_SOCKET_READER_STOP)));
 
+        // Extended string handling (qsort/bsearch live in res/lib/libc.s).
+        libc.put("strstr",     new Integer(createLibraryStub(LIB_STRSTR)));
+        libc.put("strrchr",    new Integer(createLibraryStub(LIB_STRRCHR)));
+        libc.put("strcasecmp", new Integer(createLibraryStub(LIB_STRCASECMP)));
+        libc.put("strncasecmp", new Integer(createLibraryStub(LIB_STRNCASECMP)));
+        libc.put("strtol",     new Integer(createLibraryStub(LIB_STRTOL)));
+        libc.put("strtoul",    new Integer(createLibraryStub(LIB_STRTOUL)));
+
+        // Extended LCDUI widgets, matching the Lua `graphics` package.
+        libc.put("lcdui_alert",              new Integer(createLibraryStub(LIB_UI_ALERT)));
+        libc.put("lcdui_set_ticker",         new Integer(createLibraryStub(LIB_UI_SET_TICKER)));
+        libc.put("lcdui_append_gauge",       new Integer(createLibraryStub(LIB_UI_APPEND_GAUGE)));
+        libc.put("lcdui_set_gauge",          new Integer(createLibraryStub(LIB_UI_SET_GAUGE)));
+        libc.put("lcdui_get_gauge",          new Integer(createLibraryStub(LIB_UI_GET_GAUGE)));
+        libc.put("lcdui_append_spacer",      new Integer(createLibraryStub(LIB_UI_APPEND_SPACER)));
+        libc.put("lcdui_append_image",       new Integer(createLibraryStub(LIB_UI_APPEND_IMAGE)));
+        libc.put("lcdui_list_append_image",  new Integer(createLibraryStub(LIB_UI_LIST_APPEND_IMAGE)));
+        libc.put("lcdui_append_choice",      new Integer(createLibraryStub(LIB_UI_APPEND_CHOICE)));
+        libc.put("lcdui_choice_append",      new Integer(createLibraryStub(LIB_UI_CHOICE_APPEND)));
+        libc.put("lcdui_choice_selected",    new Integer(createLibraryStub(LIB_UI_CHOICE_SELECTED)));
+        libc.put("lcdui_choice_set_selected", new Integer(createLibraryStub(LIB_UI_CHOICE_SET_SELECTED)));
+        libc.put("lcdui_choice_count",       new Integer(createLibraryStub(LIB_UI_CHOICE_COUNT)));
+        libc.put("lcdui_append_button",      new Integer(createLibraryStub(LIB_UI_APPEND_BUTTON)));
+        libc.put("lcdui_item_command",       new Integer(createLibraryStub(LIB_UI_ITEM_COMMAND)));
+        libc.put("lcdui_set_default_command", new Integer(createLibraryStub(LIB_UI_SET_DEFAULT_COMMAND)));
+        libc.put("lcdui_get_current",        new Integer(createLibraryStub(LIB_UI_GET_CURRENT)));
+        libc.put("lcdui_vibrate",            new Integer(createLibraryStub(LIB_UI_VIBRATE)));
+        libc.put("lcdui_get_label",          new Integer(createLibraryStub(LIB_UI_GET_LABEL)));
+        libc.put("lcdui_delete",             new Integer(createLibraryStub(LIB_UI_DELETE)));
+        libc.put("lcdui_insert_text",        new Integer(createLibraryStub(LIB_UI_INSERT_TEXT)));
+        libc.put("lcdui_size",               new Integer(createLibraryStub(LIB_UI_SIZE)));
+        libc.put("lcdui_list_selected",      new Integer(createLibraryStub(LIB_UI_LIST_SELECTED)));
+        libc.put("lcdui_set_font",           new Integer(createLibraryStub(LIB_UI_SET_FONT)));
+        libc.put("lcdui_set_layout",         new Integer(createLibraryStub(LIB_UI_SET_LAYOUT)));
+        libc.put("lcdui_show_alert",         new Integer(createLibraryStub(LIB_UI_SHOW_ALERT)));
+
         // direct syscalls (open/read/write/close/exit/brk) as before
         libc.put("exit",  new Integer(createSyscallStub("exit")));
         libc.put("open",  new Integer(createSyscallStub("open")));
@@ -759,6 +812,38 @@ public class ELF implements CommandListener {
             case LIB_MEM_USED - LIB_BASE: { Runtime r = Runtime.getRuntime(); registers[REG_A0] = (int) ((r.totalMemory() - r.freeMemory()) / 1024); break; }
             case LIB_SOCKET_READER_START - LIB_BASE: registers[REG_A0] = startSocketReader(registers[REG_A0], registers[REG_A1]); break;
             case LIB_SOCKET_READER_STOP - LIB_BASE: registers[REG_A0] = stopSocketReader(registers[REG_A0]); break;
+            case LIB_STRSTR - LIB_BASE: registers[REG_A0] = libcStrstr(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_STRRCHR - LIB_BASE: registers[REG_A0] = libcStrrchr(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_STRCASECMP - LIB_BASE: registers[REG_A0] = libcStrcasecmp(registers[REG_A0], registers[REG_A1], -1); break;
+            case LIB_STRNCASECMP - LIB_BASE: registers[REG_A0] = libcStrcasecmp(registers[REG_A0], registers[REG_A1], registers[REG_A2]); break;
+            case LIB_STRTOL - LIB_BASE: registers[REG_A0] = libcStrtol(registers[REG_A0], registers[REG_A1], registers[REG_A2], true); break;
+            case LIB_STRTOUL - LIB_BASE: registers[REG_A0] = libcStrtol(registers[REG_A0], registers[REG_A1], registers[REG_A2], false); break;
+            case LIB_UI_ALERT - LIB_BASE: registers[REG_A0] = uiAlert(registers[REG_A0], registers[REG_A1], registers[REG_A2], registers[REG_A3]); break;
+            case LIB_UI_SET_TICKER - LIB_BASE: registers[REG_A0] = uiSetTicker(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_UI_APPEND_GAUGE - LIB_BASE: registers[REG_A0] = uiAppendGauge(registers[REG_A0], registers[REG_A1], registers[REG_A2], registers[REG_A3], getSyscallParam(4)); break;
+            case LIB_UI_SET_GAUGE - LIB_BASE: registers[REG_A0] = uiSetGauge(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_UI_GET_GAUGE - LIB_BASE: registers[REG_A0] = uiGetGauge(registers[REG_A0]); break;
+            case LIB_UI_APPEND_SPACER - LIB_BASE: registers[REG_A0] = uiAppendSpacer(registers[REG_A0], registers[REG_A1], registers[REG_A2]); break;
+            case LIB_UI_APPEND_IMAGE - LIB_BASE: registers[REG_A0] = uiAppendImage(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_UI_LIST_APPEND_IMAGE - LIB_BASE: registers[REG_A0] = uiListAppendImage(registers[REG_A0], registers[REG_A1], registers[REG_A2]); break;
+            case LIB_UI_APPEND_CHOICE - LIB_BASE: registers[REG_A0] = uiAppendChoice(registers[REG_A0], registers[REG_A1], registers[REG_A2]); break;
+            case LIB_UI_CHOICE_APPEND - LIB_BASE: registers[REG_A0] = uiChoiceAppend(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_UI_CHOICE_SELECTED - LIB_BASE: registers[REG_A0] = uiChoiceSelected(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_UI_CHOICE_SET_SELECTED - LIB_BASE: registers[REG_A0] = uiChoiceSetSelected(registers[REG_A0], registers[REG_A1], registers[REG_A2]); break;
+            case LIB_UI_CHOICE_COUNT - LIB_BASE: registers[REG_A0] = uiChoiceCount(registers[REG_A0]); break;
+            case LIB_UI_APPEND_BUTTON - LIB_BASE: registers[REG_A0] = uiAppendButton(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_UI_ITEM_COMMAND - LIB_BASE: registers[REG_A0] = uiItemCommand(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_UI_SET_DEFAULT_COMMAND - LIB_BASE: registers[REG_A0] = uiSetDefaultCommand(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_UI_GET_CURRENT - LIB_BASE: registers[REG_A0] = uiGetCurrent(); break;
+            case LIB_UI_VIBRATE - LIB_BASE: registers[REG_A0] = uiVibrate(registers[REG_A0]); break;
+            case LIB_UI_GET_LABEL - LIB_BASE: registers[REG_A0] = uiGetLabel(registers[REG_A0], registers[REG_A1], registers[REG_A2]); break;
+            case LIB_UI_DELETE - LIB_BASE: registers[REG_A0] = uiDelete(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_UI_INSERT_TEXT - LIB_BASE: registers[REG_A0] = uiInsertText(registers[REG_A0], registers[REG_A1], registers[REG_A2], registers[REG_A3]); break;
+            case LIB_UI_SIZE - LIB_BASE: registers[REG_A0] = uiSize(registers[REG_A0]); break;
+            case LIB_UI_LIST_SELECTED - LIB_BASE: registers[REG_A0] = uiListSelected(registers[REG_A0]); break;
+            case LIB_UI_SET_FONT - LIB_BASE: registers[REG_A0] = uiSetFont(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_UI_SET_LAYOUT - LIB_BASE: registers[REG_A0] = uiSetLayout(registers[REG_A0], registers[REG_A1]); break;
+            case LIB_UI_SHOW_ALERT - LIB_BASE: registers[REG_A0] = uiShowAlert(registers[REG_A0], registers[REG_A1]); break;
             default: registers[REG_A0] = -1; break;
         }
     }
@@ -858,6 +943,7 @@ public class ELF implements CommandListener {
         if (!(screen instanceof Displayable)) { return -1; }
         Displayable displayable = (Displayable) screen;
         displayable.setCommandListener(this);
+        if (displayable instanceof Form) { ((Form) displayable).setItemStateListener(this); }
         if (proc != null) { proc.screen = displayable; }
         midlet.display.setCurrent(displayable);
         return 0;
@@ -1021,14 +1107,242 @@ public class ELF implements CommandListener {
         uiHandles.remove(object);
         return 0;
     }
-    public void commandAction(Command command, Displayable screen) {
-        int type = command == List.SELECT_COMMAND ? 2 : 1;
-        int selected = screen instanceof List ? ((List) screen).getSelectedIndex() : -1;
-        uiEvents.addElement(new int[] { type, uiHandle(screen), uiHandle(command), selected });
+
+    // | LCDUI widgets - parity with the Lua `graphics` package (forms, lists,
+    // | alerts with types, tickers, gauges, spacers, images, choice groups,
+    // | button items, item commands and item state events).
+
+    private Font uiFont(int specPtr) {
+        String spec = uiString(specPtr).trim().toLowerCase();
+        if (spec.length() == 0 || spec.equals("default")) { return Font.getDefaultFont(); }
+        int face = Font.FACE_SYSTEM, style = Font.STYLE_PLAIN, size = Font.SIZE_MEDIUM;
+        String[] tokens = midlet.split(spec, ' ');
+        for (int i = 0; i < tokens.length; i++) {
+            String token = tokens[i];
+            if (token.equals("system")) { face = Font.FACE_SYSTEM; }
+            else if (token.equals("monospace")) { face = Font.FACE_MONOSPACE; }
+            else if (token.equals("proportional")) { face = Font.FACE_PROPORTIONAL; }
+            else if (token.equals("bold")) { style |= Font.STYLE_BOLD; }
+            else if (token.equals("italic")) { style |= Font.STYLE_ITALIC; }
+            else if (token.equals("ul") || token.equals("underline") || token.equals("underlined")) { style |= Font.STYLE_UNDERLINED; }
+            else if (token.equals("small")) { size = Font.SIZE_SMALL; }
+            else if (token.equals("medium")) { size = Font.SIZE_MEDIUM; }
+            else if (token.equals("large")) { size = Font.SIZE_LARGE; }
+        }
+        Font font = Font.getFont(face, style, size);
+        return font == null ? Font.getDefaultFont() : font;
+    }
+    private AlertType uiAlertType(int type) {
+        switch (type) {
+            case 1: return AlertType.WARNING;
+            case 2: return AlertType.ERROR;
+            case 3: return AlertType.ALARM;
+            case 4: return AlertType.CONFIRMATION;
+            default: return AlertType.INFO;
+        }
+    }
+    private int uiAlert(int titlePtr, int textPtr, int type, int timeout) {
+        Alert alert = new Alert(uiString(titlePtr), uiString(textPtr), null, uiAlertType(type));
+        alert.setTimeout(timeout <= 0 ? Alert.FOREVER : timeout);
+        return uiStore(alert);
+    }
+    private int uiSetTicker(int handle, int textPtr) {
+        Object object = uiObject(handle);
+        if (!(object instanceof Displayable)) { return -1; }
+        String text = uiString(textPtr);
+        ((Displayable) object).setTicker(text.length() == 0 ? null : new Ticker(text));
+        return 0;
+    }
+    private int uiAppendGauge(int formHandle, int labelPtr, int interactive, int maxValue, int value) {
+        Object object = uiObject(formHandle);
+        if (!(object instanceof Form)) { return -1; }
+        if (maxValue < 1) { maxValue = 100; }
+        if (value < 0) { value = 0; }
+        if (value > maxValue) { value = maxValue; }
+        Gauge gauge = new Gauge(uiString(labelPtr), interactive != 0, maxValue, value);
+        ((Form) object).append(gauge);
+        return uiStore(gauge);
+    }
+    private int uiSetGauge(int handle, int value) {
+        Object object = uiObject(handle);
+        if (!(object instanceof Gauge)) { return -1; }
+        Gauge gauge = (Gauge) object;
+        if (value < 0) { value = 0; }
+        if (value > gauge.getMaxValue()) { value = gauge.getMaxValue(); }
+        gauge.setValue(value);
+        return 0;
+    }
+    private int uiGetGauge(int handle) {
+        Object object = uiObject(handle);
+        return object instanceof Gauge ? ((Gauge) object).getValue() : -1;
+    }
+    private int uiAppendSpacer(int formHandle, int width, int height) {
+        Object object = uiObject(formHandle);
+        if (!(object instanceof Form)) { return -1; }
+        Spacer spacer = new Spacer(width < 1 ? 1 : width, height < 0 ? 0 : height);
+        ((Form) object).append(spacer);
+        return uiStore(spacer);
+    }
+    private int uiAppendImage(int formHandle, int pathPtr) {
+        Object object = uiObject(formHandle);
+        if (!(object instanceof Form)) { return -1; }
+        Image image = midlet.readImg(uiString(pathPtr), scope);
+        if (image == null) { return -1; }
+        ((Form) object).append(image);
+        return uiStore(image);
+    }
+    private int uiListAppendImage(int listHandle, int textPtr, int pathPtr) {
+        Object object = uiObject(listHandle);
+        if (!(object instanceof List)) { return -1; }
+        Image image = pathPtr == 0 ? null : midlet.readImg(uiString(pathPtr), scope);
+        return ((List) object).append(uiString(textPtr), image);
+    }
+    private int uiChoiceMode(int mode) { return mode == 1 ? Choice.MULTIPLE : mode == 2 ? Choice.POPUP : Choice.EXCLUSIVE; }
+    private int uiAppendChoice(int formHandle, int labelPtr, int mode) {
+        Object object = uiObject(formHandle);
+        if (!(object instanceof Form)) { return -1; }
+        ChoiceGroup choice = new ChoiceGroup(uiString(labelPtr), uiChoiceMode(mode));
+        ((Form) object).append(choice);
+        return uiStore(choice);
+    }
+    private int uiChoiceAppend(int handle, int textPtr) {
+        Object object = uiObject(handle);
+        return object instanceof ChoiceGroup ? ((ChoiceGroup) object).append(uiString(textPtr), null) : -1;
+    }
+    private int uiChoiceSelected(int handle, int index) {
+        Object object = uiObject(handle);
+        if (!(object instanceof ChoiceGroup)) { return -1; }
+        try { return ((ChoiceGroup) object).isSelected(index) ? 1 : 0; }
+        catch (IndexOutOfBoundsException e) { return -1; }
+    }
+    private int uiChoiceSetSelected(int handle, int index, int selected) {
+        Object object = uiObject(handle);
+        if (!(object instanceof ChoiceGroup)) { return -1; }
+        try { ((ChoiceGroup) object).setSelectedIndex(index, selected != 0); }
+        catch (IndexOutOfBoundsException e) { return -1; }
+        return 0;
+    }
+    private int uiChoiceCount(int handle) {
+        Object object = uiObject(handle);
+        return object instanceof ChoiceGroup ? ((ChoiceGroup) object).size() : -1;
+    }
+    private int uiAppendButton(int formHandle, int labelPtr) {
+        Object object = uiObject(formHandle);
+        if (!(object instanceof Form)) { return -1; }
+        StringItem item = new StringItem(null, uiString(labelPtr), StringItem.BUTTON);
+        item.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_BEFORE | Item.LAYOUT_NEWLINE_AFTER);
+        item.setItemCommandListener(this);
+        ((Form) object).append(item);
+        return uiStore(item);
+    }
+    private int uiItemCommand(int itemHandle, int commandHandle) {
+        Object item = uiObject(itemHandle), command = uiObject(commandHandle);
+        if (!(item instanceof Item) || !(command instanceof Command)) { return -1; }
+        ((Item) item).addCommand((Command) command);
+        ((Item) item).setItemCommandListener(this);
+        return 0;
+    }
+    private int uiSetDefaultCommand(int itemHandle, int commandHandle) {
+        Object item = uiObject(itemHandle), command = uiObject(commandHandle);
+        if (!(item instanceof Item) || !(command instanceof Command)) { return -1; }
+        Item target = (Item) item;
+        target.setDefaultCommand((Command) command);
+        target.setItemCommandListener(this);
+        return 0;
+    }
+    private int uiGetCurrent() {
+        Displayable current = midlet.display.getCurrent();
+        if (current == null) { return 0; }
+        int handle = uiHandle(current);
+        return handle != 0 ? handle : uiStore(current);
+    }
+    private int uiVibrate(int millis) {
+        midlet.display.vibrate(millis <= 0 ? 500 : millis);
+        return 0;
+    }
+    private int uiGetLabel(int handle, int buffer, int size) {
+        Object object = uiObject(handle);
+        String label = object instanceof Item ? ((Item) object).getLabel() : null;
+        if (label == null || size < 1) { return -1; }
+        libcWriteCStringN(buffer, label, size);
+        return label.length();
+    }
+    private int uiDelete(int handle, int index) {
+        Object object = uiObject(handle);
+        try {
+            if (object instanceof Form) { ((Form) object).delete(index); }
+            else if (object instanceof List) { ((List) object).delete(index); }
+            else if (object instanceof ChoiceGroup) { ((ChoiceGroup) object).delete(index); }
+            else { return -1; }
+        } catch (IndexOutOfBoundsException e) { return -1; }
+        return 0;
+    }
+    private int uiInsertText(int formHandle, int index, int labelPtr, int textPtr) {
+        Object object = uiObject(formHandle);
+        if (!(object instanceof Form)) { return -1; }
+        StringItem item = new StringItem(uiString(labelPtr), uiString(textPtr));
+        try { ((Form) object).insert(index, item); }
+        catch (IndexOutOfBoundsException e) { return -1; }
+        return uiStore(item);
+    }
+    private int uiSize(int handle) {
+        Object object = uiObject(handle);
+        if (object instanceof Form) { return ((Form) object).size(); }
+        if (object instanceof List) { return ((List) object).size(); }
+        if (object instanceof ChoiceGroup) { return ((ChoiceGroup) object).size(); }
+        return -1;
+    }
+    private int uiListSelected(int handle) {
+        Object object = uiObject(handle);
+        return object instanceof List ? ((List) object).getSelectedIndex() : -1;
+    }
+    private int uiSetFont(int handle, int specPtr) {
+        Object object = uiObject(handle);
+        if (!(object instanceof Item)) { return -1; }
+        try { ((Item) object).setFont(uiFont(specPtr)); }
+        catch (IllegalStateException e) { return -1; }
+        return 0;
+    }
+    private int uiSetLayout(int handle, int layout) {
+        Object object = uiObject(handle);
+        if (!(object instanceof Item)) { return -1; }
+        try { ((Item) object).setLayout(layout); }
+        catch (IllegalStateException e) { return -1; }
+        return 0;
+    }
+    private int uiShowAlert(int alertHandle, int nextHandle) {
+        Object alert = uiObject(alertHandle);
+        if (!(alert instanceof Alert)) { return -1; }
+        Displayable next = null;
+        if (nextHandle != 0) {
+            Object object = uiObject(nextHandle);
+            if (object instanceof Displayable) { next = (Displayable) object; }
+        }
+        ((Alert) alert).setCommandListener(this);
+        if (proc != null) { proc.screen = (Alert) alert; }
+        if (next == null) { midlet.display.setCurrent((Alert) alert); }
+        else { midlet.display.setCurrent((Alert) alert, next); }
+        return 0;
+    }
+
+    private void uiEnqueue(int type, int screen, int command, int index) {
+        uiEvents.addElement(new int[] { type, screen, command, index });
         if (uiWaiting) {
             uiWaiting = false;
             run();
         }
+    }
+    public void commandAction(Command command, Displayable screen) {
+        int type = command == List.SELECT_COMMAND ? 2 : 1;
+        int selected = screen instanceof List ? ((List) screen).getSelectedIndex() : -1;
+        uiEnqueue(type, uiHandle(screen), uiHandle(command), selected);
+    }
+    public void commandAction(Command command, Item item) {
+        uiEnqueue(3, uiHandle(item), uiHandle(command), -1);
+    }
+    public void itemStateChanged(Item item) {
+        int index = item instanceof ChoiceGroup ? ((ChoiceGroup) item).getSelectedIndex() : -1;
+        uiEnqueue(4, uiHandle(item), 0, index);
     }
 
     private int memByte(int addr) { return (addr >= 0 && addr < memory.length) ? (memory[addr] & 0xFF) : -1; }
@@ -1246,8 +1560,10 @@ public class ELF implements CommandListener {
         registers[REG_A2] = (int) r; registers[REG_A3] = (int) (r >>> 32);
     }
 
-    // | stdlib heap (malloc/calloc/realloc/free): first-fit with splitting,
-    // | blocks in guest RAM with header { int size; int next; } followed by payload.
+    // | stdlib heap (malloc/calloc/realloc/free): first-fit with splitting.
+    // | Blocks live in guest RAM as { int size; int next; payload }. The free
+    // | list is address-ordered so neighbours can be merged on free, and a
+    // | block that ends at the bump pointer is returned to the region.
 
     private int libcMalloc(int n) {
         if (n <= 0) { n = 8; }
@@ -1282,6 +1598,7 @@ public class ELF implements CommandListener {
                 len >>= 1;
             }
             if (region == 0) { return 0; }
+            libcHeapRegionStart = region;
             libcHeapTop = region;
             libcHeapRegionEnd = region + len;
             heapEnd = libcHeapRegionEnd;
@@ -1301,8 +1618,40 @@ public class ELF implements CommandListener {
         if (hdr < 0 || hdr + 7 >= memory.length) { return; }
         int size = readIntLE(memory, hdr);
         if (size <= 0 || hdr + 8 + size > memory.length) { return; }
-        writeIntLE(memory, hdr + 4, libcHeapFree);
-        libcHeapFree = hdr;
+        hdr = libcFreeInsert(hdr);
+        if (hdr < 0) { return; } // already free: ignore the double free
+        libcHeapTrim(hdr);
+    }
+    // Inserts a block header into the address-ordered free list and merges it
+    // with adjacent free neighbours. Returns the (possibly merged) header, or
+    // -1 when the block was already on the free list.
+    private int libcFreeInsert(int hdr) {
+        int prev = 0, cur = libcHeapFree;
+        while (cur != 0 && cur < hdr) { prev = cur; cur = readIntLE(memory, cur + 4); }
+        if (cur == hdr) { return -1; }
+        writeIntLE(memory, hdr + 4, cur);
+        if (prev == 0) { libcHeapFree = hdr; } else { writeIntLE(memory, prev + 4, hdr); }
+        if (cur != 0 && hdr + 8 + readIntLE(memory, hdr) == cur) {
+            writeIntLE(memory, hdr, readIntLE(memory, hdr) + 8 + readIntLE(memory, cur));
+            writeIntLE(memory, hdr + 4, readIntLE(memory, cur + 4));
+        }
+        if (prev != 0 && prev + 8 + readIntLE(memory, prev) == hdr) {
+            writeIntLE(memory, prev, readIntLE(memory, prev) + 8 + readIntLE(memory, hdr));
+            writeIntLE(memory, prev + 4, readIntLE(memory, hdr + 4));
+            return prev;
+        }
+        return hdr;
+    }
+    // Gives a trailing free block back to the bump pointer of its region.
+    private void libcHeapTrim(int hdr) {
+        if (libcHeapRegionStart == 0 || hdr < libcHeapRegionStart) { return; }
+        if (hdr + 8 + readIntLE(memory, hdr) != libcHeapTop) { return; }
+        int prev = 0, cur = libcHeapFree;
+        while (cur != 0 && cur != hdr) { prev = cur; cur = readIntLE(memory, cur + 4); }
+        if (cur != hdr) { return; }
+        int next = readIntLE(memory, hdr + 4);
+        if (prev == 0) { libcHeapFree = next; } else { writeIntLE(memory, prev + 4, next); }
+        libcHeapTop = hdr;
     }
     private int libcCalloc(int nmemb, int size) {
         long total = (long) nmemb * (long) size;
@@ -1317,15 +1666,141 @@ public class ELF implements CommandListener {
     }
     private int libcRealloc(int p, int n) {
         if (p == 0) { return libcMalloc(n); }
+        if (n <= 0) { libcFree(p); return 0; }
         int hdr = p - 8;
         if (hdr < 0 || hdr + 7 >= memory.length) { return 0; }
         int old = readIntLE(memory, hdr);
-        if (old >= n) { return p; }
+        if (old <= 0) { return 0; }
+        int want = (n + 3) & ~3;
+        if (old >= want) {
+            int rem = old - want;
+            if (rem >= 16) { // shrink in place, releasing the tail
+                int rest = hdr + 8 + want;
+                writeIntLE(memory, rest, rem - 8);
+                writeIntLE(memory, hdr, want);
+                int merged = libcFreeInsert(rest);
+                if (merged >= 0) { libcHeapTrim(merged); }
+            }
+            return p;
+        }
+        int next = hdr + 8 + old; // grow in place over a free neighbour
+        if (next < memory.length) {
+            int prev = 0, cur = libcHeapFree;
+            while (cur != 0 && cur < next) { prev = cur; cur = readIntLE(memory, cur + 4); }
+            if (cur == next) {
+                int combined = old + 8 + readIntLE(memory, cur);
+                if (combined >= want) {
+                    if (prev == 0) { libcHeapFree = readIntLE(memory, cur + 4); } else { writeIntLE(memory, prev + 4, readIntLE(memory, cur + 4)); }
+                    writeIntLE(memory, hdr, want);
+                    if (combined - want >= 16) {
+                        int rest = hdr + 8 + want;
+                        writeIntLE(memory, rest, combined - want - 8);
+                        int merged = libcFreeInsert(rest);
+                        if (merged >= 0) { libcHeapTrim(merged); }
+                    }
+                    return p;
+                }
+            }
+        }
         int np = libcMalloc(n);
         if (np == 0) { return 0; }
-        libcMemcpy(np, p, old);
+        libcMemcpy(np, p, old < n ? old : n);
         libcFree(p);
         return np;
+    }
+
+    // | extended string helpers: strstr/strrchr/strcasecmp/strtol/strtoul
+
+    private int libcStrstr(int haystack, int needle) {
+        if (haystack == 0 || needle == 0) { return 0; }
+        int nlen = libcStrlen(needle);
+        if (nlen == 0) { return haystack; }
+        int i = 0;
+        while (true) {
+            int c = memByte(haystack + i);
+            if (c <= 0) { return 0; }
+            boolean match = true;
+            for (int j = 0; j < nlen; j++) {
+                int a = memByte(haystack + i + j);
+                if (a <= 0 || a != memByte(needle + j)) { match = false; break; }
+            }
+            if (match) { return haystack + i; }
+            i++;
+        }
+    }
+    private int libcStrrchr(int s, int ch) {
+        if (s == 0) { return 0; }
+        int found = 0, i = 0;
+        while (true) {
+            int c = memByte(s + i);
+            if (c < 0) { return found; }
+            if (c == (ch & 0xFF)) { found = s + i; }
+            if (c == 0) { return found; }
+            i++;
+        }
+    }
+    private int libcStrcasecmp(int a, int b, int n) {
+        if (a == 0 || b == 0) { return 0; }
+        int i = 0;
+        while (n < 0 || i < n) {
+            int x = memByte(a + i), y = memByte(b + i);
+            if (x < 0 || y < 0) { return 0; }
+            if (x >= 'A' && x <= 'Z') { x += 32; }
+            if (y >= 'A' && y <= 'Z') { y += 32; }
+            if (x != y) { return x - y; }
+            if (x == 0) { return 0; }
+            i++;
+        }
+        return 0;
+    }
+    // strtol/strtoul: base 0 auto-detects 0x/0 prefixes. Out-of-range values
+    // saturate (this ABI has no errno) and *endptr receives the stop address.
+    private int libcStrtol(int ptr, int endptrAddr, int base, boolean signed) {
+        if (ptr == 0) { return 0; }
+        int i = 0;
+        while (true) {
+            int c = memByte(ptr + i);
+            if (c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == 0x0B || c == 0x0C) { i++; } else { break; }
+        }
+        boolean negative = false;
+        int c = memByte(ptr + i);
+        if (c == '+' || c == '-') { negative = c == '-'; i++; c = memByte(ptr + i); }
+        int radix = base;
+        if (radix == 0) {
+            if (c == '0') {
+                int n1 = memByte(ptr + i + 1);
+                if (n1 == 'x' || n1 == 'X') { radix = 16; i += 2; } else { radix = 8; }
+            } else { radix = 10; }
+        } else if (radix == 16 && c == '0') {
+            int n1 = memByte(ptr + i + 1);
+            if (n1 == 'x' || n1 == 'X') { i += 2; }
+        }
+        if (radix < 2 || radix > 36) {
+            if (endptrAddr != 0) { writeIntLE(memory, endptrAddr, ptr); }
+            return 0;
+        }
+        long value = 0;
+        int digits = 0;
+        while (true) {
+            int d = memByte(ptr + i);
+            int v;
+            if (d >= '0' && d <= '9') { v = d - '0'; }
+            else if (d >= 'a' && d <= 'z') { v = d - 'a' + 10; }
+            else if (d >= 'A' && d <= 'Z') { v = d - 'A' + 10; }
+            else { break; }
+            if (v >= radix) { break; }
+            value = value * radix + v;
+            if (signed && value > 0x7FFFFFFFL) { value = 0x7FFFFFFFL; }
+            if (!signed && value > 0xFFFFFFFFL) { value = 0xFFFFFFFFL; }
+            digits++; i++;
+        }
+        if (digits == 0) {
+            if (endptrAddr != 0) { writeIntLE(memory, endptrAddr, ptr); }
+            return 0;
+        }
+        if (endptrAddr != 0) { writeIntLE(memory, endptrAddr, ptr + i); }
+        if (negative) { value = -value; }
+        return (int) value;
     }
 
     // | printf/sprintf/snprintf - formatting engine over guest RAM

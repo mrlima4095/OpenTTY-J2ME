@@ -17,6 +17,7 @@ public abstract class Item {
     public String getLabel() { return label; }
 
     public void setLayout(int layout) {}
+    public void setFont(Font font) {}
 
     public void addCommand(Command c) { if (c != null && !commands.contains(c)) { commands.addElement(c); } }
     public void removeCommand(Command c) { if (c != null) { commands.removeElement(c); } }

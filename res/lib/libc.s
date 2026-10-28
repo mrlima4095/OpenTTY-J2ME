@@ -1,19 +1,20 @@
-# libc.s (RISC-V RV32IM) - Biblioteca C para o emulador ELF do OpenTTY
+# libc.s (RISC-V RV32IM) - C library for the OpenTTY ELF emulator
 #
-# Estas funcoes NAO implementam a logica em asm: cada uma e um wrapper de 3
-# instrucoes (li a7, #LIB_*; ecall; ret) que entrega o trabalho ao emulador
-# (src/ELF.java -> handleLibraryCall). O emulador conhece strings, printf,
-# mem*, o alocador de heap, atoi/abs e helpers de divisao, etc.
+# Most functions do NOT implement logic in assembly: each one is a 3-instruction
+# wrapper (li a7, #LIB_*; ecall; ret) that hands the work to the emulator
+# (src/ELF.java -> handleLibraryCall). The emulator implements strings, printf,
+# mem*, the heap allocator, atoi/abs and the RISC-V division helpers, plus the
+# LCDUI widget ABI declared in lcdui.h.
 #
-# LINKAR:  ./build-elf.sh demo.c -stdlib
-# (o -stdlib linka este arquivo antes do programa; o programa define main;
-#  o _start aqui le argc/argv/envp da stack do CRT do emulador e chama main.)
+# LINK:  ./build-elf.sh demo.c -stdlib
+# (-stdlib links this file before the program; the program defines main; the
+#  _start below reads argc/argv/envp from the emulator CRT stack and calls main.)
 #
-# Constantes de syscall do emulador (src/ELF.java):
-#   ecall com a7 = N (N != 0) -> handleSyscall(N), ou if N >= LIB_BASE
+# Emulator syscall numbers (src/ELF.java):
+#   ecall with a7 = N (N != 0) -> handleSyscall(N), or if N >= LIB_BASE
 #   handleLibraryCall(N - LIB_BASE).
 #
-# ABI RISC-V: args a0-a7 (x10-x17), retorno a0, syscall number em a7.
+# RISC-V ABI: args in a0-a7 (x10-x17), return value in a0, syscall number in a7.
 .equ LIB_BASE,         1000
 .equ LIB_STRLEN,       LIB_BASE + 1
 .equ LIB_STRCPY,       LIB_BASE + 2
@@ -72,20 +73,52 @@
 .equ LIB_PROC_WAITPID,     LIB_BASE + 55
 .equ LIB_PROC_SHELL,       LIB_BASE + 56
 .equ LIB_PROC_GETENV,      LIB_BASE + 57
-.equ LIB_PROC_EXPAND_ENV,  LIB_BASE + 59
 .equ LIB_UI_SET_LABEL,     LIB_BASE + 58
+.equ LIB_PROC_EXPAND_ENV,  LIB_BASE + 59
 .equ LIB_GC,               LIB_BASE + 60
 .equ LIB_MEM_FREE,         LIB_BASE + 61
 .equ LIB_MEM_TOTAL,        LIB_BASE + 62
 .equ LIB_MEM_USED,         LIB_BASE + 63
 .equ LIB_SOCKET_READER_START, LIB_BASE + 64
 .equ LIB_SOCKET_READER_STOP,  LIB_BASE + 65
+.equ LIB_STRSTR,           LIB_BASE + 66
+.equ LIB_STRRCHR,          LIB_BASE + 67
+.equ LIB_STRCASECMP,       LIB_BASE + 68
+.equ LIB_STRNCASECMP,      LIB_BASE + 69
+.equ LIB_STRTOL,           LIB_BASE + 70
+.equ LIB_STRTOUL,          LIB_BASE + 71
+.equ LIB_UI_ALERT,         LIB_BASE + 72
+.equ LIB_UI_SET_TICKER,    LIB_BASE + 73
+.equ LIB_UI_APPEND_GAUGE,  LIB_BASE + 74
+.equ LIB_UI_SET_GAUGE,     LIB_BASE + 75
+.equ LIB_UI_GET_GAUGE,     LIB_BASE + 76
+.equ LIB_UI_APPEND_SPACER, LIB_BASE + 77
+.equ LIB_UI_APPEND_IMAGE,  LIB_BASE + 78
+.equ LIB_UI_LIST_APPEND_IMAGE, LIB_BASE + 79
+.equ LIB_UI_APPEND_CHOICE, LIB_BASE + 80
+.equ LIB_UI_CHOICE_APPEND, LIB_BASE + 81
+.equ LIB_UI_CHOICE_SELECTED, LIB_BASE + 82
+.equ LIB_UI_CHOICE_SET_SELECTED, LIB_BASE + 83
+.equ LIB_UI_CHOICE_COUNT,  LIB_BASE + 84
+.equ LIB_UI_APPEND_BUTTON, LIB_BASE + 85
+.equ LIB_UI_ITEM_COMMAND,  LIB_BASE + 86
+.equ LIB_UI_SET_DEFAULT_COMMAND, LIB_BASE + 87
+.equ LIB_UI_GET_CURRENT,   LIB_BASE + 88
+.equ LIB_UI_VIBRATE,       LIB_BASE + 89
+.equ LIB_UI_GET_LABEL,     LIB_BASE + 90
+.equ LIB_UI_DELETE,        LIB_BASE + 91
+.equ LIB_UI_INSERT_TEXT,   LIB_BASE + 92
+.equ LIB_UI_SIZE,          LIB_BASE + 93
+.equ LIB_UI_LIST_SELECTED, LIB_BASE + 94
+.equ LIB_UI_SET_FONT,      LIB_BASE + 95
+.equ LIB_UI_SET_LAYOUT,    LIB_BASE + 96
+.equ LIB_UI_SHOW_ALERT,    LIB_BASE + 97
 
 # ============================================================
-# _start - Entry point (compativel com o CRT do emulador):
+# _start - Entry point (matches the emulator CRT layout):
 #   [sp]     = argc
-#   [sp,4]   = argv[] (ponteiros), NULL no fim
-#   apos argv vem envp[]
+#   [sp,4]   = argv[] (pointers), NULL terminated
+#   envp[] follows the argv NULL
 # ============================================================
 .text
 
@@ -94,15 +127,15 @@ _start:
     lw      a0, 0(sp)            # argc
     addi    a1, sp, 4            # argv
     slli    a2, a0, 2            # argv + argc*4
-    add     a2, a1, a2           # aponta pro NULL do argv
-    addi    a2, a2, 4            # envp (apos o NULL do argv)
+    add     a2, a1, a2           # points at the argv NULL
+    addi    a2, a2, 4            # envp (after the argv NULL)
     jal     main
-    # main retornou; exit(r0)
+    # main returned; exit(0)
     li      a7, 1                # SYS_EXIT
     ecall
 
 # ============================================================
-# Gerador de wrapper: li a7, #LIB_*; ecall; ret
+# Wrapper generator: li a7, #LIB_*; ecall; ret
 # ============================================================
 .macro LIBWRAP id, name
     .globl \name
@@ -123,12 +156,18 @@ LIBWRAP LIB_STRCAT,      strcat
 LIBWRAP LIB_STRNCAT,     strncat
 LIBWRAP LIB_STRCHR,      strchr
 LIBWRAP LIB_STRDUP,      strdup
+LIBWRAP LIB_STRSTR,      strstr
+LIBWRAP LIB_STRRCHR,     strrchr
+LIBWRAP LIB_STRCASECMP,  strcasecmp
+LIBWRAP LIB_STRNCASECMP, strncasecmp
+LIBWRAP LIB_STRTOL,      strtol
+LIBWRAP LIB_STRTOUL,     strtoul
 LIBWRAP LIB_ATOI,        atoi
 LIBWRAP LIB_ABS,         abs
 LIBWRAP LIB_TOUPPER,     toupper
 LIBWRAP LIB_TOLOWER,     tolower
 
-# ---- memoria -------------------------------------------------
+# ---- memory --------------------------------------------------
 LIBWRAP LIB_MEMCPY,      memcpy
 LIBWRAP LIB_MEMMOVE,     memmove
 LIBWRAP LIB_MEMSET,      memset
@@ -170,17 +209,45 @@ LIBWRAP LIB_UI_CLEAR,        lcdui_clear
 LIBWRAP LIB_UI_WAIT_EVENT,   lcdui_wait_event
 LIBWRAP LIB_UI_DESTROY,      lcdui_destroy
 LIBWRAP LIB_UI_TASKMNGR,     graphics_taskmngr
+LIBWRAP LIB_UI_SET_LABEL,    lcdui_set_label
+LIBWRAP LIB_UI_ALERT,        lcdui_alert
+LIBWRAP LIB_UI_SET_TICKER,   lcdui_set_ticker
+LIBWRAP LIB_UI_APPEND_GAUGE, lcdui_append_gauge
+LIBWRAP LIB_UI_SET_GAUGE,    lcdui_set_gauge
+LIBWRAP LIB_UI_GET_GAUGE,    lcdui_get_gauge
+LIBWRAP LIB_UI_APPEND_SPACER, lcdui_append_spacer
+LIBWRAP LIB_UI_APPEND_IMAGE, lcdui_append_image
+LIBWRAP LIB_UI_LIST_APPEND_IMAGE, lcdui_list_append_image
+LIBWRAP LIB_UI_APPEND_CHOICE, lcdui_append_choice
+LIBWRAP LIB_UI_CHOICE_APPEND, lcdui_choice_append
+LIBWRAP LIB_UI_CHOICE_SELECTED, lcdui_choice_selected
+LIBWRAP LIB_UI_CHOICE_SET_SELECTED, lcdui_choice_set_selected
+LIBWRAP LIB_UI_CHOICE_COUNT, lcdui_choice_count
+LIBWRAP LIB_UI_APPEND_BUTTON, lcdui_append_button
+LIBWRAP LIB_UI_ITEM_COMMAND, lcdui_item_command
+LIBWRAP LIB_UI_SET_DEFAULT_COMMAND, lcdui_set_default_command
+LIBWRAP LIB_UI_GET_CURRENT,  lcdui_get_current
+LIBWRAP LIB_UI_VIBRATE,      lcdui_vibrate
+LIBWRAP LIB_UI_GET_LABEL,    lcdui_get_label
+LIBWRAP LIB_UI_DELETE,       lcdui_delete
+LIBWRAP LIB_UI_INSERT_TEXT,  lcdui_insert_text
+LIBWRAP LIB_UI_SIZE,         lcdui_size
+LIBWRAP LIB_UI_LIST_SELECTED, lcdui_list_selected
+LIBWRAP LIB_UI_SET_FONT,     lcdui_set_font
+LIBWRAP LIB_UI_SET_LAYOUT,   lcdui_set_layout
+LIBWRAP LIB_UI_SHOW_ALERT,   lcdui_show_alert
+
+# ---- processes / environment ---------------------------------
 LIBWRAP LIB_PROC_SET,        opentty_setproc
 LIBWRAP LIB_PROC_SPAWN,      opentty_spawn
 LIBWRAP LIB_PROC_WAITPID,    opentty_waitpid
 LIBWRAP LIB_PROC_SHELL,      opentty_shell
 LIBWRAP LIB_PROC_GETENV,     opentty_getenv
 LIBWRAP LIB_PROC_EXPAND_ENV, opentty_expand_env
-LIBWRAP LIB_UI_SET_LABEL,    lcdui_set_label
 LIBWRAP LIB_SOCKET_READER_START, opentty_socket_reader_start
 LIBWRAP LIB_SOCKET_READER_STOP,  opentty_socket_reader_stop
 
-# ---- Helpers de runtime RISC-V ---------------------------------
+# ---- RISC-V runtime helpers ----------------------------------
 LIBWRAP LIB_UDIV32,           __udivsi3
 LIBWRAP LIB_SDIV32,           __divsi3
 LIBWRAP LIB_UDIVMOD32,        __udivmodsi4
@@ -191,7 +258,7 @@ LIBWRAP LIB_MEMCLR,           __memclr
 LIBWRAP LIB_MEMCPY_ALIGN,     __memcpy
 LIBWRAP LIB_MEMSET_ALIGN,     __memset
 
-# variantes alinhadas/tipadas para rotinas de memoria ------------
+# aligned/typed variants used by memory routines ----------------
 LIBWRAP LIB_MEMCLR,           __memclr4
 LIBWRAP LIB_MEMCLR,           __memclr8
 LIBWRAP LIB_MEMCPY_ALIGN,     __memcpy4
@@ -202,12 +269,133 @@ LIBWRAP LIB_MEMMOVE,          __memmove
 LIBWRAP LIB_MEMMOVE,          __memmove4
 LIBWRAP LIB_MEMMOVE,          __memmove8
 
-# ---- RISC-V 64-bit helpers (gerados pelo compilador) ------------------
-# clang/gcc RV32IM usa __muldi3/__divdi3/__moddi3/__udivdi3/__umoddi3 para
-# aritmetica de long long. Layout dos args:
-#   a0:a1 = dividendo/destino, a2:a3 = divisor/fonte.
-# LIB_*LDIVMOD retorna quociente em a0:a1 E resto em a2:a3 (ver libcLdivmod
-# em src/ELF.java); as funcoes abaixo selecionam a metade certa.
+# ---- qsort / bsearch (guest side, comparator is a guest function) ------
+# void qsort(void *base, int nmemb, int size,
+#            int (*cmp)(const void *, const void *))
+# Insertion sort: stable, no extra memory, O(n^2) worst case - a good fit for
+# the small arrays that fit in 1 MiB of guest RAM.
+.globl qsort
+.type qsort, %function
+qsort:
+    addi    sp, sp, -32
+    sw      ra, 28(sp)
+    sw      s0, 24(sp)
+    sw      s1, 20(sp)
+    sw      s2, 16(sp)
+    sw      s3, 12(sp)
+    sw      s4, 8(sp)
+    sw      s5, 4(sp)
+    mv      s0, a0                # base
+    mv      s1, a1                # nmemb
+    mv      s2, a2                # size
+    mv      s3, a3                # cmp
+    li      s4, 1                 # i = 1
+qsort_outer:
+    bge     s4, s1, qsort_done
+    mv      s5, s4                # j = i
+qsort_inner:
+    blez    s5, qsort_next        # while (j > 0)
+    addi    t0, s5, -1
+    mul     t0, t0, s2
+    add     t0, s0, t0            # &a[j-1]
+    add     t1, t0, s2            # &a[j]
+    mv      a0, t0
+    mv      a1, t1
+    jalr    s3                    # cmp(&a[j-1], &a[j])
+    blez    a0, qsort_next        # already ordered
+    addi    t0, s5, -1            # t regs are caller-saved: rebuild them
+    mul     t0, t0, s2
+    add     t0, s0, t0
+    add     t1, t0, s2
+    mv      t2, s2                # swap size bytes
+qsort_swap:
+    beqz    t2, qsort_swapped
+    lbu     t3, 0(t0)
+    lbu     t4, 0(t1)
+    sb      t4, 0(t0)
+    sb      t3, 0(t1)
+    addi    t0, t0, 1
+    addi    t1, t1, 1
+    addi    t2, t2, -1
+    j       qsort_swap
+qsort_swapped:
+    addi    s5, s5, -1
+    j       qsort_inner
+qsort_next:
+    addi    s4, s4, 1
+    j       qsort_outer
+qsort_done:
+    lw      ra, 28(sp)
+    lw      s0, 24(sp)
+    lw      s1, 20(sp)
+    lw      s2, 16(sp)
+    lw      s3, 12(sp)
+    lw      s4, 8(sp)
+    lw      s5, 4(sp)
+    addi    sp, sp, 32
+    ret
+
+# void *bsearch(const void *key, const void *base, int nmemb, int size,
+#               int (*cmp)(const void *, const void *))
+# Requires a sorted array; returns a matching element or NULL.
+.globl bsearch
+.type bsearch, %function
+bsearch:
+    addi    sp, sp, -32
+    sw      ra, 28(sp)
+    sw      s0, 24(sp)
+    sw      s1, 20(sp)
+    sw      s2, 16(sp)
+    sw      s3, 12(sp)
+    sw      s4, 8(sp)
+    sw      s5, 4(sp)
+    mv      s0, a0                # key
+    mv      s1, a1                # base
+    mv      s2, a2                # hi = nmemb
+    mv      s3, a3                # size
+    mv      s4, a4                # cmp
+    li      s5, 0                 # lo = 0
+bsearch_loop:
+    bge     s5, s2, bsearch_none
+    add     t0, s5, s2
+    srli    t0, t0, 1             # mid = (lo + hi) / 2
+    mul     t1, t0, s3
+    add     t1, s1, t1            # &a[mid]
+    sw      t0, 0(sp)             # the comparator clobbers t0
+    mv      a0, s0
+    mv      a1, t1
+    jalr    s4
+    lw      t0, 0(sp)
+    beqz    a0, bsearch_found
+    bltz    a0, bsearch_lower
+    addi    s5, t0, 1             # lo = mid + 1
+    j       bsearch_loop
+bsearch_lower:
+    mv      s2, t0                # hi = mid
+    j       bsearch_loop
+bsearch_found:
+    mul     t1, t0, s3
+    add     a0, s1, t1
+    j       bsearch_out
+bsearch_none:
+    li      a0, 0
+bsearch_out:
+    lw      ra, 28(sp)
+    lw      s0, 24(sp)
+    lw      s1, 20(sp)
+    lw      s2, 16(sp)
+    lw      s3, 12(sp)
+    lw      s4, 8(sp)
+    lw      s5, 4(sp)
+    addi    sp, sp, 32
+    ret
+
+# ---- RISC-V 64-bit helpers (emitted by the compiler) ------------------
+# clang/gcc RV32IM uses __muldi3/__divdi3/__moddi3/__udivdi3/__umoddi3 for
+# long long arithmetic. Argument layout:
+#   a0:a1 = dividend/destination, a2:a3 = divisor/source.
+# LIB_*LDIVMOD returns the quotient in a0:a1 AND the remainder in a2:a3 (see
+# libcLdivmod in src/ELF.java); the functions below pick the right half.
 .globl __udivdi3
 .type __udivdi3, %function
 __udivdi3:
@@ -227,7 +415,7 @@ __divdi3:
 __umoddi3:
     li      a7, LIB_UDIVMOD64
     ecall
-    mv      a0, a2               # resto a2:a3 -> a0:a1
+    mv      a0, a2               # remainder a2:a3 -> a0:a1
     mv      a1, a3
     ret
 
@@ -236,16 +424,16 @@ __umoddi3:
 __moddi3:
     li      a7, LIB_SDIVMOD64
     ecall
-    mv      a0, a2               # resto a2:a3 -> a0:a1
+    mv      a0, a2               # remainder a2:a3 -> a0:a1
     mv      a1, a3
     ret
 
-# __muldi3(a0:a1, a2:a3) -> a0:a1 (32x32 -> 64 via MUL/MULHU, sem lmul)
+# __muldi3(a0:a1, a2:a3) -> a0:a1 (32x32 -> 64 via MUL/MULHU, no lmul)
 .globl __muldi3
 .type __muldi3, %function
 __muldi3:
-    mul     t0, a0, a2           # lo32 de Alo*Blo
-    mulhu   t3, a0, a2           # carry de Alo*Blo (bit 32+)
+    mul     t0, a0, a2           # lo32 of Alo*Blo
+    mulhu   t3, a0, a2           # carry out of Alo*Blo (bit 32+)
     mul     t1, a1, a2           # Ahi*Blo (lo32)
     mul     t2, a0, a3           # Alo*Bhi (lo32)
     add     t1, t1, t2
@@ -254,10 +442,10 @@ __muldi3:
     mv      a1, t1
     ret
 
-# ---- saida ---------------------------------------------------
+# ---- output --------------------------------------------------
 .globl exit
 exit:
-    li      a7, 1                # SYS_EXIT (nao retorna; a0 = status)
+    li      a7, 1                # SYS_EXIT (does not return; a0 = status)
     ecall
 
 .globl _exit
@@ -270,11 +458,11 @@ abort:
     li      a7, 1
     ecall
 
-# ---- wrappers de syscall uteis ---------------------------------
+# ---- useful syscall wrappers ---------------------------------
 .globl time
 .type time, %function
 time:
-    mv      a1, a0               # tloc: emulator reads the pointer from a1
+    mv      a1, a0               # tloc: the emulator reads the pointer from a1
     li      a7, 13               # SYS_TIME (seconds, UTC)
     ecall
     ret

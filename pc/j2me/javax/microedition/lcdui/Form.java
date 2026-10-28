@@ -32,6 +32,12 @@ public class Form extends Displayable {
 
     public int size() { return items.size(); }
 
+    public int insert(int index, Item item) {
+        if (item != null) { items.insertElementAt(item, index); }
+        touch();
+        return index;
+    }
+
     public Form set(int index, Item item) {
         if (item != null) { items.setElementAt(item, index); }
         touch();

@@ -68,7 +68,19 @@ Create a screen with `lcdui_new(kind, title, content, mode)`:
 | `LCDUI_FORM` | `Form` | Ignored. |
 | `LCDUI_LIST` | `List` | `mode`: `LCDUI_LIST_IMPLICIT`, `LCDUI_LIST_EXCLUSIVE`, or `LCDUI_LIST_MULTIPLE`. |
 | `LCDUI_TEXTBOX` | `TextBox` | Initial text and `LCDUI_TEXT_ANY` or `LCDUI_TEXT_PASSWORD`. |
-| `LCDUI_ALERT` | Permanent information `Alert` | Alert message; `mode` is ignored. |
+| `LCDUI_ALERT` | `Alert` | Alert message; `mode` is one of the `LCDUI_ALERT_*` types. |
+
+`lcdui_alert(title, text, type, timeout)` builds an alert with an explicit type
+and timeout (milliseconds, `0` for a permanent alert):
+
+```c
+int warn = lcdui_alert("Warning", "Battery low", LCDUI_ALERT_WARNING, 0);
+int quick = lcdui_alert("Saved", "Done", LCDUI_ALERT_INFO, 1500);
+```
+
+`lcdui_show_alert(alert, next)` displays an alert and returns to `next` when it
+is dismissed (Lua `graphics.display(alert, next)`); `lcdui_display(alert)`
+displays it on its own.
 
 Populate a form or list:
 
@@ -84,6 +96,36 @@ lcdui_list_append(list, "Second choice");
 `lcdui_set_text(handle, text)` and `lcdui_get_text(handle, buffer, size)`.
 `lcdui_list_append` returns the zero-based list index. `lcdui_clear` removes all
 items from a `Form` or `List`; `lcdui_set_title` changes a screen title.
+
+## Widgets
+
+Every `graphics.append(form, {...})` item type from Lua has an ELF equivalent:
+
+```c
+int ticker = lcdui_set_ticker(form, "Scrolling message");     /* 0 on success */
+int gauge  = lcdui_append_gauge(form, "Progress", 0, 100, 25);
+int gap    = lcdui_append_spacer(form, 8, 8);
+int logo   = lcdui_append_image(form, "/mnt/opentty/logo.png");
+int mode   = lcdui_append_choice(form, "Mode", LCDUI_CHOICE_EXCLUSIVE);
+int bump   = lcdui_append_button(form, "Advance gauge");
+```
+
+| Function | Notes |
+| --- | --- |
+| `lcdui_append_gauge(form, label, interactive, max, value)` | `interactive != 0` lets the user drag it. Read/write with `lcdui_get_gauge` / `lcdui_set_gauge` (values are clamped to `0..max`). |
+| `lcdui_append_spacer(form, width, height)` | Blank space. |
+| `lcdui_append_image(form, path)` | Decodes an image through the OpenTTY VFS. |
+| `lcdui_append_choice(form, label, mode)` | `LCDUI_CHOICE_EXCLUSIVE`, `LCDUI_CHOICE_MULTIPLE` or `LCDUI_CHOICE_POPUP`. Add entries with `lcdui_choice_append`, read with `lcdui_choice_count` / `lcdui_choice_selected` / `lcdui_choice_set_selected`. |
+| `lcdui_append_button(form, label)` | A `StringItem.BUTTON`; attach an `LCDUI_COMMAND_ITEM` command with `lcdui_item_command` / `lcdui_set_default_command`. |
+| `lcdui_set_font(item, style)` | Lua style string: `"default"`, `"bold"`, `"italic"`, `"underlined"`, `"small"`, `"medium"`, `"large"`, `"monospace"`, `"proportional"`, combined with spaces. |
+| `lcdui_set_layout(item, layout)` | MIDP `Item.LAYOUT_*` bits, mirrored as `LCDUI_LAYOUT_*`. |
+
+Other item helpers: `lcdui_get_label`, `lcdui_size` (form/list/choice count),
+`lcdui_delete(handle, index)`, `lcdui_insert_text(form, index, label, text)`,
+`lcdui_list_append_image(list, text, path)` and `lcdui_list_selected(list)`.
+`lcdui_get_current()` returns the handle of the displayed screen (storing it if
+the screen came from another source), and `lcdui_vibrate(ms)` mirrors
+`graphics.vibrate`.
 
 ## Commands And Events
 
@@ -103,17 +145,43 @@ the process screen, so it appears in the OpenTTY task manager.
 
 ```c
 struct lcdui_event {
-    int type;     /* LCDUI_EVENT_COMMAND or LCDUI_EVENT_LIST_SELECT */
-    int screen;   /* Displayable handle */
-    int command;  /* Command handle, or 0 for an implicit List selection */
+    int type;     /* LCDUI_EVENT_COMMAND, LIST_SELECT, ITEM_COMMAND or ITEM_STATE */
+    int screen;   /* Displayable handle, or the Item handle for item events */
+    int command;  /* Command handle, or 0 for a list selection / item state */
     int index;    /* selected List index, otherwise -1 */
 };
 ```
+
+| `type` | Meaning | `screen` | `command` | `index` |
+| --- | --- | --- | --- | --- |
+| `LCDUI_EVENT_COMMAND` | Screen command | screen | command | -1 |
+| `LCDUI_EVENT_LIST_SELECT` | Implicit `List` selection | list | 0 | selected index |
+| `LCDUI_EVENT_ITEM_COMMAND` | Button/item command | item | command | -1 |
+| `LCDUI_EVENT_ITEM_STATE` | Choice/field state change | item | 0 | selected index |
 
 When no event is pending, `lcdui_wait_event` returns `0`, suspends the ELF
 process, and returns to the emulator. Do not exit in that case: call it again
 after OpenTTY resumes the process for a command event. An implicit `List`
 selection has `type == LCDUI_EVENT_LIST_SELECT`; inspect `index`.
+
+Item events need the screen to be displayed (that is when the emulator installs
+its item listeners):
+
+```c
+int mode = lcdui_append_choice(form, "Mode", LCDUI_CHOICE_EXCLUSIVE);
+int bump = lcdui_append_button(form, "Advance");
+int tap = lcdui_command("Advance", LCDUI_COMMAND_ITEM, 1);
+
+lcdui_set_default_command(bump, tap);
+lcdui_item_command(bump, tap);
+lcdui_display(form);
+
+while (lcdui_wait_event(&event) == 0) { }
+if (event.type == LCDUI_EVENT_ITEM_COMMAND && event.command == tap) { /* ... */ }
+if (event.type == LCDUI_EVENT_ITEM_STATE && event.screen == mode) { /* event.index */ }
+```
+
+`res/apps/src/lcdui-demo.c` is a complete widget showcase built from this API.
 
 Destroy an unused object with `lcdui_destroy(handle)`. Process cleanup destroys
 all remaining handles automatically.

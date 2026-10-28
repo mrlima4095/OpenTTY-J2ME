@@ -135,8 +135,9 @@ There is no host C library. Do not include `<stdio.h>`, `<stdlib.h>`,
 - Do not use `float` or `double`. `%f`, `%e`, and `%g` consume an argument but
   print `0`.
 - Code, data, stack, heap, and loaded libraries share 1 MiB of guest RAM.
-- `malloc` is first-fit and does not coalesce free blocks. Free temporary
-  buffers and avoid repeated mixed-size allocations.
+- `malloc` is first-fit with splitting; `free` merges neighbouring blocks and
+  returns a trailing block to the bump region, so mixed-size churn is safe.
+  `realloc` shrinks and grows in place when the neighbour allows it.
 - `read(0, ...)` currently returns zero bytes. Use arguments, files, or LCDUI
   fields for user input.
 
@@ -159,16 +160,35 @@ int strncmp(const char *a, const char *b, size_t n);
 char *strcat(char *dst, const char *src);
 char *strncat(char *dst, const char *src, size_t n);
 char *strchr(const char *s, int c);
+char *strrchr(const char *s, int c);
+char *strstr(const char *haystack, const char *needle);
+int strcasecmp(const char *a, const char *b);
+int strncasecmp(const char *a, const char *b, size_t n);
 char *strdup(const char *s);
+long strtol(const char *s, char **endptr, int base);
+unsigned long strtoul(const char *s, char **endptr, int base);
 void *memcpy(void *dst, const void *src, size_t n);
 void *memmove(void *dst, const void *src, size_t n);
 void *memset(void *dst, int c, size_t n);
 int memcmp(const void *a, const void *b, size_t n);
 void *memchr(const void *s, int c, size_t n);
+void qsort(void *base, int nmemb, int size,
+           int (*compare)(const void *, const void *));
+void *bsearch(const void *key, const void *base, int nmemb, int size,
+              int (*compare)(const void *, const void *));
 ```
 
 `strcpy`, `strcat`, and `sprintf` do not know destination capacity. Allocate
 enough space yourself; prefer `snprintf` for bounded formatting.
+
+`strtol`/`strtoul` accept `base` 0 (auto `0x`/`0` prefixes) or 2..36, skip
+leading whitespace, honour a sign, and store the stop address in `*endptr`.
+Out-of-range values saturate, because this ABI has no `errno`.
+
+`qsort` and `bsearch` are implemented in `res/lib/libc.s` and call the
+comparator back in guest code. `qsort` is a stable insertion sort (O(n^2) worst
+case), which suits the small arrays that fit in 1 MiB of guest RAM; `bsearch`
+needs the array sorted by the same comparator.
 
 ### Conversion, output, and heap
 
@@ -293,24 +313,65 @@ The UI uses positive integer handles, not Java object pointers. Build UI apps
 with `-stdlib`. Its public functions are:
 
 ```c
+/* screens */
 int lcdui_new(int kind, const char *title, const char *content, int mode);
+int lcdui_alert(const char *title, const char *text, int type, int timeout);
+int lcdui_show_alert(int alert, int next);
+int lcdui_set_title(int screen, const char *title);
+int lcdui_set_ticker(int screen, const char *text);
+int lcdui_display(int screen);
+int lcdui_get_current(void);
+int lcdui_vibrate(int millis);
+
+/* form items */
 int lcdui_append_text(int form, const char *label, const char *text);
 int lcdui_append_field(int form, const char *label, const char *value,
                        int max_length, int mode);
-int lcdui_list_append(int list, const char *text);
-int lcdui_command(const char *label, int type, int priority);
-int lcdui_add_command(int screen, int command);
-int lcdui_display(int screen);
+int lcdui_append_gauge(int form, const char *label, int interactive,
+                       int max_value, int value);
+int lcdui_append_spacer(int form, int width, int height);
+int lcdui_append_image(int form, const char *path);
+int lcdui_append_choice(int form, const char *label, int mode);
+int lcdui_append_button(int form, const char *label);
 int lcdui_set_text(int item, const char *text);
 int lcdui_get_text(int item, char *buffer, int size);
-int lcdui_set_title(int screen, const char *title);
 int lcdui_set_label(int item, const char *label);
+int lcdui_get_label(int item, char *buffer, int size);
+int lcdui_set_font(int item, const char *style);
+int lcdui_set_layout(int item, int layout);
+
+/* lists, gauges, choice groups */
+int lcdui_list_append(int list, const char *text);
+int lcdui_list_append_image(int list, const char *text, const char *path);
+int lcdui_list_selected(int list);
+int lcdui_set_gauge(int gauge, int value);
+int lcdui_get_gauge(int gauge);
+int lcdui_choice_append(int choice, const char *text);
+int lcdui_choice_count(int choice);
+int lcdui_choice_selected(int choice, int index);
+int lcdui_choice_set_selected(int choice, int index, int selected);
+int lcdui_size(int handle);
+int lcdui_delete(int handle, int index);
+int lcdui_insert_text(int form, int index, const char *label,
+                      const char *text);
 int lcdui_clear(int screen);
+
+/* commands and events */
+int lcdui_command(const char *label, int type, int priority);
+int lcdui_add_command(int screen, int command);
+int lcdui_item_command(int item, int command);
+int lcdui_set_default_command(int item, int command);
 int lcdui_wait_event(struct lcdui_event *event);
 int lcdui_destroy(int handle);
 int graphics_taskmngr(void);
 int opentty_setproc(const char *key, ...);
 ```
+
+This mirrors the Lua `graphics` package one to one: alerts with a type and
+timeout, tickers, gauges, spacers, images, choice groups, button items with
+their own `ITEM` commands, item state events, fonts, layouts, list/choice
+accessors and `graphics.vibrate`. See [LCDUI.md](LCDUI.md) for the event
+structure and `res/apps/src/lcdui-demo.c` for a working showcase.
 
 The `-stdlib` layer also exposes the clock and the Java heap to guest C
 (declared in `opentty.h`):

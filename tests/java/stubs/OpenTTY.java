@@ -33,6 +33,8 @@ public class OpenTTY {
     public void showTaskManager() { }
     public void destroyApp(boolean unconditional) { }
 
+    public javax.microedition.lcdui.Image readImg(String filename, Hashtable scope) { return new javax.microedition.lcdui.Image(); }
+
     public String joinpath(String file, Hashtable scope) {
         String pwd = scope.containsKey("PWD") ? (String) scope.get("PWD") : "/";
         if (file.startsWith("/")) { return file; }
