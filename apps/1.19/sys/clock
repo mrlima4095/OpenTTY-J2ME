@@ -1,0 +1,132 @@
+#!/bin/lua
+-- clock - analog + digital clock on graphics.canvas.
+--
+-- Demonstrates geometric drawing (circle, ticks, rotating hands) and a slow
+-- background loop: the canvas is only redrawn when the second changes.
+--
+-- Usage:
+--   clock        run in the background
+--   clock 60     draw 60 frames and return (used by the test suite)
+
+local PI = 3.1415926535898
+
+-- CLDC has no math.sin/math.cos in this runtime: a 7th order Taylor series
+-- after range reduction is more than enough for a clock face.
+local function sin(x)
+    x = x % (2 * PI)
+    if x > PI then x = x - 2 * PI end
+    local x2 = x * x
+    return x * (1 - x2 / 6 + x2 * x2 / 120 - x2 * x2 * x2 / 5040)
+end
+local function cos(x) return sin(x + PI / 2) end
+
+local c = graphics.canvas.new({
+    title = "Clock",
+    background = 0x000814,
+    foreground = 0xFFFFFF,
+    font = "monospace medium"
+})
+
+local W, H = c:size()
+local CX, CY = W / 2 - (W / 2) % 1, H / 2 - (H / 2) % 1 - 8
+local R = (W < H and W or H) / 2 - 26
+R = R - R % 1
+
+local frames = 0
+local lastSecond = -1
+
+local MONTHS = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" }
+
+-- os.date() returns java.util.Date.toString(), e.g.
+-- "Tue Oct 27 18:57:12 BRT 2026".
+local function now()
+    local parts = string.split(os.date(), " ")
+    local hms = string.split(parts[4] or "00:00:00", ":")
+    local hour = tonumber(hms[1]) or 0
+    local minute = tonumber(hms[2]) or 0
+    local second = tonumber(hms[3]) or 0
+    local stamp = parts[3] .. " " .. (parts[2] or "") .. " " .. (parts[6] or "")
+    return hour, minute, second, stamp
+end
+
+local function pad(n)
+    if n < 10 then return "0" .. n end
+    return "" .. n
+end
+
+local function hand(angleDeg, length, width, color)
+    local a = angleDeg * PI / 180
+    local x = CX + sin(a) * length
+    local y = CY - cos(a) * length
+    c:color(color)
+    for i = -width, width do
+        c:line(CX + i, CY, x + i, y)
+    end
+end
+
+local function draw()
+    local hour, minute, second, stamp = now()
+    local secondAngle = second * 6
+    local minuteAngle = (minute + second / 60) * 6
+    local hourAngle = (hour % 12 + minute / 60) * 30
+
+    c:clear()
+
+    -- Face
+    c:color(0x123A5C)
+    c:circle(CX, CY, R, false)
+    c:color(0x0A2038)
+    c:circle(CX, CY, R - 6, false)
+
+    -- Hour ticks
+    for i = 0, 11 do
+        local a = i * 30 * PI / 180
+        local inner = R - (i % 3 == 0 and 16 or 10)
+        c:color(i % 3 == 0 and 0x66CCFF or 0x2A6A9A)
+        c:line(CX + sin(a) * inner, CY - cos(a) * inner, CX + sin(a) * (R - 4), CY - cos(a) * (R - 4))
+    end
+
+    hand(hourAngle, R * 0.5, 1, 0xFFFFFF)
+    hand(minuteAngle, R * 0.72, 1, 0xCCE8FF)
+    hand(secondAngle, R * 0.82, 0, 0xFF6060)
+
+    -- Center cap
+    c:color(0xFFFFFF)
+    c:circle(CX, CY, 3, true)
+
+    -- Digital readout
+    c:font("monospace bold large")
+    c:color(0xFFFFFF)
+    c:text(pad(hour) .. ":" .. pad(minute) .. ":" .. pad(second), W / 2, H - 44, "center")
+    c:font("monospace medium")
+    c:color(0x66CCFF)
+    c:text(stamp, W / 2, H - 20, "center")
+end
+
+local function frame(canvas, dt)
+    frames = frames + 1
+    local h2, m2, s2 = now()
+    if s2 ~= lastSecond then
+        lastSecond = s2
+        draw()
+    end
+end
+
+local limit = tonumber(arg[1] or "")
+
+os.setproc("name", "clock")
+c:command("Exit", "exit", function() c:stop() c:close() end)
+c:display()
+draw()
+
+if limit and limit > 0 then
+    -- Test mode: force a redraw every frame instead of waiting for a tick.
+    c:loop(function(canvas, dt)
+        frames = frames + 1
+        draw()
+        if frames >= limit then return false end
+    end, 16)
+    print("clock: " .. frames .. " frames")
+else
+    c:animate(frame, 200)
+end

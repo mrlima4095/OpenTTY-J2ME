@@ -1,0 +1,84 @@
+#!/bin/lua
+-- matrix - digital rain on graphics.canvas.
+--
+-- Demonstrates per-frame full-canvas text drawing: one falling column per
+-- character cell, a bright head and a fading tail, redrawn every frame.
+--
+-- Usage:
+--   matrix        play
+--   matrix 120    run 120 frames and return (used by the test suite)
+
+local c = graphics.canvas.new({
+    title = "Matrix",
+    background = 0x000000,
+    foreground = 0x00FF00,
+    font = "monospace medium"
+})
+
+local W, H = c:size()
+local CH_W = c:charWidth("M")
+local FONT_H, FONT_BASE = c:metrics()
+local COLS = W / CH_W - (W / CH_W) % 1
+local TAIL = 6
+
+-- Head first, then the fading tail.
+local SHADES = { 0xE6FFE6, 0x99FF99, 0x55EE55, 0x2ABB2A, 0x158815, 0x0A550A }
+
+local drops = {}
+local frames = 0
+
+local function reset(drop)
+    drop.y = -math.random(12) - TAIL
+    drop.speed = 0.5 + math.random(14) * 0.12
+end
+
+for i = 1, COLS do
+    drops[i] = { y = 0, speed = 1 }
+    reset(drops[i])
+end
+
+local function update(dt)
+    for i = 1, COLS do
+        local drop = drops[i]
+        drop.y = drop.y + drop.speed * dt / 50
+        if drop.y * FONT_H > H + TAIL * FONT_H then reset(drop) end
+    end
+end
+
+local function draw()
+    c:clear()
+    for i = 1, COLS do
+        local drop = drops[i]
+        local x = (i - 1) * CH_W
+        for t = 0, TAIL - 1 do
+            local row = drop.y - t
+            local y = row * FONT_H
+            if row >= 0 and y <= H - FONT_H then
+                c:color(SHADES[t + 1])
+                c:text(string.char(33 + math.random(94)), x, y)
+            end
+        end
+    end
+end
+
+local function frame(canvas, dt)
+    frames = frames + 1
+    update(dt)
+    draw()
+end
+
+local limit = tonumber(arg[1] or "")
+
+os.setproc("name", "matrix")
+c:command("Exit", "exit", function() c:stop() c:close() end)
+c:display()
+
+if limit and limit > 0 then
+    c:loop(function(canvas, dt)
+        frame(canvas, dt)
+        if frames >= limit then return false end
+    end, 16)
+    print("matrix: " .. frames .. " frames, " .. COLS .. " columns")
+else
+    c:animate(frame, 60)
+end

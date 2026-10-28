@@ -1,0 +1,204 @@
+#!/bin/lua
+-- snake - the classic snake game on graphics.canvas.
+--
+-- Demonstrates the canvas game pattern:
+--   * fixed-step logic (dt accumulator) inside a frame loop
+--   * input through keyPressed callbacks and game actions
+--   * everything drawn into the canvas buffer each frame
+--
+-- Usage:
+--   snake        play
+--   snake 200    run 200 frames and return (used by the test suite)
+
+local CELL, TOP = 12, 16
+
+local c = graphics.canvas.new({
+    title = "Snake",
+    background = 0x081020,
+    foreground = 0xFFFFFF,
+    font = "monospace medium"
+})
+
+local W, H = c:size()
+local COLS = W / CELL - (W / CELL) % 1
+local ROWS = (H - TOP) / CELL - ((H - TOP) / CELL) % 1
+
+local key, action = graphics.canvas.key, graphics.canvas.action
+local COLOR_HEAD, COLOR_BODY, COLOR_FOOD = 0x00FF88, 0x00A860, 0xFF5050
+
+local game = {
+    snake = {},
+    dx = 1, dy = 0,
+    pendingX = 1, pendingY = 0,
+    food = { x = 0, y = 0 },
+    score = 0,
+    best = 0,
+    wait = 0,
+    over = false,
+    paused = false,
+    frames = 0
+}
+
+local function occupied(x, y)
+    for i = 1, #game.snake do
+        if game.snake[i].x == x and game.snake[i].y == y then return true end
+    end
+    return false
+end
+
+local function placeFood()
+    for attempt = 1, 200 do
+        local x, y = math.random(COLS), math.random(ROWS)
+        if not occupied(x, y) then game.food = { x = x, y = y } return end
+    end
+    -- Board almost full: take the first free cell.
+    for y = 0, ROWS - 1 do
+        for x = 0, COLS - 1 do
+            if not occupied(x, y) then game.food = { x = x, y = y } return end
+        end
+    end
+end
+
+local function restart()
+    game.snake = {
+        { x = 6, y = 8 },
+        { x = 5, y = 8 },
+        { x = 4, y = 8 }
+    }
+    game.dx = 1
+    game.dy = 0
+    game.pendingX = 1
+    game.pendingY = 0
+    game.score = 0
+    game.wait = 0
+    game.over = false
+    game.paused = false
+    placeFood()
+end
+
+-- Queue a direction; a direct reversal is ignored.
+local function turn(dx, dy)
+    if dx == -game.dx and dy == -game.dy then return end
+    game.pendingX = dx
+    game.pendingY = dy
+end
+
+local function step()
+    game.dx = game.pendingX
+    game.dy = game.pendingY
+    local head = game.snake[1]
+    local nx, ny = head.x + game.dx, head.y + game.dy
+
+    if nx < 0 or ny < 0 or nx >= COLS or ny >= ROWS then game.over = true return end
+    for i = 1, #game.snake do
+        if game.snake[i].x == nx and game.snake[i].y == ny then game.over = true return end
+    end
+
+    local grown = { { x = nx, y = ny } }
+    for i = 1, #game.snake do grown[#grown + 1] = game.snake[i] end
+    if nx == game.food.x and ny == game.food.y then
+        game.score = game.score + 1
+        if game.score > game.best then game.best = game.score end
+        placeFood()
+    else
+        grown[#grown] = nil
+    end
+    game.snake = grown
+end
+
+local function stepDelay()
+    local delay = 150 - game.score * 5
+    if delay < 70 then delay = 70 end
+    return delay
+end
+
+local function update(dt)
+    if game.over or game.paused then return end
+    game.wait = game.wait + dt
+    while game.wait >= stepDelay() do
+        game.wait = game.wait - stepDelay()
+        step()
+        if game.over then return end
+    end
+end
+
+local function draw()
+    c:clear()
+
+    -- Header
+    c:color(0xFFFFFF)
+    c:font("monospace bold medium")
+    c:text("SCORE " .. game.score, 4, 2)
+    c:text("BEST " .. game.best, W - 4, 2, "right")
+    c:color(0x224466)
+    c:line(0, TOP - 1, W - 1, TOP - 1)
+    c:font("monospace medium")
+
+    -- Food
+    c:color(COLOR_FOOD)
+    c:circle(game.food.x * CELL + CELL / 2, TOP + game.food.y * CELL + CELL / 2, CELL / 2 - 2, true)
+
+    -- Snake
+    for i = 1, #game.snake do
+        local seg = game.snake[i]
+        c:color(i == 1 and COLOR_HEAD or COLOR_BODY)
+        c:rect(seg.x * CELL + 1, TOP + seg.y * CELL + 1, CELL - 2, CELL - 2, true)
+    end
+
+    if game.paused and not game.over then
+        c:color(0x000000)
+        c:rect(W / 2 - 44, H / 2 - 14, 88, 28, true)
+        c:color(0xFFFFFF)
+        c:rect(W / 2 - 44, H / 2 - 14, 88, 28, false)
+        c:text("PAUSED", W / 2, H / 2 - 6, "center")
+    end
+
+    if game.over then
+        c:color(0x000000)
+        c:rect(10, H / 2 - 34, W - 20, 68, true)
+        c:color(0xFF5050)
+        c:rect(10, H / 2 - 34, W - 20, 68, false)
+        c:font("monospace bold large")
+        c:text("GAME OVER", W / 2, H / 2 - 26, "center")
+        c:font("monospace medium")
+        c:color(0xFFFFFF)
+        c:text("FIRE to play again", W / 2, H / 2 + 6, "center")
+    end
+end
+
+local function handleKey(k, a)
+    if a == action.UP or k == key.NUM2 then turn(0, -1)
+    elseif a == action.DOWN or k == key.NUM8 then turn(0, 1)
+    elseif a == action.LEFT or k == key.NUM4 then turn(-1, 0)
+    elseif a == action.RIGHT or k == key.NUM6 then turn(1, 0)
+    elseif a == action.FIRE then
+        if game.over then restart() else game.paused = not game.paused end
+    end
+end
+
+c.keyPressed = function(canvas, k, a) handleKey(k, a) end
+
+local function frame(canvas, dt)
+    game.frames = game.frames + 1
+    update(dt)
+    draw()
+end
+
+local frames = tonumber(arg[1] or "")
+
+os.setproc("name", "snake")
+restart()
+c:command("Exit", "exit", function() c:stop() c:close() end)
+c:command("Pause", "screen", function() game.paused = not game.paused end)
+c:display()
+
+if frames and frames > 0 then
+    c:loop(function(canvas, dt)
+        if game.over then restart() end
+        frame(canvas, dt)
+        if game.frames >= frames then return false end
+    end, 16)
+    print("snake: " .. game.frames .. " frames, score " .. game.score)
+else
+    c:animate(frame, 40)
+end

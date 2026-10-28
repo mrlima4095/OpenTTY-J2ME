@@ -1,0 +1,191 @@
+#!/bin/lua
+-- life - Conway's Game of Life on graphics.canvas.
+--
+-- Demonstrates a full-canvas grid animation: a cell grid, a generation
+-- counter, torus wrapping and color by cell age.
+--
+-- Usage:
+--   life          play (random soup, 10 generations/second)
+--   life 120      run 120 frames and return (used by the test suite)
+--
+-- Keys: FIRE pauses, GAME_A / 5 reseeds, GAME_B / 0 clears,
+--       2 steps once while paused.
+
+local CELL = 8
+
+local c = graphics.canvas.new({
+    title = "Life",
+    background = 0x000000,
+    foreground = 0x66FF66,
+    font = "monospace medium"
+})
+
+local W, H = c:size()
+local COLS = W / CELL - (W / CELL) % 1
+local ROWS = H / CELL - (H / CELL) % 1
+
+local key, action = graphics.canvas.key, graphics.canvas.action
+local HUD = 14
+
+local state = {
+    grid = {},
+    next = {},
+    age = {},
+    generation = 0,
+    population = 0,
+    wait = 0,
+    paused = false,
+    frames = 0
+}
+
+local function blank()
+    local grid = {}
+    for y = 1, ROWS do
+        grid[y] = {}
+        for x = 1, COLS do grid[y][x] = 0 end
+    end
+    return grid
+end
+
+local function reseed()
+    state.grid = blank()
+    state.age = blank()
+    state.generation = 0
+    state.population = 0
+    for y = 1, ROWS do
+        for x = 1, COLS do
+            if math.random(100) < 26 then
+                state.grid[y][x] = 1
+                state.age[y][x] = 1
+                state.population = state.population + 1
+            end
+        end
+    end
+end
+
+local function clear()
+    state.grid = blank()
+    state.age = blank()
+    state.generation = 0
+    state.population = 0
+end
+
+-- Neighbours on a torus, so gliders leaving one edge come back on the other.
+local function neighbours(x, y)
+    local count = 0
+    for dy = -1, 1 do
+        for dx = -1, 1 do
+            if dx ~= 0 or dy ~= 0 then
+                local nx, ny = x + dx, y + dy
+                if nx < 1 then nx = COLS elseif nx > COLS then nx = 1 end
+                if ny < 1 then ny = ROWS elseif ny > ROWS then ny = 1 end
+                if state.grid[ny][nx] == 1 then count = count + 1 end
+            end
+        end
+    end
+    return count
+end
+
+local function step()
+    if state.population == 0 then return end
+    local nextGrid, nextAge = blank(), blank()
+    local population = 0
+
+    for y = 1, ROWS do
+        for x = 1, COLS do
+            local n = neighbours(x, y)
+            local alive = state.grid[y][x] == 1
+            if alive and (n == 2 or n == 3) then
+                nextGrid[y][x] = 1
+                nextAge[y][x] = state.age[y][x] + 1
+                population = population + 1
+            elseif not alive and n == 3 then
+                nextGrid[y][x] = 1
+                nextAge[y][x] = 1
+                population = population + 1
+            end
+        end
+    end
+
+    state.grid = nextGrid
+    state.age = nextAge
+    state.population = population
+    state.generation = state.generation + 1
+end
+
+local function ageColor(age)
+    if age <= 1 then return 0xCCFFCC end
+    if age <= 3 then return 0x66FF66 end
+    if age <= 8 then return 0x33CC33 end
+    if age <= 20 then return 0x229922 end
+    return 0x117711
+end
+
+local function draw()
+    c:clear()
+
+    for y = 1, ROWS do
+        local row, ages = state.grid[y], state.age[y]
+        for x = 1, COLS do
+            if row[x] == 1 then
+                c:color(ageColor(ages[x]))
+                c:rect((x - 1) * CELL + 1, (y - 1) * CELL + 1, CELL - 1, CELL - 1, true)
+            end
+        end
+    end
+
+    c:color(0x000000)
+    c:rect(0, H - HUD, W, HUD, true)
+    c:color(0x66FF66)
+    c:font("monospace medium")
+    c:text("gen " .. state.generation, 2, H - HUD + 1)
+    c:text("pop " .. state.population, W - 2, H - HUD + 1, "right")
+    if state.paused then
+        c:text("PAUSED", W / 2, H - HUD + 1, "center")
+    end
+end
+
+local function update(dt)
+    if state.paused then return end
+    state.wait = state.wait + dt
+    while state.wait >= 100 do
+        state.wait = state.wait - 100
+        step()
+    end
+end
+
+local function handleKey(k, a)
+    if a == action.FIRE then state.paused = not state.paused
+    elseif a == action.GAME_A or k == key.NUM5 then reseed()
+    elseif a == action.GAME_B or k == key.NUM0 then clear()
+    elseif k == key.NUM2 then step()
+    end
+end
+
+c.keyPressed = function(canvas, k, a) handleKey(k, a) end
+
+local function frame(canvas, dt)
+    state.frames = state.frames + 1
+    update(dt)
+    draw()
+end
+
+local frames = tonumber(arg[1] or "")
+
+os.setproc("name", "life")
+reseed()
+c:command("Exit", "exit", function() c:stop() c:close() end)
+c:command("Pause", "screen", function() state.paused = not state.paused end)
+c:command("Reseed", "screen", function() reseed() end)
+c:command("Clear", "screen", function() clear() end)
+c:display()
+
+if frames and frames > 0 then
+    c:loop(function(canvas, dt)
+        frame(canvas, dt)
+        if state.frames >= frames then return false end
+    end, 16)
+    print("life: " .. state.frames .. " frames, gen " .. state.generation .. ", pop " .. state.population)
+else
+    c:animate(frame, 40)
+end

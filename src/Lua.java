@@ -561,7 +561,7 @@ public class Lua {
 
                 if (peek().type == ASSIGN) {
                     consume(ASSIGN);
-                    Object value = expression(scope);
+                    Object value = firstValue(expression(scope));
                     indexSet(targetTable, key, value);
                     return null;
                 } 
@@ -586,7 +586,7 @@ public class Lua {
             else {
                 if (peek().type == ASSIGN) {
                     consume(ASSIGN);
-                    Object value = expression(scope);
+                    Object value = firstValue(expression(scope));
                     assignVariable(scope, varName, value);
                     return null;
                 } 
