@@ -1,4 +1,4 @@
-# OpenTTY 1.18.2 test suite
+# OpenTTY 1.19 test suite
 
 Pre-release tests for OpenTTY. They run on a plain Linux box with only
 `python3`, `lua`, `javac`/`java` and (fallback) the LLVM toolchain — no J2ME
@@ -7,7 +7,7 @@ stage.
 
 ## Quick start
 
-    ./tests/run_all.sh              # default 4 suites
+    ./tests/run_all.sh              # default 5 suites
     ./tests/run_all.sh --build      # + the real J2ME device build (~3 min)
 
 ## Suites
@@ -17,8 +17,9 @@ stage.
 | Lua syntax | `tests/check_syntax.sh` | every `.lua` and every `#!/bin/lua` script in `src/`, `apps/`, `res/` parses (the maintainers' `assert(loadfile(...))` convention). |
 | Appstore DB | `tests/check_sources.py` | each `apps/<major>/sources.lua`: `remote` files exist, `depends` resolve, `riscv=true` apps ship a real ELF, and `src/etc/sources` matches the newest catalog (`apps/<major>/sources.lua`). |
 | ELF headers | `tests/check_elves.py` | every shipped RISC-V binary is ELF32 LE, `EM_RISCV` (243), `ET_EXEC`/`ET_DYN`, and `ET_EXEC` entry < 1 MB (the emulator's guest RAM). |
+| Lua runtime | `tests/lua/run_lua.sh` | boots the desktop shim headless and checks `src/Lua.java` semantics: numeric/generic `for` keep iterating when the body's last statement returns a value, `break`/`return` inside loops, `and`/`or` short-circuit, `tonumber("")` is nil, `t[#t] = nil` shrinks, multi-assignment takes the first value. |
 | ELF emulator | `tests/java/run_java.sh` | runs the **real** `src/ELF.java` on the JVM against small J2ME stubs and executes the shipped `res/apps/dist` binaries (`rev`, `tac`, `seq`, `factor`, `cal`, `rot13`, `memtest`) checking exact stdout. |
-| Device build | `tests/build/run_j2me_build.sh` | real `sdkcli.jar` build; verifies the jar has `MIDlet-Version: 1.18.2`, the full `ELF.class` emulator, and the `/boot`, `/bin`, `/lib`, `/etc/sources` seeds. |
+| Device build | `tests/build/run_j2me_build.sh` | real `sdkcli.jar` build; verifies the jar has `MIDlet-Version: 1.19`, the full `ELF.class` emulator, and the `/boot`, `/bin`, `/lib`, `/etc/sources` seeds. |
 
 ## How the emulator test works
 
@@ -37,5 +38,5 @@ available; the test skips gracefully otherwise.
 
 - `lua` 5.x (`check_syntax.sh`)
 - `python3` (`check_sources.py`, `check_elves.py`)
-- `javac`+`java` (`run_java.sh`, `run_j2me_build.sh`)
+- `javac`+`java` (`run_java.sh`, `run_lua.sh`, `run_j2me_build.sh`)
 - `clang`/`llvm-mc`/`ld.lld` (optional; only to rebuild the `memtest` fixture)

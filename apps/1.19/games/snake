@@ -36,6 +36,8 @@ local game = {
     wait = 0,
     over = false,
     paused = false,
+    waiting = true, -- showing the start prompt, nothing moves yet
+    overWait = 0,   -- ms spent on the GAME OVER screen (auto restart)
     frames = 0
 }
 
@@ -73,6 +75,7 @@ local function restart()
     game.wait = 0
     game.over = false
     game.paused = false
+    game.overWait = 0
     placeFood()
 end
 
@@ -113,7 +116,11 @@ local function stepDelay()
 end
 
 local function update(dt)
-    if game.over or game.paused then return end
+    if game.over then
+        game.overWait = game.overWait + dt
+        return
+    end
+    if game.waiting or game.paused then return end
     -- Cap the catch-up: a slow frame must not make the loop spin forever.
     if dt > 200 then dt = 200 end
     game.wait = game.wait + dt
@@ -150,6 +157,18 @@ local function draw()
         c:rect(seg.x * CELL + 1, TOP + seg.y * CELL + 1, CELL - 2, CELL - 2, true)
     end
 
+    if game.waiting and not game.over then
+        c:color(0x000000)
+        c:rect(10, H / 2 - 26, W - 20, 52, true)
+        c:color(0x00FF88)
+        c:rect(10, H / 2 - 26, W - 20, 52, false)
+        c:font("monospace bold large")
+        c:text("SNAKE", W / 2, H / 2 - 20, "center")
+        c:font("monospace medium")
+        c:color(0xFFFFFF)
+        c:text("FIRE to start", W / 2, H / 2 + 4, "center")
+    end
+
     if game.paused and not game.over then
         c:color(0x000000)
         c:rect(W / 2 - 44, H / 2 - 14, 88, 28, true)
@@ -177,7 +196,13 @@ local function handleKey(k, a)
     elseif a == action.LEFT or k == key.NUM4 then turn(-1, 0)
     elseif a == action.RIGHT or k == key.NUM6 then turn(1, 0)
     elseif a == action.FIRE then
-        if game.over then restart() else game.paused = not game.paused end
+        if game.over then
+            restart()
+        elseif game.waiting then
+            game.waiting = false
+        else
+            game.paused = not game.paused
+        end
     end
 end
 
@@ -186,6 +211,12 @@ c.keyPressed = function(canvas, k, a) handleKey(k, a) end
 local function frame(canvas, dt)
     game.frames = game.frames + 1
     update(dt)
+    -- Attract mode: after a few seconds the game over screen goes back to the
+    -- start prompt instead of sitting there forever.
+    if game.over and game.overWait >= 4000 then
+        restart()
+        game.waiting = true
+    end
     draw()
 end
 
@@ -198,6 +229,7 @@ c:command("Pause", "screen", function() game.paused = not game.paused end)
 c:display()
 
 if frames and frames > 0 then
+    game.waiting = false
     c:loop(function(canvas, dt)
         if game.over then restart() end
         frame(canvas, dt)

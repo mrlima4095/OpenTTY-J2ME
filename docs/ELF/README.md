@@ -512,12 +512,12 @@ and arguments through the emulator formatter. The compiler accepts `//` and
 
 ## Packaging
 
-For the current `1.18.2` store:
+For the current `1.19` store:
 
 1. Keep source in `res/apps/src/<name>.c`.
 2. Build to `res/apps/dist/<name>`.
-3. Copy the exact binary to `apps/1.18.2/dev/<name>`.
-4. Add an entry to both `apps/1.18.2/sources.lua` and `src/etc/sources`.
+3. Copy the exact binary to `apps/<major>/dev/<name>`.
+4. Add an entry to both `apps/<major>/sources.lua` and `src/etc/sources`.
 5. Set `riscv = true` and list shared-library dependencies.
 
 ```lua

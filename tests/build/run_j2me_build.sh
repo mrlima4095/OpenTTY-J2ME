@@ -1,6 +1,6 @@
 #!/bin/sh
 # J2ME release build test: runs the device SDK build (sdkcli.jar) and verifies
-# the produced jar/jad are 1.18.2 and carry the full RISC-V emulator.
+# the produced jar/jad are 1.19 and carry the full RISC-V emulator.
 #
 # Requires a JDK on PATH. This is slow (the SDK compile takes ~2-3 min) and is
 # therefore NOT part of the default test run.
@@ -19,7 +19,7 @@ java -jar "$ROOT/sdkcli.jar" "$ROOT/" OpenTTY.jar OpenTTY.jad
 fails=0
 
 # Version gate.
-grep -q 'MIDlet-Version: 1.18.2' dist/OpenTTY.jad || { echo "FAIL: JAD MIDlet-Version != 1.18.2"; fails=1; }
+grep -q 'MIDlet-Version: 1.19' dist/OpenTTY.jad || { echo "FAIL: JAD MIDlet-Version != 1.19"; fails=1; }
 
 # The Nokia-MIDlet-Background-Event attribute must not leak into the release
 # manifest (it was removed from nbproject/project.properties in 1.18.2).
@@ -46,10 +46,10 @@ for resource in boot/grub.cfg boot/initrd.img boot/vmlinuz bin/init etc/sources 
 done
 
 # /etc/sources seeded for the released appstore version.
-if unzip -p dist/OpenTTY.jar etc/sources | grep -q 'version = "1.18.2"'; then
-    echo "PASS: etc/sources seeds appstore 1.18.2"
+if unzip -p dist/OpenTTY.jar etc/sources | grep -q 'version = "1.19"'; then
+    echo "PASS: etc/sources seeds appstore 1.19"
 else
-    echo "FAIL: etc/sources is not 1.18.2"; fails=1
+    echo "FAIL: etc/sources is not 1.19"; fails=1
 fi
 
 echo "run_j2me_build: $([ "$fails" -eq 0 ] && echo ALL CHECKS PASSED || echo FAILED)"

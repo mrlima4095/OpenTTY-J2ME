@@ -3,8 +3,8 @@
 # the pc/j2me bindings, the pc/app runner and the guest /bin /boot /etc /lib
 # resources all packed into one runnable archive.
 #
-#   pc/build-jar.sh                      -> dist/OpenTTY-desktop-1.18.2.jar
-#   java -jar dist/OpenTTY-desktop-1.18.2.jar [options] [--] [command tokens...]
+#   pc/build-jar.sh                      -> dist/OpenTTY-desktop-1.19.jar
+#   java -jar dist/OpenTTY-desktop-1.19.jar [options] [--] [command tokens...]
 #
 # Options are identical to pc/run.sh (see docs/RUNNER.md). Per-boot state
 # (RecordStores, mounts) lives under data/ by default.
@@ -12,7 +12,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 WORK="$ROOT/pc/work"
-OUT="$ROOT/dist/OpenTTY-desktop-1.18.2.jar"
+OUT="$ROOT/dist/OpenTTY-desktop-1.19.jar"
 
 cd "$ROOT"
 

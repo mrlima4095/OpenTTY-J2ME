@@ -13,7 +13,7 @@ public abstract class MIDlet {
     protected MIDlet() {
         current = this;
         props.put("MIDlet-Name", "OpenTTY");
-        props.put("MIDlet-Version", "1.18.2");
+        props.put("MIDlet-Version", "1.19");
         props.put("MIDlet-Vendor", "Mr Lima");
         props.put("MIDlet-Description", "Terminal Emulator for J2ME");
         props.put("MIDlet-Info-URL", "https://github.com/mrlima4095/OpenTTY-J2ME");

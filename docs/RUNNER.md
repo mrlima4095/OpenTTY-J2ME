@@ -123,7 +123,7 @@ guest `/bin /boot /etc /lib` resources packed together):
 
 ```
 pc/build-jar.sh
-java -jar dist/OpenTTY-desktop-1.18.2.jar -- /tmp/app.lua
+java -jar dist/OpenTTY-desktop-1.19.jar -- /tmp/app.lua
 ```
 
 The JAR accepts the same options as `pc/run.sh`. Per-boot state (RecordStores,
@@ -135,7 +135,7 @@ mounts) lives under `data/` by default.
 > automatically; when launching the JAR with `java -jar`, set it yourself:
 >
 > ```
-> _JAVA_AWT_WM_NONREPARENTING=1 java -jar dist/OpenTTY-desktop-1.18.2.jar
+> _JAVA_AWT_WM_NONREPARENTING=1 java -jar dist/OpenTTY-desktop-1.19.jar
 > ```
 >
 > It is harmless on reparenting WMs (GNOME/Cinnamon/KDE).

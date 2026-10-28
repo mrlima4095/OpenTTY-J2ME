@@ -239,7 +239,7 @@ Quick overview:
 - Build on-device using the J2ME SDK (`http://opentty.fun/dl/SDK.jar`)
 - Compiles to `OpenTTY.jar` + `OpenTTY.jad`
 - Install directly on Java ME (MIDP-2.0 / CLDC-1.0) devices
-- Version: **1.18.2**
+- Version: **1.19**
 
 ### Desktop development
 
@@ -269,7 +269,7 @@ window width with no left margin, and destroying the MIDlet (Exit/`exit`)
 closes the window instead of leaving a zombie JVM.
 
 `pc/build-jar.sh` packs the same build into a standalone desktop JAR
-(`dist/OpenTTY-desktop-1.18.2.jar`, `java -jar …`). See
+(`dist/OpenTTY-desktop-1.19.jar`, `java -jar …`). See
 [docs/RUNNER.md](docs/RUNNER.md) for the full runner reference.
 
 ---

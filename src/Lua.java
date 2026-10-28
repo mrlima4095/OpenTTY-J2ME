@@ -10,6 +10,9 @@ import java.io.*;
 // Lua Runtime
 public class Lua {
     public boolean breakLoop = false, doreturn = false, kill = true, gc = true;
+    // > 0 while the right operand of a short-circuited `and`/`or` is parsed:
+    // the tokens are consumed (so positions stay exact) but nothing runs.
+    private int suppress = 0;
     public Process proc;
     private OpenTTY midlet;
     private Object stdout;
@@ -700,15 +703,19 @@ public class Lua {
                         tokenIndex = 0;
 
                         Object ret = null;
+                        boolean returned = false;
                         while (peek().type != EOF) {
                             ret = statement(scope);
-                            if (doreturn) { break; }
+                            if (doreturn) { returned = true; break; }
                         }
 
                         tokenIndex = originalTokenIndex;
                         tokens = originalTokens;
 
-                        if (ret != null) { return ret; }
+                        // The body's last statement value is not a return: a
+                        // call such as `c:rect(...)` returns a handle and used
+                        // to abort the loop after its first iteration.
+                        if (returned) { return ret; }
 
                         iVal += stepVal;
                     }
@@ -762,14 +769,15 @@ public class Lua {
                                 tokenIndex = 0;
 
                                 Object ret = null;
+                                boolean returned = false;
                                 while (peek().type != EOF) {
                                     ret = statement(scope);
-                                    if (doreturn) return ret;
+                                    if (doreturn) { returned = true; break; }
                                 }
 
                                 tokenIndex = originalTokenIndex;
                                 tokens = originalTokens;
-                                if (ret != null) return ret;
+                                if (returned) { return ret; }
 
                                 if (breakLoop) {
                                     breakLoop = false;
@@ -793,14 +801,15 @@ public class Lua {
                             tokenIndex = 0;
 
                             Object ret = null;
+                            boolean returned = false;
                             while (peek().type != EOF) {
                                 ret = statement(scope);
-                                if (doreturn) { return ret; }
+                                if (doreturn) { returned = true; break; }
                             }
 
                             tokenIndex = originalTokenIndex;
                             tokens = originalTokens;
-                            if (ret != null) { return ret; }
+                            if (returned) { return ret; }
 
                             if (breakLoop) { breakLoop = false; break; }
                         }
@@ -827,14 +836,15 @@ public class Lua {
                             tokenIndex = 0;
 
                             Object ret = null;
+                            boolean returned = false;
                             while (peek().type != EOF) {
                                 ret = statement(scope);
-                                if (doreturn) { return ret; }
+                                if (doreturn) { returned = true; break; }
                             }
 
                             tokenIndex = originalTokenIndex;
                             tokens = originalTokens;
-                            if (ret != null) return ret;
+                            if (returned) { return ret; }
 
                             if (breakLoop) { breakLoop = false; break; }
                         }
@@ -1126,13 +1136,38 @@ public class Lua {
         return value;
     }
 
-    private Object logicalOr(Hashtable scope) throws Exception { Object left = logicalAnd(scope); while (peek().type == OR) { consume(OR); Object right = logicalAnd(scope); left = isTruthy(left) ? left : right; } return left; }
-    private Object logicalAnd(Hashtable scope) throws Exception { Object left = comparison(scope); while (peek().type == AND) { consume(AND); Object right = comparison(scope); left = isTruthy(left) ? right : left; } return left; }
+    private Object logicalOr(Hashtable scope) throws Exception {
+        Object left = logicalAnd(scope);
+        while (peek().type == OR) {
+            consume(OR);
+            if (isTruthy(left)) { skipOperand(scope); } else { left = logicalAnd(scope); }
+        }
+        return left;
+    }
+    private Object logicalAnd(Hashtable scope) throws Exception {
+        Object left = comparison(scope);
+        while (peek().type == AND) {
+            consume(AND);
+            if (isTruthy(left)) { left = comparison(scope); } else { skipOperand(scope); }
+        }
+        return left;
+    }
+    // | (Short-circuit: parse the operand we must not evaluate. It is still
+    // |  consumed token by token so the parser keeps its place; every value
+    // |  it would produce is dropped.)
+    private Object skipOperand(Hashtable scope) throws Exception {
+        suppress++;
+        try { return logicalAnd(scope); }
+        catch (Exception e) { return null; }
+        catch (Error e) { return null; }
+        finally { suppress--; }
+    }
     private Object comparison(Hashtable scope) throws Exception {
         Object left = concatenation(scope);
         while (peek().type == EQ || peek().type == NE || peek().type == LT || peek().type == GT || peek().type == LE || peek().type == GE) {
             Token op = consume();
             Object right = concatenation(scope);
+            if (suppress > 0) { left = null; continue; }
             left = firstValue(left);
             right = firstValue(right);
             if (op.type == EQ || op.type == NE) {
@@ -1175,6 +1210,7 @@ public class Lua {
         while (peek().type == CONCAT) {
             consume(CONCAT);
             Object right = arithmetic(scope);
+            if (suppress > 0) { left = null; continue; }
             left = firstValue(left);
             right = firstValue(right);
 
@@ -1191,6 +1227,7 @@ public class Lua {
         while (peek().type == PLUS || peek().type == MINUS) {
             Token op = consume();
             Object right = term(scope); 
+            if (suppress > 0) { left = null; continue; }
             left = firstValue(left);
             right = firstValue(right);
             String event = op.type == PLUS ? "__add" : "__sub";
@@ -1209,6 +1246,7 @@ public class Lua {
         while (peek().type == MULTIPLY || peek().type == DIVIDE || peek().type == MODULO) {
             Token op = consume();
             Object right = exponentiation(scope);
+            if (suppress > 0) { left = null; continue; }
             left = firstValue(left);
             right = firstValue(right);
             String event = op.type == MULTIPLY ? "__mul" : op.type == DIVIDE ? "__div" : "__mod";
@@ -1230,6 +1268,7 @@ public class Lua {
         while (peek().type == POWER) {
             consume(POWER);
             Object right = factor(scope);
+            if (suppress > 0) { left = null; continue; }
 
             if (!(left instanceof Double) || !(right instanceof Double)) {
                 if (hasAnyMeta(left, right, "__pow")) { left = metaBinary("__pow", left, right); continue; }
@@ -1271,7 +1310,7 @@ public class Lua {
                     consume(DOT);
                     String field = (String) consume(IDENTIFIER).value;
 
-                    if (base == null) { throw new Exception("attempt to index a nil value after literal"); }
+                    if (base == null) { if (suppress > 0) { continue; } throw new Exception("attempt to index a nil value after literal"); }
                     base = fieldValue(base, field);
                 } 
                 else if (peek().type == COLON) {
@@ -1279,7 +1318,7 @@ public class Lua {
                     String method = (String) consume(IDENTIFIER).value;
 
                     Object func = base == null ? null : fieldValue(base, method);
-                    if (func == null) { throw new Exception("method '" + method + "' not found for type: " + LuaFunction.type(base)); }
+                    if (func == null && suppress == 0) { throw new Exception("method '" + method + "' not found for type: " + LuaFunction.type(base)); }
 
                     base = callMethod(base, null, func, method, scope);
                 }
@@ -1292,11 +1331,12 @@ public class Lua {
             Object val = factor(scope);
             if (val instanceof Double) { return luaNumber(-((Double) val).doubleValue()); }
             if (hasMeta(val, "__unm")) { return callMeta("__unm", new Object[] { val }); }
+            if (suppress > 0) { return null; }
             throw new RuntimeException("attempt to perform arithmetic on a " + LuaFunction.type(val) + " value");
         }
         else if (current.type == NOT) { consume(NOT); return new Boolean(!isTruthy(factor(scope))); } 
         else if (current.type == LPAREN) { consume(LPAREN); Object value = expression(scope); consume(RPAREN); return value; } 
-        else if (current.type == LENGTH) { consume(LENGTH); Object val = factor(scope); if (hasMeta(val, "__len")) { return callMeta("__len", new Object[] { val }); } else if (val == null || val instanceof Boolean) { throw new RuntimeException("attempt to get length of a " + (val == null ? "nil" : "boolean") + " value"); } else if (val instanceof String) { return luaNumber(((String) val).length()); } else if (val instanceof Hashtable) { int size = luaLength((Hashtable) val); if (val == globals.get("arg") && size > 0) { size -= 1; } return luaNumber(size); } else if (val instanceof Vector) { return luaNumber(((Vector) val).size()); } else if (val instanceof InputStream) { return luaNumber(((InputStream) val).available()); } else { return luaNumber(0); } }
+        else if (current.type == LENGTH) { consume(LENGTH); Object val = factor(scope); if (hasMeta(val, "__len")) { return callMeta("__len", new Object[] { val }); } else if (val == null || val instanceof Boolean) { if (suppress > 0) { return null; } throw new RuntimeException("attempt to get length of a " + (val == null ? "nil" : "boolean") + " value"); } else if (val instanceof String) { return luaNumber(((String) val).length()); } else if (val instanceof Hashtable) { int size = luaLength((Hashtable) val); if (val == globals.get("arg") && size > 0) { size -= 1; } return luaNumber(size); } else if (val instanceof Vector) { return luaNumber(((Vector) val).size()); } else if (val instanceof InputStream) { return luaNumber(((InputStream) val).available()); } else { return luaNumber(0); } }
         else if (current.type == IDENTIFIER) {
             String name = (String) consume(IDENTIFIER).value;
             Object value = unwrap(scope.get(name));
@@ -1307,11 +1347,11 @@ public class Lua {
                 if (peek().type == LBRACKET) { consume(LBRACKET); key = expression(scope); consume(RBRACKET); } 
                 else { consume(DOT); key = (String) consume(IDENTIFIER).value; }
 
-                if (value == null) { return null; }
-                if (!(value instanceof Hashtable)) { throw new Exception("attempt to index a non-table value"); }
-
-                value = indexValue(value, key);
-                if (value == null) { break; }
+                if (value == null || !(value instanceof Hashtable)) {
+                    if (suppress == 0) { throw new Exception(value == null ? "attempt to index a nil value" : "attempt to index a non-table value"); }
+                    value = null;
+                }
+                else { value = indexValue(value, key); }
             }
 
             if (peek().type == COLON) {
@@ -1319,13 +1359,13 @@ public class Lua {
             
                 Object self = unwrap(scope.get(objectName));
                 if (self == null && globals.containsKey(objectName)) { self = unwrap(globals.get(objectName)); }
-                if (self == null) { throw new Exception("attempt to call method on nil value: " + objectName); }
+                if (self == null && suppress == 0) { throw new Exception("attempt to call method on nil value: " + objectName); }
             
                 consume(COLON);
                 String methodName = (String) consume(IDENTIFIER).value;
             
-                Object func = fieldValue(self, methodName);
-                if (func == null) { throw new Exception("method '" + methodName + "' not found for type: " + LuaFunction.type(self)); }
+                Object func = self == null ? null : fieldValue(self, methodName);
+                if (func == null && suppress == 0) { throw new Exception("method '" + methodName + "' not found for type: " + LuaFunction.type(self)); }
             
                 return callMethod(self, objectName, func, methodName, scope);
             }
@@ -1445,6 +1485,7 @@ public class Lua {
         Object  funcObj = unwrap(scope.get(funcName));
         if (funcObj == null && globals.containsKey(funcName)) { funcObj = unwrap(globals.get(funcName)); }
 
+        if (suppress > 0) { return null; }
         if (isCallable(funcObj)) { return callValue(funcObj, args); }
         else { throw new RuntimeException("Attempt to call a non-function value: " + funcName); }
     }
@@ -1452,6 +1493,7 @@ public class Lua {
         Vector args = new Vector();
         readCallArgs(args, scope);
 
+        if (suppress > 0) { return null; }
         if (isCallable(funcObj)) { return callValue(funcObj, args); }
         else { throw new Exception("Attempt to call a non-function value (by object)."); }
     }
@@ -1558,14 +1600,16 @@ public class Lua {
                 if (peek().type == DOT) { consume(DOT); Token field = consume(IDENTIFIER); key = field.value; } 
                 else if (peek().type == LBRACKET) { consume(LBRACKET); key = expression(scope); consume(RBRACKET); }
         
-                if (table == null) { throw new Exception("attempt to index a nil value"); }
-                if (!(table instanceof Hashtable)) { throw new Exception("attempt to index a non-table value"); }
-                if (peek().type == DOT || peek().type == LBRACKET) { methodObj = unwrap(((Hashtable)table).get(key)); }
+                if (table == null || !(table instanceof Hashtable)) {
+                    if (suppress == 0) { throw new Exception(table == null ? "attempt to index a nil value" : "attempt to index a non-table value"); }
+                }
+                else if (peek().type == DOT || peek().type == LBRACKET) { methodObj = unwrap(((Hashtable)table).get(key)); }
             }
         }
         Vector args = new Vector();
         args.addElement(self);
         readCallArgs(args, scope);
+        if (suppress > 0) { return null; }
         if (isCallable(methodObj)) { return callValue(methodObj, args); } 
         else { throw new Exception("attempt to call non-function as method: " + methodName); }
     }
@@ -1850,7 +1894,16 @@ public class Lua {
                         return new Double(0);
                     }
                 case TOSTRING: return toDisplayValue(args.isEmpty() ? gotbad(1, "tostring", "value expected") : args.elementAt(0));
-                case TONUMBER: return args.isEmpty() ? gotbad(1, "tonumber", "value expected") : luaNumber(parseLuaNumber(toLuaString(args.elementAt(0))));
+                case TONUMBER:
+                    if (args.isEmpty()) { return gotbad(1, "tonumber", "value expected"); }
+                    else {
+                        Object value = args.elementAt(0);
+                        if (value instanceof Double) { return value; }
+                        // Lua returns nil for anything that is not a number
+                        // (Double.parseDouble would throw on "" / "abc").
+                        try { return luaNumber(parseLuaNumber(toLuaString(value))); }
+                        catch (RuntimeException e) { return null; }
+                    }
                 case SELECT:
                     if (args.isEmpty() || args.elementAt(0) == null) { return gotbad(1, "select", "number expected, got no value"); } 
                     else {
