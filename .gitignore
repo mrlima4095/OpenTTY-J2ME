@@ -26,3 +26,6 @@ __pycache__/
 /data/
 # desktop shim release jar (built by pc/build-jar.sh)
 /dist/OpenTTY-desktop-*.jar
+
+# bench/ ELF twin (rebuilt by ./build-elf.sh)
+/bench/bench

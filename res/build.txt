@@ -218,3 +218,4 @@
 [2026-1.19-04x48]	Build #448 - Lua: `for` loops no longer stop after the first iteration when the body's last statement returns a value (canvas methods return the handle, so snake/life/matrix only drew one element); tests/lua/run_lua.sh covers loops, short-circuit, tonumber, list shrinking and multi-assignment
 [2026-1.19-04x49]	Build #449 - Snake: the apple cycles through a bright palette (new random color per apple, changes every 220 ms)
 [2026-1.19-04x50]	Build #450 - Snake: the apple now relocates to a new free cell (never a board corner) when its color changes
+[2026-1.19-04x51]	Build #451 - bench/: Lua vs RISC-V ELF benchmark twins (eight identical tests, matching checksums, best-of-N comparison); os.clock() now returns a Lua number and string.byte(s, i) honors the start index

@@ -2029,7 +2029,7 @@ public class Lua {
                         else { midlet.attributes.put(toLuaString(args.elementAt(0)), value); }
                         break;
                     }
-                case CLOCK: return System.currentTimeMillis() - uptime;
+                case CLOCK: return luaNumber(System.currentTimeMillis() - uptime);
                 case SETLOC: if (args.isEmpty()) { break; } else { midlet.attributes.put("LOCALE", toLuaString(args.elementAt(0))); break; }
                 case EXIT: exit(args); break;
                 case DATE: return new java.util.Date().toString();
@@ -2975,7 +2975,7 @@ public class Lua {
                     else {
                         String s = toLuaString(args.elementAt(0));
                         int len = s.length(), start = 1, end = 1;
-                        if (args.size() >= 2) { start = getNumber(toLuaString(args.elementAt(1)), 1); }
+                        if (args.size() >= 2) { start = getNumber(toLuaString(args.elementAt(1)), 1); end = start; }
                         if (args.size() >= 3) { end = getNumber(toLuaString(args.elementAt(2)), start); }
                         
                         if (start < 0) { start = len + start + 1; }
