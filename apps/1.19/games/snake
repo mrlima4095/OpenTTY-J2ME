@@ -24,13 +24,18 @@ local COLS = W / CELL - (W / CELL) % 1
 local ROWS = (H - TOP) / CELL - ((H - TOP) / CELL) % 1
 
 local key, action = graphics.canvas.key, graphics.canvas.action
-local COLOR_HEAD, COLOR_BODY, COLOR_FOOD = 0x00FF88, 0x00A860, 0xFF5050
+local COLOR_HEAD, COLOR_BODY = 0x00FF88, 0x00A860
+-- The apple cycles through these while it waits to be eaten.
+local FOOD_COLORS = { 0xFF5050, 0xFFB040, 0xFFFF40, 0x40FF80, 0x40D0FF, 0xB070FF, 0xFF70C0 }
+local FOOD_STEP = 220 -- ms between color changes
 
 local game = {
     snake = {},
     dx = 1, dy = 0,
     pendingX = 1, pendingY = 0,
     food = { x = 0, y = 0 },
+    foodColor = 1,   -- index into FOOD_COLORS
+    foodTick = 0,    -- ms spent on the current color
     score = 0,
     best = 0,
     wait = 0,
@@ -48,15 +53,22 @@ local function occupied(x, y)
     return false
 end
 
+local function newFood(x, y)
+    game.food = { x = x, y = y }
+    -- A fresh apple starts on a random color instead of always red.
+    game.foodColor = math.random(#FOOD_COLORS)
+    game.foodTick = 0
+end
+
 local function placeFood()
     for attempt = 1, 200 do
         local x, y = math.random(COLS), math.random(ROWS)
-        if not occupied(x, y) then game.food = { x = x, y = y } return end
+        if not occupied(x, y) then newFood(x, y) return end
     end
     -- Board almost full: take the first free cell.
     for y = 0, ROWS - 1 do
         for x = 0, COLS - 1 do
-            if not occupied(x, y) then game.food = { x = x, y = y } return end
+            if not occupied(x, y) then newFood(x, y) return end
         end
     end
 end
@@ -146,8 +158,8 @@ local function draw()
     c:line(0, TOP - 1, W - 1, TOP - 1)
     c:font("monospace medium")
 
-    -- Food
-    c:color(COLOR_FOOD)
+    -- Food (the apple changes color every FOOD_STEP ms)
+    c:color(FOOD_COLORS[game.foodColor])
     c:circle(game.food.x * CELL + CELL / 2, TOP + game.food.y * CELL + CELL / 2, CELL / 2 - 2, true)
 
     -- Snake
@@ -210,6 +222,12 @@ c.keyPressed = function(canvas, k, a) handleKey(k, a) end
 
 local function frame(canvas, dt)
     game.frames = game.frames + 1
+    -- Keep the apple blinking even while the start/game over prompt is up.
+    game.foodTick = game.foodTick + dt
+    if game.foodTick >= FOOD_STEP then
+        game.foodTick = 0
+        game.foodColor = game.foodColor % #FOOD_COLORS + 1
+    end
     update(dt)
     -- Attract mode: after a few seconds the game over screen goes back to the
     -- start prompt instead of sitting there forever.
