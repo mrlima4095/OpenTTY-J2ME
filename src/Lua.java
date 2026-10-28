@@ -2728,8 +2728,25 @@ public class Lua {
                     Object content = args.size() > 2 ? args.elementAt(2) : null;
 
                     if (type.equals("alert")) {
-                        Alert alert = new Alert(title, content != null ? toLuaString(content) : "", null, AlertType.INFO);
-                        alert.setTimeout(Alert.FOREVER);
+                        // Optional 4th argument: { type = "info|warning|error|alarm|confirm", timeout = ms }
+                        AlertType alertType = AlertType.INFO;
+                        int alertTimeout = Alert.FOREVER;
+
+                        if (args.size() > 3 && args.elementAt(3) instanceof Hashtable) {
+                            Hashtable field = (Hashtable) args.elementAt(3);
+                            String kind = getFieldValue(field, "type", "info").toLowerCase();
+
+                            if (kind.equals("warning")) { alertType = AlertType.WARNING; }
+                            else if (kind.equals("error")) { alertType = AlertType.ERROR; }
+                            else if (kind.equals("alarm")) { alertType = AlertType.ALARM; }
+                            else if (kind.equals("confirm") || kind.equals("confirmation")) { alertType = AlertType.CONFIRMATION; }
+
+                            int millis = getFieldNumber(field, "timeout", Alert.FOREVER);
+                            if (millis > 0) { alertTimeout = millis; }
+                        }
+
+                        Alert alert = new Alert(title, content != null ? toLuaString(content) : "", null, alertType);
+                        alert.setTimeout(alertTimeout);
                         return alert;
                     } 
                     else if (type.equals("edit")) { return new TextBox(title, content != null ? toLuaString(content) : "", 31522, TextField.ANY); } 

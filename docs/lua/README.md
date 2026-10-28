@@ -311,6 +311,17 @@ graphics.addCommand(form, ok)
 graphics.display(form)
 ```
 
+An alert accepts an optional options table as its fourth argument:
+
+```lua
+graphics.new("alert", "Battery", "Low charge", { type = "warning", timeout = 2000 })
+```
+
+`type` is `info` (default), `warning`, `error`, `alarm` or `confirm`, and
+`timeout` is a duration in milliseconds (`0`, the default, keeps the alert
+until the user dismisses it). The `alert` command wraps this and can also show a
+gauge: `alert "Install" "Unpacking" -g 75 -i -b Retry -b Cancel`.
+
 ### List
 
 ```lua

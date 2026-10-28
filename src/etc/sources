@@ -2,6 +2,7 @@ return {
     version = "1.19",
     mirror = {
         --["appmenu"] = { remote = "sys/appmenu/main.lua", here = "/bin/init", description = "Application Menu" },
+        ["alert"] = { remote = "sys/alert.lua", here = "/bin/alert", description = "Show an alert or a gauge form" },
         ["armitage"] = { remote = "net/armitage", here = "/bin/armitage", depends = { "ifconfig" }, description = "OpenTTY Network Tools" },
         ["audio"] = { remote = "file/audio.lua", here = "/bin/audio", description = "Audio Codec Manager" },
         ["autogc"] = { remote = "sys/autogc", here = "/bin/autogc", description = "Auto Clean Memory" },
