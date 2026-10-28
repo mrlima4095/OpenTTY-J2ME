@@ -114,12 +114,17 @@ end
 
 local function update(dt)
     if game.over or game.paused then return end
+    -- Cap the catch-up: a slow frame must not make the loop spin forever.
+    if dt > 200 then dt = 200 end
     game.wait = game.wait + dt
+    local steps = 0
     while game.wait >= stepDelay() do
         game.wait = game.wait - stepDelay()
         step()
-        if game.over then return end
+        steps = steps + 1
+        if game.over or steps >= 3 then break end
     end
+    if game.wait > stepDelay() then game.wait = 0 end
 end
 
 local function draw()

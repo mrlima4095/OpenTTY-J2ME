@@ -213,3 +213,4 @@
 [2026-1.18.2-04x43] 1.19 Suite Case
 [2026-1.18.2-04x44]	Build #444 - Lua: full metatables (__index/__newindex/__call/__tostring/__len/comparison/arithmetic/__concat), rawget/rawset/rawequal/rawlen, debug.traceback/getinfo/getregistry, return f() forwards results
 [2026-1.18.2-04x45]	Build #445 - Lua: graphics.canvas API (LuaCanvas: shapes, fonts, cursor, keys, pointer, callbacks, game loop), runtime fixes (hex literals, upvalue assignment, <=/>=, call results in operators/args), headless desktop runs
+[2026-1.18.2-04x46]	Build #446 - Apps: snake, life, matrix, clock, paint on graphics.canvas; Lua runtime fixes (t[#t] = nil removes the key, multi-assignment takes the first value of each call)

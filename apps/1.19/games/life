@@ -11,7 +11,7 @@
 -- Keys: FIRE pauses, GAME_A / 5 reseeds, GAME_B / 0 clears,
 --       2 steps once while paused.
 
-local CELL = 8
+local CELL = 12
 
 local c = graphics.canvas.new({
     title = "Life",
@@ -26,6 +26,7 @@ local ROWS = H / CELL - (H / CELL) % 1
 
 local key, action = graphics.canvas.key, graphics.canvas.action
 local HUD = 14
+local PERIOD = 200 -- ms per generation (5/s): a phone cannot redraw faster
 
 local state = {
     grid = {},
@@ -147,11 +148,19 @@ end
 
 local function update(dt)
     if state.paused then return end
+    -- A generation can take longer than its target period on a phone; without
+    -- these guards the accumulator would fall behind forever and the frame
+    -- callback would never return (the loop spins inside update).
+    if dt > 400 then dt = 400 end
     state.wait = state.wait + dt
-    while state.wait >= 100 do
-        state.wait = state.wait - 100
+    local steps = 0
+    while state.wait >= PERIOD do
+        state.wait = state.wait - PERIOD
         step()
+        steps = steps + 1
+        if steps >= 2 then break end
     end
+    if state.wait > PERIOD then state.wait = 0 end
 end
 
 local function handleKey(k, a)

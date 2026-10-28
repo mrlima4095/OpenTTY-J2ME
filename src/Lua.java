@@ -541,7 +541,7 @@ public class Lua {
                         Vector expanded = (Vector) v;
                         for (int j = 0; j < expanded.size(); j++) { assignValues.addElement(expanded.elementAt(j)); }
                     } 
-                    else { assignValues.addElement(v); }
+                    else { assignValues.addElement(firstValue(v)); }
                 }
 
                 for (int i = 0; i < varNames.size(); i++) {
@@ -1058,7 +1058,7 @@ public class Lua {
                         if (i == values.size() - 1 && v instanceof Vector) {
                             Vector expanded = (Vector) v;
                             for (int j = 0; j < expanded.size(); j++) { assignValues.addElement(expanded.elementAt(j)); }
-                        } else { assignValues.addElement(v); }
+                        } else { assignValues.addElement(firstValue(v)); }
                     }
 
 
@@ -1523,7 +1523,10 @@ public class Lua {
             if (handler instanceof Hashtable) { indexSet(handler, key, value); return; }
             if (handler instanceof LuaFunction) { callMeta("__newindex", new Object[] { table, key, value }); return; }
         }
-        table.put(key, value == null ? LUA_NIL : value);
+        // Assigning nil removes the key (so `t[#t] = nil` really shrinks a list;
+        // storing a LUA_NIL placeholder kept it counted by the length operator).
+        if (value == null) { table.remove(key); }
+        else { table.put(key, value); }
     }
     // | (Field/method lookup: tables go through __index, primitives through their module)
     private Object fieldValue(Object self, String name) throws Exception {

@@ -481,6 +481,39 @@ graphics.canvas.colors   -- black white red green blue yellow cyan magenta
 
 ---
 
+## Apps built with it
+
+The 1.19 app store ships six `graphics.canvas` apps (see `apps/1.19/sources.lua`):
+
+| App | Path | What it shows |
+| --- | --- | --- |
+| `canvasdemo` | `games/canvasdemo` | reference game: loop, keys, HUD, restart |
+| `snake` | `games/snake` | fixed-step logic, key actions, growing list |
+| `life` | `games/life` | full-canvas grid, age coloring, pause/step |
+| `matrix` | `games/matrix` | per-frame text rain, fading tail |
+| `clock` | `sys/clock` | shapes/ticks/rotating hands, slow redraw |
+| `paint` | `file/paint` | callback mode: stylus + keypad, persistent buffer |
+
+Each one takes a frame count as `arg[1]` (`snake 40`) to run headless and
+return, which is what the desktop shim uses:
+
+```sh
+OPENTTY_JVM_OPTS="-Dopentty.headless=1" bash pc/run.sh \
+    --user opentty --pass opentty --smoke -- /path/apps-test.lua
+```
+
+Two things every canvas game must do, because they bit the shipped apps:
+
+- **Cap the catch-up.** `dt` is the real elapsed time in ms; if one step costs
+  more than its period, `while wait >= period do wait = wait - period; step() end`
+  never terminates and the frame callback never returns (the whole shell
+  appears hung). Clamp `dt` and break out after a couple of steps.
+- **Pop with `table.remove` or `t[#t] = nil`** — assigning `nil` now really
+  removes the key, so `#t` shrinks (earlier the runtime stored a `nil`
+  placeholder and `#t` kept counting it).
+
+---
+
 ## Limitations
 
 - The buffer is one `Image` the size of the canvas: on very small heaps prefer
