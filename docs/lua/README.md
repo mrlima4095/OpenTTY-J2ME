@@ -207,6 +207,10 @@ upvalues are not implemented.
 | `graphics.addCommand(screen, command)` | Add a command/button |
 | `graphics.handler(screen, {})` | Set screen button handlers |
 | `graphics.vibrate(ms)` | Vibrate the device |
+| `graphics.new("gauge", { label, interactive, maxValue, value })` | Standalone gauge |
+| `graphics.SetIndicator(alert, gauge)` | Show a gauge inside an alert |
+| `graphics.SetGauge(gauge, value)` / `graphics.GetGauge(gauge)` | Update / read a gauge |
+| `graphics.CONTINUOUS_RUNNING` (and `CONTINUOUS_IDLE`, `INCREMENTAL_IDLE`, `INCREMENTAL_UPDATING`) | Continuous-indicator values |
 | `graphics.db` | Screens database |
 
 ### `graphics.canvas`
@@ -319,8 +323,25 @@ graphics.new("alert", "Battery", "Low charge", { type = "warning", timeout = 200
 
 `type` is `info` (default), `warning`, `error`, `alarm` or `confirm`, and
 `timeout` is a duration in milliseconds (`0`, the default, keeps the alert
-until the user dismisses it). The `alert` command wraps this and can also show a
-gauge: `alert "Install" "Unpacking" -g 75 -i -b Retry -b Cancel`.
+until the user dismisses it). An alert can also show one non-interactive gauge
+as its indicator:
+
+```lua
+local alert = graphics.new("alert", "Install", "Unpacking files")
+local gauge = graphics.new("gauge", { interactive = false, maxValue = 100, value = 75 })
+graphics.SetIndicator(alert, gauge)
+graphics.display(alert)
+```
+
+With `maxValue = 0` the gauge is the MIDP continuous indicator: its value is
+one of `graphics.CONTINUOUS_IDLE`, `graphics.INCREMENTAL_IDLE`,
+`graphics.CONTINUOUS_RUNNING` or `graphics.INCREMENTAL_UPDATING`. Use
+`graphics.SetGauge(gauge, value)` from a `java.run` loop to animate a normal
+gauge (the update is posted to the event thread).
+
+The `alert` command wraps this: `alert "Install" "Unpacking" -g 75 -b Cancel`
+keeps the alert with a 75/100 gauge, `alert "Copy" "Please wait" -g` shows the
+continuous running indicator and `-c` animates a value gauge.
 
 ### List
 

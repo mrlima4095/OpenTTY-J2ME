@@ -8,6 +8,7 @@ public class Alert extends Displayable {
     private Image image = null;
     private AlertType type;
     private int timeout = FOREVER;
+    private Gauge indicator = null;
 
     public Alert(String title) { this(title, null, null, AlertType.INFO); }
 
@@ -25,4 +26,14 @@ public class Alert extends Displayable {
     public Image getImage() { return image; }
     public void setImage(Image i) { image = i; }
     public AlertType getType() { return type; }
+
+    // MIDP 2.0: the indicator is one non-interactive gauge shown in the alert.
+    public Gauge getIndicator() { return indicator; }
+
+    public void setIndicator(Gauge g) {
+        if (g != null && g.isInteractive()) {
+            throw new IllegalArgumentException("interactive gauge cannot be an alert indicator");
+        }
+        indicator = g;
+    }
 }

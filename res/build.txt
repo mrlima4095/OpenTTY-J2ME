@@ -219,3 +219,4 @@
 [2026-1.19-04x49]	Build #449 - Snake: the apple cycles through a bright palette (new random color per apple, changes every 220 ms)
 [2026-1.19-04x50]	Build #450 - Snake: the apple now relocates to a new free cell (never a board corner) when its color changes
 [2026-1.19-04x51]	Build #451 - bench/: Lua vs RISC-V ELF benchmark twins (eight identical tests, matching checksums, best-of-N comparison); os.clock() now returns a Lua number and string.byte(s, i) honors the start index
+[2026-1.19-04x52]	Build #452 - alert: -g now keeps the alert and attaches the gauge with Alert.setIndicator (bare -g is the MIDP continuous-running gauge, -c animates a value gauge); new graphics.new("gauge"), graphics.SetIndicator/SetGauge/GetGauge and graphics.CONTINUOUS_* constants

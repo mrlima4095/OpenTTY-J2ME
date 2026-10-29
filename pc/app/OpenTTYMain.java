@@ -10,6 +10,8 @@ import javax.microedition.lcdui.TextBox;
 import javax.microedition.lcdui.List;
 import javax.microedition.lcdui.TextField;
 import javax.microedition.lcdui.StringItem;
+import javax.microedition.lcdui.Alert;
+import javax.microedition.lcdui.Gauge;
 import javax.microedition.rms.RecordStore;
 import javax.microedition.rms.RecordStoreException;
 import javax.swing.SwingUtilities;
@@ -619,6 +621,11 @@ System.out.println("[probe]   content " + c.getWidth() + "x" + c.getHeight()
             sb.append(" items=").append(l.size());
         } else if (d instanceof TextBox) {
             sb.append(" text=").append(((TextBox) d).getString());
+        } else if (d instanceof Alert) {
+            Gauge g = ((Alert) d).getIndicator();
+            if (g == null) { sb.append(" indicator=none"); }
+            else if (g.getMaxValue() == 0) { sb.append(" indicator=running(").append(g.getValue()).append(")"); }
+            else { sb.append(" indicator=").append(g.getValue()).append("/").append(g.getMaxValue()); }
         }
         return sb.toString();
     }

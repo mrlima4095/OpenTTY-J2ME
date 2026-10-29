@@ -42,7 +42,7 @@ public class Lua {
     public static final int EXEC = 300, GETENV = 301, SETENV = 302, CLOCK = 303, SETLOC = 304, EXIT = 305, DATE = 306, GETPID = 307, SETPROC = 308, GETPROC = 309, GETCWD = 310, GETUID = 311, CHDIR = 312, REQUEST = 313, START = 314, STOP = 315, PREQ = 316, SU = 318, REMOVE = 319, SCOPE = 320, JOIN = 321, MKDIR = 322;
     public static final int READ = 400, WRITE = 401, CLOSE = 402, OPEN = 403, POPEN = 404, DIRS = 405, SETOUT = 406, MOUNT = 407, GEN = 408, COPY = 409;
     public static final int HTTP_GET = 500, HTTP_POST = 501, CONNECT = 502, PEER = 503, DEVICE = 504, SERVER = 505, ACCEPT = 506, HTTP_RGET = 507, HTTP_RPOST = 508;
-    public static final int DISPLAY = 600, NEW = 601, RENDER = 602, APPEND = 603, ADDCMD = 604, HANDLER = 605, GETCURRENT = 606, TITLE = 607, TICKER = 608, VIBRATE = 609, SETLABEL = 610, SETTEXT = 611, GETLABEL = 612, GETTEXT = 613, CLEAR_SCREEN = 614, TASKMNGR = 615, CANVAS = 616, CANVAS_ASSIGN = 617;
+    public static final int DISPLAY = 600, NEW = 601, RENDER = 602, APPEND = 603, ADDCMD = 604, HANDLER = 605, GETCURRENT = 606, TITLE = 607, TICKER = 608, VIBRATE = 609, SETLABEL = 610, SETTEXT = 611, GETLABEL = 612, GETTEXT = 613, CLEAR_SCREEN = 614, TASKMNGR = 615, CANVAS = 616, CANVAS_ASSIGN = 617, SETINDICATOR = 618, SETGAUGE = 619, GETGAUGE = 620;
     public static final int CLASS = 700, NAME = 701, DELETE = 702, UPTIME = 703, RUN = 704, THREAD = 705, SLEEP = 706, KERNEL = 1000;
     public static final int AUDIO_LOAD = 800, AUDIO_PLAY = 801, AUDIO_PAUSE = 802, AUDIO_VOLUME = 803, AUDIO_DURATION = 804, AUDIO_TIME = 805;
     public static final int PUSH_REGISTER = 900, PUSH_UNREGISTER = 901, PUSH_LIST = 902, PUSH_PENDING = 903, PUSH_SET_ALARM = 904;
@@ -119,9 +119,9 @@ public class Lua {
         funcs = new String[] { "register", "unregister", "list", "pending", "setAlarm" }; loaders = new int[] { PUSH_REGISTER, PUSH_UNREGISTER, PUSH_LIST, PUSH_PENDING, PUSH_SET_ALARM };
         for (int i = 0; i< funcs.length; i++) { push.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("push", push);
 
-        funcs = new String[] { "display", "new", "render", "append", "addCommand", "handler", "getCurrent", "SetTitle", "SetTicker", "vibrate", "SetLabel", "SetText", "GetLabel", "GetText", "clear", "taskmngr" }; 
-        loaders = new int[] { DISPLAY, NEW, RENDER, APPEND, ADDCMD, HANDLER, GETCURRENT, TITLE, TICKER, VIBRATE, SETLABEL, SETTEXT, GETLABEL, GETTEXT, CLEAR_SCREEN, TASKMNGR };
-        for (int i = 0; i < funcs.length; i++) { graphics.put(funcs[i], new LuaFunction(loaders[i])); } graphics.put("db", midlet.graphics); graphics.put("fire", List.SELECT_COMMAND); globals.put("graphics", graphics);
+        funcs = new String[] { "display", "new", "render", "append", "addCommand", "handler", "getCurrent", "SetTitle", "SetTicker", "vibrate", "SetLabel", "SetText", "GetLabel", "GetText", "clear", "taskmngr", "SetIndicator", "SetGauge", "GetGauge" }; 
+        loaders = new int[] { DISPLAY, NEW, RENDER, APPEND, ADDCMD, HANDLER, GETCURRENT, TITLE, TICKER, VIBRATE, SETLABEL, SETTEXT, GETLABEL, GETTEXT, CLEAR_SCREEN, TASKMNGR, SETINDICATOR, SETGAUGE, GETGAUGE };
+        for (int i = 0; i < funcs.length; i++) { graphics.put(funcs[i], new LuaFunction(loaders[i])); } graphics.put("db", midlet.graphics); graphics.put("fire", List.SELECT_COMMAND); graphics.put("CONTINUOUS_IDLE", new Double(Gauge.CONTINUOUS_IDLE)); graphics.put("INCREMENTAL_IDLE", new Double(Gauge.INCREMENTAL_IDLE)); graphics.put("CONTINUOUS_RUNNING", new Double(Gauge.CONTINUOUS_RUNNING)); graphics.put("INCREMENTAL_UPDATING", new Double(Gauge.INCREMENTAL_UPDATING)); globals.put("graphics", graphics);
 
         // Package [graphics.canvas] - free-form drawing surface (see LuaCanvas).
         // Every entry is a native tagged with its method name; the canvas table
@@ -2799,6 +2799,17 @@ public class Lua {
                             return new TextField(getFieldValue(field, "label", ""), getFieldValue(field, "value", ""), getFieldNumber(field, "length", 256), getQuest(getFieldValue(field, "mode", "")));
                         }
                     }
+                    else if (type.equals("gauge")) {
+                        // A standalone Gauge, used as an Alert indicator (SetIndicator)
+                        // or appended to a Form with graphics.append(form, gauge).
+                        // maxValue = 0 + a CONTINUOUS_* value gives the built-in
+                        // continuous-running indicator, which needs a non-interactive
+                        // gauge.
+                        if (args.elementAt(1) instanceof Hashtable) {
+                            Hashtable field = (Hashtable) args.elementAt(1);
+                            return new Gauge(getFieldValue(field, "label", ""), getFieldBoolean(field, "interactive", false), getFieldNumber(field, "maxValue", 100), getFieldNumber(field, "value", 0));
+                        } else { return gotbad(2, "new", "table expected"); }
+                    }
                     else { return gotbad(1, "new", "invalid type: " + type); } 
                 case RENDER: return args.isEmpty() || args.elementAt(0) == null ? gotbad(1, "render", "string expected, got" + type(args.elementAt(0))) : midlet.readImg(toLuaString(args.elementAt(0)), father);
                 case APPEND:
@@ -2931,6 +2942,37 @@ public class Lua {
                         break;
                     }
                 case TASKMNGR: midlet.showTaskManager(); break;
+                case SETINDICATOR:
+                    if (args.size() < 2) { return gotbad(1, "SetIndicator", "alert and gauge expected"); }
+                    else if (!(args.elementAt(0) instanceof Alert)) { return gotbad(1, "SetIndicator", "Alert expected"); }
+                    else if (!(args.elementAt(1) instanceof Gauge)) { return gotbad(2, "SetIndicator", "Gauge expected"); }
+                    else {
+                        // MIDP alerts cannot hold items, but they can show one
+                        // non-interactive gauge as their indicator. The indicator
+                        // has to be attached before the alert is displayed.
+                        try { ((Alert) args.elementAt(0)).setIndicator((Gauge) args.elementAt(1)); }
+                        catch (Exception e) { return gotbad(1, "SetIndicator", midlet.getCatch(e)); }
+                        break;
+                    }
+                case SETGAUGE:
+                    if (args.size() < 2) { return gotbad(1, "SetGauge", "gauge and value expected"); }
+                    else if (!(args.elementAt(0) instanceof Gauge)) { return gotbad(1, "SetGauge", "Gauge expected"); }
+                    else {
+                        Gauge target = (Gauge) args.elementAt(0);
+                        Object raw = args.elementAt(1);
+                        int max = target.getMaxValue();
+                        int value = raw instanceof Double ? ((Double) raw).intValue() : getNumber(toLuaString(raw), target.getValue());
+
+                        // A max of 0 means the built-in continuous indicator, where
+                        // the value is one of the Gauge.CONTINUOUS_* constants.
+                        if (max > 0) { value = Math.max(0, Math.min(value, max)); }
+                        else { value = Math.max(0, Math.min(value, 3)); }
+
+                        // Gauge.setValue must run on the event thread.
+                        midlet.display.callSerially(new GaugeUpdate(target, value));
+                        break;
+                    }
+                case GETGAUGE: return args.isEmpty() || !(args.elementAt(0) instanceof Gauge) ? gotbad(1, "GetGauge", "Gauge expected") : new Double(((Gauge) args.elementAt(0)).getValue());
                 case CANVAS: return canvasApi(nativeName, args);
                 case CANVAS_ASSIGN: return canvasAssign(args);
                 // Package [string]
@@ -4405,6 +4447,16 @@ public class Lua {
                 }
             } catch (Exception e) { midlet.print(getTraceback(e), stdout, id, father); midlet.sys.remove(PID); } catch (Error e) { if (!silent) { midlet.print(midlet.getCatch(e), stdout, id, father); } midlet.sys.remove(PID); } 
         }
+    }
+
+    // Gauge updates from a background thread (graphics.SetGauge in a java.run
+    // loop) are posted to the event thread through Display.callSerially. A named
+    // class instead of an anonymous one keeps the J2ME preverifier happy.
+    private class GaugeUpdate implements Runnable {
+        private final Gauge gauge;
+        private final int value;
+        GaugeUpdate(Gauge gauge, int value) { this.gauge = gauge; this.value = value; }
+        public void run() { try { gauge.setValue(value); } catch (Exception e) { } }
     }
 }
 // |

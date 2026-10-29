@@ -1,15 +1,18 @@
 #!/bin/lua
--- alert - display an LCDUI alert, or a form with a gauge.
+-- alert - display an LCDUI alert, optionally with a gauge indicator.
 --
 -- Usage:
 --   alert [title] [text] [options]
 --
 -- Options:
---   -g, --gauge value[/max]   show a form with a gauge (a bare number is a
---                             percentage: -g 75 is 75/100)
---   -i, --interactive         let the user drag the gauge
+--   -g, --gauge [value[/max]] show a gauge inside the alert (a bare number is
+--                             a percentage: -g 75 is 75/100). Without a value
+--                             the gauge runs continuously (MIDP
+--                             Gauge.CONTINUOUS_RUNNING).
+--   -c, --continuous          animate a value gauge while the alert is open
+--   -i, --interactive         let the user drag the gauge (uses a form: MIDP
+--                             alerts only accept a non-interactive gauge)
 --   -t, --type kind           info, warning, error, alarm or confirm
---                             (alerts only)
 --   -m, --timeout ms          alert timeout in milliseconds; 0 (default)
 --                             keeps the alert until the user dismisses it
 --   -k, --ticker text         scrolling ticker on the screen
@@ -17,21 +20,25 @@
 --   -v, --vibrate ms          vibrate when the screen opens
 --   -h, --help                show this help
 --
--- MIDP alerts cannot contain items, so -g switches to a Form holding the text
--- and the gauge. Every -b button prints "alert: <label>" (plus the gauge value
--- on the form variant) and closes the screen.
+-- An alert can show one non-interactive gauge as its indicator
+-- (Alert.setIndicator), so -g keeps the alert instead of switching to a form.
+-- -i needs an interactive gauge, which cannot be an alert indicator, so it
+-- falls back to a form. Every -b button prints "alert: <label>" and closes.
 --
 -- Examples:
 --   alert "Build" "Done" -v 300
 --   alert "Battery" "Low charge" -t warning -m 2000
---   alert "Install" "Unpacking files" -g 75 -i -b Retry -b Cancel
+--   alert "Install" "Unpacking files" -g 75 -b Cancel
+--   alert "Copy" "Please wait" -g -c
+--   alert "Sync" "Working" -g 30/64 -c -m 5000
 
 os.setproc("name", "alert")
 
 local function usage()
     print("alert [title] [text] [options]")
-    print("  -g, --gauge value[/max]  show a form with a gauge instead of an alert")
-    print("  -i, --interactive        let the user drag the gauge")
+    print("  -g, --gauge [value[/max]] show a gauge in the alert, no value = running")
+    print("  -c, --continuous         animate a value gauge while the alert is open")
+    print("  -i, --interactive        let the user drag the gauge (uses a form)")
     print("  -t, --type kind          info, warning, error, alarm or confirm")
     print("  -m, --timeout ms         alert timeout, 0 = wait for a command (default)")
     print("  -k, --ticker text        scrolling ticker on the screen")
@@ -41,7 +48,8 @@ local function usage()
 end
 
 local positional, buttons = {}, {}
-local gaugeValue, gaugeMax, interactive = nil, 100, false
+local gaugeMode, gaugeValue, gaugeMax = nil, 0, 100
+local interactive, animate = false, false
 local kind, timeout, ticker, vibrate = "info", 0, nil, 0
 local index = 1
 
@@ -57,23 +65,37 @@ while index <= #arg do
         usage()
         return 0
     elseif token == "-g" or token == "--gauge" then
-        local spec = string.trim(nextValue() or "")
-        local slash = string.find(spec, "/")
+        local spec = arg[index + 1]
+        if spec ~= nil then spec = string.trim(spec) end
 
-        if slash then
-            gaugeValue = tonumber(string.trim(string.sub(spec, 1, slash - 1)))
-            gaugeMax = tonumber(string.trim(string.sub(spec, slash + 1)))
+        if spec == nil or string.startswith(spec, "-") then
+            -- Bare -g: the built-in continuous running indicator.
+            gaugeMode = "continuous"
+        elseif spec == "continuous" or spec == "run" then
+            index = index + 1
+            gaugeMode = "continuous"
         else
-            gaugeValue, gaugeMax = tonumber(spec), 100
-        end
+            index = index + 1
+            local slash = string.find(spec, "/")
 
-        if gaugeValue == nil then
-            print("alert: invalid gauge value: " .. spec)
-            return 1
+            if slash then
+                gaugeValue = tonumber(string.trim(string.sub(spec, 1, slash - 1)))
+                gaugeMax = tonumber(string.trim(string.sub(spec, slash + 1)))
+            else
+                gaugeValue, gaugeMax = tonumber(spec), 100
+            end
+
+            if gaugeValue == nil then
+                print("alert: invalid gauge value: " .. spec)
+                return 1
+            end
+            if gaugeMax == nil or gaugeMax < 1 then gaugeMax = 100 end
+            if gaugeValue < 0 then gaugeValue = 0 end
+            if gaugeValue > gaugeMax then gaugeValue = gaugeMax end
+            gaugeMode = "value"
         end
-        if gaugeMax == nil or gaugeMax < 1 then gaugeMax = 100 end
-        if gaugeValue < 0 then gaugeValue = 0 end
-        if gaugeValue > gaugeMax then gaugeValue = gaugeMax end
+    elseif token == "-c" or token == "--continuous" then
+        animate = true
     elseif token == "-i" or token == "--interactive" then
         interactive = true
     elseif token == "-t" or token == "--type" then
@@ -107,8 +129,10 @@ end
 
 local previous = graphics.getCurrent()
 local switch = graphics.new("command", { label = "Switch to...", type = "screen", priority = 3 })
+local running = true
 
 local function close()
+    running = false
     if previous then graphics.display(previous) end
     os.exit(0)
 end
@@ -118,12 +142,8 @@ local function addButtons(screen, handler)
         local label = buttons[i]
         local cmd = graphics.new("command", { label = label, type = "ok", priority = 2 })
         graphics.addCommand(screen, cmd)
-        handler[cmd] = function (value)
-            if value == nil then
-                print("alert: " .. label)
-            else
-                print("alert: " .. label .. " " .. tostring(value))
-            end
+        handler[cmd] = function ()
+            print("alert: " .. label)
             close()
         end
     end
@@ -131,52 +151,91 @@ local function addButtons(screen, handler)
     handler[switch] = graphics.taskmngr
 end
 
-if vibrate > 0 then graphics.vibrate(vibrate) end
-
-if gaugeValue == nil then
-    -- Plain alert: type and timeout are honoured.
-    local options = { type = kind, timeout = timeout }
-    local screen = graphics.new("alert", title, text, options)
-    if ticker then graphics.SetTicker(screen, ticker) end
-
-    if timeout > 0 then
-        -- A timed alert dismisses itself and returns to the previous screen,
-        -- so the process does not stay around to handle commands.
-        if previous then
-            graphics.display(screen, previous)
-        else
-            graphics.display(screen)
-        end
-        -- The alert dismisses itself, so the process is not needed anymore.
-        os.exit(0)
-    end
-
+local function addHandler(screen)
     local handler = {}
     local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
     graphics.addCommand(screen, back)
     handler[back] = close
     addButtons(screen, handler)
+    return handler
+end
 
-    graphics.handler(screen, handler)
+-- Animation thread: sweep the value from its start up to max, wrapping around,
+-- until the alert closes (running = false) or the alert timeout expires.
+local function animateGauge(gauge, millis)
+    local step = gaugeMax / 20
+    if step < 1 then step = 1 end
+    step = step - step % 1
+
+    local value = gaugeValue
+    local deadline = millis > 0 and (os.clock() + millis) or nil
+
+    while running do
+        if deadline ~= nil and os.clock() >= deadline then break end
+        graphics.SetGauge(gauge, value)
+        value = value + step
+        if value > gaugeMax then value = 0 end
+        java.sleep(200)
+    end
+end
+
+if vibrate > 0 then graphics.vibrate(vibrate) end
+
+-- A gauge inside an alert has to be non-interactive; MIDP only supports the
+-- indicator in that case. Older runtimes without SetIndicator get the form.
+local alertGauge = gaugeMode ~= nil and not interactive and graphics.SetIndicator ~= nil
+
+if gaugeMode == nil or alertGauge then
+    local screen = graphics.new("alert", title, text, { type = kind, timeout = timeout })
+    if ticker then graphics.SetTicker(screen, ticker) end
+
+    local gauge = nil
+    if gaugeMode ~= nil then
+        if gaugeMode == "continuous" then
+            gauge = graphics.new("gauge", { interactive = false, maxValue = 0, value = graphics.CONTINUOUS_RUNNING or 2 })
+        else
+            gauge = graphics.new("gauge", { interactive = false, maxValue = gaugeMax, value = gaugeValue })
+        end
+        graphics.SetIndicator(screen, gauge)
+    end
+
+    if timeout > 0 then
+        -- A timed alert dismisses itself and returns to the previous screen,
+        -- so the process is only kept around while the gauge animates.
+        if previous then
+            graphics.display(screen, previous)
+        else
+            graphics.display(screen)
+        end
+
+        if gauge ~= nil and animate and gaugeMode == "value" then
+            java.run(function () animateGauge(gauge, timeout) end, "alert-gauge")
+            java.sleep(timeout + 250)
+            running = false
+        end
+
+        os.exit(0)
+    end
+
+    graphics.handler(screen, addHandler(screen))
     os.setproc("screen", screen)
     graphics.display(screen)
+
+    if gauge ~= nil and animate and gaugeMode == "value" then
+        java.run(function () animateGauge(gauge, 0) end, "alert-gauge")
+    end
+
     return 0
 end
 
--- Gauge variant: MIDP alerts cannot hold items, so build a form instead.
+-- Interactive gauge: a form, because MIDP alerts cannot hold one.
 local screen = graphics.new("screen", title)
 if text ~= "" then
     graphics.append(screen, { type = "text", label = "", value = text })
 end
-graphics.append(screen, { type = "gauge", label = "", interactive = interactive, maxValue = gaugeMax, value = gaugeValue })
+graphics.append(screen, { type = "gauge", label = "", interactive = true, maxValue = gaugeMax, value = gaugeValue })
 if ticker then graphics.SetTicker(screen, ticker) end
 
-local handler = {}
-local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
-graphics.addCommand(screen, back)
-handler[back] = close
-addButtons(screen, handler)
-
-graphics.handler(screen, handler)
+graphics.handler(screen, addHandler(screen))
 os.setproc("screen", screen)
 graphics.display(screen)

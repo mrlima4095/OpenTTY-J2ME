@@ -14,7 +14,7 @@ public class Gauge extends Item {
         setLabel(label);
         interactive_ = interactive;
         max_ = Math.max(maxValue, 0);
-        value_ = Math.max(0, Math.min(initialValue, max_));
+        value_ = clamp(initialValue);
     }
 
     public boolean isInteractive() { return interactive_; }
@@ -23,15 +23,23 @@ public class Gauge extends Item {
 
     public void setMaxValue(int maxValue) {
         max_ = Math.max(maxValue, 0);
-        value_ = Math.max(0, Math.min(value_, max_));
+        value_ = clamp(value_);
         touch();
     }
 
     public int getValue() { return value_; }
 
     public void setValue(int value) {
-        value_ = max_ == 0 ? 0 : Math.max(0, Math.min(value, max_));
+        value_ = clamp(value);
         touch();
+    }
+
+    // A non-interactive gauge with max 0 is the MIDP continuous indicator: its
+    // value is one of CONTINUOUS_IDLE / INCREMENTAL_IDLE / CONTINUOUS_RUNNING /
+    // INCREMENTAL_UPDATING instead of a number in 0..max.
+    private int clamp(int value) {
+        if (max_ == 0) { return interactive_ ? 0 : Math.max(0, Math.min(value, 3)); }
+        return Math.max(0, Math.min(value, max_));
     }
 
     private int max_;

@@ -527,6 +527,21 @@ public class Display {
         msg.setFont(new java.awt.Font("Monospaced", java.awt.Font.PLAIN, 12));
         msg.setAlignmentX(Component.LEFT_ALIGNMENT);
         p.add(msg);
+
+        Gauge indicator = a.getIndicator();
+        if (indicator != null) {
+            javax.swing.JProgressBar bar;
+            if (indicator.getMaxValue() == 0) {
+                bar = new javax.swing.JProgressBar();
+                bar.setIndeterminate(indicator.getValue() == Gauge.CONTINUOUS_RUNNING || indicator.getValue() == Gauge.INCREMENTAL_UPDATING);
+            } else {
+                bar = new javax.swing.JProgressBar(0, indicator.getMaxValue());
+                bar.setValue(indicator.getValue());
+            }
+            bar.setStringPainted(indicator.getMaxValue() > 0);
+            bar.setAlignmentX(Component.LEFT_ALIGNMENT);
+            p.add(bar);
+        }
         body.add(p);
     }
 

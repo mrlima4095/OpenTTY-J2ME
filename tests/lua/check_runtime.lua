@@ -78,5 +78,18 @@ local function two() return 1, 2 end
 local a, b = two(), two()
 check("multi-assignment first values", a == 1 and b == 1, tostring(a) .. "," .. tostring(b))
 
+-- 9. Alert indicators: a standalone gauge can be attached to an alert, read
+--    back, and a max of 0 makes it the MIDP continuous running indicator.
+--    (SetGauge posts the update to the event thread, so only the initial
+--    value is checked here.)
+local alert = graphics.new("alert", "gauge", "body")
+local gauge = graphics.new("gauge", { interactive = false, maxValue = 10, value = 3 })
+check("gauge initial value", graphics.GetGauge(gauge) == 3, tostring(graphics.GetGauge(gauge)))
+graphics.SetIndicator(alert, gauge)
+check("SetIndicator accepts a gauge", alert ~= nil)
+
+local running = graphics.new("gauge", { interactive = false, maxValue = 0, value = graphics.CONTINUOUS_RUNNING })
+check("continuous gauge value", graphics.GetGauge(running) == 2, tostring(graphics.GetGauge(running)))
+
 mark("FAILURES=" .. fails)
 canvas:close()
