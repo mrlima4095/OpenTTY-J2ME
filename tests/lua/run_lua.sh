@@ -2,7 +2,8 @@
 # Lua runtime semantics on the real interpreter (src/Lua.java) through the
 # desktop shim, headless. Guards the language behavior the apps rely on:
 # numeric/generic for loops, break/return inside loops, `and`/`or`
-# short-circuit, tonumber, list shrinking and multi-assignment.
+# short-circuit, tonumber, list shrinking, multi-assignment, and anonymous
+# function bodies (table-constructor handlers) with nested blocks.
 #
 # Runs one headless shim process (~30 s, it compiles src/ + pc/j2me first).
 # Usage: tests/lua/run_lua.sh

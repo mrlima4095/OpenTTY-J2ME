@@ -91,5 +91,50 @@ check("SetIndicator accepts a gauge", alert ~= nil)
 local running = graphics.new("gauge", { interactive = false, maxValue = 0, value = graphics.CONTINUOUS_RUNNING })
 check("continuous gauge value", graphics.GetGauge(running) == 2, tostring(graphics.GetGauge(running)))
 
+-- 10. Anonymous function in a table constructor with a nested
+--     `local function` whose body has one-line `if ... end` blocks.
+--     Every nested `end` used to be copied twice into the anonymous
+--     body, so the nested function body stopped at the first `end` and
+--     the rest ran in the outer frame (nil locals, ArithmeticException).
+local handlers = {
+    run = function()
+        local function render(value)
+            local w = value
+            if w < 4 then w = 4 end
+            local bar = 6 + w
+            return bar
+        end
+        return render(1) + render(10)
+    end,
+    [2] = function() end
+}
+local okHandler, handlerResult = pcall(handlers.run)
+check("anonymous fn + nested local function",
+    okHandler and handlerResult == 26,
+    tostring(handlerResult))
+
+-- 11. Same shape as the pkg screen: the nested function keeps a table
+--     upvalue and loops over it after a one-line guard.
+local screens = {
+    [1] = function()
+        local state = { lines = { "a", "b", "c" } }
+        local function draw()
+            local rows = #state.lines
+            if rows < 1 then rows = 1 end
+            local total = 0
+            for i = 1, rows do
+                if state.lines[i] then total = total + 1 end
+            end
+            return total
+        end
+        return draw()
+    end,
+    [2] = function() end
+}
+local okScreen, drawn = pcall(screens[1])
+check("anonymous fn keeps table upvalue after guard",
+    okScreen and drawn == 3,
+    tostring(drawn))
+
 mark("FAILURES=" .. fails)
 canvas:close()

@@ -1402,11 +1402,13 @@ public class Lua {
                     depth++; 
                 }
                 // Tokens that CLOSE blocks
+                // (Only one addElement per token: the trailing guard below
+                //  already copies the `end` when it still belongs to the body.
+                //  Adding it here too duplicated every nested `end`, so a
+                //  nested `local function` ended early and its tail ran in the
+                //  enclosing frame with bogus upvalues.)
                 else if (token.type == END) { 
                     depth--; 
-                    if (depth > 0) { 
-                        bodyTokens.addElement(token); 
-                    }
                 }
                 else if (token.type == EOF) { 
                     throw new RuntimeException("Unmatched 'function' statement: Expected 'end'"); 
