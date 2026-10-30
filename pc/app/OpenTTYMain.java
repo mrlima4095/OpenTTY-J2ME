@@ -141,6 +141,17 @@ public class OpenTTYMain {
         String rms = System.getProperty("opentty.rms", "data/rms");
         System.out.println("[OpenTTY] desktop run: rms=" + rms);
 
+        // Real machine name for fetch / the xterm prompt. The MIDlet has no
+        // host-name API, so the shim publishes one (override with
+        // -Dopentty.hostname=...). /etc/hostname still wins when set.
+        if (System.getProperty("opentty.hostname") == null) {
+            String host = System.getenv("HOSTNAME");
+            if (host == null || host.length() == 0) {
+                try { host = java.net.InetAddress.getLocalHost().getHostName(); } catch (Exception e) { host = ""; }
+            }
+            if (host != null && host.length() > 0) { System.setProperty("opentty.hostname", host); }
+        }
+
         // Same command line as pc/run.sh, so `java -jar OpenTTY-desktop-*.jar
         // [options] [--] [command tokens...]` works out of the box. When a
         // caller already supplied the props (run.sh), leave them alone.

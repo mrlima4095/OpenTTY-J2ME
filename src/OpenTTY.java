@@ -198,6 +198,8 @@ public class OpenTTY extends MIDlet implements CommandListener {
             String r = (root == null || root.length() == 0) ? "/" : root;
             chroot = r.equals("/") ? "" : r;
             globals.put("PWD", "/home/"); globals.put("USER", "root"); globals.put("ROOT", r); globals.put("ALIAS", new Hashtable()); userID.put(username, 1000);
+            // Real host name for `os.getenv("HOSTNAME")` (fetch, uname -n, xterm).
+            attributes.put("HOSTNAME", hostName());
 
             Process proc = new Process(this, "init", program, "root", 0, "1", new StringBuffer(), globals);
 
@@ -435,6 +437,19 @@ public class OpenTTY extends MIDlet implements CommandListener {
         }
     }
     public Image readImg(String filename, Hashtable scope) { try { InputStream is = getInputStream(filename, scope); Image img = Image.createImage(is); is.close(); return img; } catch (Exception e) { return Image.createImage(16, 16); } }
+    // Host name reported by fetch, the xterm prompt and gethostname(): a name the
+    // user set in /etc/hostname wins, otherwise the real machine name published
+    // by the desktop shim (-Dopentty.hostname), otherwise the seed "localhost"
+    // (a phone has no host name of its own).
+    public String hostName() { return hostName(globals); }
+    public String hostName(Hashtable scope) {
+        String name = read("/etc/hostname", scope);
+        name = name == null ? "" : name.trim();
+        if (name.length() > 0 && !name.equals("localhost")) { return name; }
+        String real = System.getProperty("opentty.hostname");
+        if (real != null && real.length() > 0) { return real; }
+        return name.length() > 0 ? name : "localhost";
+    }
     public String read(String filename, Hashtable scope) {
         try {
             InputStream is = getInputStream(filename, scope);

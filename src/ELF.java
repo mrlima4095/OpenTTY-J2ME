@@ -3695,20 +3695,9 @@ public class ELF implements CommandListener, ItemCommandListener, ItemStateListe
         writeString(memory, bufAddr, hostName, len);
         registers[REG_A0] = 0;
     }
-    private String readHostName() {
-        try {
-            InputStream is = midlet.getInputStream(midlet.joinpath("/etc/hostname", scope), scope);
-            if (is != null) {
-                ByteArrayOutputStream out = new ByteArrayOutputStream();
-                byte[] buf = new byte[128]; int n;
-                while ((n = is.read(buf)) != -1) { out.write(buf, 0, n); }
-                is.close();
-                String s = new String(out.toByteArray(), "UTF-8").trim();
-                if (s.length() > 0 && s.length() <= 64) { return s; }
-            }
-        } catch (Exception e) { }
-        return "opentty";
-    }
+    // Same resolution as the Lua side: /etc/hostname when the user set one,
+    // otherwise the machine name the desktop shim publishes.
+    private String readHostName() { return midlet.hostName(scope); }
     private void handleUnlink() {
         int pathAddr = registers[REG_A0];
         if (pathAddr < 0 || pathAddr >= memory.length) { registers[REG_A0] = -1; return; }

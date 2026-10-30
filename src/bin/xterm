@@ -14,7 +14,12 @@ os.setproc("screen", xterm)
 io.setstdout(stdout)
 io.stdin = stdin
 
-local scope, hostname = os.scope(), io.read("/etc/hostname")
+-- The real host name comes from the runtime (HOSTNAME env, seeded from
+-- /etc/hostname or the machine name); fall back to the file for old kernels.
+local scope = os.scope()
+local hostname = os.getenv("HOSTNAME")
+if hostname == nil or hostname == "" then hostname = string.trim(io.read("/etc/hostname") or "") end
+if hostname == nil or hostname == "" then hostname = "localhost" end
 
 io.write(string.env(io.read("/etc/motd")))
 pcall(io.popen, "/home/.initrc")

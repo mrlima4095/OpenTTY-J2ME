@@ -216,5 +216,13 @@ check("calls in conditions use the first value",
 local chosen = no() and "yes-branch" or "no-branch"
 check("calls in and/or use the first value", chosen == "no-branch", tostring(chosen))
 
+-- 18. Boot environment: the runtime seeds HOSTNAME (fetch, uname -n and the
+--     xterm prompt read it) and the process scope carries the real user name,
+--     so `fetch` prints <user>@<host> instead of the old user@localhost.
+local host = os.getenv("HOSTNAME")
+check("HOSTNAME env is seeded", host ~= nil and host ~= "", tostring(host))
+local scopeUser = os.scope()["USER"]
+check("scope carries the user name", scopeUser ~= nil and scopeUser ~= "", tostring(scopeUser))
+
 mark("FAILURES=" .. fails)
 canvas:close()

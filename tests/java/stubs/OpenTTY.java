@@ -17,6 +17,8 @@ public class OpenTTY {
     public String genpid() { return "999"; }
     public String getUser(int uid) { return "root"; }
     public int getCallerUid(Hashtable scope) { return 0; }
+    public String hostName() { return "localhost"; }
+    public String hostName(Hashtable scope) { return "localhost"; }
     public void print(String message, Object stdout, int id, Hashtable scope, boolean newLine) { }
     public void print(String message, Object stdout, int id, Hashtable scope) { }
     public void print(String message, Object stdout) { }

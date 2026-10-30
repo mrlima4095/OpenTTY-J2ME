@@ -86,8 +86,21 @@ if arg[1] == "-h" or arg[1] == "--help" then
     os.exit(0)
 end
 
-local hostname = env("HOSTNAME", "localhost")
-local user = env("USER", "user")
+-- Real values: the shell's scope carries the logged-in user (it follows `su`),
+-- and the runtime seeds HOSTNAME from /etc/hostname or the machine name.
+local function current_user()
+    local ok, scope = pcall(os.scope)
+    if ok and type(scope) == "table" then
+        local name = scope["USER"]
+        if name ~= nil and name ~= "" then return name end
+    end
+    return env("USER", "user")
+end
+
+local hostname = env("HOSTNAME", "")
+if hostname == "" then hostname = string.trim(io.read("/etc/hostname") or "") end
+if hostname == "" then hostname = "localhost" end
+local user = current_user()
 local type_ = env("TYPE", "OpenTTY")
 local version_ = env("VERSION", "unknown")
 local config = env("CONFIG", "CLDC-1.0")

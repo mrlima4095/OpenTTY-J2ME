@@ -22,6 +22,13 @@ public abstract class MIDlet {
         props.put("microedition.configuration", "CLDC-1.0");
         props.put("microedition.profiles", "MIDP-2.0");
         props.put("microedition.locale", System.getProperty("user.language", "en"));
+        // The Lua runtime reads these through System.getProperty (the CLDC way),
+        // so publish them as JVM properties too: /bin/init exports TYPE, CONFIG,
+        // PROFILE and LOCALE from them (fetch and uname print them).
+        System.setProperty("microedition.platform", "j2me");
+        System.setProperty("microedition.configuration", "CLDC-1.0");
+        System.setProperty("microedition.profiles", "MIDP-2.0");
+        System.setProperty("microedition.locale", System.getProperty("user.language", "en"));
         String ui = System.getProperty("opentty.user", "opentty");
         props.put("opentty.user", ui);
         String rms = System.getProperty("opentty.rms.dirl", ".");
