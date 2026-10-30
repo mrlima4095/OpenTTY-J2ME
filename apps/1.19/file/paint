@@ -101,7 +101,7 @@ local function drawToolbar()
 end
 
 local function hint()
-    if state.moveMode then return "move: arrows move the cursor" end
+    if state.moveMode then return "move: x=" .. state.x .. " y=" .. state.y .. "  FIRE draws" end
     if state.pen then return "draw: arrows draw, FIRE lifts" end
     return "pen up: arrows move, FIRE draws"
 end
