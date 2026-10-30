@@ -98,16 +98,12 @@ if arg[1] == "install" then
         local chooser = graphics.new("list", "Install packages", "multiple")
         local install = graphics.new("command", { label = "Install", type = "ok", priority = 1 })
         local back = graphics.new("command", { label = "Back", type = "back", priority = 2 })
-        local by_label = {}
 
+        -- Only the package name goes in the list: what the user selects is
+        -- already the key in the mirror, so Install can use it directly (no
+        -- label -> name table and no description parsing).
         for _, name in ipairs(names) do
-            local pkg = mirror[name]
-            local label = name
-            if pkg.description and pkg.description ~= "" then
-                label = label .. " - " .. pkg.description
-            end
-            by_label[label] = name
-            graphics.append(chooser, label)
+            graphics.append(chooser, name)
         end
 
         graphics.addCommand(chooser, install)
@@ -115,16 +111,12 @@ if arg[1] == "install" then
         graphics.handler(chooser, {
             [install] = function(...)
                 -- OpenTTY stores varargs in a table, so {...} is not an array.
-                local selected = {}
+                -- The selected labels are the package names themselves.
+                local packages = {}
                 local count = select('#', ...)
                 for i = 1, count do
                     local rest = select(i, ...)
-                    selected[#selected + 1] = rest[1]
-                end
-
-                local packages = {}
-                for _, label in ipairs(selected) do
-                    local name = by_label[label] or string.getCommand(label)
+                    local name = rest[1]
                     if name and name ~= "" then packages[#packages + 1] = name end
                 end
 
@@ -160,19 +152,15 @@ if arg[1] == "install" then
                 graphics.addCommand(form, stopCmd)
 
                 local function refresh_log()
-                    -- Keep the visible item small: devices choke on a Form item
-                    -- that grows without bound. The full log stays in the
-                    -- terminal (print) and in state.lines.
-                    local first = #state.lines - 9
-                    if first < 1 then first = 1 end
-                    local visible = {}
-                    for i = first, #state.lines do visible[#visible + 1] = state.lines[i] end
-                    pcall(graphics.SetText, log, table.concat(visible, "\n"))
+                    -- Only the last lines stay visible: devices choke on a Form
+                    -- item that grows without bound. The full log is in the
+                    -- terminal (print).
+                    pcall(graphics.SetText, log, table.concat(state.lines, "\n"))
                 end
 
                 local function note(message)
                     state.lines[#state.lines + 1] = message
-                    if #state.lines > 200 then table.remove(state.lines, 1) end
+                    if #state.lines > 10 then table.remove(state.lines, 1) end
                     print(message)
                     refresh_log()
                 end
