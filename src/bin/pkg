@@ -22,58 +22,229 @@ if arg[1] == "install" then
         os.exit(1)
     end
 
-    for i = 2, #arg do
-        local pkg_name, err = arg[i], nil
+    local function install_package(pkg_name, report)
+        local function note(message)
+            print(message)
+            if report then report(message) end
+            -- Hand the interpreter to the UI thread so Stop/Close and repaints
+            -- are handled between steps (no-op when nothing else is waiting).
+            java.yield(15)
+        end
+
         local pkg = mirror[pkg_name]
 
-        if pkg then
-            if pkg.riscv == true then
-                if java.midlet.lite ~= false then
-                    print(":: package " .. pkg_name .. " requires the full OpenTTY ARM build")
-                    os.exit(69)
-                end
+        if not pkg then
+            note(":: package " .. pkg_name .. " not found")
+            return false
+        end
+        if pkg.riscv == true then
+            if java.midlet.lite ~= false then
+                note(":: package " .. pkg_name .. " requires the full OpenTTY ARM build")
+                return false
             end
-            if pkg.depends then
-                for _, dep in ipairs(pkg.depends) do
-                    local dep_pkg = mirror[dep]
-                    if not dep_pkg then
-                        print(":: dependency " .. dep .. " not found for package " .. pkg_name)
-                        os.exit(1)
-                    end
-                    print(":: installing dependency " .. dep)
-                    local url = server .. "/apps/" .. db_version .. "/" .. dep_pkg.remote
-                    
-                    local ok, stream = pcall(socket.http.rget, url)
-                    if ok then
-                        ok, err = pcall(io.copy, stream, dep_pkg.here)
-                        if not ok then
-                            print(":: error installing dependency " .. dep .. ": " .. tostring(err))
-                            os.exit(1)
-                        else
-                            print(":: installed dependency " .. dep)
-                        end
-                    else
-                        print(":: error downloading dependency " .. dep .. ": " .. tostring(stream))
-                        os.exit(1)
-                    end
+        end
+        if pkg.depends then
+            for _, dep in ipairs(pkg.depends) do
+                local dep_pkg = mirror[dep]
+                if not dep_pkg then
+                    note(":: dependency " .. dep .. " not found for package " .. pkg_name)
+                    return false
                 end
-            end
-            print(":: downloading " .. pkg_name .. " from " .. pkg.remote)
+                note(":: installing dependency " .. dep)
+                local url = server .. "/apps/" .. db_version .. "/" .. dep_pkg.remote
 
-            local url = server .. "/apps/" .. db_version .. "/" .. pkg.remote
-            
-            local ok, stream = pcall(socket.http.rget, url)
-            if ok then
-                ok, err = pcall(io.copy, stream, pkg.here)
+                local ok, stream = pcall(socket.http.rget, url)
                 if not ok then
-                    print(":: error installing " .. pkg_name .. ": " .. tostring(err))
-                else
-                    print(":: installed " .. pkg_name)
+                    note(":: error downloading dependency " .. dep .. ": " .. tostring(stream))
+                    return false
                 end
-            else
-                print(":: error downloading " .. pkg_name .. ": " .. tostring(stream))
+                local copied, err = pcall(io.copy, stream, dep_pkg.here)
+                if not copied then
+                    note(":: error installing dependency " .. dep .. ": " .. tostring(err))
+                    return false
+                end
+                note(":: installed dependency " .. dep)
             end
-        else print(":: package " .. pkg_name .. " not found") end
+        end
+        note(":: downloading " .. pkg_name .. " from " .. pkg.remote)
+
+        local url = server .. "/apps/" .. db_version .. "/" .. pkg.remote
+        local ok, stream = pcall(socket.http.rget, url)
+        if not ok then
+            note(":: error downloading " .. pkg_name .. ": " .. tostring(stream))
+            return false
+        end
+        local copied, err = pcall(io.copy, stream, pkg.here)
+        if not copied then
+            note(":: error installing " .. pkg_name .. ": " .. tostring(err))
+            return false
+        end
+        note(":: installed " .. pkg_name)
+        return true
+    end
+
+    if arg[2] == nil then
+        local previous = graphics.getCurrent()
+
+        local function leave()
+            if previous then graphics.display(previous) end
+            os.exit(0)
+        end
+
+        local names = {}
+        for name in pairs(mirror) do names[#names + 1] = name end
+        table.sort(names)
+
+        local chooser = graphics.new("list", "Install packages", "multiple")
+        local install = graphics.new("command", { label = "Install", type = "ok", priority = 1 })
+        local back = graphics.new("command", { label = "Back", type = "back", priority = 2 })
+        local by_label = {}
+
+        for _, name in ipairs(names) do
+            local pkg = mirror[name]
+            local label = name
+            if pkg.description and pkg.description ~= "" then
+                label = label .. " - " .. pkg.description
+            end
+            by_label[label] = name
+            graphics.append(chooser, label)
+        end
+
+        graphics.addCommand(chooser, install)
+        graphics.addCommand(chooser, back)
+        graphics.handler(chooser, {
+            [install] = function(...)
+                -- OpenTTY stores varargs in a table, so {...} is not an array.
+                local selected = {}
+                local count = select('#', ...)
+                for i = 1, count do
+                    local rest = select(i, ...)
+                    selected[#selected + 1] = rest[1]
+                end
+
+                local packages = {}
+                for _, label in ipairs(selected) do
+                    local name = by_label[label] or string.getCommand(label)
+                    if name and name ~= "" then packages[#packages + 1] = name end
+                end
+
+                if #packages == 0 then
+                    print(":: no packages selected")
+                    graphics.display(graphics.new("alert", "pkg", "Select at least one package.", { timeout = 2500, type = "warning" }))
+                    return
+                end
+
+                -- LCDUI progress screen. The device only repaints reliably with
+                -- plain Forms, so the install runs in a java.run worker that
+                -- updates a Gauge and a monospaced StringItem. java.yield()
+                -- lets the UI thread handle Stop/Close between steps without
+                -- two threads entering the Lua interpreter at once.
+                local state = {
+                    index = 0, total = #packages,
+                    installed = 0, failed = 0,
+                    running = true, stop = false, close = false,
+                    lines = {}
+                }
+
+                local form = graphics.new("screen", "Install packages")
+                local gauge = graphics.new("gauge", { label = "", interactive = false, maxValue = #packages, value = 0 })
+                local log = graphics.new("buffer", { label = "", value = "", style = "monospace" })
+                local switchCmd = graphics.new("command", { label = "Switch to...", type = "screen", priority = 2 })
+                local stopCmd = graphics.new("command", { label = "Stop", type = "stop", priority = 3 })
+                local closeCmd = graphics.new("command", { label = "Close", type = "back", priority = 1 })
+
+                graphics.append(form, gauge)
+                graphics.append(form, log)
+                graphics.addCommand(form, closeCmd)
+                graphics.addCommand(form, switchCmd)
+                graphics.addCommand(form, stopCmd)
+
+                local function refresh_log()
+                    -- Keep the visible item small: devices choke on a Form item
+                    -- that grows without bound. The full log stays in the
+                    -- terminal (print) and in state.lines.
+                    local first = #state.lines - 9
+                    if first < 1 then first = 1 end
+                    local visible = {}
+                    for i = first, #state.lines do visible[#visible + 1] = state.lines[i] end
+                    pcall(graphics.SetText, log, table.concat(visible, "\n"))
+                end
+
+                local function note(message)
+                    state.lines[#state.lines + 1] = message
+                    if #state.lines > 200 then table.remove(state.lines, 1) end
+                    print(message)
+                    refresh_log()
+                end
+
+                graphics.handler(form, {
+                    [switchCmd] = graphics.taskmngr,
+                    [stopCmd] = function()
+                        if state.running then
+                            state.stop = true
+                            note(":: stopping after the current operation...")
+                        else
+                            note(":: nothing is running")
+                        end
+                    end,
+                    [closeCmd] = function()
+                        if state.running then
+                            state.stop = true
+                            state.close = true
+                            note(":: stopping and closing...")
+                        else
+                            leave()
+                        end
+                    end
+                })
+
+                os.setproc("name", "pkg")
+                os.setproc("screen", form)
+                graphics.display(form)
+                note("Packages: " .. table.concat(packages, ", "))
+
+                java.run(function()
+                    for i, name in ipairs(packages) do
+                        if state.stop then break end
+
+                        pcall(graphics.SetTitle, form, "Installing " .. i .. "/" .. state.total)
+                        note("[" .. i .. "/" .. state.total .. "] " .. name)
+                        pcall(graphics.SetGauge, gauge, i - 1)
+                        java.yield(20)
+
+                        local ok, result = pcall(install_package, name, note)
+                        if ok and result then state.installed = state.installed + 1
+                        else
+                            state.failed = state.failed + 1
+                            if not ok then note(":: error: " .. tostring(result)) end
+                        end
+
+                        state.index = i
+                        pcall(graphics.SetGauge, gauge, i)
+                        java.yield(20)
+                    end
+
+                    state.running = false
+                    pcall(graphics.SetTitle, form, "Install packages - finished")
+                    if state.stop then note(":: operation stopped") end
+                    note(":: " .. state.installed .. " installed, " .. state.failed .. " failed")
+                    java.yield(20)
+
+                    if state.close then leave() end
+                end, "pkg-install")
+            end,
+            [back] = function()
+                leave()
+            end
+        })
+
+        os.setproc("name", "pkg")
+        os.setproc("screen", chooser)
+        graphics.display(chooser)
+    else
+        for i = 2, #arg do
+            install_package(arg[i], nil)
+        end
     end
 elseif arg[1] == "remove" then
     if os.getuid() ~= 0 then
@@ -172,7 +343,7 @@ elseif arg[1] == "version" then
 else
     print(":: usage: pkg <command> [args]")
     print(":: commands:")
-    print("   install <package> - install a package")
+    print("   install [packages...] - install packages (no packages opens a multi-select list)")
     print("   remove <package> - remove a package")
     print("   update - update the package database")
     print("   switch <version> - switch to a different package database version")
