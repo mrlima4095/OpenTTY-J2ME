@@ -55,7 +55,7 @@ local function draw()
             local y = row * FONT_H
             if row >= 0 and y <= H - FONT_H then
                 c:color(SHADES[t + 1])
-                c:text(string.char(33 + math.random(94)), x, y)
+                c:text(string.char(33 + math.random(93)), x, y)
             end
         end
     end

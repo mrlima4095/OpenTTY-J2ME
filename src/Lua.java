@@ -1190,7 +1190,9 @@ public class Lua {
         Object left = logicalAnd(scope);
         while (peek().type == OR) {
             consume(OR);
-            if (isTruthy(left)) { skipOperand(scope); } else { left = logicalAnd(scope); }
+            // `a or b` yields one value; a bare call keeps all of its results.
+            left = firstValue(left);
+            if (isTruthy(left)) { skipOperand(scope); } else { left = firstValue(logicalAnd(scope)); }
         }
         return left;
     }
@@ -1198,7 +1200,8 @@ public class Lua {
         Object left = comparison(scope);
         while (peek().type == AND) {
             consume(AND);
-            if (isTruthy(left)) { left = comparison(scope); } else { skipOperand(scope); }
+            left = firstValue(left);
+            if (isTruthy(left)) { left = firstValue(comparison(scope)); } else { skipOperand(scope); }
         }
         return left;
     }
@@ -1417,7 +1420,7 @@ public class Lua {
             if (suppress > 0) { return null; }
             throw new RuntimeException("attempt to perform arithmetic on a " + LuaFunction.type(val) + " value");
         }
-        else if (current.type == NOT) { consume(NOT); return new Boolean(!isTruthy(factor(scope))); } 
+        else if (current.type == NOT) { consume(NOT); return new Boolean(!isTruthy(firstValue(factor(scope)))); } 
         else if (current.type == LPAREN) { consume(LPAREN); Object value = expression(scope); consume(RPAREN); return postfix(value, scope); } 
         else if (current.type == LENGTH) { consume(LENGTH); Object val = factor(scope); if (hasMeta(val, "__len")) { return callMeta("__len", new Object[] { val }); } else if (val == null || val instanceof Boolean) { if (suppress > 0) { return null; } throw new RuntimeException("attempt to get length of a " + (val == null ? "nil" : "boolean") + " value"); } else if (val instanceof String) { return luaNumber(((String) val).length()); } else if (val instanceof Hashtable) { int size = luaLength((Hashtable) val); if (val == globals.get("arg") && size > 0) { size -= 1; } return luaNumber(size); } else if (val instanceof Vector) { return luaNumber(((Vector) val).size()); } else if (val instanceof InputStream) { return luaNumber(((InputStream) val).available()); } else { return luaNumber(0); } }
         else if (current.type == IDENTIFIER) {
@@ -1677,7 +1680,7 @@ public class Lua {
     private void skipIfBodyUntilElsePart() throws Exception { int depth = 1; while (true) { Token t = consume(); if (t.type == IF || t.type == WHILE || t.type == FUNCTION || t.type == FOR) { depth++; } else if (t.type == END) { depth--; if (depth == 0) { tokenIndex--; return; } } else if ((t.type == ELSEIF || t.type == ELSE) && depth == 1) { tokenIndex--; return; } else if (t.type == EOF) { throw new Exception("Unmatched 'if' statement: Expected 'end'"); } } }
     private void skipUntilMatchingEnd() throws Exception { int depth = 1; while (depth > 0) { Token t = consume(); if (t.type == IF || t.type == WHILE || t.type == FUNCTION || t.type == FOR) { depth++; } else if (t.type == END) { depth--; } else if (t.type == EOF) { throw new Exception("Unmatched 'if' statement: Expected 'end'"); } } tokenIndex--; }
     // |
-    private boolean isTruthy(Object value) { if (value == null || value == LUA_NIL) { return false; } if (value instanceof Boolean) { return ((Boolean) value).booleanValue(); } return true; }
+    private boolean isTruthy(Object value) { if (value instanceof Vector) { return isTruthy(firstValue(value)); } if (value == null || value == LUA_NIL) { return false; } if (value instanceof Boolean) { return ((Boolean) value).booleanValue(); } return true; }
     // |
     // |
     // | (Plain assignment: write to the nearest frame that already declares the
@@ -2063,7 +2066,16 @@ public class Lua {
                     }
                 case TYPE: return args.isEmpty() ? gotbad(1, "type", "value expected") : type(args.elementAt(0));
                 case GETPROPERTY: if (args.isEmpty()) { break; } else { String query = toLuaString(args.elementAt(0)); return query.startsWith("/") ? System.getProperty(query.substring(1)) : midlet.getAppProperty(query); }
-                case RANDOM: Double gen = new Double(midlet.random.nextInt(getNumber(args.isEmpty() ? "100" : toLuaString(args.elementAt(0)), 100))); return args.isEmpty() ? new Double(gen.doubleValue() / 100) : gen;
+                case RANDOM:
+                    if (args.isEmpty()) { return new Double(midlet.random.nextInt(1000) / 1000.0); }
+                    else {
+                        // Lua semantics: random(n) -> 1..n, random(m, n) -> m..n.
+                        int low = 1, high = getNumber(toLuaString(args.elementAt(0)), 100);
+                        if (args.size() > 1) { low = high; high = getNumber(toLuaString(args.elementAt(1)), 100); }
+                        if (high < low) { int swap = low; low = high; high = swap; }
+                        if (high <= low) { return new Double(low); }
+                        return new Double(low + midlet.random.nextInt(high - low + 1));
+                    }
                 case SETMETATABLE:
                     if (args.size() < 2) { return gotbad(1, "setmetatable", "table expected, got no value"); }
                     else {

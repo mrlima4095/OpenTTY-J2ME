@@ -180,5 +180,41 @@ check("return f() forwards results", fwd1 == 1 and fwd2 == 2, tostring(fwd1) .. 
 local okSingle, single = pcall(function() local t = { label = "one" } local function make() return t, "extra" end return make().label end)
 check("call result keeps only first for indexing", okSingle and single == "one", tostring(single))
 
+-- 16. math.random follows Lua semantics: random(n) -> 1..n, random(m, n) ->
+--     m..n, random() -> [0, 1). The old 0..n-1 form made snake index the color
+--     palette with 0 (nil) and abort every draw.
+local oneToN, whole = true, true
+for i = 1, 300 do
+    local v = math.random(7)
+    if v < 1 or v > 7 then oneToN = false end
+    if v % 1 ~= 0 then whole = false end
+end
+check("math.random(n) returns 1..n", oneToN and whole)
+local mToN = true
+for i = 1, 300 do
+    local v = math.random(3, 5)
+    if v < 3 or v > 5 then mToN = false end
+end
+check("math.random(m, n) returns m..n", mToN)
+local unit = math.random()
+check("math.random() is in [0, 1)", unit >= 0 and unit < 1, tostring(unit))
+
+-- 17. A call used directly as a condition uses its first value: `if not
+--     occupied(x, y) then` was always truthy (a call returns a result list),
+--     so snake never placed a new apple after eating.
+local function no() return false end
+local function yes() return true end
+local taken, skipped = 0, 0
+for i = 1, 3 do
+    if not no() then taken = taken + 1 end
+    if yes() then taken = taken + 1 end
+    if no() then skipped = skipped + 1 end
+end
+check("calls in conditions use the first value",
+    taken == 6 and skipped == 0,
+    tostring(taken) .. "," .. tostring(skipped))
+local chosen = no() and "yes-branch" or "no-branch"
+check("calls in and/or use the first value", chosen == "no-branch", tostring(chosen))
+
 mark("FAILURES=" .. fails)
 canvas:close()

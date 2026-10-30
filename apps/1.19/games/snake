@@ -7,8 +7,9 @@
 --   * everything drawn into the canvas buffer each frame
 --
 -- Usage:
---   snake        play
---   snake 200    run 200 frames and return (used by the test suite)
+--   snake          play
+--   snake 200      run 200 frames and return (used by the test suite)
+--   snake 300 auto run 300 frames steering itself, logging every meal
 
 local CELL, TOP = 12, 16
 
@@ -46,6 +47,10 @@ local game = {
     frames = 0
 }
 
+-- Test hook (`snake <frames> auto`): steer towards the apple and log every
+-- meal, so the suite can check that eating really moves it.
+local autoplay = arg[2] == "auto"
+
 local function occupied(x, y)
     for i = 1, #game.snake do
         if game.snake[i].x == x and game.snake[i].y == y then return true end
@@ -68,7 +73,7 @@ local corners = {
 
 local function relocateFood()
     for attempt = 1, 400 do
-        local x, y = math.random(COLS), math.random(ROWS)
+        local x, y = math.random(COLS) - 1, math.random(ROWS) - 1
         if not occupied(x, y) then
             local corner = false
             for i = 1, #corners do
@@ -93,7 +98,7 @@ end
 
 local function placeFood()
     for attempt = 1, 400 do
-        local x, y = math.random(COLS), math.random(ROWS)
+        local x, y = math.random(COLS) - 1, math.random(ROWS) - 1
         if not occupied(x, y) then
             local corner = false
             for i = 1, #corners do
@@ -135,6 +140,19 @@ local function turn(dx, dy)
     game.pendingY = dy
 end
 
+-- Greedy autopilot used by the test hook. It avoids turning straight back on
+-- itself (the game ignores reversals, which would make it loop forever).
+local function steer()
+    local head = game.snake[1]
+    local dx, dy = game.food.x - head.x, game.food.y - head.y
+    local wantX = dx ~= 0 and not (dx > 0 and game.dx < 0) and not (dx < 0 and game.dx > 0)
+    local wantY = dy ~= 0 and not (dy > 0 and game.dy < 0) and not (dy < 0 and game.dy > 0)
+    if wantX then turn(dx > 0 and 1 or -1, 0)
+    elseif wantY then turn(0, dy > 0 and 1 or -1)
+    elseif dx ~= 0 then turn(dx > 0 and 1 or -1, 0)
+    elseif dy ~= 0 then turn(0, dy > 0 and 1 or -1) end
+end
+
 local function step()
     game.dx = game.pendingX
     game.dy = game.pendingY
@@ -148,14 +166,18 @@ local function step()
 
     local grown = { { x = nx, y = ny } }
     for i = 1, #game.snake do grown[#grown + 1] = game.snake[i] end
-    if nx == game.food.x and ny == game.food.y then
+    local eaten = nx == game.food.x and ny == game.food.y
+    if not eaten then grown[#grown] = nil end
+    game.snake = grown
+    if eaten then
         game.score = game.score + 1
         if game.score > game.best then game.best = game.score end
+        local oldX, oldY = game.food.x, game.food.y
         placeFood()
-    else
-        grown[#grown] = nil
+        if autoplay then
+            io.write("eat " .. oldX .. "," .. oldY .. " -> " .. game.food.x .. "," .. game.food.y .. "\n", "/mnt/opentty/snake-eat.txt", "a")
+        end
     end
-    game.snake = grown
 end
 
 local function stepDelay()
@@ -196,7 +218,7 @@ local function draw()
     c:font("monospace medium")
 
     -- Food (the apple changes color every FOOD_STEP ms)
-    c:color(FOOD_COLORS[game.foodColor])
+    c:color(FOOD_COLORS[game.foodColor] or FOOD_COLORS[1])
     c:circle(game.food.x * CELL + CELL / 2, TOP + game.food.y * CELL + CELL / 2, CELL / 2 - 2, true)
 
     -- Snake
@@ -260,11 +282,14 @@ c.keyPressed = function(canvas, k, a) handleKey(k, a) end
 local function frame(canvas, dt)
     game.frames = game.frames + 1
     -- Keep the apple blinking even while the start/game over prompt is up.
-    game.foodTick = game.foodTick + dt
-    if game.foodTick >= FOOD_STEP then
-        game.foodTick = 0
-        game.foodColor = game.foodColor % #FOOD_COLORS + 1
-        relocateFood()
+    -- Autoplay keeps the apple still so the test bot can actually reach it.
+    if not autoplay then
+        game.foodTick = game.foodTick + dt
+        if game.foodTick >= FOOD_STEP then
+            game.foodTick = 0
+            game.foodColor = game.foodColor % #FOOD_COLORS + 1
+            relocateFood()
+        end
     end
     update(dt)
     -- Attract mode: after a few seconds the game over screen goes back to the
@@ -287,10 +312,12 @@ c:display()
 if frames and frames > 0 then
     game.waiting = false
     c:loop(function(canvas, dt)
+        if autoplay then steer() end
         if game.over then restart() end
-        frame(canvas, dt)
+        -- Autoplay uses a fixed step so a run covers a lot of game time fast.
+        frame(canvas, autoplay and 100 or dt)
         if game.frames >= frames then return false end
-    end, 16)
+    end, autoplay and 1 or 16)
     print("snake: " .. game.frames .. " frames, score " .. game.score)
 else
     c:animate(frame, 40)
