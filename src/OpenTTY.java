@@ -359,6 +359,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public String replace(String source, String target, String replacement) { if (target.length() == 0 || source.indexOf(target) < 0) { return source; } StringBuffer result = new StringBuffer(); int start = 0, end; while ((end = source.indexOf(target, start)) >= 0) { result.append(source.substring(start, end)); result.append(replacement); start = end + target.length(); } result.append(source.substring(start)); return result.toString(); }
     public String env(String text, Hashtable scope) { if (scope != null) { text = replace(text, "$PATH", (String) scope.get("PWD")); for (Enumeration keys = scope.keys(); keys.hasMoreElements();) { String key = (String) keys.nextElement(); text = replace(text, "$" + key, (String) scope.get(key)); } } return env(text); }
     public String env(String text) { text = replace(text, "$USER", username); for (Enumeration keys = attributes.keys(); keys.hasMoreElements();) { String key = (String) keys.nextElement(); text = replace(text, "$" + key, (String) attributes.get(key)); } text = replace(text, "$.", "$"); return escape(text); }
+    // | (File contents only get `$VAR` expansion. `escape()` decodes `\n`,
+    // | `\t`, `\\`, ... which corrupts any Lua source read with io.read /
+    // | require (`"a\nb"` became a real newline, `"\\"` a lone backslash).)
+    public String envVars(String text) { text = replace(text, "$USER", username); for (Enumeration keys = attributes.keys(); keys.hasMoreElements();) { String key = (String) keys.nextElement(); text = replace(text, "$" + key, (String) attributes.get(key)); } return replace(text, "$.", "$"); }
     public String escape(String text) { if (text.indexOf('\\') < 0 && text.indexOf('.') < 0) { return text; } text = replace(text, "\\n", "\n"); text = replace(text, "\\r", "\r"); text = replace(text, "\\t", "\t"); text = replace(text, "\\b", "\b"); text = replace(text, "\\\\", "\\"); text = replace(text, "\\.", "\\"); return text; }
     public String getCatch(Throwable e) { String message = e.getMessage(); return message == null || message.length() == 0 || message.equals("null") ? e.getClass().getName() : e.getClass().getName() + ": " + message; }
     // |
@@ -462,7 +466,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
             reader.close();
             is.close();
             
-            return filename.startsWith("/home/") ? sb.toString() : env(sb.toString());
+            return filename.startsWith("/home/") ? sb.toString() : envVars(sb.toString());
         } catch (Exception e) { return ""; }
     }
     public String read(InputStream in, int chunkSize, boolean consume) {

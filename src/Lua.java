@@ -950,51 +950,6 @@ public class Lua {
                             if (breakLoop) { breakLoop = false; break; }
                         }
                     } 
-                    else if (iterSrc instanceof LuaFunction) {
-                        // Function iterator: `for w in gmatch(s, p) do` calls the
-                        // function until it returns nil (values after `in` are the
-                        // state/control arguments, as in standard Lua).
-                        LuaFunction fn = (LuaFunction) iterSrc;
-                        Vector iterArgs = new Vector();
-                        for (int a = 0; a < iterInits.size(); a++) { iterArgs.addElement(iterInits.elementAt(a)); }
-
-                        while (true) {
-                            Object result = fn.call(iterArgs);
-                            Vector values;
-                            if (result instanceof Vector) { values = (Vector) result; }
-                            else { values = new Vector(); if (result != null) { values.addElement(result); } }
-                            Object first = values.isEmpty() ? null : values.elementAt(0);
-                            if (first == null || first == LUA_NIL) { break; }
-
-                            for (int n = 0; n < names.size(); n++) {
-                                Object value = n < values.size() ? values.elementAt(n) : null;
-                                scope.put((String) names.elementAt(n), value == null ? LUA_NIL : value);
-                            }
-                            if (!iterInits.isEmpty()) {
-                                iterArgs = new Vector();
-                                iterArgs.addElement(iterInits.elementAt(0));
-                                iterArgs.addElement(first);
-                            }
-
-                            int originalTokenIndex = tokenIndex;
-                            Vector originalTokens = tokens;
-                            tokens = bodyTokens;
-                            tokenIndex = 0;
-
-                            Object ret = null;
-                            boolean returned = false;
-                            while (peek().type != EOF) {
-                                ret = statement(scope);
-                                if (doreturn) { returned = true; break; }
-                            }
-
-                            tokenIndex = originalTokenIndex;
-                            tokens = originalTokens;
-                            if (returned) { return ret; }
-
-                            if (breakLoop) { breakLoop = false; break; }
-                        }
-                    }
                     else if (iterSrc == null) { } 
                     else { throw new Exception("Generic for: unsupported iterator source"); }
 
@@ -1377,7 +1332,10 @@ public class Lua {
     }
     // |
     // Strings
-    private String toLuaString(Object obj) { if (obj == null || obj == LUA_NIL) { return "nil"; } if (obj instanceof Boolean) { return ((Boolean)obj).booleanValue() ? "true" : "false"; } if (obj instanceof Double) { double d = ((Double)obj).doubleValue(); if (d == (long)d) return String.valueOf((long)d); return String.valueOf(d); } return midlet.escape(obj.toString()); }
+    // Strings are values, not escaped file content: `load`, `string.byte` and
+    // `tostring` must see the exact bytes. Escape sequences are decoded when
+    // a *command line* is expanded (midlet.env), never here.
+    private String toLuaString(Object obj) { if (obj == null || obj == LUA_NIL) { return "nil"; } if (obj instanceof Boolean) { return ((Boolean)obj).booleanValue() ? "true" : "false"; } if (obj instanceof Double) { double d = ((Double)obj).doubleValue(); if (d == (long)d) return String.valueOf((long)d); return String.valueOf(d); } return obj.toString(); }
     private Object concatenation(Hashtable scope) throws Exception {
         Object left = arithmetic(scope);
 
