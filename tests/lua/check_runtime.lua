@@ -394,6 +394,70 @@ check("generic for over an iterator closure", rangeOut == "123", rangeOut)
 local nextOut = ""
 for k in next, { a = 1, b = 2 } do nextOut = nextOut .. k end
 check("generic for with next", nextOut == "ab" or nextOut == "ba", nextOut)
+-- 21. table.remove must capture the length before shifting: the old loop
+--     re-read `#t` after every move and stopped one element early, so
+--     `table.remove(t, 1)` left the last element in place and returned nil.
+local t = { 1, 2, 3, 4 }
+local removed = table.remove(t, 1)
+check("table.remove(t, 1) returns the head", removed == 1, tostring(removed))
+check("table.remove(t, 1) shifts every element",
+    #t == 3 and t[1] == 2 and t[2] == 3 and t[3] == 4,
+    "#t=" .. tostring(#t) .. " t=" .. table.concat(t, ","))
+local last = table.remove(t)
+check("table.remove(t) returns the tail", last == 4, tostring(last))
+check("table.remove(t) shrinks the list",
+    #t == 2 and t[1] == 2 and t[2] == 3,
+    "#t=" .. tostring(#t) .. " t=" .. table.concat(t, ","))
+local u = { "a", "b", "c" }
+local middle = table.remove(u, 2)
+check("table.remove(t, i) returns the middle",
+    middle == "b" and #u == 2 and u[1] == "a" and u[2] == "c",
+    tostring(middle) .. " #u=" .. tostring(#u) .. " u=" .. table.concat(u, ","))
+local v = { 1, 2, 3 }
+local gone = table.remove(v, 3)
+check("table.remove(t, #t) returns the tail",
+    gone == 3 and #v == 2 and v[1] == 1 and v[2] == 2,
+    tostring(gone) .. " #v=" .. tostring(#v))
+
+-- 22. `break` inside a numeric for used to leak into the enclosing loop when
+--     the broken iteration was the last one (the flag was only cleared at the
+--     top of the next iteration). The pattern engine hit this on every
+--     capture group, so string.match/gsub stopped after the first one.
+local outer = 0
+local wi = 1
+while wi <= 3 do
+    for k = 1, 1 do
+        if k == 1 then break end
+    end
+    outer = outer + 1
+    wi = wi + 1
+end
+check("break in a for keeps the enclosing while going", outer == 3, tostring(outer))
+local lastHit = 0
+for k = 4, 1, -1 do
+    if k == 2 then lastHit = k; break end
+end
+check("break in a descending for sets the value", lastHit == 2, tostring(lastHit))
+
+-- 23. Generic `for` over a function iterator (standard Lua, used by
+--     string.gmatch and io.lines): call until the function returns nil.
+local function pairIter()
+    local i = 0
+    return function()
+        i = i + 1
+        if i == 1 then return "a", 1 end
+        if i == 2 then return "b", 2 end
+        return nil
+    end
+end
+local keys, values = {}, {}
+for k, v in pairIter() do
+    keys[#keys + 1] = k
+    values[#values + 1] = v
+end
+check("function iterators return multiple values",
+    table.concat(keys, "") == "ab" and values[1] == 1 and values[2] == 2,
+    table.concat(keys, "") .. "/" .. tostring(values[1]) .. tostring(values[2]))
 
 mark("FAILURES=" .. fails)
 canvas:close()

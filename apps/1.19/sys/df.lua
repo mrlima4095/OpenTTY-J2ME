@@ -15,7 +15,8 @@ local i = 1
 
 local function trunc(x)
     local s = tostring(x)
-    local dot = string.find(s, ".")
+    -- Plain search: with the `string` rock loaded "." would be a pattern.
+    local dot = string.find(s, ".", 1, true)
     if dot then s = string.sub(s, 1, dot - 1) end
     local n = tonumber(s)
     return n or 0

@@ -769,6 +769,11 @@ public class Lua {
                         // to abort the loop after its first iteration.
                         if (returned) { return ret; }
 
+                        // A `break` in the body must end *this* loop only: the
+                        // flag used to leak into the enclosing loop when the
+                        // broken iteration was the last one.
+                        if (breakLoop) { breakLoop = false; break; }
+
                         iVal += stepVal;
                     }
 
@@ -945,6 +950,51 @@ public class Lua {
                             if (breakLoop) { breakLoop = false; break; }
                         }
                     } 
+                    else if (iterSrc instanceof LuaFunction) {
+                        // Function iterator: `for w in gmatch(s, p) do` calls the
+                        // function until it returns nil (values after `in` are the
+                        // state/control arguments, as in standard Lua).
+                        LuaFunction fn = (LuaFunction) iterSrc;
+                        Vector iterArgs = new Vector();
+                        for (int a = 0; a < iterInits.size(); a++) { iterArgs.addElement(iterInits.elementAt(a)); }
+
+                        while (true) {
+                            Object result = fn.call(iterArgs);
+                            Vector values;
+                            if (result instanceof Vector) { values = (Vector) result; }
+                            else { values = new Vector(); if (result != null) { values.addElement(result); } }
+                            Object first = values.isEmpty() ? null : values.elementAt(0);
+                            if (first == null || first == LUA_NIL) { break; }
+
+                            for (int n = 0; n < names.size(); n++) {
+                                Object value = n < values.size() ? values.elementAt(n) : null;
+                                scope.put((String) names.elementAt(n), value == null ? LUA_NIL : value);
+                            }
+                            if (!iterInits.isEmpty()) {
+                                iterArgs = new Vector();
+                                iterArgs.addElement(iterInits.elementAt(0));
+                                iterArgs.addElement(first);
+                            }
+
+                            int originalTokenIndex = tokenIndex;
+                            Vector originalTokens = tokens;
+                            tokens = bodyTokens;
+                            tokenIndex = 0;
+
+                            Object ret = null;
+                            boolean returned = false;
+                            while (peek().type != EOF) {
+                                ret = statement(scope);
+                                if (doreturn) { returned = true; break; }
+                            }
+
+                            tokenIndex = originalTokenIndex;
+                            tokens = originalTokens;
+                            if (returned) { return ret; }
+
+                            if (breakLoop) { breakLoop = false; break; }
+                        }
+                    }
                     else if (iterSrc == null) { } 
                     else { throw new Exception("Generic for: unsupported iterator source"); }
 
@@ -1016,8 +1066,11 @@ public class Lua {
                 consume(UNTIL);
                 Object cond = expression(scope);
 
-                if (isTruthy(cond) || doreturn) { break; }
-                else if (breakLoop) { breakLoop = false; break; } 
+                if (doreturn) { break; }
+                // `break` inside the body ends the repeat, and must not leak
+                // into the enclosing loop.
+                else if (breakLoop) { breakLoop = false; break; }
+                else if (isTruthy(cond)) { break; }
             }
 
             loopDepth--;

@@ -242,6 +242,19 @@ Programs can be installed in several ways:
 2. **Via file** — copy `.lua` files to `/bin/`
 3. **Via network** — download from an HTTP server with `wget`/`curl`
 
+Lua **libraries** (modules that extend the runtime instead of adding a program)
+are installed with `luarocks` into `/lib/<name>.lua` and loaded with
+`require("<name>")`:
+
+```sh
+luarocks list --available      # what the mirror offers
+luarocks install math string   # install rocks (and their dependencies)
+luarocks update                # refresh /etc/rocks from the mirror
+```
+
+See [LUAROCKS.md](LUAROCKS.md) for the rock format, the catalog and the
+publishing workflow.
+
 ---
 
 ## Debugging and Troubleshooting

@@ -11,8 +11,17 @@ For every apps/<major>/sources.lua this checks that:
     here: file is not plain text);
   - the top-level apps/ copy and each catalog copy are kept in sync.
 
+For every apps/<major>/rocks.lua (the luarocks catalog) it checks that:
+  - the catalog version matches the <major> directory;
+  - every rock `remote` payload exists and its `-- rock:` header agrees with
+    the catalog (version/here), so `luarocks index` is not stale;
+  - every `depends` name is another rock in the same catalog;
+  - every `here` is an absolute path.
+
 It also asserts src/etc/sources (the on-device /etc/sources seed) matches the
-catalog of the release version found in src/OpenTTY.java.
+catalog of the release version found in src/OpenTTY.java, that src/etc/rocks
+matches the newest rocks catalog, and that src/lib/math.lua (the shipped seed)
+is the same file as the math rock payload.
 
 Exit code 0 = OK, 1 = problems found.
 """
@@ -51,6 +60,103 @@ def parse_table(path):
 def is_elf(path):
     with open(path, "rb") as f:
         return f.read(4) == b"\x7fELF"
+
+
+def parse_rocks(path):
+    """Parse the generated apps/<major>/rocks.lua catalog."""
+    if not os.path.isfile(path):
+        return None
+    text = open(path, encoding="utf-8", errors="replace").read()
+    version_m = re.search(r'^\s*version\s*=\s*"([^"]+)"', text, re.M)
+    server_m = re.search(r'^\s*server\s*=\s*"([^"]+)"', text, re.M)
+    entries = {}
+    for line in text.splitlines():
+        m = re.match(r'\s*\["([^"]+)"\]\s*=\s*\{(.*)\},\s*$', line)
+        if not m:
+            continue
+        name, body = m.group(1), m.group(2)
+        version = re.search(r'version\s*=\s*"([^"]*)"', body)
+        remote = re.search(r'remote\s*=\s*"([^"]*)"', body)
+        here = re.search(r'here\s*=\s*"([^"]*)"', body)
+        desc = re.search(r'description\s*=\s*"([^"]*)"', body)
+        deps = []
+        dm = re.search(r'depends\s*=\s*\{([^}]*)\}', body)
+        if dm:
+            deps = re.findall(r'"([^"]+)"', dm.group(1))
+        entries[name] = {
+            "version": version.group(1) if version else None,
+            "remote": remote.group(1) if remote else None,
+            "here": here.group(1) if here else None,
+            "description": desc.group(1) if desc else "",
+            "depends": deps,
+        }
+    return (version_m.group(1) if version_m else None,
+            server_m.group(1) if server_m else None,
+            entries)
+
+
+def parse_rock_header(path):
+    """Read the `-- rock: key=value` lines at the top of a payload."""
+    meta = {"depends": []}
+    with open(path, encoding="utf-8", errors="replace") as f:
+        for line in f:
+            line = line.strip()
+            if line.startswith("-- rock:"):
+                body = line[len("-- rock:"):].strip()
+                if "=" in body:
+                    key, value = body.split("=", 1)
+                    key, value = key.strip(), value.strip()
+                    if key == "depends":
+                        for dep in value.split(","):
+                            dep = dep.strip()
+                            if dep:
+                                meta["depends"].append(dep)
+                    else:
+                        meta[key] = value
+            elif line.startswith("--") or line == "":
+                continue
+            else:
+                break
+    return meta
+
+
+def check_rocks(major):
+    """Return (problems, message, entries) for apps/<major>/rocks.lua."""
+    catalog = os.path.join(ROOT, "apps", major)
+    path = os.path.join(catalog, "rocks.lua")
+    if not os.path.isfile(path):
+        return None
+    parsed = parse_rocks(path)
+    if parsed is None:
+        return 1, "apps/%s/rocks.lua unreadable" % major, {}
+    version, _server, entries = parsed
+    problems = []
+    if str(version) != major:
+        problems.append("rocks.lua version = %r does not match catalog %r" % (version, major))
+
+    names = set(entries)
+    for name, ent in entries.items():
+        remote = ent["remote"]
+        if not remote:
+            problems.append("%s: missing remote" % name)
+            continue
+        full = os.path.normpath(os.path.join(catalog, remote))
+        if not os.path.exists(full):
+            problems.append("%s: rock payload missing: %s" % (name, remote))
+            continue
+        if not ent["here"] or not ent["here"].startswith("/"):
+            problems.append("%s: here must be an absolute path, got %r" % (name, ent["here"]))
+        for dep in ent["depends"]:
+            if dep not in names:
+                problems.append("%s: unknown rock dependency %r" % (name, dep))
+        header = parse_rock_header(full)
+        if header.get("version") and header["version"] != ent["version"]:
+            problems.append("%s: catalog version %r != header %r" %
+                            (name, ent["version"], header["version"]))
+        if header.get("here") and header["here"] != ent["here"]:
+            problems.append("%s: catalog here %r != header %r" %
+                            (name, ent["here"], header["here"]))
+    return len(problems), "; ".join(problems), entries
 
 
 def check_catalog(major):
@@ -118,6 +224,15 @@ def main():
             print("  - " + msg)
             problems.append(msg)
 
+        rocks = check_rocks(major)
+        if rocks is not None:
+            rn, rmsg, _entries = rocks
+            rstatus = "OK" if rn == 0 else "FAIL"
+            print("check_sources: apps/%s rocks %s" % (major, rstatus))
+            if rn:
+                print("  - " + rmsg)
+                problems.append(rmsg)
+
     # The on-device seed (/etc/sources) ships the newest catalog, which is the
     # one the next release pulls from: apps/<major>/sources.lua.
     versioned = [d for d in catalogs if re.match(r"^\d+(\.\d+)*$", d)]
@@ -130,6 +245,27 @@ def main():
         print("check_sources: src/etc/sources %s apps/%s/sources.lua" % ("matches" if same else "DIFFERS from", newest))
         if not same:
             problems.append("src/etc/sources out of sync with apps/%s" % newest)
+
+        # /etc/rocks is the luarocks catalog seed; keep it on the newest catalog.
+        rocks_seed = os.path.join(ROOT, "src", "etc", "rocks")
+        rocks_catalog = os.path.join(ROOT, "apps", newest, "rocks.lua")
+        if os.path.isfile(rocks_catalog):
+            same_rocks = open(rocks_seed, encoding="utf-8", errors="replace").read() == \
+                         open(rocks_catalog, encoding="utf-8", errors="replace").read()
+            print("check_sources: src/etc/rocks %s apps/%s/rocks.lua" % ("matches" if same_rocks else "DIFFERS from", newest))
+            if not same_rocks:
+                problems.append("src/etc/rocks out of sync with apps/%s/rocks.lua" % newest)
+
+        # src/lib/math.lua is the shipped /lib seed; it must stay identical to
+        # the math rock payload so a device without luarocks gets the same code.
+        math_seed = os.path.join(ROOT, "src", "lib", "math.lua")
+        math_rock = os.path.join(ROOT, "apps", newest, "lua", "math.lua")
+        if os.path.isfile(math_rock):
+            same_math = open(math_seed, encoding="utf-8", errors="replace").read() == \
+                        open(math_rock, encoding="utf-8", errors="replace").read()
+            print("check_sources: src/lib/math.lua %s apps/%s/lua/math.lua" % ("matches" if same_math else "DIFFERS from", newest))
+            if not same_math:
+                problems.append("src/lib/math.lua out of sync with apps/%s/lua/math.lua" % newest)
     else:
         print("check_sources: no versioned app catalog found under apps/")
         problems.append("no apps/<major> catalog")

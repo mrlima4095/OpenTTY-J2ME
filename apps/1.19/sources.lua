@@ -54,6 +54,7 @@ return {
         ["libinit"] = { remote = "lib/libinit.so", here = "/lib/libinit.so", depends = { "libutil" }, riscv = true, description = "OpenTTY ELF lifecycle test library" },
         ["libutil"] = { remote = "lib/libutil.so", here = "/lib/libutil.so", riscv = true, description = "OpenTTY C utility library" },
         ["log"] = { remote = "sys/smile/logs.lua", here = "/bin/log", description = "MIDlet Logs" },
+        ["luarocks"] = { remote = "sys/luarocks", here = "/bin/luarocks", description = "Lua package manager (rocks)" },
         ["man"] = { remote = "sys/man.lua", here = "/bin/man", description = "Application manual pages" },
         ["matrix"] = { remote = "games/matrix", here = "/bin/matrix", description = "Digital rain screensaver" },
         ["memelf"] = { remote = "sys/memelf", here = "/bin/memelf", description = "Set the max RAM of the ELF emulator (KB)" },

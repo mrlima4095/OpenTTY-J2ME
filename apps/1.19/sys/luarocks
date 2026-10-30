@@ -1,0 +1,461 @@
+#!/bin/lua
+
+-- luarocks - package manager for OpenTTY Lua rocks.
+--
+-- Rocks are plain Lua files with a small metadata header:
+--
+--   -- rock: name=math
+--   -- rock: version=1.1.0
+--   -- rock: description=Numeric helpers
+--   -- rock: here=/lib/math.lua
+--   -- rock: depends=string
+--
+-- `luarocks index <dir> [out] [prefix]` scans those headers and writes the
+-- catalog (`apps/<major>/rocks.lua`) that `update`/`switch` copy to
+-- `/etc/rocks`, mirroring how `pkg` refreshes `/etc/sources`.
+
+local version = "1.0.0"
+local api = os.getenv("VERSION") or getAppProperty("MIDlet-Version") or "1.19"
+local server = os.getenv("REPO") or "http://opentty.fun"
+
+local CATALOG = "/etc/rocks"
+local INSTALLED = "/etc/rocks.installed"
+
+os.setproc("name", "luarocks")
+
+if arg == nil then arg = {} end
+
+local function require_root(what)
+    if os.getuid() ~= 0 then
+        print(":: must be root to " .. what)
+        os.exit(1)
+    end
+end
+
+local function read_file(path)
+    local text = io.read(path)
+    if text == nil then return "" end
+    return text
+end
+
+local function load_table(path)
+    local code = read_file(path)
+    if code == "" then return nil end
+    local ok, value = pcall(load, code)
+    if not ok or type(value) ~= "table" then return nil end
+    return value
+end
+
+local function lua_quote(value)
+    local s = tostring(value)
+    local out = { '"' }
+    for i = 1, #s do
+        local c = string.sub(s, i, i)
+        if c == '"' or c == "\\" then out[#out + 1] = "\\" .. c
+        elseif c == "\n" then out[#out + 1] = "\\n"
+        elseif c == "\r" then out[#out + 1] = "\\r"
+        elseif c == "\t" then out[#out + 1] = "\\t"
+        elseif string.byte(c) < 32 then out[#out + 1] = "\\" .. tostring(string.byte(c))
+        else out[#out + 1] = c end
+    end
+    out[#out + 1] = '"'
+    return table.concat(out)
+end
+
+local function serialize_array(values)
+    if values == nil or #values == 0 then return "{}" end
+    local out = {}
+    for i = 1, #values do out[i] = lua_quote(values[i]) end
+    return "{ " .. table.concat(out, ", ") .. " }"
+end
+
+local function parent_dir(path)
+    path = string.trim(path or ".")
+    if string.sub(path, -1) == "/" then path = string.sub(path, 1, -2) end
+    local i = #path
+    while i > 0 and string.sub(path, i, i) ~= "/" do i = i - 1 end
+    if i <= 1 then return "." end
+    return string.sub(path, 1, i - 1)
+end
+
+local function basename(path)
+    local i = #path
+    while i > 0 and string.sub(path, i, i) ~= "/" do i = i - 1 end
+    return string.sub(path, i + 1)
+end
+
+local function strip_lua(name)
+    if string.endswith(name, ".lua") then return string.sub(name, 1, #name - 4) end
+    return name
+end
+
+local function parse_header(code, default_name)
+    local meta = { depends = {} }
+    local lines = string.split(code, "\n")
+    for i = 1, #lines do
+        local line = string.trim(lines[i])
+        if string.startswith(line, "-- rock:") then
+            local body = string.trim(string.sub(line, 9))
+            local eq = string.find(body, "=", 1, true)
+            if eq then
+                local key = string.trim(string.sub(body, 1, eq - 1))
+                local value = string.trim(string.sub(body, eq + 1))
+                if key == "depends" then
+                    for _, dep in ipairs(string.split(value, ",")) do
+                        dep = string.trim(dep)
+                        if dep ~= "" then meta.depends[#meta.depends + 1] = dep end
+                    end
+                else
+                    meta[key] = value
+                end
+            end
+        elseif string.startswith(line, "--") or line == "" then
+            -- keep scanning the leading comment block
+        else
+            break
+        end
+    end
+    if meta.name == nil or meta.name == "" then meta.name = default_name end
+    return meta
+end
+
+local function load_installed()
+    return load_table(INSTALLED) or {}
+end
+
+local function save_installed(installed)
+    local names = {}
+    for name in pairs(installed) do names[#names + 1] = name end
+    table.sort(names)
+    local out = { "-- Managed by luarocks. Do not edit by hand.", "return {" }
+    for _, name in ipairs(names) do
+        local info = installed[name]
+        out[#out + 1] = "    [" .. lua_quote(name) .. "] = { version = " ..
+            lua_quote(info.version or "") .. ", here = " .. lua_quote(info.here or "") .. " },"
+    end
+    out[#out + 1] = "}"
+    local ok, err = pcall(io.write, table.concat(out, "\n") .. "\n", INSTALLED)
+    if not ok then print(":: error saving installed rocks: " .. tostring(err)) end
+end
+
+local function load_catalog()
+    local catalog = load_table(CATALOG)
+    if catalog == nil or type(catalog.rocks) ~= "table" then return nil end
+    return catalog
+end
+
+local function require_catalog()
+    local catalog = load_catalog()
+    if catalog == nil then
+        print(":: no rock database at " .. CATALOG .. " (run `luarocks update`)")
+        os.exit(1)
+    end
+    return catalog
+end
+
+local function rock_here(name, rock)
+    if rock.here ~= nil and rock.here ~= "" then return rock.here end
+    return "/lib/" .. name .. ".lua"
+end
+
+local function build_catalog_source(names, rocks, catalog_version, catalog_server)
+    local out = {
+        "-- Generated by `luarocks index`. Do not edit by hand.",
+        "return {",
+        "    version = " .. lua_quote(catalog_version) .. ",",
+        "    server = " .. lua_quote(catalog_server) .. ",",
+        "    rocks = {"
+    }
+    for _, name in ipairs(names) do
+        local rock = rocks[name]
+        out[#out + 1] = "        [" .. lua_quote(name) .. "] = { version = " ..
+            lua_quote(rock.version) .. ", remote = " .. lua_quote(rock.remote) ..
+            ", here = " .. lua_quote(rock.here) .. ", description = " ..
+            lua_quote(rock.description) .. ", depends = " .. serialize_array(rock.depends) .. " },"
+    end
+    out[#out + 1] = "    }"
+    out[#out + 1] = "}"
+    return table.concat(out, "\n") .. "\n"
+end
+
+local function usage()
+    print(":: usage: luarocks <command> [args]")
+    print(":: commands:")
+    print("   install <rock>...          install rocks and their dependencies")
+    print("   remove <rock>...           remove installed rocks")
+    print("   list [--available]         list installed (or available) rocks")
+    print("   search <term>              search the catalog")
+    print("   info <rock>                show rock metadata")
+    print("   update                     refresh /etc/rocks from the mirror")
+    print("   switch <version>           switch to another catalog version")
+    print("   index <dir> [out] [prefix] build a catalog from `-- rock:` headers")
+    print("   make <file> [dir]          copy a payload into a catalog directory")
+    print("   version                    show versions")
+    print("   help                       show this message")
+end
+
+local command = arg[1] or "help"
+
+if command == "install" then
+    require_root("install rocks")
+    if #arg < 2 then usage(); os.exit(2) end
+
+    local catalog = require_catalog()
+    local installed = load_installed()
+    local mirror = catalog.rocks
+    local base = catalog.server or server
+
+    local function install_one(name, stack)
+        if installed[name] ~= nil then
+            print(":: " .. name .. " is already installed")
+            return true
+        end
+        local rock = mirror[name]
+        if rock == nil then
+            print(":: rock " .. name .. " not found")
+            return false
+        end
+        if stack[name] then
+            print(":: dependency loop on " .. name)
+            return false
+        end
+        stack[name] = true
+
+        local depends = rock.depends or {}
+        for _, dep in ipairs(depends) do
+            if installed[dep] == nil then
+                print(":: installing dependency " .. dep)
+                if not install_one(dep, stack) then return false end
+            end
+        end
+
+        local here = rock_here(name, rock)
+        local url = base .. "/apps/" .. tostring(catalog.version) .. "/" .. tostring(rock.remote)
+        print(":: downloading " .. name .. " from " .. tostring(rock.remote))
+        local ok, stream = pcall(socket.http.rget, url)
+        if not ok then
+            print(":: error downloading " .. name .. ": " .. tostring(stream))
+            return false
+        end
+        local copied, err = pcall(io.copy, stream, here)
+        if not copied then
+            print(":: error installing " .. name .. ": " .. tostring(err))
+            return false
+        end
+
+        installed[name] = { version = rock.version, here = here }
+        save_installed(installed)
+        print(":: installed " .. name .. " " .. tostring(rock.version) .. " -> " .. here)
+        java.yield(15)
+        return true
+    end
+
+    local failed = 0
+    for i = 2, #arg do
+        if not install_one(arg[i], {}) then failed = failed + 1 end
+    end
+    if failed > 0 then os.exit(1) end
+
+elseif command == "remove" then
+    require_root("remove rocks")
+    if #arg < 2 then usage(); os.exit(2) end
+    local installed = load_installed()
+    for i = 2, #arg do
+        local name = arg[i]
+        local info = installed[name]
+        if info == nil then
+            print(":: rock " .. name .. " is not installed")
+        else
+            local ok, err = pcall(os.remove, info.here)
+            if not ok then
+                print(":: error removing " .. name .. ": " .. tostring(err))
+            else
+                installed[name] = nil
+                save_installed(installed)
+                print(":: removed " .. name)
+            end
+        end
+    end
+
+elseif command == "list" then
+    if arg[2] == "--available" or arg[2] == "-a" then
+        local catalog = require_catalog()
+        local names = {}
+        for name in pairs(catalog.rocks) do names[#names + 1] = name end
+        table.sort(names)
+        print(":: available rocks (" .. #names .. "):")
+        for _, name in ipairs(names) do
+            local rock = catalog.rocks[name]
+            print(name .. " " .. tostring(rock.version) .. " - " .. tostring(rock.description or ""))
+        end
+    else
+        local installed = load_installed()
+        local names = {}
+        for name in pairs(installed) do names[#names + 1] = name end
+        table.sort(names)
+        if #names == 0 then
+            print(":: no rocks installed")
+        else
+            print(":: installed rocks (" .. #names .. "):")
+            for _, name in ipairs(names) do
+                local info = installed[name]
+                print(name .. " " .. tostring(info.version) .. " -> " .. tostring(info.here))
+            end
+        end
+    end
+
+elseif command == "search" then
+    local term = string.lower(arg[2] or "")
+    if term == "" then usage(); os.exit(2) end
+    local catalog = require_catalog()
+    local names = {}
+    for name in pairs(catalog.rocks) do names[#names + 1] = name end
+    table.sort(names)
+    local found = 0
+    for _, name in ipairs(names) do
+        local rock = catalog.rocks[name]
+        local haystack = string.lower(name .. " " .. tostring(rock.description or ""))
+        if string.find(haystack, term, 1, true) then
+            found = found + 1
+            print(name .. " " .. tostring(rock.version) .. " - " .. tostring(rock.description or ""))
+        end
+    end
+    if found == 0 then print(":: no rock matches '" .. arg[2] .. "'") end
+
+elseif command == "info" then
+    local name = arg[2]
+    if name == nil then usage(); os.exit(2) end
+    local catalog = require_catalog()
+    local rock = catalog.rocks[name]
+    if rock == nil then
+        print(":: rock " .. name .. " not found")
+        os.exit(1)
+    end
+    local installed = load_installed()
+    print("name: " .. name)
+    print("version: " .. tostring(rock.version))
+    print("remote: " .. tostring(rock.remote))
+    print("here: " .. rock_here(name, rock))
+    print("description: " .. tostring(rock.description or ""))
+    if rock.depends ~= nil and #rock.depends > 0 then
+        print("depends: " .. table.concat(rock.depends, ", "))
+    end
+    print("installed: " .. (installed[name] ~= nil and "yes" or "no"))
+
+elseif command == "update" then
+    require_root("update the rock database")
+    local url = server .. "/apps/" .. api .. "/rocks.lua"
+    local ok, body = pcall(socket.http.get, url)
+    if not ok or body == nil or body == "" then
+        print(":: error updating rock database: " .. tostring(body))
+        os.exit(1)
+    end
+    local written, err = pcall(io.write, body, CATALOG)
+    if not written then
+        print(":: error updating rock database: " .. tostring(err))
+        os.exit(1)
+    end
+    print(":: rock database updated")
+
+elseif command == "switch" then
+    require_root("switch the rock database")
+    local target = arg[2]
+    if target == nil then
+        print(":: usage: luarocks switch <version>")
+        os.exit(2)
+    end
+    local url = server .. "/apps/" .. target .. "/rocks.lua"
+    local ok, body = pcall(socket.http.get, url)
+    if not ok or body == nil or body == "" then
+        print(":: error switching rock database: " .. tostring(body))
+        os.exit(1)
+    end
+    local written, err = pcall(io.write, body, CATALOG)
+    if not written then
+        print(":: error switching rock database: " .. tostring(err))
+        os.exit(1)
+    end
+    print(":: rock database switched to version " .. target)
+
+elseif command == "index" then
+    local dir = arg[2]
+    if dir == nil then
+        print(":: usage: luarocks index <dir> [out] [prefix]")
+        os.exit(2)
+    end
+    local out = arg[3] or (parent_dir(dir) .. "/rocks.lua")
+    local prefix = arg[4] or "lua/"
+    local entries = io.dirs(dir)
+    if entries == nil then
+        print(":: cannot list " .. dir)
+        os.exit(1)
+    end
+
+    local rocks = {}
+    local names = {}
+    for _, entry in ipairs(entries) do
+        if string.endswith(entry, ".lua") then
+            local path = dir
+            if string.sub(path, -1) ~= "/" then path = path .. "/" end
+            path = path .. entry
+            local code = read_file(path)
+            if code ~= "" then
+                local name = strip_lua(entry)
+                local meta = parse_header(code, name)
+                name = meta.name
+                rocks[name] = {
+                    version = meta.version or "0.1.0",
+                    remote = prefix .. entry,
+                    here = meta.here or ("/lib/" .. name .. ".lua"),
+                    description = meta.description or "",
+                    depends = meta.depends
+                }
+                names[#names + 1] = name
+            end
+        end
+    end
+    table.sort(names)
+
+    local code = build_catalog_source(names, rocks, api, server)
+    local written, err = pcall(io.write, code, out)
+    if not written then
+        print(":: error writing " .. out .. ": " .. tostring(err))
+        os.exit(1)
+    end
+    print(":: indexed " .. #names .. " rocks into " .. out)
+
+elseif command == "make" then
+    local file = arg[2]
+    if file == nil then
+        print(":: usage: luarocks make <file> [dir]")
+        os.exit(2)
+    end
+    local dir = arg[3] or "."
+    local code = read_file(file)
+    if code == "" then
+        print(":: cannot read " .. file)
+        os.exit(1)
+    end
+    local meta = parse_header(code, strip_lua(basename(file)))
+    local name = meta.name
+    if string.sub(dir, -1) ~= "/" then dir = dir .. "/" end
+    local target = dir .. name .. ".lua"
+    local written, err = pcall(io.write, code, target)
+    if not written then
+        print(":: error writing " .. target .. ": " .. tostring(err))
+        os.exit(1)
+    end
+    print(":: made " .. name .. " " .. tostring(meta.version or "0.1.0") .. " -> " .. target)
+
+elseif command == "version" then
+    print(":: luarocks version " .. version)
+    local catalog = load_catalog()
+    if catalog == nil then
+        print(":: no rock database (run `luarocks update`)")
+    else
+        print(":: rocks for OpenTTY " .. tostring(catalog.version))
+    end
+
+else
+    usage()
+end
