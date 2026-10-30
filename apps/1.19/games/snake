@@ -10,6 +10,7 @@
 --   snake          play
 --   snake 200      run 200 frames and return (used by the test suite)
 --   snake 300 auto run 300 frames steering itself, logging every meal
+--   snake 60 idle  run 60 frames on the start prompt, logging apple moves
 
 local CELL, TOP = 12, 16
 
@@ -50,6 +51,9 @@ local game = {
 -- Test hook (`snake <frames> auto`): steer towards the apple and log every
 -- meal, so the suite can check that eating really moves it.
 local autoplay = arg[2] == "auto"
+-- Test hook (`snake <frames> idle`): stay on the start prompt, where the apple
+-- only blinks, and log every position change.
+local idle = arg[2] == "idle"
 
 local function occupied(x, y)
     for i = 1, #game.snake do
@@ -65,36 +69,11 @@ local function newFood(x, y)
     game.foodTick = 0
 end
 
--- Relocate the apple somewhere fresh: not on the snake, and not on a board
--- corner (the corner is a hard-to-reach, hard-to-see cell).
+-- The apple only moves when it is eaten (placeFood): avoid the snake body and
+-- the board corners (a corner is a hard-to-reach, hard-to-see cell).
 local corners = {
     { 0, 0 }, { COLS - 1, 0 }, { 0, ROWS - 1 }, { COLS - 1, ROWS - 1 }
 }
-
-local function relocateFood()
-    for attempt = 1, 400 do
-        local x, y = math.random(COLS) - 1, math.random(ROWS) - 1
-        if not occupied(x, y) then
-            local corner = false
-            for i = 1, #corners do
-                if corners[i][1] == x and corners[i][2] == y then corner = true end
-            end
-            if not corner then newFood(x, y) return end
-        end
-    end
-    -- Fallback: first free cell that is not a corner.
-    for y = 0, ROWS - 1 do
-        for x = 0, COLS - 1 do
-            if not occupied(x, y) then
-                local corner = false
-                for i = 1, #corners do
-                    if corners[i][1] == x and corners[i][2] == y then corner = true end
-                end
-                if not corner then newFood(x, y) return end
-            end
-        end
-    end
-end
 
 local function placeFood()
     for attempt = 1, 400 do
@@ -282,14 +261,11 @@ c.keyPressed = function(canvas, k, a) handleKey(k, a) end
 local function frame(canvas, dt)
     game.frames = game.frames + 1
     -- Keep the apple blinking even while the start/game over prompt is up.
-    -- Autoplay keeps the apple still so the test bot can actually reach it.
-    if not autoplay then
-        game.foodTick = game.foodTick + dt
-        if game.foodTick >= FOOD_STEP then
-            game.foodTick = 0
-            game.foodColor = game.foodColor % #FOOD_COLORS + 1
-            relocateFood()
-        end
+    -- Only the color changes here: the apple stays put until it is eaten.
+    game.foodTick = game.foodTick + dt
+    if game.foodTick >= FOOD_STEP then
+        game.foodTick = 0
+        game.foodColor = game.foodColor % #FOOD_COLORS + 1
     end
     update(dt)
     -- Attract mode: after a few seconds the game over screen goes back to the
@@ -310,12 +286,22 @@ c:command("Pause", "screen", function() game.paused = not game.paused end)
 c:display()
 
 if frames and frames > 0 then
-    game.waiting = false
+    game.waiting = idle
     c:loop(function(canvas, dt)
         if autoplay then steer() end
         if game.over then restart() end
+        local beforeX, beforeY = game.food.x, game.food.y
+        local beforeColor = game.foodColor
         -- Autoplay uses a fixed step so a run covers a lot of game time fast.
         frame(canvas, autoplay and 100 or dt)
+        if idle then
+            if game.food.x ~= beforeX or game.food.y ~= beforeY then
+                io.write("moved " .. beforeX .. "," .. beforeY .. " -> " .. game.food.x .. "," .. game.food.y .. "\n", "/mnt/opentty/snake-idle.txt", "a")
+            end
+            if game.foodColor ~= beforeColor then
+                io.write("blink " .. game.foodColor .. "\n", "/mnt/opentty/snake-idle.txt", "a")
+            end
+        end
         if game.frames >= frames then return false end
     end, autoplay and 1 or 16)
     print("snake: " .. game.frames .. " frames, score " .. game.score)
