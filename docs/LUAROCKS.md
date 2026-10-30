@@ -50,15 +50,35 @@ print(math.floor(2.7))
 Payloads live in the versioned app catalog:
 
 ```
-apps/1.19/lua/math.lua       -- canonical source of the rock
-apps/1.19/lua/string.lua
-apps/1.19/lua/graphics.lua
-apps/1.19/lua/kernel.lua
-apps/1.19/lua/httpd.lua
+apps/1.19/lua/<rock>.lua     -- canonical source of each rock
 apps/1.19/rocks.lua          -- generated catalog
 src/etc/rocks                -- seed copy of the catalog (/etc/rocks)
 src/lib/math.lua             -- seed copy of the math rock (/lib/math.lua)
 ```
+
+Shipped rocks:
+
+| Rock | What it adds |
+|------|--------------|
+| `math` | trig, logs, rounding, gcd/lcm, clamp, factorial |
+| `string` | `format`, `rep`, `gsub`, `gmatch` and a pattern engine |
+| `graphics` | Markdown/HTML viewers on top of the native LCDUI API |
+| `kernel` | typed wrappers for the `/bin/init` payloads |
+| `httpd` | HTTP/1.1 server with routing, query parsing and static files |
+| `json` | `encode`/`decode`/`pretty`/`try_decode` with a null sentinel |
+| `tablex` | `deepcopy`, `merge`, `map`/`filter`/`reduce`, `sortby`, `range` |
+| `base64` | standard/URL-safe Base64 plus `hex`/`unhex`/`bytes` |
+| `sha1` | SHA-1 and HMAC-SHA-1 (pure Lua, 32-bit arithmetic) |
+| `sha256` | SHA-256 and HMAC-SHA-256 (pure Lua, 32-bit arithmetic) |
+| `term` | ANSI colours, tables, progress bars, boxes, wrapping |
+| `argparse` | options with short/long flags, types, defaults and `--help` |
+| `log` | levelled loggers with timestamps, colours and sinks |
+| `config` | INI parse/encode/load/save with dotted keys |
+| `template` | Mustache-style variables, sections, comments, partials |
+| `csv` | RFC 4180 parser/writer plus header/object helpers |
+| `date` | format, parse, parts, add, diff and relative text |
+| `re` | `findall`, `matchall`, `split`, `replace`, `escape` over `string` |
+| `ui` | callback-based menus, prompts, confirms, alerts, progress, file picker |
 
 `src/lib/math.lua` exists so a fresh device can `require("math")` before the
 first `luarocks install`; `tests/check_sources.py` keeps it byte-identical to
@@ -164,25 +184,12 @@ file that extends the runtime and returns its table.
 
 | Rock | What it adds | Notes |
 |------|--------------|-------|
-| `json` | `encode`/`decode` with ordered keys and pretty printing | needed by every HTTP/API app; the runtime has no `string.format`, so build strings directly |
-| `tablex` | `deepcopy`, `merge`, `keys`, `values`, `sortby`, `find`, `count` | `table` only ships insert/remove/concat/sort/unpack |
-| `base64` | `encode`/`decode`, plus `hex`/`unhex` | pure Lua over `string.byte`/`string.char`; used by HTTP auth and tokens |
-| `sha1` | `sha1`, `hmac_sha1`, `sha256` | pure Lua bit ops; needed for signatures and password hashing |
-| `term` | ANSI/colour helpers, box drawing, tables, progress bars | the xterm prints plain text; this makes CLI output readable |
-| `argparse` | option parsing with `--help`, types, defaults | every `/bin` script hand-rolls `arg[i]` loops today |
-| `log` | levels, timestamps, file/stdout sinks | `/bin/log` exists for MIDlet logs; this is for apps |
-| `config` | INI/`key=value` reader and writer | `/etc/*` files are read by hand everywhere |
-| `template` | `{{name}}` substitution and simple loops | for HTML pages and generated scripts |
-| `csv` | `parse`/`encode` with quoted fields | tables + `string.split` cover the easy cases |
 | `semver` | `parse`, `compare`, `satisfies` | for `pkg`/`luarocks` version checks |
 | `path` | `join`, `basename`, `dirname`, `normalize`, `ext` | the same string surgery is repeated in many apps |
-| `date` | `now`, `format`, `parse`, `diff` | `java.time`/`os.time` wrappers with a fixed format |
 | `test` | tiny `describe`/`it`/`assert` runner writing a report | would let apps ship their own suites like `tests/lua` |
 | `queue` | FIFO/LIFO, priority queue, ring buffer | for schedulers and background workers |
-| `re` | thin helpers over the `string` rock (`findall`, `split`, `matchall`) | no new engine, just a nicer API |
 | `crypto` | `xor`, `rot13`, `random_bytes`, `crc32` | small utilities; real ciphers need more than pure Lua can afford |
 | `net` | HTTP client helpers: `get`, `post`, query building, headers | wraps `socket.http` with a JSON/urlencode-friendly API |
-| `ui` | higher-level screens: menus, prompts, file pickers | builds on `graphics` (`graphics.RenderMarkdown` is the first step) |
 
 Guidelines for new rocks:
 

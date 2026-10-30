@@ -52,6 +52,7 @@ The runtime now follows Lua 5.1 much more closely:
 - Anonymous function bodies no longer duplicate a nested `end`, so a `local function` inside a table-constructor handler stops ending at the first one-line `if ... end`
 - The interpreter has a single owner: UI callbacks and background jobs take turns instead of corrupting the shared parser state, and `java.yield()` hands control to the other thread
 - `luarocks` package manager (`/bin/luarocks`) with rock payloads for `math`, `string` (patterns, `format`, `rep`, `gsub`, `gmatch`), `graphics`, `kernel` and `httpd`; `require` loads `/lib/<name>.lua` and installed state lives in `/etc/rocks.installed`
+- 14 new rocks in the catalog: `json`, `tablex`, `base64`, `sha1`, `sha256`, `term`, `argparse`, `log`, `config`, `template`, `csv`, `date`, `re` (depends on `string`) and `ui` — JSON/CSV/INI data handling, pure-Lua SHA-1/SHA-256 with HMAC, terminal tables and progress bars, option parsing, levelled logging, Mustache-style templates, date math, pattern helpers and callback-based menus/prompts/file picker
 
 [ ELF ]
 
