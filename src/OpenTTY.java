@@ -26,7 +26,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Hashtable attributes = new Hashtable(), fs = new Hashtable(), sys = new Hashtable(), exited = new Hashtable(), tmp = new Hashtable(), cacheLua = new Hashtable(), graphics = new Hashtable(), servers = new Hashtable(), globals = new Hashtable(), userID = new Hashtable();
     private Hashtable vfsFiles = new Hashtable();
     private boolean vfsReady = false;
-    public String username = read("/home/OpenRMS", globals), build = "2026-1.19-04x52";
+    public String username = read("/home/OpenRMS", globals), build = "2026-1.19-04x53";
     // | (Boot Menu / chroot)
     public String chroot = "";
     public Vector bootEntries = null;
@@ -385,7 +385,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (stdout == null) { }
         else if (stdout instanceof StringItem) { String current = ((StringItem) stdout).getText(), output = current == null || current.length() == 0 ? message : current + separator + message; ((StringItem) stdout).setText(output); }
         else if (stdout instanceof StringBuffer) { ((StringBuffer) stdout).append(separator).append(message); }
-        else if (stdout instanceof String) { write((String) stdout, read((String) stdout, scope) + separator + message, 1000, scope); }
+        else if (stdout instanceof String) { String current = read((String) stdout, scope); write((String) stdout, (current == null || current.length() == 0 ? "" : current + separator) + message, 1000, scope); }
         else if (stdout instanceof OutputStream) { try { ((OutputStream) stdout).write((message + separator).getBytes()); ((OutputStream) stdout).flush(); } catch (Exception e) { } }
     }
     // |
@@ -453,7 +453,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public String read(InputStream in, int chunkSize, boolean consume) {
         try {
             if (in == null) { return ""; }
-            //if (chunkSize == -1) { consume = true; }
+            // A negative chunk size means "read the whole stream": /bin/lua and
+            // the lua runtime use io.read(handle, -1) for that.
+            if (chunkSize < 0) { consume = true; }
             if (consume) {
                 InputStreamReader reader = new InputStreamReader(in, "UTF-8");
                 StringBuffer sb = new StringBuffer();
@@ -508,6 +510,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (filename.equals("")) { return 2; }
                 if (filename.equals("OpenRMS")) { return 13; } 
                 
+                if (fs.containsKey("/home/" + filename + "/")) { return removeVirtualDir("/home/" + filename); }
                 RecordStore.deleteRecordStore(filename); 
             } 
             catch (RecordStoreNotFoundException e) { return 127; } 
@@ -549,6 +552,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (filename.startsWith("/tmp/")) {
             filename = filename.substring(5);
             if (filename.equals("")) { }
+            else if (fs.containsKey("/tmp/" + filename + "/")) { return removeVirtualDir("/tmp/" + filename); }
             else if (tmp.containsKey(filename)) { tmp.remove(filename); }
             else { return 127; }
         }
@@ -575,6 +579,83 @@ public class OpenTTY extends MIDlet implements CommandListener {
             return VFS_RESERVED + (h % VFS_HASH_MOD);
         }
         return -1;
+    }
+    // | (Writable directories: /tmp is RAM, /home is RMS-backed. Both are
+    // |  listed through `fs` like the VFS mounts so cd/ls/rm work on them.)
+    public int makeVirtualDir(String dir, int id) {
+        if (dir == null || dir.length() == 0) { return 2; }
+        while (dir.length() > 1 && dir.endsWith("/")) { dir = dir.substring(0, dir.length() - 1); }
+        String key = dir + "/";
+
+        if (fs.containsKey(key)) { return 128; }
+        if (dir.startsWith("/tmp/")) {
+            String rel = dir.substring(5);
+            if (rel.length() == 0) { return 2; }
+            if (tmp.containsKey(rel)) { return 128; }
+            mountDirPath(key);
+            return 0;
+        }
+        if (dir.startsWith("/home/")) {
+            String rel = dir.substring(6);
+            if (rel.length() == 0) { return 2; }
+            RecordStore rs = null;
+            try {
+                rs = RecordStore.openRecordStore(rel, false);
+                if (rs != null) { rs.closeRecordStore(); return 128; }
+            } catch (RecordStoreNotFoundException e) { }
+            catch (Exception e) { return 1; }
+            finally { try { if (rs != null) { rs.closeRecordStore(); } } catch (Exception e) { } }
+            mountDirPath(key);
+            return 0;
+        }
+        return 5;
+    }
+    public void mountDirPath(String dir) {
+        if (dir == null || !dir.startsWith("/") || !dir.endsWith("/") || dir.length() <= 1) { return; }
+        if (!fs.containsKey(dir)) { Vector self = new Vector(); self.addElement(".."); fs.put(dir, self); }
+
+        int base = dir.lastIndexOf('/', dir.length() - 2);
+        String parent = base <= 0 ? "/" : dir.substring(0, base + 1);
+        if (base > 0 && !fs.containsKey(parent)) {
+            if (parent.equals("/tmp/") || parent.equals("/home/")) { Vector p = new Vector(); p.addElement(".."); fs.put(parent, p); }
+            else { mountDirPath(parent); }
+        }
+        Vector struct = (Vector) fs.get(parent);
+        if (struct != null) {
+            String entry = dir.substring(dir.lastIndexOf('/', dir.length() - 2) + 1);
+            if (!struct.contains(entry)) { struct.addElement(entry); }
+        }
+    }
+    public int removeVirtualDir(String dir) {
+        if (dir == null || dir.length() == 0) { return 2; }
+        while (dir.length() > 1 && dir.endsWith("/")) { dir = dir.substring(0, dir.length() - 1); }
+        String key = dir + "/";
+        if (!fs.containsKey(key)) { return 127; }
+
+        if (dir.startsWith("/tmp/")) {
+            String prefix = dir.substring(5) + "/";
+            Vector dead = new Vector();
+            for (Enumeration e = tmp.keys(); e.hasMoreElements();) { String k = (String) e.nextElement(); if (k.startsWith(prefix)) { dead.addElement(k); } }
+            for (int i = 0; i < dead.size(); i++) { tmp.remove(dead.elementAt(i)); }
+        } else if (dir.startsWith("/home/")) {
+            String prefix = dir.substring(6) + "/";
+            String[] stores = RecordStore.listRecordStores();
+            if (stores != null) {
+                for (int i = 0; i < stores.length; i++) { if (stores[i].startsWith(prefix)) { try { RecordStore.deleteRecordStore(stores[i]); } catch (Exception e) { } } }
+            }
+        }
+
+        Vector nested = new Vector();
+        for (Enumeration e = fs.keys(); e.hasMoreElements();) { String k = (String) e.nextElement(); if (k.startsWith(key)) { nested.addElement(k); } }
+        for (int i = 0; i < nested.size(); i++) { fs.remove(nested.elementAt(i)); }
+        fs.remove(key);
+
+        int base = key.lastIndexOf('/', key.length() - 2);
+        if (base > 0) {
+            Vector parent = (Vector) fs.get(key.substring(0, base + 1));
+            if (parent != null) { parent.removeElement(dir.substring(dir.lastIndexOf('/') + 1) + "/"); }
+        }
+        return 0;
     }
     private void loadVfs() {
         if (vfsReady) { return; }
@@ -781,8 +862,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
             }
         } catch (Exception e) { }
     }
-    public boolean isRootCaller(Hashtable scope) { try { return scope != null && scope.containsKey("USER") && getUserID((String) scope.get("USER")) == 0; } catch (Exception e) { return false; } }
-    public int getCallerUid(Hashtable scope) { try { if (scope != null && scope.containsKey("USER")) { int u = getUserID((String) scope.get("USER")); if (u != -1) { return u; } } } catch (Exception e) { } return 1000; }
+    public boolean isRootCaller(Hashtable scope) { return getCallerUid(scope) == 0; }
+    // The scope keeps the real numeric uid under "_UID" (set by the Lua
+    // interpreter whenever a process/uid is created or changed). "USER" stays
+    // the login name for whoami/labels, but permission checks must follow the
+    // uid: a shell started as root but named "lima" must still read /proc/1.
+    public int getCallerUid(Hashtable scope) {
+        try {
+            if (scope != null && scope.containsKey("_UID")) { return Integer.parseInt(String.valueOf(scope.get("_UID"))); }
+            if (scope != null && scope.containsKey("USER")) { int u = getUserID((String) scope.get("USER")); if (u != -1) { return u; } }
+        } catch (Exception e) { }
+        return 1000;
+    }
     // | (/proc virtual filesystem)
     public String[] procFiles() { return new String[] { "cpuinfo", "meminfo", "uptime", "version" }; }
     public Vector procEntries(int uid) {

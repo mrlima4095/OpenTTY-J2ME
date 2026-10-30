@@ -240,9 +240,8 @@ def fix_shadowing(path):
          "Object payload = args.elementAt(0), arg = args.elementAt(1), scope = args.elementAt(2), kpid = args.elementAt(3);",
          "kernel-pid"),
         # exec(): inner `String[] args` shadows the method-level split axis.
-        ("String[] args = new String[sanitize.size()];\n                        sanitize.copyInto(args);",
-         "String[] sanitizedArgs = new String[sanitize.size()];\n                        sanitize.copyInto(sanitizedArgs);",
-         "exec-sanitized-args"),
+        # (The redirect fast-path now assigns the cleaned array to the outer
+        #  variable without declaring a nested one, so no rename is needed.)
         # exec(): the cat() `InputStream in` shadows the method-level `in`.
         ("int status = 0; InputStream in; boolean builtin = args.size() > 1 ? ((Boolean) args.elementAt(1)).booleanValue() : false;",
          "int status = 0; InputStream inOut; boolean builtin = args.size() > 1 ? ((Boolean) args.elementAt(1)).booleanValue() : false;",

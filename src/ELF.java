@@ -53,6 +53,8 @@ public class ELF implements CommandListener, ItemCommandListener, ItemStateListe
     // stdlib heap (malloc/calloc/realloc/free): first-fit allocator with
     // blocks written into guest RAM: { int size; int next; ...payload }
     private int libcHeapFree, libcHeapTop, libcHeapRegionEnd, libcHeapRegionStart;
+    // Only print the "raise the guest RAM" hint once per process.
+    private boolean memoryWarningShown;
 
     // LCDUI guest objects live in Java; the guest accesses them through handles.
     private Hashtable uiObjects, uiHandles;
@@ -1567,6 +1569,16 @@ public class ELF implements CommandListener, ItemCommandListener, ItemStateListe
     // | list is address-ordered so neighbours can be merged on free, and a
     // | block that ends at the bump pointer is returned to the region.
 
+    private void reportMemoryExhausted() {
+        if (memoryWarningShown) { return; }
+        memoryWarningShown = true;
+
+        int kb = midlet.memory_size;
+        midlet.print("elf: not enough memory allocated for this program (" + kb + " KB).\n"
+            + "Increase the guest RAM and run it again, for example:\n"
+            + "  lua -e \"print(os.request(1, 'memory', 1024))\"\n"
+            + "then check with `memelf` (values are in KB, minimum 512).", stdout, id, scope);
+    }
     private int libcMalloc(int n) {
         if (n <= 0) { n = 8; }
         n = (n + 3) & ~3;
@@ -1599,7 +1611,7 @@ public class ELF implements CommandListener, ItemCommandListener, ItemStateListe
                 if (region != 0) { break; }
                 len >>= 1;
             }
-            if (region == 0) { return 0; }
+            if (region == 0) { reportMemoryExhausted(); return 0; }
             libcHeapRegionStart = region;
             libcHeapTop = region;
             libcHeapRegionEnd = region + len;
@@ -1607,7 +1619,7 @@ public class ELF implements CommandListener, ItemCommandListener, ItemStateListe
         }
         int top = libcHeapTop;
         int avail = libcHeapRegionEnd - top;
-        if (avail < 8 + n) { return 0; }
+        if (avail < 8 + n) { reportMemoryExhausted(); return 0; }
         writeIntLE(memory, top, avail - 8);
         writeIntLE(memory, top + 4, libcHeapFree);
         libcHeapFree = top;
@@ -3050,7 +3062,7 @@ public class ELF implements CommandListener, ItemCommandListener, ItemStateListe
         if (newBrk < heapStart) { registers[REG_A0] = -1; return; }
 
         newBrk = (newBrk + 4095) & ~4095;
-        if (newBrk > memory.length) { registers[REG_A0] = -12; return; }
+        if (newBrk > memory.length) { reportMemoryExhausted(); registers[REG_A0] = -12; return; }
         if (newBrk < heapEnd) {
             Vector keysToRemove = new Vector();
             Enumeration keys = allocatedBlocks.keys();
@@ -3809,16 +3821,22 @@ public class ELF implements CommandListener, ItemCommandListener, ItemStateListe
             }
         }
         
-        // st_mode
+        // RISC-V asm-generic struct stat (32-bit): st_mode at 8, st_size at 32.
         int st_mode = 0;
-        if (path.endsWith("/")) { st_mode |= S_IFDIR | S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH; } 
-        else { st_mode |= 0100644; } // Regular file
+        boolean isDir = isElfDirectory(path);
+        if (isDir) { st_mode = S_IFDIR | S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH; }
+        else { st_mode = 0100644; } // Regular file
 
-        writeIntLE(memory, statbufAddr + 16, st_mode);
+        writeIntLE(memory, statbufAddr + 0, 1);   // st_dev
+        writeIntLE(memory, statbufAddr + 4, 1);   // st_ino
+        writeIntLE(memory, statbufAddr + 8, st_mode);
+        writeIntLE(memory, statbufAddr + 12, 1);  // st_nlink
+        writeIntLE(memory, statbufAddr + 16, 0);  // st_uid
+        writeIntLE(memory, statbufAddr + 20, 0);  // st_gid
         
         // st_size
         int st_size = 0;
-        if (!path.endsWith("/")) {
+        if (!isDir) {
             try {
                 InputStream is = midlet.getInputStream(path, scope);
                 if (is != null) {
@@ -3830,9 +3848,27 @@ public class ELF implements CommandListener, ItemCommandListener, ItemStateListe
                 }
             } catch (Exception e) {}
         }
-        writeIntLE(memory, statbufAddr + 44, st_size);
+        writeIntLE(memory, statbufAddr + 32, st_size);               // st_size
+        writeIntLE(memory, statbufAddr + 36, 4096);                  // st_blksize
+        writeIntLE(memory, statbufAddr + 44, (st_size + 511) / 512); // st_blocks
         
         registers[REG_A0] = 0;
+    }
+    private boolean isElfDirectory(String path) {
+        if (path == null || path.length() == 0) { return false; }
+        String p = path;
+        while (p.length() > 1 && p.endsWith("/")) { p = p.substring(0, p.length() - 1); }
+
+        if (p.equals("/") || p.equals("/bin") || p.equals("/etc") || p.equals("/lib") || p.equals("/root") || p.equals("/boot") || p.equals("/dev") || p.equals("/proc") || p.equals("/tmp") || p.equals("/home") || p.equals("/mnt")) { return true; }
+        if (midlet.fs.containsKey(p + "/")) { return true; }
+        if (p.startsWith("/proc/")) { return midlet.sys.containsKey(p.substring(6)); }
+        if (p.startsWith("/mnt/")) {
+            FileConnection fc = null;
+            try { fc = (FileConnection) Connector.open("file:///" + p.substring(5), Connector.READ); return fc.isDirectory(); }
+            catch (Exception e) { return false; }
+            finally { try { if (fc != null) { fc.close(); } } catch (Exception e) { } }
+        }
+        return false;
     }
     private void handleFstat() {
         int fd = registers[REG_A0];
@@ -3850,31 +3886,34 @@ public class ELF implements CommandListener, ItemCommandListener, ItemStateListe
         
         if (fd == 0 || fd == 1 || fd == 2) {
             // stdin/stdout/stderr - character device
-            writeIntLE(memory, statbufAddr + 16, 020000); // st_mode: character device
+            writeIntLE(memory, statbufAddr + 8, 020000); // st_mode: character device
         } else if (socketDescriptors.containsKey(fdKey)) {
             Hashtable socketInfo = (Hashtable) socketDescriptors.get(fdKey);
             int type = ((Integer) socketInfo.get("type")).intValue();
-            writeIntLE(memory, statbufAddr + 16, type == SOCK_DGRAM ? S_IFIFO | 0600 : 0140000 | 0600);
+            writeIntLE(memory, statbufAddr + 8, type == SOCK_DGRAM ? S_IFIFO | 0600 : 0140000 | 0600);
         } else if (fileDescriptors.containsKey(fdKey)) {
             Object stream = fileDescriptors.get(fdKey);
             
             if (stream instanceof InputStream || stream instanceof OutputStream) {
                 // Regular file
-                writeIntLE(memory, statbufAddr + 16, 0100644); // st_mode: regular file
+                writeIntLE(memory, statbufAddr + 8, 0100644); // st_mode: regular file
+                writeIntLE(memory, statbufAddr + 12, 1);      // st_nlink
                 
                 // Try to obtain the size
                 try {
                     if (stream instanceof InputStream) {
                         int available = ((InputStream) stream).available();
-                        writeIntLE(memory, statbufAddr + 44, available);
+                        writeIntLE(memory, statbufAddr + 32, available);
+                        writeIntLE(memory, statbufAddr + 36, 4096);
+                        writeIntLE(memory, statbufAddr + 44, (available + 511) / 512);
                     }
                 } catch (Exception e) {}
             } else if (stream instanceof PipeReadEnd || stream instanceof PipeWriteEnd) {
                 // Pipe (FIFO) - fileDescriptors holds both ends of the same buffer
-                writeIntLE(memory, statbufAddr + 16, S_IFIFO | 0600);
+                writeIntLE(memory, statbufAddr + 8, S_IFIFO | 0600);
             } else {
                 // Unknown device
-                writeIntLE(memory, statbufAddr + 16, 020000);
+                writeIntLE(memory, statbufAddr + 8, 020000);
             }
         } else {
             registers[REG_A0] = -9; // EBADF

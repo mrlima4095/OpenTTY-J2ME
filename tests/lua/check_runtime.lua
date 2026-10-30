@@ -151,5 +151,34 @@ local okBox = pcall(function()
 end)
 check("text box can be shown and the canvas restored", okBox)
 
+-- 14. Postfix chains after any primary expression: `(f)(x)`, `f()(x)` and
+--     `("a" .. "b"):upper()` used to stop at the closing parenthesis.
+local schema = {
+    name = { label = "schema", run = function(self, v) return self.label .. ":" .. v end },
+    build = { label = "build", run = function(self, v) return self.label .. ":" .. v end }
+}
+local function pick(key) return schema[key] end
+local okParen, parenResult = pcall(function() return (pick("name")).run(pick("name"), "x") end)
+check("(f)(x) parenthesized call", okParen and parenResult == "schema:x", tostring(parenResult))
+local okChain, chainResult = pcall(function() return (pick("build")).run(pick("build"), "y") end)
+check("method call on parenthesized table", okChain and chainResult == "build:y", tostring(chainResult))
+local okColon, colonResult = pcall(function() return ("ab"):upper() end)
+check("method on literal string", okColon and colonResult == "AB", tostring(colonResult))
+local okCallField, callField = pcall(function() return pick("name").label end)
+check("field after call", okCallField and callField == "schema", tostring(callField))
+local okNested, nested = pcall(function() local function g() return { label = "L" } end return g().label end)
+check("field after nested call", okNested and nested == "L", tostring(nested))
+
+-- 15. A call returns all of its results; `return f()` still forwards every one
+--     of them, while `f().field` keeps only the first.
+local function pair() return 1, 2 end
+local first, second = pair()
+check("call keeps multiple results", first == 1 and second == 2, tostring(first) .. "," .. tostring(second))
+local function passthrough() return pair() end
+local fwd1, fwd2 = passthrough()
+check("return f() forwards results", fwd1 == 1 and fwd2 == 2, tostring(fwd1) .. "," .. tostring(fwd2))
+local okSingle, single = pcall(function() local t = { label = "one" } local function make() return t, "extra" end return make().label end)
+check("call result keeps only first for indexing", okSingle and single == "one", tostring(single))
+
 mark("FAILURES=" .. fails)
 canvas:close()

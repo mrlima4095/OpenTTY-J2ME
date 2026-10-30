@@ -46,7 +46,7 @@ public class Lua {
     public static final int DEBUG_TRACEBACK = 1100, DEBUG_GETINFO = 1101, DEBUG_GETREGISTRY = 1102;
     public static final int UPPER = 100, LOWER = 101, LEN = 102, FIND = 103, MATCH = 104, REVERSE = 105, SUB = 106, HASH = 107, BYTE = 108, CHAR = 109, TRIM = 110, SPLIT = 111, UUID = 112, GETCMD = 113, GETARGS = 114, ENV = 115, BASE64_ENCODE = 116, BASE64_DECODE = 117, GETPATTERN = 118, STARTSWITH = 119, ENDSWITH = 120;
     public static final int TB_INSERT = 200, TB_CONCAT = 201, TB_REMOVE = 202, TB_SORT = 203, TB_MOVE = 204, TB_UNPACK = 205, TB_PACK = 206, TB_DECODE = 207;
-    public static final int EXEC = 300, GETENV = 301, SETENV = 302, CLOCK = 303, SETLOC = 304, EXIT = 305, DATE = 306, GETPID = 307, SETPROC = 308, GETPROC = 309, GETCWD = 310, GETUID = 311, CHDIR = 312, REQUEST = 313, START = 314, STOP = 315, PREQ = 316, SU = 318, REMOVE = 319, SCOPE = 320, JOIN = 321, MKDIR = 322;
+    public static final int EXEC = 300, GETENV = 301, SETENV = 302, CLOCK = 303, SETLOC = 304, EXIT = 305, DATE = 306, GETPID = 307, SETPROC = 308, GETPROC = 309, GETCWD = 310, GETUID = 311, CHDIR = 312, REQUEST = 313, START = 314, STOP = 315, PREQ = 316, SU = 318, REMOVE = 319, SCOPE = 320, JOIN = 321, MKDIR = 322, TIME = 323;
     public static final int READ = 400, WRITE = 401, CLOSE = 402, OPEN = 403, POPEN = 404, DIRS = 405, SETOUT = 406, MOUNT = 407, GEN = 408, COPY = 409;
     public static final int HTTP_GET = 500, HTTP_POST = 501, CONNECT = 502, PEER = 503, DEVICE = 504, SERVER = 505, ACCEPT = 506, HTTP_RGET = 507, HTTP_RPOST = 508;
     public static final int DISPLAY = 600, NEW = 601, RENDER = 602, APPEND = 603, ADDCMD = 604, HANDLER = 605, GETCURRENT = 606, TITLE = 607, TICKER = 608, VIBRATE = 609, SETLABEL = 610, SETTEXT = 611, GETLABEL = 612, GETTEXT = 613, CLEAR_SCREEN = 614, TASKMNGR = 615, CANVAS = 616, CANVAS_ASSIGN = 617, SETINDICATOR = 618, SETGAUGE = 619, GETGAUGE = 620;
@@ -95,11 +95,12 @@ public class Lua {
     // Main
     public Lua(OpenTTY midlet, int id, String pid, Process proc, Object stdout, Hashtable scope) {
         this.midlet = midlet; this.id = id; this.PID = pid; this.proc = proc; this.stdout = stdout; this.father = scope;
+        if (this.father != null) { this.father.put("_UID", String.valueOf(id)); }
         this.tokenIndex = 0; 
 
         Hashtable os = new Hashtable(), io = new Hashtable(), string = new Hashtable(), table = new Hashtable(), pkg = new Hashtable(), graphics = new Hashtable(), socket = new Hashtable(), http = new Hashtable(), java = new Hashtable(), jdb = new Hashtable(), math = new Hashtable(), audio = new Hashtable(), push = new Hashtable(), base64 = new Hashtable(), debug = new Hashtable();
-        String[] funcs = new String[] { "getenv", "setenv", "clock", "setlocale", "exit", "date", "getpid", "setproc", "getproc", "getcwd", "request", "getuid", "chdir", "open", "su", "remove", "scope", "join", "mkdir" }; 
-        int[] loaders = new int[] { GETENV, SETENV, CLOCK, SETLOC, EXIT, DATE, GETPID, SETPROC, GETPROC, GETCWD, REQUEST, GETUID, CHDIR, PREQ, SU, REMOVE, SCOPE, JOIN, MKDIR };
+        String[] funcs = new String[] { "getenv", "setenv", "clock", "setlocale", "exit", "date", "time", "getpid", "setproc", "getproc", "getcwd", "request", "getuid", "chdir", "open", "su", "remove", "scope", "join", "mkdir" }; 
+        int[] loaders = new int[] { GETENV, SETENV, CLOCK, SETLOC, EXIT, DATE, TIME, GETPID, SETPROC, GETPROC, GETCWD, REQUEST, GETUID, CHDIR, PREQ, SU, REMOVE, SCOPE, JOIN, MKDIR };
         for (int i = 0; i < funcs.length; i++) { os.put(funcs[i], new LuaFunction(loaders[i])); } os.put("execute", midlet.shell instanceof LuaFunction ? midlet.shell : new LuaFunction(EXEC)); globals.put("os", os);
 
         funcs = new String[] { "read", "write", "close", "open", "popen", "dirs", "setstdout", "mount", "new", "copy" }; loaders = new int[] { READ, WRITE, CLOSE, OPEN, POPEN, DIRS, SETOUT, MOUNT, GEN, COPY };
@@ -293,6 +294,49 @@ public class Lua {
         }
         clearThrown();
         return sb.toString();
+    }
+    // |
+    // | (os.date: strftime-style formatting for the subset scripts use)
+    private static final String[] DATE_MONTHS = { "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
+    private static final String[] DATE_DAYS = { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
+    private static String padNumber(int value, int width) {
+        String text = String.valueOf(value);
+        StringBuffer sb = new StringBuffer();
+        for (int i = text.length(); i < width; i++) { sb.append('0'); }
+        return sb.append(text).toString();
+    }
+    public static String formatDate(String format, long millis) {
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        cal.setTime(new java.util.Date(millis));
+
+        StringBuffer out = new StringBuffer();
+        for (int i = 0; i < format.length(); i++) {
+            char c = format.charAt(i);
+            if (c != '%' || i + 1 >= format.length()) { out.append(c); continue; }
+            i++;
+            char spec = format.charAt(i);
+            switch (spec) {
+                case 'Y': out.append(padNumber(cal.get(java.util.Calendar.YEAR), 4)); break;
+                case 'y': out.append(padNumber(cal.get(java.util.Calendar.YEAR) % 100, 2)); break;
+                case 'm': out.append(padNumber(cal.get(java.util.Calendar.MONTH) + 1, 2)); break;
+                case 'd': out.append(padNumber(cal.get(java.util.Calendar.DAY_OF_MONTH), 2)); break;
+                case 'e': { String day = String.valueOf(cal.get(java.util.Calendar.DAY_OF_MONTH)); out.append(day.length() < 2 ? " " + day : day); break; }
+                case 'H': out.append(padNumber(cal.get(java.util.Calendar.HOUR_OF_DAY), 2)); break;
+                case 'I': { int h = cal.get(java.util.Calendar.HOUR); out.append(padNumber(h == 0 ? 12 : h, 2)); break; }
+                case 'M': out.append(padNumber(cal.get(java.util.Calendar.MINUTE), 2)); break;
+                case 'S': out.append(padNumber(cal.get(java.util.Calendar.SECOND), 2)); break;
+                case 'j': out.append(padNumber(cal.get(java.util.Calendar.DAY_OF_YEAR), 3)); break;
+                case 'A': out.append(DATE_DAYS[cal.get(java.util.Calendar.DAY_OF_WEEK) - 1]); break;
+                case 'a': out.append(DATE_DAYS[cal.get(java.util.Calendar.DAY_OF_WEEK) - 1].substring(0, 3)); break;
+                case 'B': out.append(DATE_MONTHS[cal.get(java.util.Calendar.MONTH)]); break;
+                case 'b': out.append(DATE_MONTHS[cal.get(java.util.Calendar.MONTH)].substring(0, 3)); break;
+                case 'p': out.append(cal.get(java.util.Calendar.AM_PM) == java.util.Calendar.AM ? "AM" : "PM"); break;
+                case 'Z': out.append(cal.getTimeZone().getID()); break;
+                case '%': out.append('%'); break;
+                default: out.append('%').append(spec); break;
+            }
+        }
+        return out.toString();
     }
     // |
     public static String pointerBlock(String lineText, int col, String near) {
@@ -575,8 +619,7 @@ public class Lua {
                     indexSet(targetTable, key, value);
                     return null;
                 } 
-                else if (peek().type == LPAREN) { return callFunctionObject(indexValue(targetTable, key), scope); }
-                else { return indexValue(targetTable, key); }
+                else { return postfix(indexValue(targetTable, key), scope); }
             } 
             else if (peek().type == COLON) {
                 Object self = unwrap(scope.get(varName));
@@ -588,7 +631,7 @@ public class Lua {
                 Object fn = fieldValue(self, methodName);
 
                 if (fn != null) {
-                    return callMethod(self, varName, fn, methodName, scope);
+                    return postfix(callMethod(self, varName, fn, methodName, scope), scope);
                 }
 
                 throw new Exception("method '" + methodName + "' not found " + (self instanceof Hashtable ? "in table: " + varName : "for type: " + LuaFunction.type(self)));
@@ -1301,6 +1344,39 @@ public class Lua {
     }
     // |
     // Build Objects
+    // | (Postfix chain: indexing, field access, method calls and plain calls may
+    // |  follow any primary expression, so `(f)(x)`, `f()(x)` and
+    // |  `(obj):method()` all parse like `name.field(x)` does.)
+    private Object postfix(Object value, Hashtable scope) throws Exception {
+        while (true) {
+            int type = peek().type;
+            if (type != LBRACKET && type != DOT && type != COLON && type != LPAREN) { break; }
+            // A call hands back all of its results as a Vector (that is how
+            // `return f()` forwards them); indexing or calling the result again
+            // uses only the first one, so `f().field` and `f()(x)` work.
+            value = firstValue(value);
+
+            if (type == LBRACKET || type == DOT) {
+                Object key;
+                if (type == LBRACKET) { consume(LBRACKET); key = expression(scope); consume(RBRACKET); }
+                else { consume(DOT); key = (String) consume(IDENTIFIER).value; }
+
+                if (value == null || !(value instanceof Hashtable)) {
+                    if (suppress == 0) { throw new Exception(value == null ? "attempt to index a nil value" : "attempt to index a non-table value"); }
+                    value = null;
+                } else { value = indexValue(value, key); }
+            }
+            else if (type == COLON) {
+                consume(COLON);
+                String method = (String) consume(IDENTIFIER).value;
+                Object function = value == null ? null : fieldValue(value, method);
+                if (function == null && suppress == 0) { throw new Exception("method '" + method + "' not found for type: " + LuaFunction.type(value)); }
+                value = callMethod(value, null, function, method, scope);
+            }
+            else if (type == LPAREN) { value = callFunctionObject(value, scope); }
+        }
+        return value;
+    }
     private Object factor(Hashtable scope) throws Exception {
         Token current = peek();
         
@@ -1342,43 +1418,14 @@ public class Lua {
             throw new RuntimeException("attempt to perform arithmetic on a " + LuaFunction.type(val) + " value");
         }
         else if (current.type == NOT) { consume(NOT); return new Boolean(!isTruthy(factor(scope))); } 
-        else if (current.type == LPAREN) { consume(LPAREN); Object value = expression(scope); consume(RPAREN); return value; } 
+        else if (current.type == LPAREN) { consume(LPAREN); Object value = expression(scope); consume(RPAREN); return postfix(value, scope); } 
         else if (current.type == LENGTH) { consume(LENGTH); Object val = factor(scope); if (hasMeta(val, "__len")) { return callMeta("__len", new Object[] { val }); } else if (val == null || val instanceof Boolean) { if (suppress > 0) { return null; } throw new RuntimeException("attempt to get length of a " + (val == null ? "nil" : "boolean") + " value"); } else if (val instanceof String) { return luaNumber(((String) val).length()); } else if (val instanceof Hashtable) { int size = luaLength((Hashtable) val); if (val == globals.get("arg") && size > 0) { size -= 1; } return luaNumber(size); } else if (val instanceof Vector) { return luaNumber(((Vector) val).size()); } else if (val instanceof InputStream) { return luaNumber(((InputStream) val).available()); } else { return luaNumber(0); } }
         else if (current.type == IDENTIFIER) {
             String name = (String) consume(IDENTIFIER).value;
             Object value = unwrap(scope.get(name));
             if (value == null && scope == globals == false) { }
             if (value == null && globals.containsKey(name)) { value = unwrap(globals.get(name)); }
-            while (peek().type == LBRACKET || peek().type == DOT) {
-                Object key = null;
-                if (peek().type == LBRACKET) { consume(LBRACKET); key = expression(scope); consume(RBRACKET); } 
-                else { consume(DOT); key = (String) consume(IDENTIFIER).value; }
-
-                if (value == null || !(value instanceof Hashtable)) {
-                    if (suppress == 0) { throw new Exception(value == null ? "attempt to index a nil value" : "attempt to index a non-table value"); }
-                    value = null;
-                }
-                else { value = indexValue(value, key); }
-            }
-
-            if (peek().type == COLON) {
-                String objectName = (String) ((Token) tokens.elementAt(tokenIndex - 1)).value;
-            
-                Object self = unwrap(scope.get(objectName));
-                if (self == null && globals.containsKey(objectName)) { self = unwrap(globals.get(objectName)); }
-                if (self == null && suppress == 0) { throw new Exception("attempt to call method on nil value: " + objectName); }
-            
-                consume(COLON);
-                String methodName = (String) consume(IDENTIFIER).value;
-            
-                Object func = self == null ? null : fieldValue(self, methodName);
-                if (func == null && suppress == 0) { throw new Exception("method '" + methodName + "' not found for type: " + LuaFunction.type(self)); }
-            
-                return callMethod(self, objectName, func, methodName, scope);
-            }
-            else if (peek().type == LPAREN) { return callFunctionObject(value, scope); }
-
-            return value;
+            return postfix(value, scope);
         }
         else if (current.type == FUNCTION) {
             int funcOffset = current.offset;
@@ -1647,6 +1694,12 @@ public class Lua {
         if (current != null) { current.put(name, stored); }
         else { globals.put(name, stored); }
     }
+    // | Keep the numeric identity in the scope in sync with the interpreter's
+    // | uid, so OpenTTY permission checks and /proc see the same user.
+    private void syncUid() {
+        if (father != null) { father.put("_UID", String.valueOf(id)); }
+        if (proc != null) { proc.uid = id; }
+    }
     private Object[] resolveTableAndKey(String varName, Hashtable scope) throws Exception {
         Object table = unwrap(scope.get(varName));
         if (table == null && globals.containsKey(varName)) table = unwrap(globals.get(varName));
@@ -1908,7 +1961,18 @@ public class Lua {
                         return obj;
                     } 
                     else { return gotbad(1, "require", "string expected, got " + type(args.elementAt(0))); }
-                case LOADS: if (args.isEmpty() || args.elementAt(0) == null) { break; } else { return exec(toLuaString(args.elementAt(0)), args.size() > 1 ? (args.elementAt(1) instanceof Hashtable ? (Hashtable) args.elementAt(1) : null) : null); }
+                case LOADS:
+                    if (args.isEmpty() || args.elementAt(0) == null) { break; }
+                    else {
+                        Hashtable environment = null; String chunkName = null;
+                        if (args.size() > 1) {
+                            Object second = args.elementAt(1);
+                            if (second instanceof Hashtable) { environment = (Hashtable) second; }
+                            else if (second instanceof String) { chunkName = (String) second; }
+                        }
+                        if (chunkName == null && args.size() > 2 && args.elementAt(2) instanceof String) { chunkName = (String) args.elementAt(2); }
+                        return exec(toLuaString(args.elementAt(0)), environment, chunkName);
+                    }
                 case PAIRS: 
                     if (args.isEmpty()) { return gotbad(1, "pairs", "table expected, got no value"); } 
                     else {
@@ -2085,7 +2149,25 @@ public class Lua {
                 case CLOCK: return luaNumber(System.currentTimeMillis() - uptime);
                 case SETLOC: if (args.isEmpty()) { break; } else { midlet.attributes.put("LOCALE", toLuaString(args.elementAt(0))); break; }
                 case EXIT: exit(args); break;
-                case DATE: return new java.util.Date().toString();
+                case DATE: {
+                    String format = args.isEmpty() || args.elementAt(0) == null ? null : toLuaString(args.elementAt(0));
+                    long millis = args.size() > 1 && args.elementAt(1) instanceof Double ? (long) (((Double) args.elementAt(1)).doubleValue() * 1000) : System.currentTimeMillis();
+
+                    return format == null ? new java.util.Date(millis).toString() : formatDate(format, millis);
+                }
+                case TIME: {
+                    if (args.isEmpty() || !(args.elementAt(0) instanceof Hashtable)) { return new Double(System.currentTimeMillis() / 1000); }
+                    Hashtable fields = (Hashtable) args.elementAt(0);
+                    java.util.Calendar cal = java.util.Calendar.getInstance();
+                    cal.set(Calendar.YEAR, getNumber(toLuaString(fields.get("year")), 1970));
+                    cal.set(Calendar.MONTH, getNumber(toLuaString(fields.get("month")), 1) - 1);
+                    cal.set(Calendar.DAY_OF_MONTH, getNumber(toLuaString(fields.get("day")), 1));
+                    cal.set(Calendar.HOUR_OF_DAY, getNumber(toLuaString(fields.get("hour")), 12));
+                    cal.set(Calendar.MINUTE, getNumber(toLuaString(fields.get("min")), 0));
+                    cal.set(Calendar.SECOND, getNumber(toLuaString(fields.get("sec")), 0));
+                    cal.set(Calendar.MILLISECOND, 0);
+                    return new Double(cal.getTime().getTime() / 1000);
+                }
                 case GETPID: return args.isEmpty() || args.elementAt(0) == null ? PID : midlet.getpid(toLuaString(args.elementAt(0)));
                 case GETPROC:
                     if (args.isEmpty()) {
@@ -2152,10 +2234,10 @@ public class Lua {
                     if (args.isEmpty()) { return gotbad(1, "su", "username and password expected"); } 
                     else {
                         String user = toLuaString(args.elementAt(0)), query = args.size() > 1 ? toLuaString(args.elementAt(1)) : null;
-                        if (user.equals(midlet.username)) { id = 1000; father.put("USER", user); father.put("PWD", "/home/"); proc.uid = 1000; return new Double(0); }
-                        else if (midlet.userID.containsKey(user)) { id = midlet.getUserID(user); father.put("USER", user); father.put("PWD", "/home/"); proc.uid = id; return new Double(0); }
+                        if (user.equals(midlet.username)) { id = 1000; father.put("USER", user); father.put("PWD", "/home/"); syncUid(); return new Double(0); }
+                        else if (midlet.userID.containsKey(user)) { id = midlet.getUserID(user); father.put("USER", user); father.put("PWD", "/home/"); syncUid(); return new Double(0); }
                         else if (query == null) { return gotbad(2, "su", "string expected, got nil"); }
-                        else if (user.equals("root") && midlet.passwd(query)) { id = 0; father.put("USER", "root"); father.put("PWD", "/home/"); proc.uid = 0; return new Double(0); }
+                        else if (user.equals("root") && midlet.passwd(query)) { id = 0; father.put("USER", "root"); father.put("PWD", "/home/"); syncUid(); return new Double(0); }
                         else { return new Double(13); }
                     }
                 case REMOVE: return args.isEmpty() ? (Double) gotbad(1, "remove", "string expected, got no value") : new Double(midlet.deleteFile(toLuaString(args.elementAt(0)), id, father));
@@ -2174,6 +2256,7 @@ public class Lua {
                                 }
                             }
 
+                            father.put("_UID", String.valueOf(id));
                             break;
                         }
                         else { return gotbad(1, "scope", "table expected, got " + type(args.elementAt(0))); }
@@ -2203,6 +2286,8 @@ public class Lua {
                             if (midlet.fs.containsKey(dir)) { return new Double(128); }
                             midlet.registerVfsDir(dir);
                             return new Double(0);
+                        } else if (dir.startsWith("/tmp/") || dir.startsWith("/home/")) {
+                            return new Double(midlet.makeVirtualDir(dir, id));
                         } else { return new Double(5); }
                     }
                 // Package [io]
@@ -3823,6 +3908,13 @@ public class Lua {
                 for (Enumeration e = globals.keys(); e.hasMoreElements();) { String k = (String) e.nextElement(); modScope.put(k, unwrap(globals.get(k))); }
                 while (peek().type != EOF) { Object res = statement(modScope); if (doreturn) { ret = res; doreturn = false; break; } }
             }
+            catch (Exception e) {
+                // Remember where the failed chunk was before the finally below
+                // restores the caller's source: otherwise `lua -e` reports
+                // /bin/lua:8 instead of the user chunk.
+                if (thrownTokenIndex == -1) { recordThrow(); }
+                throw e;
+            }
             finally {
                 tokenIndex = savedIndex; tokens = savedTokens;
                 currentSource = savedSource; lastCode = savedCode; lineOffsets = savedOffsets;
@@ -3964,14 +4056,18 @@ public class Lua {
 
                 Object output = stdout; Hashtable aliases = (Hashtable) father.get("ALIAS");
                 for (int i = 0; i < args.length; i++) {
-                    if (args[i].equals(">")) {
-                        output = toLuaString(midlet.joinpath(args[i + 1], father));
+                    if ((args[i].equals(">") || args[i].equals(">>")) && i + 1 < args.length) {
+                        String target = toLuaString(midlet.joinpath(args[i + 1], father));
+                        // ">" truncates, ">>" keeps the current content (print()
+                        // appends either way, so truncation has to happen here).
+                        if (args[i].equals(">")) { midlet.write(target, new byte[0], id, father); }
+                        output = target;
                         
                         Vector sanitize = new Vector(); StringBuffer buffer = new StringBuffer();
                         for (int j = 0; j < i; j++) { sanitize.addElement(args[j]); if (j > 0) buffer.append(' '); buffer.append(args[j]); }
 
-                        String[] args = new String[sanitize.size()];
-                        sanitize.copyInto(args); argument = buffer.toString();
+                        String[] cleaned = new String[sanitize.size()];
+                        sanitize.copyInto(cleaned); args = cleaned; argument = buffer.toString();
 
                         break;
                     }
@@ -3996,8 +4092,9 @@ public class Lua {
                         try {
                             InputStream in = midlet.getInputStream(midlet.joinpath(args[i], father), father);
                             if (in != null) { midlet.print(midlet.read(in, 1024, true), output, id, father); }
-                            else { status = 2; break; }
+                            else { midlet.print("cat: " + args[i] + ": not found", output, id, father); status = 2; break; }
                         } catch (Exception e) {
+                            midlet.print("cat: " + args[i] + ": " + (e instanceof SecurityException ? "permission denied" : "cannot read"), output, id, father);
                             status = 127; break;
                         }
                     }
@@ -4029,12 +4126,12 @@ public class Lua {
                 }
                 else if (mainCommand.equals("su")) {
                     if (args.length == 0) {
-                        if (id == 0) { id = 1000; father.put("USER", midlet.username); }
+                        if (id == 0) { id = 1000; father.put("USER", midlet.username); syncUid(); }
                         else { suPrompt(); }
                     }
                     else if (args[0].equals("root")) {
                         if (args.length >= 2) {
-                            if (midlet.passwd(args[1])) { id = 0; father.put("USER", "root"); }
+                            if (midlet.passwd(args[1])) { id = 0; father.put("USER", "root"); syncUid(); }
                             else { midlet.print("Permission denied!", output, id, father); status = 13; }
                         } else {
                             suPrompt();
@@ -4044,6 +4141,7 @@ public class Lua {
                         if (midlet.userID.containsKey(args[0])) {
                             id = midlet.getUserID(args[0]);
                             father.put("USER", args[0]);
+                            syncUid();
                         } else {
                             midlet.print("Permission denied!", output, id, father);
                             status = 13;
@@ -4231,12 +4329,24 @@ public class Lua {
             else { pwd = pwd + "/"; }
 
             if (pwd.startsWith("/root/") && id != 0) { return list; }
-            else if ((pwd = midlet.redirect(midlet.solvepath(pwd, father))).equals("/tmp/")) { for (Enumeration files = midlet.tmp.keys(); files.hasMoreElements();) { list.put(new Double(index), (String) files.nextElement()); index++; } }
-            else if (pwd.equals("/mnt/")) { for (Enumeration roots = FileSystemRegistry.listRoots(); roots.hasMoreElements();) { list.put(new Double(index), (String) roots.nextElement()); index++; } } 
+            else if ((pwd = midlet.redirect(midlet.solvepath(pwd, father))).equals("/tmp/")) { for (Enumeration files = midlet.tmp.keys(); files.hasMoreElements();) { String name = (String) files.nextElement(); if (name.indexOf('/') < 0) { list.put(new Double(index), name); index++; } } }
+            else if (pwd.startsWith("/tmp/")) {
+                String prefix = pwd.substring(5);
+                for (Enumeration files = midlet.tmp.keys(); files.hasMoreElements();) {
+                    String name = (String) files.nextElement();
+                    if (!name.startsWith(prefix)) { continue; }
+                    String rest = name.substring(prefix.length());
+                    if (rest.length() > 0 && rest.indexOf('/') < 0) { list.put(new Double(index), rest); index++; }
+                }
+            }
+            else if (pwd.equals("/mnt/")) { try { for (Enumeration roots = FileSystemRegistry.listRoots(); roots.hasMoreElements();) { list.put(new Double(index), (String) roots.nextElement()); index++; } } catch (SecurityException e) { } catch (Exception e) { } } 
             else if (pwd.startsWith("/mnt/")) { 
-                FileConnection CONN = (FileConnection) Connector.open("file:///" + pwd.substring(5), Connector.READ); 
-                for (Enumeration files = CONN.list(); files.hasMoreElements();) { list.put(new Double(index), (String) files.nextElement()); index++; } 
-                CONN.close(); 
+                FileConnection CONN = null;
+                try {
+                    CONN = (FileConnection) Connector.open("file:///" + pwd.substring(5), Connector.READ); 
+                    for (Enumeration files = CONN.list(); files.hasMoreElements();) { list.put(new Double(index), (String) files.nextElement()); index++; } 
+                } catch (SecurityException e) { } catch (Exception e) { }
+                finally { try { if (CONN != null) { CONN.close(); } } catch (Exception e) { } }
             } 
             else if (pwd.startsWith("/proc/")) {
                 String rest = pwd.substring(6);
@@ -4262,7 +4372,12 @@ public class Lua {
             if (midlet.fs.containsKey(pwd)) {
                 Vector struct = (Vector) midlet.fs.get(pwd);
 
-                for (int i = 0; i < struct.size(); i++) { list.put(new Double(index), struct.elementAt(i)); index++; }
+                for (int i = 0; i < struct.size(); i++) {
+                    String entry = (String) struct.elementAt(i);
+                    boolean seen = false;
+                    for (Enumeration values = list.elements(); values.hasMoreElements();) { if (entry.equals(values.nextElement())) { seen = true; break; } }
+                    if (!seen) { list.put(new Double(index), entry); index++; }
+                }
             }
             
             return list;
@@ -4330,6 +4445,7 @@ public class Lua {
                     } else {
                         Hashtable childScope = midlet.cloneScope(scope);
                         childScope.put("USER", midlet.getUser(owner));
+                        childScope.put("_UID", String.valueOf(owner));
                         Process process = new Process(midlet, ("lua " + program).trim(), midlet.joinpath(program, scope), midlet.getUser(owner), owner, pid, out, childScope);
                         process.parentPid = PID;
                         midlet.sys.put(pid, process);
@@ -4341,6 +4457,7 @@ public class Lua {
                     InputStream elfStream = new ByteArrayInputStream(data);
                     Hashtable elfScope = midlet.cloneScope(scope);
                     elfScope.put("USER", midlet.getUser(owner));
+                    elfScope.put("_UID", String.valueOf(owner));
                     Process process = new Process(midlet, "elf", midlet.joinpath(program, scope), midlet.getUser(owner), owner, pid, out, arg, elfScope);
                     process.parentPid = PID;
                     midlet.sys.put(pid, process);
@@ -4455,6 +4572,7 @@ public class Lua {
                         } else {
                             id = 0;
                             father.put("USER", "root");
+                            syncUid();
                         }
                     }
                     suPromptForm = null;

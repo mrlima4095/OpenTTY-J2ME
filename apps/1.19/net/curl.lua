@@ -2,8 +2,16 @@
 
 local libcore = require("libcore")
 local function parse_url(url)
-    if string.sub(url, 1, 5) == "http:" or string.sub(url, 1, 6) == "https:" then return url end
+    if string.startswith(url, "http://") or string.startswith(url, "https://") then return url end
     return "http://" .. url
+end
+
+local function report_failure(url, err)
+    print("curl: " .. tostring(err))
+
+    if string.startswith(url, "https://") then
+        print("curl: HTTPS/TLS is not supported by this J2ME runtime; use an http:// URL instead")
+    end
 end
 
 os.setproc("name", "curl")
@@ -14,18 +22,19 @@ if arg[1] == "-o" then
         local ok, body, status = pcall(socket.http.get, url)
         if ok then
             if status ~= 200 then
-                print("HTTP " .. status)
+                print("HTTP " .. tostring(status))
                 print("---")
             end
 
             local code = io.write(body, os.join(arg[2]))
             if code ~= 0 then
-                print("curl: " .. libcore.errormsg(code))
+                print("curl: " .. os.join(arg[2]) .. ": " .. libcore.errormsg(code))
             end
 
             os.exit(tonumber(code))
         else
-            print("curl: (6) Could not resolve host: " .. arg[3])
+            report_failure(url, body)
+            os.exit(6)
         end
     else
         print("Usage: curl -o [file] [url]")
@@ -41,7 +50,7 @@ elseif arg[1] == "-t" then
             local _, msg = pcall(io.read, i, 2048)
             print(msg)
         else
-            print("curl: " .. tostring(conn))
+            print("curl: " .. arg[2] .. ":" .. arg[3] .. ": " .. tostring(conn))
         end
     else
         print("Usage: curl -t [host] [port] [payload]")
@@ -54,11 +63,12 @@ elseif arg[1] == "-s" then
     end
 elseif arg[1] then
     local url = parse_url(arg[1])
-    local ok, body, status = pcall(socket.http.get, url)
+    local ok, body = pcall(socket.http.get, url)
     if ok then
         print(body)
     else
-        print("curl: (6) Could not resolve host: " .. arg[1])
+        report_failure(url, body)
+        os.exit(6)
     end
 else
     print("curl [url]")
