@@ -224,5 +224,13 @@ check("HOSTNAME env is seeded", host ~= nil and host ~= "", tostring(host))
 local scopeUser = os.scope()["USER"]
 check("scope carries the user name", scopeUser ~= nil and scopeUser ~= "", tostring(scopeUser))
 
+-- 19. os.time()/os.date() round-trip (os.date no longer returns Date.toString()).
+local stamp = os.time({ year = 2024, month = 1, day = 2, hour = 3, min = 4, sec = 5 })
+check("os.time accepts a date table", type(stamp) == "number" and stamp > 0, tostring(stamp))
+local formatted = os.date("%Y-%m-%d %H:%M:%S", stamp)
+check("os.date formats a timestamp", formatted == "2024-01-02 03:04:05", formatted)
+local weekday = os.date("%a %j", stamp)
+check("os.date %a/%j", weekday == "Tue 002", weekday)
+
 mark("FAILURES=" .. fails)
 canvas:close()

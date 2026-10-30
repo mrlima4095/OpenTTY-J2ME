@@ -613,13 +613,18 @@ public class OpenTTY extends MIDlet implements CommandListener {
         if (dir.startsWith("/home/")) {
             String rel = dir.substring(6);
             if (rel.length() == 0) { return 2; }
+
+            // No `return` inside a try/finally: the MIDP preverifier fails on it.
             RecordStore rs = null;
+            int status = 0;
             try {
                 rs = RecordStore.openRecordStore(rel, false);
-                if (rs != null) { rs.closeRecordStore(); return 128; }
-            } catch (RecordStoreNotFoundException e) { }
-            catch (Exception e) { return 1; }
-            finally { try { if (rs != null) { rs.closeRecordStore(); } } catch (Exception e) { } }
+                status = 128; // the record store (directory) already exists
+            } catch (RecordStoreNotFoundException e) { status = 0; }
+            catch (Exception e) { status = 1; }
+            if (rs != null) { try { rs.closeRecordStore(); } catch (Exception e) { } }
+            if (status != 0) { return status; }
+
             mountDirPath(key);
             return 0;
         }

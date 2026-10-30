@@ -296,18 +296,33 @@ public class Lua {
         return sb.toString();
     }
     // |
-    // | (os.date: strftime-style formatting for the subset scripts use)
+    // | (os.date: strftime-style formatting for the subset scripts use. The
+    // |  MIDP CLDC Calendar has no DAY_OF_YEAR, so that one is computed here.)
     private static final String[] DATE_MONTHS = { "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
     private static final String[] DATE_DAYS = { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
+    private static final int[] DATE_DAYS_IN_MONTH = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
     private static String padNumber(int value, int width) {
         String text = String.valueOf(value);
         StringBuffer sb = new StringBuffer();
         for (int i = text.length(); i < width; i++) { sb.append('0'); }
         return sb.append(text).toString();
     }
+    private static boolean isLeapYear(int year) { return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0); }
+    private static int dayOfYear(int year, int month, int day) {
+        int total = day;
+        for (int i = 0; i < month && i < DATE_DAYS_IN_MONTH.length; i++) { total += DATE_DAYS_IN_MONTH[i]; }
+        if (month > 1 && isLeapYear(year)) { total++; }
+        return total;
+    }
     public static String formatDate(String format, long millis) {
+        if (format == null) { return new java.util.Date(millis).toString(); }
+
         java.util.Calendar cal = java.util.Calendar.getInstance();
         cal.setTime(new java.util.Date(millis));
+
+        int year = cal.get(java.util.Calendar.YEAR), month = cal.get(java.util.Calendar.MONTH), day = cal.get(java.util.Calendar.DAY_OF_MONTH);
+        int hours = cal.get(java.util.Calendar.HOUR_OF_DAY), minutes = cal.get(java.util.Calendar.MINUTE), seconds = cal.get(java.util.Calendar.SECOND);
+        int weekDay = cal.get(java.util.Calendar.DAY_OF_WEEK); // 1 = Sunday
 
         StringBuffer out = new StringBuffer();
         for (int i = 0; i < format.length(); i++) {
@@ -316,22 +331,22 @@ public class Lua {
             i++;
             char spec = format.charAt(i);
             switch (spec) {
-                case 'Y': out.append(padNumber(cal.get(java.util.Calendar.YEAR), 4)); break;
-                case 'y': out.append(padNumber(cal.get(java.util.Calendar.YEAR) % 100, 2)); break;
-                case 'm': out.append(padNumber(cal.get(java.util.Calendar.MONTH) + 1, 2)); break;
-                case 'd': out.append(padNumber(cal.get(java.util.Calendar.DAY_OF_MONTH), 2)); break;
-                case 'e': { String day = String.valueOf(cal.get(java.util.Calendar.DAY_OF_MONTH)); out.append(day.length() < 2 ? " " + day : day); break; }
-                case 'H': out.append(padNumber(cal.get(java.util.Calendar.HOUR_OF_DAY), 2)); break;
-                case 'I': { int h = cal.get(java.util.Calendar.HOUR); out.append(padNumber(h == 0 ? 12 : h, 2)); break; }
-                case 'M': out.append(padNumber(cal.get(java.util.Calendar.MINUTE), 2)); break;
-                case 'S': out.append(padNumber(cal.get(java.util.Calendar.SECOND), 2)); break;
-                case 'j': out.append(padNumber(cal.get(java.util.Calendar.DAY_OF_YEAR), 3)); break;
-                case 'A': out.append(DATE_DAYS[cal.get(java.util.Calendar.DAY_OF_WEEK) - 1]); break;
-                case 'a': out.append(DATE_DAYS[cal.get(java.util.Calendar.DAY_OF_WEEK) - 1].substring(0, 3)); break;
-                case 'B': out.append(DATE_MONTHS[cal.get(java.util.Calendar.MONTH)]); break;
-                case 'b': out.append(DATE_MONTHS[cal.get(java.util.Calendar.MONTH)].substring(0, 3)); break;
+                case 'Y': out.append(padNumber(year, 4)); break;
+                case 'y': out.append(padNumber(year % 100, 2)); break;
+                case 'm': out.append(padNumber(month + 1, 2)); break;
+                case 'd': out.append(padNumber(day, 2)); break;
+                case 'e': { String text = String.valueOf(day); out.append(text.length() < 2 ? " " + text : text); break; }
+                case 'H': out.append(padNumber(hours, 2)); break;
+                case 'I': { int h = hours % 12; out.append(padNumber(h == 0 ? 12 : h, 2)); break; }
+                case 'M': out.append(padNumber(minutes, 2)); break;
+                case 'S': out.append(padNumber(seconds, 2)); break;
+                case 'j': out.append(padNumber(dayOfYear(year, month, day), 3)); break;
+                case 'A': out.append(DATE_DAYS[weekDay - 1]); break;
+                case 'a': out.append(DATE_DAYS[weekDay - 1].substring(0, 3)); break;
+                case 'B': out.append(DATE_MONTHS[month]); break;
+                case 'b': out.append(DATE_MONTHS[month].substring(0, 3)); break;
                 case 'p': out.append(cal.get(java.util.Calendar.AM_PM) == java.util.Calendar.AM ? "AM" : "PM"); break;
-                case 'Z': out.append(cal.getTimeZone().getID()); break;
+                case 'Z': { String zone = ""; try { zone = cal.getTimeZone().getID(); } catch (Throwable ignored) { } out.append(zone); break; }
                 case '%': out.append('%'); break;
                 default: out.append('%').append(spec); break;
             }
@@ -2171,13 +2186,13 @@ public class Lua {
                     if (args.isEmpty() || !(args.elementAt(0) instanceof Hashtable)) { return new Double(System.currentTimeMillis() / 1000); }
                     Hashtable fields = (Hashtable) args.elementAt(0);
                     java.util.Calendar cal = java.util.Calendar.getInstance();
-                    cal.set(Calendar.YEAR, getNumber(toLuaString(fields.get("year")), 1970));
-                    cal.set(Calendar.MONTH, getNumber(toLuaString(fields.get("month")), 1) - 1);
-                    cal.set(Calendar.DAY_OF_MONTH, getNumber(toLuaString(fields.get("day")), 1));
-                    cal.set(Calendar.HOUR_OF_DAY, getNumber(toLuaString(fields.get("hour")), 12));
-                    cal.set(Calendar.MINUTE, getNumber(toLuaString(fields.get("min")), 0));
-                    cal.set(Calendar.SECOND, getNumber(toLuaString(fields.get("sec")), 0));
-                    cal.set(Calendar.MILLISECOND, 0);
+                    cal.set(java.util.Calendar.YEAR, getNumber(toLuaString(fields.get("year")), 1970));
+                    cal.set(java.util.Calendar.MONTH, getNumber(toLuaString(fields.get("month")), 1) - 1);
+                    cal.set(java.util.Calendar.DAY_OF_MONTH, getNumber(toLuaString(fields.get("day")), 1));
+                    cal.set(java.util.Calendar.HOUR_OF_DAY, getNumber(toLuaString(fields.get("hour")), 12));
+                    cal.set(java.util.Calendar.MINUTE, getNumber(toLuaString(fields.get("min")), 0));
+                    cal.set(java.util.Calendar.SECOND, getNumber(toLuaString(fields.get("sec")), 0));
+                    cal.set(java.util.Calendar.MILLISECOND, 0);
                     return new Double(cal.getTime().getTime() / 1000);
                 }
                 case GETPID: return args.isEmpty() || args.elementAt(0) == null ? PID : midlet.getpid(toLuaString(args.elementAt(0)));

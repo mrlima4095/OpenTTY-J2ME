@@ -3852,10 +3852,14 @@ public class ELF implements CommandListener, ItemCommandListener, ItemStateListe
         if (midlet.fs.containsKey(p + "/")) { return true; }
         if (p.startsWith("/proc/")) { return midlet.sys.containsKey(p.substring(6)); }
         if (p.startsWith("/mnt/")) {
+            // No try/finally here: the MIDP preverifier gives up on a `return`
+            // inside a try that has a finally block.
             FileConnection fc = null;
-            try { fc = (FileConnection) Connector.open("file:///" + p.substring(5), Connector.READ); return fc.isDirectory(); }
-            catch (Exception e) { return false; }
-            finally { try { if (fc != null) { fc.close(); } } catch (Exception e) { } }
+            boolean dir = false;
+            try { fc = (FileConnection) Connector.open("file:///" + p.substring(5), Connector.READ); dir = fc.isDirectory(); }
+            catch (Exception e) { dir = false; }
+            if (fc != null) { try { fc.close(); } catch (Exception e) { } }
+            return dir;
         }
         return false;
     }
