@@ -136,5 +136,20 @@ check("anonymous fn keeps table upvalue after guard",
     okScreen and drawn == 3,
     tostring(drawn))
 
+-- 13. Text input round-trip: the paint app asks for the image output path in a
+--     TextBox, so creating one, displaying it and going back must not break.
+local pathBox = graphics.new("edit", "Image path", "/mnt/opentty/paint.png")
+check("edit box keeps its text",
+    graphics.GetText(pathBox) == "/mnt/opentty/paint.png",
+    tostring(graphics.GetText(pathBox)))
+local okBox = pcall(function()
+    local ok = graphics.new("command", { label = "Save", type = "ok", priority = 1 })
+    graphics.addCommand(pathBox, ok)
+    graphics.handler(pathBox, { [ok] = function(text) end })
+    graphics.display(pathBox)
+    canvas:display()
+end)
+check("text box can be shown and the canvas restored", okBox)
+
 mark("FAILURES=" .. fails)
 canvas:close()

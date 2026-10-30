@@ -13,11 +13,12 @@
 --
 -- Commands: Move (arrows move the pencil cursor without drawing),
 --           Save (writes the drawing so it can be reopened), Load (replays it),
---           Clear, Color, Size, Exit.
+--           Path (set the image output file), Clear, Color, Size, Exit.
 
 local PALETTE = { 0x000000, 0xFF3030, 0x30C030, 0x3060FF, 0xFFAA00, 0xB040C0, 0x00B0B0, 0x808080, 0xFFFFFF }
 local TOOLBAR = 26
-local SAVE_PATH = "/mnt/opentty/paint.txt"
+local CONFIG_PATH = "/mnt/opentty/paint.conf"
+local DEFAULT_IMAGE = "/mnt/opentty/paint.png"
 
 local c = graphics.canvas.new({
     title = "Paint",
@@ -39,7 +40,8 @@ local state = {
     pen = true,
     strokes = 0,
     moveMode = false, -- move the pencil cursor without drawing
-    log = {}          -- every stroke, so the drawing can be saved and replayed
+    log = {},         -- every stroke, so the drawing can be saved and replayed
+    imagePath = DEFAULT_IMAGE -- where Save writes the image
 }
 
 local function currentColor() return PALETTE[state.colorIndex] end
@@ -63,6 +65,27 @@ local function clampX(x)
     if x < 0 then return 0 end
     if x > W - 1 then return W - 1 end
     return x
+end
+
+-- The stroke file keeps the same base name as the image: paint.png -> paint.txt.
+local function strokePath()
+    local path = state.imagePath
+    if string.endswith(path, ".png") then
+        return string.sub(path, 1, #path - 4) .. ".txt"
+    end
+    return path .. ".txt"
+end
+
+-- Remember the chosen output path across runs.
+local function loadConfig()
+    local text = io.read(CONFIG_PATH)
+    if text == nil or text == "" then return end
+    local path = string.trim(text)
+    if path ~= "" then state.imagePath = path end
+end
+
+local function saveConfig()
+    io.write(state.imagePath .. "\n", CONFIG_PATH)
 end
 
 local function drawOp(op)
@@ -181,15 +204,17 @@ local function saveDrawing()
             text = text .. "L " .. op.x1 .. " " .. op.y1 .. " " .. op.x2 .. " " .. op.y2 .. " " .. op.color .. " " .. op.size .. "\n"
         end
     end
-    io.write(text, SAVE_PATH)
-    local png = c:saveImage("/mnt/opentty/paint.png")
-    print("paint: saved " .. #state.log .. " strokes to " .. SAVE_PATH .. " (png=" .. tostring(png) .. ")")
+    local strokes = strokePath()
+    io.write(text, strokes)
+    local png = c:saveImage(state.imagePath)
+    print("paint: saved " .. #state.log .. " strokes to " .. strokes .. " (image " .. state.imagePath .. " png=" .. tostring(png) .. ")")
 end
 
 local function loadDrawing()
-    local text = io.read(SAVE_PATH)
+    local strokes = strokePath()
+    local text = io.read(strokes)
     if text == nil or text == "" then
-        print("paint: no saved drawing at " .. SAVE_PATH)
+        print("paint: no saved drawing at " .. strokes)
         return
     end
     local lines = string.split(text, "\n")
@@ -212,7 +237,7 @@ local function loadDrawing()
     state.log = ops
     state.strokes = #ops
     redraw()
-    print("paint: loaded " .. #ops .. " strokes from " .. SAVE_PATH)
+    print("paint: loaded " .. #ops .. " strokes from " .. strokes)
 end
 
 local function setColor(index)
@@ -279,6 +304,28 @@ c.keyPressed = function(canvas, k, a)
     end
 end
 
+-- Ask for the image output path in a text box (MIDP has no console input).
+local function editPath()
+    local box = graphics.new("edit", "Image path", state.imagePath)
+    local ok = graphics.new("command", { label = "Save", type = "ok", priority = 1 })
+    local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
+    graphics.addCommand(box, ok)
+    graphics.addCommand(box, back)
+    graphics.handler(box, {
+        [ok] = function(text)
+            local path = string.trim(text or "")
+            if path == "" then path = DEFAULT_IMAGE end
+            if not string.startswith(path, "/") then path = "/" .. path end
+            state.imagePath = path
+            saveConfig()
+            print("paint: image output is now " .. path .. " (strokes " .. strokePath() .. ")")
+            c:display()
+        end,
+        [back] = function() c:display() end,
+    })
+    graphics.display(box)
+end
+
 local function demo()
     -- Deterministic pattern so the test suite can exercise the brushes.
     local cx, cy = W / 2, (H - TOOLBAR) / 2
@@ -295,6 +342,7 @@ local function demo()
 end
 
 os.setproc("name", "paint")
+loadConfig()
 clearAll()
 
 c:command("Exit", "exit", function() c:stop() c:close() end)
@@ -303,6 +351,7 @@ c:command("Color", "screen", function() setColor(state.colorIndex + 1) end)
 c:command("Size", "screen", function() setSize(state.size >= 6 and -5 or 1) end)
 c:command("Move", "screen", function() toggleMoveMode() end)
 c:command("Save", "screen", function() saveDrawing() end)
+c:command("Path", "screen", function() editPath() end)
 c:command("Load", "screen", function() loadDrawing() end)
 
 c:display()
