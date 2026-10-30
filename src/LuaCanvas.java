@@ -45,6 +45,9 @@ public class LuaCanvas extends Canvas implements CommandListener {
     // | (Input)
     private Hashtable keysDown = new Hashtable();
     private Vector events = new Vector();
+    // | (Commands queued while a loop runs; ids are handed to pump())
+    private Hashtable pendingCommands = new Hashtable();
+    private int commandSeq = 0;
     private int pointerX = 0, pointerY = 0;
     private boolean hold = false;
     // | (Commands)
@@ -52,6 +55,7 @@ public class LuaCanvas extends Canvas implements CommandListener {
     private Hashtable commandHandlers = new Hashtable();
     // | (Loop)
     private Thread loopThread = null;
+    private boolean loopPending = false;
     private boolean fullscreen = false;
     private long startMillis = System.currentTimeMillis();
     // |
@@ -89,13 +93,19 @@ public class LuaCanvas extends Canvas implements CommandListener {
     }
     // | (Event queue: queued while a loop runs or while a blocking read waits)
     private void post(int type, int a, int b, int c, int d) {
-        if (loopThread != null || hold) {
+        if (loopThread != null || loopPending || hold) {
             synchronized (events) { events.addElement(new int[] { type, a, b, c, d }); events.notifyAll(); }
             return;
         }
         dispatch(type, a, b, c, d);
     }
     private void dispatch(int type, int a, int b, int c, int d) {
+        if (type == EVENT_COMMAND) {
+            Command queued;
+            synchronized (pendingCommands) { queued = (Command) pendingCommands.remove(new Integer(a)); }
+            if (queued != null) { invokeCommand(queued); }
+            return;
+        }
         Vector args = new Vector();
         args.addElement(screen);
         if (type == EVENT_KEY_PRESSED || type == EVENT_KEY_REPEATED) { args.addElement(new Double(a)); args.addElement(new Double(b)); }
@@ -121,7 +131,10 @@ public class LuaCanvas extends Canvas implements CommandListener {
         }
     }
     // | (Discard pending events)
-    public void clearEvents() { synchronized (events) { events.removeAllElements(); } }
+    public void clearEvents() {
+        synchronized (events) { events.removeAllElements(); }
+        synchronized (pendingCommands) { pendingCommands.clear(); }
+    }
     // | (Blocking key read used by `canvas:waitKey(ms)`; returns {code, action} or null)
     public int[] waitKey(int timeout) {
         if (loopThread == Thread.currentThread()) { return null; }
@@ -154,6 +167,7 @@ public class LuaCanvas extends Canvas implements CommandListener {
     public void runLoop(Lua.LuaFunction fn, int delay) {
         if (loopThread != null) { return; }
         loopThread = Thread.currentThread();
+        loopPending = false;
         long last = System.currentTimeMillis();
         try {
             while (loopThread == Thread.currentThread()) {
@@ -182,17 +196,24 @@ public class LuaCanvas extends Canvas implements CommandListener {
         }
     }
     public void animate(Lua.LuaFunction fn, int delay) {
-        if (loopThread != null) { return; }
+        if (loopThread != null || loopPending) { return; }
+        // Start queuing input/commands before the thread exists, then give the
+        // caller time to unwind: the script that started us must leave the
+        // interpreter before the loop thread enters it.
+        loopPending = true;
         new Thread(new LoopRunner(this, fn, delay)).start();
     }
-    public void stop() { loopThread = null; }
+    public void stop() { loopThread = null; loopPending = false; }
     // named runner: the SDK preverifier chokes on synthetic anon classes
     static class LoopRunner implements Runnable {
         private LuaCanvas canvas;
         private Lua.LuaFunction fn;
         private int delay;
         LoopRunner(LuaCanvas canvas, Lua.LuaFunction fn, int delay) { this.canvas = canvas; this.fn = fn; this.delay = delay; }
-        public void run() { canvas.runLoop(fn, delay); }
+        public void run() {
+            try { Thread.sleep(200); } catch (InterruptedException e) { canvas.stop(); return; }
+            canvas.runLoop(fn, delay);
+        }
     }
     // |
     // Presentation
@@ -241,7 +262,7 @@ public class LuaCanvas extends Canvas implements CommandListener {
     // Size / visibility
     protected void sizeChanged(int w, int h) {
         ensureBuffer();
-        dispatch(EVENT_SIZE, w, h, 0, 0);
+        post(EVENT_SIZE, w, h, 0, 0);
     }
     protected void showNotify() { post(EVENT_SHOW, 0, 0, 0, 0); }
     protected void hideNotify() { post(EVENT_HIDE, 0, 0, 0, 0); }
@@ -468,6 +489,17 @@ public class LuaCanvas extends Canvas implements CommandListener {
         commandHandlers.clear();
     }
     public void commandAction(Command command, Displayable displayable) {
+        // While a loop runs the loop thread owns the interpreter, so queue the
+        // command and let pump() invoke it instead of re-entering Lua here.
+        if ((loopThread != null || loopPending) && command != null) {
+            int id;
+            synchronized (pendingCommands) { id = commandSeq++; pendingCommands.put(new Integer(id), command); }
+            synchronized (events) { events.addElement(new int[] { EVENT_COMMAND, id, 0, 0, 0 }); events.notifyAll(); }
+            return;
+        }
+        invokeCommand(command);
+    }
+    private void invokeCommand(Command command) {
         Object fn = commandHandlers.get(command);
         Vector args = new Vector();
         args.addElement(screen);

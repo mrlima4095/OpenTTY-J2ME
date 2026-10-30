@@ -34,6 +34,13 @@ public class Lua {
     // |
     public int status = 0;
     public boolean silent = false;
+    // | (Interpreter ownership)
+    // The script state above is shared by every function of this Lua instance,
+    // so only one thread may execute it at a time. UI callbacks (LCDUI event
+    // thread) and background jobs (java.run) both call into it; java.yield()
+    // releases ownership so the other side can run between steps.
+    private Thread luaOwner = null;
+    private int luaDepth = 0;
     // | (LuaFunction)
     public static final int PRINT = 0, ERROR = 1, PCALL = 2, REQUIRE = 3, LOADS = 4, PAIRS = 5, GC = 6, TOSTRING = 7, TONUMBER = 8, SELECT = 9, TYPE = 10, GETPROPERTY = 11, SETMETATABLE = 12, GETMETATABLE = 13, IPAIRS = 14, RANDOM = 15, ASSERT = 16, RAWGET = 17, RAWSET = 18, RAWEQUAL = 19, RAWLEN = 20;
     public static final int DEBUG_TRACEBACK = 1100, DEBUG_GETINFO = 1101, DEBUG_GETREGISTRY = 1102;
@@ -43,7 +50,7 @@ public class Lua {
     public static final int READ = 400, WRITE = 401, CLOSE = 402, OPEN = 403, POPEN = 404, DIRS = 405, SETOUT = 406, MOUNT = 407, GEN = 408, COPY = 409;
     public static final int HTTP_GET = 500, HTTP_POST = 501, CONNECT = 502, PEER = 503, DEVICE = 504, SERVER = 505, ACCEPT = 506, HTTP_RGET = 507, HTTP_RPOST = 508;
     public static final int DISPLAY = 600, NEW = 601, RENDER = 602, APPEND = 603, ADDCMD = 604, HANDLER = 605, GETCURRENT = 606, TITLE = 607, TICKER = 608, VIBRATE = 609, SETLABEL = 610, SETTEXT = 611, GETLABEL = 612, GETTEXT = 613, CLEAR_SCREEN = 614, TASKMNGR = 615, CANVAS = 616, CANVAS_ASSIGN = 617, SETINDICATOR = 618, SETGAUGE = 619, GETGAUGE = 620;
-    public static final int CLASS = 700, NAME = 701, DELETE = 702, UPTIME = 703, RUN = 704, THREAD = 705, SLEEP = 706, KERNEL = 1000;
+    public static final int CLASS = 700, NAME = 701, DELETE = 702, UPTIME = 703, RUN = 704, THREAD = 705, SLEEP = 706, YIELD = 707, KERNEL = 1000;
     public static final int AUDIO_LOAD = 800, AUDIO_PLAY = 801, AUDIO_PAUSE = 802, AUDIO_VOLUME = 803, AUDIO_DURATION = 804, AUDIO_TIME = 805;
     public static final int PUSH_REGISTER = 900, PUSH_UNREGISTER = 901, PUSH_LIST = 902, PUSH_PENDING = 903, PUSH_SET_ALARM = 904;
 
@@ -110,7 +117,7 @@ public class Lua {
         funcs = new String[] { "get", "post", "rget", "rpost" }; loaders = new int[] { HTTP_GET, HTTP_POST, HTTP_RGET, HTTP_RPOST };
         for (int i = 0; i < funcs.length; i++) { http.put(funcs[i], new LuaFunction(loaders[i])); } socket.put("http", http);
 
-        funcs = new String[] { "class", "getName", "delete", "run", "thread", "sleep" }; loaders = new int[] { CLASS, NAME, DELETE, RUN, THREAD, SLEEP };
+        funcs = new String[] { "class", "getName", "delete", "run", "thread", "sleep", "yield" }; loaders = new int[] { CLASS, NAME, DELETE, RUN, THREAD, SLEEP, YIELD };
         for (int i = 0; i < funcs.length; i++) { java.put(funcs[i], new LuaFunction(loaders[i])); } jdb.put("username", midlet.username); jdb.put("build", midlet.build); jdb.put("lite", OpenTTY.ELF_LITE ? Boolean.TRUE : Boolean.FALSE); jdb.put("uptime", new LuaFunction(UPTIME)); java.put("midlet", jdb); globals.put("java", java);
 
         funcs = new String[] { "connect", "peer", "device", "server", "accept" }; loaders = new int[] { CONNECT, PEER, DEVICE, SERVER, ACCEPT };
@@ -1679,6 +1686,46 @@ public class Lua {
     // |
     public Object getKernel() { return new LuaFunction(KERNEL); }
     // |
+    // Interpreter ownership: script functions take the lock, native ones do
+    // not (they never touch the shared parser state).
+    private void enterLua() {
+        Thread current = Thread.currentThread();
+        synchronized (this) {
+            while (luaOwner != null && luaOwner != current) {
+                try { wait(); } catch (InterruptedException e) { }
+            }
+            luaOwner = current;
+            luaDepth++;
+        }
+    }
+    private void exitLua() {
+        synchronized (this) {
+            if (luaOwner != Thread.currentThread()) { return; }
+            luaDepth--;
+            if (luaDepth <= 0) { luaDepth = 0; luaOwner = null; notifyAll(); }
+        }
+    }
+    // | (Give the other thread a turn, then take the interpreter back)
+    private void yieldLua(long millis) {
+        Thread current = Thread.currentThread();
+        int saved;
+        synchronized (this) {
+            if (luaOwner != current) { return; }
+            saved = luaDepth;
+            luaDepth = 0;
+            luaOwner = null;
+            notifyAll();
+        }
+        try { Thread.sleep(millis < 0 ? 0 : millis); } catch (InterruptedException e) { }
+        synchronized (this) {
+            while (luaOwner != null && luaOwner != current) {
+                try { wait(); } catch (InterruptedException e) { }
+            }
+            luaOwner = current;
+            luaDepth = saved;
+        }
+    }
+    // |
     // Lua Object
     public class LuaFunction implements Runnable, CommandListener, ItemCommandListener, ItemStateListener {
         private Vector params, bodyTokens, argv;
@@ -1710,6 +1757,10 @@ public class Lua {
         // | (Main)
         public Object call(Vector args) throws Exception {
             if (MOD != -1) { return internals(args); }
+            enterLua();
+            try { return callLocked(args); } finally { exitLua(); }
+        }
+        private Object callLocked(Vector args) throws Exception {
 
             // Chained scope: locals live here; closure + globals resolve on miss (no per-call copy).
             Hashtable functionScope = new ScopeTable(closureScope, globals);
@@ -3195,6 +3246,11 @@ public class Lua {
                         if (arg instanceof Double) { Thread.sleep(((Double) arg).longValue()); break; }
                         else { return gotbad(1, "sleep", "number expected, got " + type(arg)); }
                     }
+                // Releases the interpreter so queued UI callbacks can run (used
+                // by background jobs that update a screen while they work).
+                case YIELD:
+                    yieldLua(args.isEmpty() || !(args.elementAt(0) instanceof Double) ? 20 : ((Double) args.elementAt(0)).longValue());
+                    break;
                 // Kernel Core
                 case KERNEL:
                     Object payload = args.elementAt(0), arg = args.elementAt(1), scope = args.elementAt(2), pid = args.elementAt(3);
