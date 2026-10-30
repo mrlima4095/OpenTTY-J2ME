@@ -257,6 +257,12 @@ c:resetKeys()                  -- forget held keys (after a pause)
 `keys()` is the polling API used by games in loop mode. In callback mode, use
 `keyPressed` / `keyReleased` / `keyRepeated` instead.
 
+In the desktop shim printable keys (including Space) arrive as their character
+codes, Enter is `FIRE`, Backspace/Delete are `8`/`127`, and Home/End/PageUp/
+PageDown map to `GAME_C`/`GAME_D`/`GAME_A`/`GAME_B`. That is what lets a canvas
+implement a real text line editor (`cterm` does); on a phone keypad, use a
+`graphics.new("edit", ...)` text box for letters.
+
 ---
 
 ## Pointer input
@@ -500,7 +506,7 @@ graphics.canvas.colors   -- black white red green blue yellow cyan magenta
 
 ## Apps built with it
 
-The 1.19 app store ships six `graphics.canvas` apps (see `apps/1.19/sources.lua`):
+The 1.19 app store ships seven `graphics.canvas` apps (see `apps/1.19/sources.lua`):
 
 | App | Path | What it shows |
 | --- | --- | --- |
@@ -510,6 +516,7 @@ The 1.19 app store ships six `graphics.canvas` apps (see `apps/1.19/sources.lua`
 | `matrix` | `games/matrix` | per-frame text rain, fading tail |
 | `clock` | `sys/clock` | shapes/ticks/rotating hands, slow redraw |
 | `paint` | `file/paint` | callback mode: stylus + keypad, persistent buffer |
+| `cterm` | `sys/cterm` | terminal grid: ANSI colours, line editor, scrollback |
 
 Each one takes a frame count as `arg[1]` (`snake 40`) to run headless and
 return, which is what the desktop shim uses:

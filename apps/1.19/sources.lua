@@ -15,6 +15,7 @@ return {
         ["clock"] = { remote = "sys/clock", here = "/bin/clock", description = "Analog and digital clock" },
         ["cmatrix"] = { remote = "games/cmatrix", here = "/bin/cmatrix", description = "The Matrix Effect" },
         ["cowsay"] = { remote = "games/cowsay", here = "/bin/cowsay", riscv = true, description = "ASCII cow with speech bubble" },
+        ["cterm"] = { remote = "sys/cterm", here = "/bin/cterm", description = "Canvas terminal emulator with ANSI colours and scrollback" },
         ["curl"] = { remote = "net/curl.lua", here = "/bin/curl", description = "Connect with a Server" },
         ["debug"] = { remote = "sys/debug", here = "/bin/debug", description = "Toggle debug mode" },
         ["df"] = { remote = "sys/df.lua", here = "/bin/df", description = "Disk Free" },

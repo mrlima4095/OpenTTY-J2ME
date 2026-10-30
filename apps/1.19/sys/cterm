@@ -1,0 +1,1355 @@
+#!/bin/lua
+-- cterm - a Canvas terminal emulator for OpenTTY.
+--
+-- Unlike /bin/xterm (an LCDUI Form with a buffer and a text field), cterm
+-- paints a real character grid on `graphics.canvas`: ANSI SGR colours
+-- (16/256/truecolour), cursor movement, erase sequences, wrapping,
+-- scrollback, a coloured prompt and an editable command line with history.
+--
+-- Keys (desktop shim / keypad):
+--   printable  insert at the cursor      Enter / FIRE  run the command
+--   Left/Right move the cursor           Up/Down       command history
+--   Backspace  delete before the cursor  Delete        delete at the cursor
+--   F1 / F2    scrollback up / down      F3 / F4       start / end of line
+--   Tab        complete a command (/bin) or a path
+--
+-- Commands (soft keys): Type (phone text box), Send, PgUp, PgDn, Bottom,
+-- Clear, Font and Exit. Drag with the stylus to scroll the scrollback.
+--
+-- Shell commands run in this process' scope, so `cd` changes the prompt and
+-- the next command's directory. Output is captured through io.setstdout and
+-- parsed by the terminal engine, so programs that emit ANSI sequences are
+-- rendered with colour.
+--
+-- `cterm 1` draws a deterministic demo frame and returns (used by the test
+-- suite). Loading this file with CTERM_AS_MODULE set returns the engine table
+-- without starting the app.
+
+local cterm = {}
+
+-- | ANSI 16-colour palette (bright variants included).
+local PALETTE = {
+    [0] = 0x0C0C0C, [1] = 0xCC0000, [2] = 0x4E9A06, [3] = 0xC4A000,
+    [4] = 0x3465A4, [5] = 0x75507B, [6] = 0x06989A, [7] = 0xD3D7CF,
+    [8] = 0x555753, [9] = 0xEF2929, [10] = 0x8AE234, [11] = 0xFCE94F,
+    [12] = 0x729FCF, [13] = 0xAD7FA8, [14] = 0x34E2E2, [15] = 0xEEEEEC
+}
+
+-- | Cell attribute bits.
+local AT_BOLD, AT_UNDERLINE, AT_REVERSE, AT_DIM, AT_HIDDEN = 1, 2, 4, 8, 16
+
+local function has(flags, bit)
+    return flags % (bit * 2) >= bit
+end
+
+local function floor(value)
+    return value - value % 1
+end
+
+local function clamp(value, low, high)
+    if value < low then return low end
+    if value > high then return high end
+    return value
+end
+
+local function splitPlain(text, separator)
+    local out = {}
+    local start = 1
+    while true do
+        local position = string.find(text, separator, start, true)
+        if position == nil then
+            out[#out + 1] = string.sub(text, start)
+            return out
+        end
+        out[#out + 1] = string.sub(text, start, position - 1)
+        start = position + 1
+    end
+end
+
+local function newRow(cols, fg, bg)
+    if fg == nil then fg = 7 end
+    if bg == nil then bg = 0 end
+    local row = { ch = {}, fg = {}, bg = {}, at = {} }
+    for x = 1, cols do
+        row.ch[x] = " "
+        row.fg[x] = fg
+        row.bg[x] = bg
+        row.at[x] = 0
+    end
+    return row
+end
+
+local CUBE = { 0, 95, 135, 175, 215, 255 }
+
+-- Map a 256-colour index to the 16-colour palette or to a truecolour value.
+local function colour256(index)
+    if index == nil or index < 0 then index = 0 end
+    if index < 16 then return index end
+    if index >= 232 then
+        local level = 8 + (index - 232) * 10
+        local rgb = level * 65536 + level * 256 + level
+        return -(rgb + 1)
+    end
+    local value = index - 16
+    local r = floor(value / 36)
+    local g = floor((value % 36) / 6)
+    local b = value % 6
+    r = CUBE[r + 1]
+    g = CUBE[g + 1]
+    b = CUBE[b + 1]
+    return -((r * 65536 + g * 256 + b) + 1)
+end
+
+-- | Terminal engine. It has no dependency on graphics.canvas, so the grid,
+-- | parser and line editor can be exercised without a screen.
+local Terminal = {}
+Terminal.__index = Terminal
+
+function cterm.new(options)
+    options = options or {}
+    local self = setmetatable({}, Terminal)
+    self.cols = options.cols or 80
+    self.rows = options.rows or 24
+    self.defaultFg = options.fg or 7
+    self.defaultBg = options.bg or 0
+    self.scrollbackLimit = options.scrollback or 200
+    self.historyLimit = options.history or 200
+    self.palette = options.palette or PALETTE
+    self.grid = {}
+    self.scrollback = {}
+    self.history = {}
+    self.viewOffset = 0
+    self.cursorVisible = true
+    self.cx = 1
+    self.cy = 1
+    self.esc = nil
+    self.escBuf = ""
+    self.savedCx = 1
+    self.savedCy = 1
+    self.input = ""
+    self.cursor = 1
+    self.histIndex = 0
+    self.savedInput = ""
+    self:resetAttrs()
+    self:clear()
+    return self
+end
+
+function Terminal:blankRowFor(cols)
+    return newRow(cols, self.defaultFg, self.defaultBg)
+end
+
+function Terminal:blankRow()
+    return self:blankRowFor(self.cols)
+end
+
+function Terminal:resetAttrs()
+    self.fg = self.defaultFg
+    self.bg = self.defaultBg
+    self.bold = false
+    self.underline = false
+    self.reverse = false
+    self.dim = false
+    self.hidden = false
+end
+
+function Terminal:attrBits()
+    local bits = 0
+    if self.bold then bits = bits + AT_BOLD end
+    if self.underline then bits = bits + AT_UNDERLINE end
+    if self.reverse then bits = bits + AT_REVERSE end
+    if self.dim then bits = bits + AT_DIM end
+    if self.hidden then bits = bits + AT_HIDDEN end
+    return bits
+end
+
+function Terminal:clear()
+    self.grid = {}
+    for y = 1, self.rows do
+        self.grid[y] = self:blankRow()
+    end
+    self.cx = 1
+    self.cy = 1
+    self.viewOffset = 0
+    self.esc = nil
+    self.escBuf = ""
+end
+
+function Terminal:clearScrollback()
+    self.scrollback = {}
+    self.viewOffset = 0
+end
+
+function Terminal:scroll()
+    local top = table.remove(self.grid, 1)
+    if top ~= nil then
+        self.scrollback[#self.scrollback + 1] = top
+        if #self.scrollback > self.scrollbackLimit then
+            table.remove(self.scrollback, 1)
+        end
+    end
+    self.grid[self.rows] = self:blankRow()
+end
+
+function Terminal:lineFeed()
+    if self.cy >= self.rows then
+        self:scroll()
+    else
+        self.cy = self.cy + 1
+    end
+end
+
+function Terminal:putChar(ch)
+    if self.cx > self.cols then
+        self.cx = 1
+        self:lineFeed()
+    end
+    local row = self.grid[self.cy]
+    row.ch[self.cx] = ch
+    row.fg[self.cx] = self.fg
+    row.bg[self.cx] = self.bg
+    row.at[self.cx] = self:attrBits()
+    self.cx = self.cx + 1
+end
+
+function Terminal:sgr(params)
+    if #params == 0 then
+        self:resetAttrs()
+        return
+    end
+    local i = 1
+    while i <= #params do
+        local code = tonumber(params[i]) or 0
+        if code == 0 then
+            self:resetAttrs()
+        elseif code == 1 then
+            self.bold = true
+        elseif code == 2 then
+            self.dim = true
+        elseif code == 4 then
+            self.underline = true
+        elseif code == 7 then
+            self.reverse = true
+        elseif code == 8 then
+            self.hidden = true
+        elseif code == 21 then
+            self.bold = false
+        elseif code == 22 then
+            self.bold = false
+            self.dim = false
+        elseif code == 24 then
+            self.underline = false
+        elseif code == 27 then
+            self.reverse = false
+        elseif code == 28 then
+            self.hidden = false
+        elseif code >= 30 and code <= 37 then
+            self.fg = code - 30
+        elseif code == 39 then
+            self.fg = self.defaultFg
+        elseif code >= 40 and code <= 47 then
+            self.bg = code - 40
+        elseif code == 49 then
+            self.bg = self.defaultBg
+        elseif code >= 90 and code <= 97 then
+            self.fg = code - 90 + 8
+        elseif code >= 100 and code <= 107 then
+            self.bg = code - 100 + 8
+        elseif code == 38 or code == 48 then
+            local mode = params[i + 1]
+            if mode == 5 then
+                local value = colour256(params[i + 2] or 0)
+                if code == 38 then self.fg = value else self.bg = value end
+                i = i + 2
+            elseif mode == 2 then
+                local r = params[i + 2]
+                local g = params[i + 3]
+                local b = params[i + 4]
+                if r == nil then
+                    r = params[i + 3]
+                    g = params[i + 4]
+                    b = params[i + 5]
+                    i = i + 1
+                end
+                r = tonumber(r) or 0
+                g = tonumber(g) or 0
+                b = tonumber(b) or 0
+                local value = -((r * 65536 + g * 256 + b) + 1)
+                if code == 38 then self.fg = value else self.bg = value end
+                i = i + 4
+            end
+        end
+        i = i + 1
+    end
+end
+
+function Terminal:eraseLine(mode)
+    local row = self.grid[self.cy]
+    local from, to
+    if mode == 1 then
+        from, to = 1, self.cx
+    elseif mode == 2 then
+        from, to = 1, self.cols
+    else
+        from, to = self.cx, self.cols
+    end
+    if from < 1 then from = 1 end
+    if to > self.cols then to = self.cols end
+    for x = from, to do
+        row.ch[x] = " "
+        row.fg[x] = self.defaultFg
+        row.bg[x] = self.defaultBg
+        row.at[x] = 0
+    end
+end
+
+function Terminal:eraseDisplay(mode)
+    if mode == 1 then
+        self:eraseLine(1)
+        for y = 1, self.cy - 1 do
+            local row = self.grid[y]
+            for x = 1, self.cols do
+                row.ch[x] = " "
+                row.fg[x] = self.defaultFg
+                row.bg[x] = self.defaultBg
+                row.at[x] = 0
+            end
+        end
+    elseif mode == 2 or mode == 3 then
+        for y = 1, self.rows do
+            local row = self.grid[y]
+            for x = 1, self.cols do
+                row.ch[x] = " "
+                row.fg[x] = self.defaultFg
+                row.bg[x] = self.defaultBg
+                row.at[x] = 0
+            end
+        end
+        if mode == 3 then self.scrollback = {} end
+    else
+        self:eraseLine(0)
+        for y = self.cy + 1, self.rows do
+            local row = self.grid[y]
+            for x = 1, self.cols do
+                row.ch[x] = " "
+                row.fg[x] = self.defaultFg
+                row.bg[x] = self.defaultBg
+                row.at[x] = 0
+            end
+        end
+    end
+end
+
+function Terminal:insertLines(count)
+    if count > self.rows - self.cy + 1 then count = self.rows - self.cy + 1 end
+    if count < 1 then return end
+    for y = self.rows, self.cy + count, -1 do
+        self.grid[y] = self.grid[y - count]
+    end
+    for y = self.cy, self.cy + count - 1 do
+        self.grid[y] = self:blankRow()
+    end
+end
+
+function Terminal:deleteLines(count)
+    if count > self.rows - self.cy + 1 then count = self.rows - self.cy + 1 end
+    if count < 1 then return end
+    for y = self.cy, self.rows - count do
+        self.grid[y] = self.grid[y + count]
+    end
+    for y = self.rows - count + 1, self.rows do
+        self.grid[y] = self:blankRow()
+    end
+end
+
+function Terminal:deleteChars(count)
+    local row = self.grid[self.cy]
+    if count > self.cols - self.cx + 1 then count = self.cols - self.cx + 1 end
+    if count < 1 then return end
+    for x = self.cx, self.cols - count do
+        row.ch[x] = row.ch[x + count]
+        row.fg[x] = row.fg[x + count]
+        row.bg[x] = row.bg[x + count]
+        row.at[x] = row.at[x + count]
+    end
+    for x = self.cols - count + 1, self.cols do
+        row.ch[x] = " "
+        row.fg[x] = self.defaultFg
+        row.bg[x] = self.defaultBg
+        row.at[x] = 0
+    end
+end
+
+function Terminal:insertChars(count)
+    local row = self.grid[self.cy]
+    if count > self.cols - self.cx + 1 then count = self.cols - self.cx + 1 end
+    if count < 1 then return end
+    for x = self.cols, self.cx + count, -1 do
+        row.ch[x] = row.ch[x - count]
+        row.fg[x] = row.fg[x - count]
+        row.bg[x] = row.bg[x - count]
+        row.at[x] = row.at[x - count]
+    end
+    for x = self.cx, self.cx + count - 1 do
+        row.ch[x] = " "
+        row.fg[x] = self.defaultFg
+        row.bg[x] = self.defaultBg
+        row.at[x] = 0
+    end
+end
+
+function Terminal:handleCSI(buffer, final)
+    local private = false
+    local first = string.sub(buffer, 1, 1)
+    if first == "?" or first == ">" or first == "!" then
+        private = true
+        buffer = string.sub(buffer, 2)
+    end
+
+    local params = {}
+    if buffer ~= "" then
+        local parts = splitPlain(buffer, ";")
+        for i = 1, #parts do
+            local sub = splitPlain(parts[i], ":")
+            for j = 1, #sub do
+                params[#params + 1] = tonumber(sub[j])
+            end
+        end
+    end
+
+    local firstParam = params[1]
+    local count = firstParam or 1
+    if count < 1 then count = 1 end
+
+    if final == "m" then
+        self:sgr(params)
+    elseif final == "A" then
+        self.cy = clamp(self.cy - count, 1, self.rows)
+    elseif final == "B" then
+        self.cy = clamp(self.cy + count, 1, self.rows)
+    elseif final == "C" then
+        self.cx = clamp(self.cx + count, 1, self.cols)
+    elseif final == "D" then
+        self.cx = clamp(self.cx - count, 1, self.cols)
+    elseif final == "E" then
+        self.cy = clamp(self.cy + count, 1, self.rows)
+        self.cx = 1
+    elseif final == "F" then
+        self.cy = clamp(self.cy - count, 1, self.rows)
+        self.cx = 1
+    elseif final == "G" then
+        self.cx = clamp(count, 1, self.cols)
+    elseif final == "d" then
+        self.cy = clamp(count, 1, self.rows)
+    elseif final == "H" or final == "f" then
+        self.cy = clamp(params[1] or 1, 1, self.rows)
+        self.cx = clamp(params[2] or 1, 1, self.cols)
+    elseif final == "J" then
+        self:eraseDisplay(params[1] or 0)
+    elseif final == "K" then
+        self:eraseLine(params[1] or 0)
+    elseif final == "L" then
+        self:insertLines(count)
+    elseif final == "M" then
+        self:deleteLines(count)
+    elseif final == "P" then
+        self:deleteChars(count)
+    elseif final == "@" then
+        self:insertChars(count)
+    elseif final == "X" then
+        local row = self.grid[self.cy]
+        local last = clamp(self.cx + count - 1, self.cx, self.cols)
+        for x = self.cx, last do
+            row.ch[x] = " "
+            row.fg[x] = self.defaultFg
+            row.bg[x] = self.defaultBg
+            row.at[x] = 0
+        end
+    elseif final == "S" then
+        for i = 1, count do self:scroll() end
+    elseif final == "T" then
+        for i = 1, count do
+            table.remove(self.grid, self.rows)
+            table.insert(self.grid, 1, self:blankRow())
+        end
+    elseif final == "s" then
+        self.savedCx = self.cx
+        self.savedCy = self.cy
+    elseif final == "u" then
+        self.cx = clamp(self.savedCx, 1, self.cols)
+        self.cy = clamp(self.savedCy, 1, self.rows)
+    elseif final == "h" or final == "l" then
+        if private and (params[1] or 0) == 25 then
+            self.cursorVisible = final == "h"
+        end
+    end
+end
+
+function Terminal:write(text)
+    text = tostring(text or "")
+    local i = 1
+    while i <= #text do
+        local byte = string.byte(text, i)
+        if self.esc == "osc" then
+            if byte == 7 then
+                self.esc = nil
+            elseif byte == 27 and string.byte(text, i + 1) == 92 then
+                self.esc = nil
+                i = i + 1
+            end
+            i = i + 1
+        elseif self.esc == "csi" then
+            local ch = string.sub(text, i, i)
+            if byte >= 64 and byte <= 126 then
+                self:handleCSI(self.escBuf, ch)
+                self.esc = nil
+                self.escBuf = ""
+            else
+                self.escBuf = self.escBuf .. ch
+            end
+            i = i + 1
+        elseif self.esc == "esc" then
+            if byte == 91 then
+                self.esc = "csi"
+                self.escBuf = ""
+            elseif byte == 93 then
+                self.esc = "osc"
+            else
+                self.esc = nil
+            end
+            i = i + 1
+        else
+            local ch = string.sub(text, i, i)
+            if byte == 27 then
+                self.esc = "esc"
+            elseif byte == 10 then
+                self:lineFeed()
+                self.cx = 1
+            elseif byte == 13 then
+                self.cx = 1
+            elseif byte == 8 then
+                if self.cx > 1 then self.cx = self.cx - 1 end
+            elseif byte == 9 then
+                local stop = (floor((self.cx - 1) / 8) + 1) * 8 + 1
+                self.cx = clamp(stop, 1, self.cols)
+            elseif byte < 32 then
+                -- BEL and the other C0 controls are ignored.
+            else
+                self:putChar(ch)
+            end
+            i = i + 1
+        end
+    end
+end
+
+function Terminal:rowText(row)
+    local out = {}
+    for x = 1, self.cols do
+        out[x] = row.ch[x] or " "
+    end
+    return table.concat(out)
+end
+
+function Terminal:screenText()
+    local lines = {}
+    for y = 1, self.rows do
+        lines[y] = self:rowText(self.grid[y])
+    end
+    return table.concat(lines, "\n")
+end
+
+function Terminal:scrollbackText()
+    local lines = {}
+    for y = 1, #self.scrollback do
+        lines[y] = self:rowText(self.scrollback[y])
+    end
+    return table.concat(lines, "\n")
+end
+
+function Terminal:allText()
+    local lines = {}
+    for y = 1, #self.scrollback do
+        lines[#lines + 1] = self:rowText(self.scrollback[y])
+    end
+    for y = 1, self.rows do
+        lines[#lines + 1] = self:rowText(self.grid[y])
+    end
+    return table.concat(lines, "\n")
+end
+
+function Terminal:cellAt(x, y)
+    local row = self.grid[y]
+    if row == nil then return nil end
+    return row.ch[x], row.fg[x], row.bg[x], row.at[x]
+end
+
+function Terminal:viewRows()
+    local out = {}
+    local offset = self.viewOffset
+    if offset > #self.scrollback then
+        offset = #self.scrollback
+        self.viewOffset = offset
+    end
+    local start = #self.scrollback - offset + 1
+    for y = 1, self.rows do
+        local index = start + y - 1
+        if index >= 1 and index <= #self.scrollback then
+            out[y] = self.scrollback[index]
+        else
+            out[y] = self.grid[index - #self.scrollback] or self:blankRow()
+        end
+    end
+    return out
+end
+
+function Terminal:scrollUp(count)
+    if count == nil or count < 1 then count = 1 end
+    self.viewOffset = clamp(self.viewOffset + count, 0, #self.scrollback)
+end
+
+function Terminal:scrollDown(count)
+    if count == nil or count < 1 then count = 1 end
+    self.viewOffset = clamp(self.viewOffset - count, 0, #self.scrollback)
+end
+
+function Terminal:bottom()
+    self.viewOffset = 0
+end
+
+function Terminal:setInput(text)
+    self.input = text or ""
+    self.cursor = #self.input + 1
+end
+
+function Terminal:insertChar(ch)
+    self.input = string.sub(self.input, 1, self.cursor - 1) .. ch .. string.sub(self.input, self.cursor)
+    self.cursor = self.cursor + 1
+end
+
+function Terminal:insertText(text)
+    if text == nil or text == "" then return end
+    self.input = string.sub(self.input, 1, self.cursor - 1) .. text .. string.sub(self.input, self.cursor)
+    self.cursor = self.cursor + #text
+end
+
+function Terminal:backspaceInput()
+    if self.cursor > 1 then
+        self.input = string.sub(self.input, 1, self.cursor - 2) .. string.sub(self.input, self.cursor)
+        self.cursor = self.cursor - 1
+    end
+end
+
+function Terminal:deleteInput()
+    if self.cursor <= #self.input then
+        self.input = string.sub(self.input, 1, self.cursor - 1) .. string.sub(self.input, self.cursor + 1)
+    end
+end
+
+function Terminal:moveInput(delta)
+    self.cursor = clamp(self.cursor + delta, 1, #self.input + 1)
+end
+
+function Terminal:moveHome()
+    self.cursor = 1
+end
+
+function Terminal:moveEnd()
+    self.cursor = #self.input + 1
+end
+
+function Terminal:pushHistory(command)
+    if command == nil or command == "" then return end
+    if #self.history == 0 or self.history[#self.history] ~= command then
+        self.history[#self.history + 1] = command
+        if #self.history > self.historyLimit then
+            table.remove(self.history, 1)
+        end
+    end
+    self.histIndex = 0
+    self.savedInput = ""
+end
+
+function Terminal:historyPrev()
+    if #self.history == 0 then return end
+    if self.histIndex == 0 then
+        self.savedInput = self.input
+        self.histIndex = #self.history
+    elseif self.histIndex > 1 then
+        self.histIndex = self.histIndex - 1
+    end
+    self.input = self.history[self.histIndex]
+    self.cursor = #self.input + 1
+end
+
+function Terminal:historyNext()
+    if self.histIndex == 0 then return end
+    if self.histIndex < #self.history then
+        self.histIndex = self.histIndex + 1
+        self.input = self.history[self.histIndex]
+    else
+        self.histIndex = 0
+        self.input = self.savedInput or ""
+    end
+    self.cursor = #self.input + 1
+end
+
+function Terminal:submit()
+    local command = self.input
+    self.input = ""
+    self.cursor = 1
+    self.histIndex = 0
+    self.savedInput = ""
+    return command
+end
+
+function Terminal:resize(cols, rows)
+    if cols == self.cols and rows == self.rows then return end
+    local old = self.grid
+    local oldRows = self.rows
+    local oldCols = self.cols
+    local dropped = oldRows - rows
+    if dropped > 0 then
+        for y = 1, dropped do
+            self.scrollback[#self.scrollback + 1] = old[y]
+        end
+        while #self.scrollback > self.scrollbackLimit do
+            table.remove(self.scrollback, 1)
+        end
+    end
+    local grid = {}
+    for y = 1, rows do
+        local sourceY = y
+        if dropped > 0 then sourceY = dropped + y end
+        local source = old[sourceY]
+        local row = self:blankRowFor(cols)
+        if source ~= nil then
+            for x = 1, cols do
+                if x <= oldCols then
+                    row.ch[x] = source.ch[x] or " "
+                    row.fg[x] = source.fg[x] or self.defaultFg
+                    row.bg[x] = source.bg[x] or self.defaultBg
+                    row.at[x] = source.at[x] or 0
+                end
+            end
+        end
+        grid[y] = row
+    end
+    self.cols = cols
+    self.rows = rows
+    self.grid = grid
+    self.cx = clamp(self.cx, 1, cols)
+    self.cy = clamp(self.cy, 1, rows)
+    self.viewOffset = 0
+end
+
+function cterm.resolve(value, fallback)
+    if value == nil then value = fallback or 7 end
+    if value >= 0 then
+        local colour = PALETTE[value]
+        if colour == nil then colour = PALETTE[fallback or 7] end
+        if colour == nil then colour = 0xFFFFFF end
+        return colour
+    end
+    return -value - 1
+end
+
+function cterm.dimColor(rgb)
+    local r = floor(rgb / 65536) % 256
+    local g = floor(rgb / 256) % 256
+    local b = rgb % 256
+    r = floor(r / 2)
+    g = floor(g / 2)
+    b = floor(b / 2)
+    return r * 65536 + g * 256 + b
+end
+
+cterm.palette = PALETTE
+cterm.has = has
+
+-- | Canvas application -------------------------------------------------------
+
+local FONTS = { "monospace small", "monospace medium", "monospace large" }
+local PAD = 2
+local THEME = {
+    bg = 0x0C0C0C,
+    fg = 0xD3D7CF,
+    inputBg = 0x161616,
+    cursor = 0xD3D7CF,
+    cursorText = 0x0C0C0C,
+    scroll = 0xFCE94F
+}
+
+local function run(options)
+    options = options or {}
+    pcall(os.setproc, "name", "cterm")
+
+    local c = graphics.canvas.new({
+        title = options.title or "cterm",
+        background = THEME.bg,
+        foreground = THEME.fg,
+        font = FONTS[1]
+    })
+    local action = graphics.canvas.action
+
+    local fontIndex = 1
+    if options.font ~= nil then
+        for i = 1, #FONTS do
+            if FONTS[i] == options.font then fontIndex = i end
+        end
+    end
+
+    local W, H = c:size()
+    local charW = 6
+    local lineH = 12
+    local cols = 80
+    local rows = 24
+    local t = nil
+    local app = nil
+    local dragging = nil
+
+    local function measure()
+        W, H = c:size()
+        c:font(FONTS[fontIndex])
+        local width = c:charWidth("M")
+        if width == nil or width < 1 then width = 6 end
+        charW = width
+        local height = c:metrics()
+        if height == nil or height < 1 then height = charW + 2 end
+        lineH = height
+        cols = floor((W - PAD * 2) / charW)
+        rows = floor((H - PAD * 2 - lineH) / lineH)
+        if cols < 4 then cols = 4 end
+        if rows < 1 then rows = 1 end
+    end
+
+    measure()
+    if options.cols ~= nil then cols = options.cols end
+    if options.rows ~= nil then rows = options.rows end
+
+    t = cterm.new({
+        cols = cols,
+        rows = rows,
+        scrollback = options.scrollback or 200,
+        history = options.history or 200
+    })
+
+    local function promptSegments()
+        local scope = os.scope() or {}
+        local user = scope["USER"] or "user"
+        local host = io.read("/etc/hostname")
+        if host == nil then
+            host = "localhost"
+        else
+            host = string.trim(host)
+        end
+        if host == "" then host = "localhost" end
+        local pwd = os.getcwd() or "/"
+        local budget = t.cols - (#user + #host + 6)
+        if budget < 4 then budget = 4 end
+        if #pwd > budget then
+            pwd = "..." .. string.sub(pwd, #pwd - budget + 4)
+        end
+        local mark = os.getuid() == 0 and "#" or "$"
+        return {
+            { text = user, fg = 10, bold = true },
+            { text = "@", fg = 8 },
+            { text = host, fg = 14, bold = true },
+            { text = ":", fg = 8 },
+            { text = pwd, fg = 12, bold = true },
+            { text = mark .. " ", fg = 11, bold = true }
+        }
+    end
+
+    local function promptAnsi()
+        local segments = promptSegments()
+        local out = ""
+        for i = 1, #segments do
+            local segment = segments[i]
+            local code = "38;5;" .. segment.fg
+            if segment.bold then code = "1;" .. code end
+            out = out .. "\27[" .. code .. "m" .. segment.text .. "\27[0m"
+        end
+        return out
+    end
+
+    local function promptWidth()
+        local segments = promptSegments()
+        local width = 0
+        for i = 1, #segments do
+            width = width + #segments[i].text
+        end
+        return width
+    end
+
+    local function drawInput()
+        local y = PAD + t.rows * lineH
+        c:color(THEME.inputBg)
+        c:rect(0, y, W, lineH, true)
+
+        local segments = promptSegments()
+        local x = PAD
+        for i = 1, #segments do
+            local segment = segments[i]
+            c:color(cterm.resolve(segment.fg, 7))
+            c:text(segment.text, x, y, "left")
+            if segment.bold then c:text(segment.text, x + 1, y, "left") end
+            x = x + #segment.text * charW
+        end
+
+        local promptCols = promptWidth()
+        local available = t.cols - promptCols
+        if available < 1 then available = 1 end
+        local offset = 0
+        if t.cursor - 1 > available then offset = t.cursor - 1 - available end
+        local text = string.sub(t.input, offset + 1, offset + available)
+        c:color(THEME.fg)
+        c:text(text, PAD + promptCols * charW, y, "left")
+
+        local cursorX = PAD + (promptCols + (t.cursor - 1 - offset)) * charW
+        if cursorX > W - charW then cursorX = W - charW end
+        if cursorX < 0 then cursorX = 0 end
+        c:color(THEME.cursor)
+        c:rect(cursorX, y + 1, charW, lineH - 2, true)
+        local under = string.sub(t.input, t.cursor, t.cursor)
+        if under ~= "" then
+            c:color(THEME.cursorText)
+            c:text(under, cursorX, y, "left")
+        end
+    end
+
+    local function draw()
+        c:clear()
+        c:font(FONTS[fontIndex])
+
+        local visible = t:viewRows()
+        for y = 1, t.rows do
+            local row = visible[y]
+            local py = PAD + (y - 1) * lineH
+
+            local x = 1
+            while x <= t.cols do
+                local fg = row.fg[x] or t.defaultFg
+                local bg = row.bg[x] or t.defaultBg
+                local at = row.at[x] or 0
+                local effectiveFg, effectiveBg = fg, bg
+                if has(at, AT_REVERSE) then effectiveFg, effectiveBg = bg, fg end
+                local start = x
+                while x <= t.cols do
+                    local nextFg = row.fg[x] or t.defaultFg
+                    local nextBg = row.bg[x] or t.defaultBg
+                    local nextAt = row.at[x] or 0
+                    local unusedFg, nextEffectiveBg = nextFg, nextBg
+                    if has(nextAt, AT_REVERSE) then unusedFg, nextEffectiveBg = nextBg, nextFg end
+                    if nextEffectiveBg ~= effectiveBg then break end
+                    x = x + 1
+                end
+                if effectiveBg ~= t.defaultBg then
+                    c:color(cterm.resolve(effectiveBg, t.defaultBg))
+                    c:rect(PAD + (start - 1) * charW, py, (x - start) * charW, lineH, true)
+                end
+            end
+
+            x = 1
+            while x <= t.cols do
+                local fg = row.fg[x] or t.defaultFg
+                local bg = row.bg[x] or t.defaultBg
+                local at = row.at[x] or 0
+                local start = x
+                local text = ""
+                while x <= t.cols do
+                    local nextFg = row.fg[x] or t.defaultFg
+                    local nextBg = row.bg[x] or t.defaultBg
+                    local nextAt = row.at[x] or 0
+                    if nextFg ~= fg or nextBg ~= bg or nextAt ~= at then break end
+                    text = text .. (row.ch[x] or " ")
+                    x = x + 1
+                end
+                if text ~= "" then
+                    local effectiveFg = fg
+                    if has(at, AT_REVERSE) then effectiveFg = bg end
+                    local colour = cterm.resolve(effectiveFg, t.defaultFg)
+                    if has(at, AT_DIM) then colour = cterm.dimColor(colour) end
+                    c:color(colour)
+                    local tx = PAD + (start - 1) * charW
+                    c:text(text, tx, py, "left")
+                    if has(at, AT_BOLD) then c:text(text, tx + 1, py, "left") end
+                    if has(at, AT_UNDERLINE) and not has(at, AT_HIDDEN) then
+                        c:line(tx, py + lineH - 1, tx + #text * charW - 1, py + lineH - 1)
+                    end
+                end
+            end
+        end
+
+        if t.viewOffset > 0 then
+            local label = " SCROLL -" .. t.viewOffset .. " "
+            local width = c:textWidth(label) + 4
+            local sx = W - width
+            if sx < 0 then sx = 0 end
+            c:color(0x000000)
+            c:rect(sx, 0, width, lineH, true)
+            c:color(THEME.scroll)
+            c:text(label, W - 2, 0, "right")
+        end
+
+        drawInput()
+        c:repaint()
+    end
+
+    local function writeHelp()
+        t:write("\27[1;36mcterm\27[0m - Canvas terminal emulator\n")
+        t:write("\n")
+        t:write("\27[1mKeys\27[0m\n")
+        t:write("  Enter / FIRE   run the command\n")
+        t:write("  Left / Right   move the cursor\n")
+        t:write("  Up / Down      command history\n")
+        t:write("  Backspace      delete before the cursor\n")
+        t:write("  Delete         delete at the cursor\n")
+        t:write("  F1 / F2        scrollback up / down\n")
+        t:write("  F3 / F4        start / end of the line\n")
+        t:write("  Tab            complete a command or a path\n")
+        t:write("\n")
+        t:write("\27[1mBuilt-in commands\27[0m\n")
+        t:write("  clear          clear the screen and scrollback\n")
+        t:write("  colors         show the ANSI colour palette\n")
+        t:write("  history        list the command history\n")
+        t:write("  help           this text\n")
+        t:write("  exit           close cterm\n")
+        t:write("\n")
+        t:write("On a phone keypad use \27[1mType\27[0m to enter letters.\n")
+    end
+
+    local function writeColors()
+        local names = {
+            "black", "red", "green", "yellow", "blue", "magenta", "cyan", "white",
+            "gray", "bright red", "bright green", "bright yellow",
+            "bright blue", "bright magenta", "bright cyan", "bright white"
+        }
+        for row = 0, 1 do
+            for i = 0, 7 do
+                local index = row * 8 + i
+                t:write("\27[48;5;" .. index .. "m  \27[0m")
+            end
+            t:write("  " .. row .. "\n")
+        end
+        t:write("\n")
+        for i = 0, 15 do
+            t:write("\27[38;5;" .. i .. "m" .. names[i + 1] .. "\27[0m\n")
+        end
+        t:write("\n")
+        t:write("\27[1mbold\27[0m \27[4munderline\27[0m \27[7mreverse\27[0m ")
+        t:write("\27[2mdim\27[0m \27[38;2;255;128;0mtruecolour\27[0m\n")
+    end
+
+    local function writeHistory()
+        if #t.history == 0 then
+            t:write("history: empty\n")
+            return
+        end
+        for i = 1, #t.history do
+            t:write(i .. "  " .. t.history[i] .. "\n")
+        end
+    end
+
+    local function closeApp()
+        c:stop()
+        c:close()
+    end
+
+    local function execute(command)
+        command = string.trim(command or "")
+        if command == "" then
+            draw()
+            return
+        end
+
+        t:pushHistory(command)
+        t.viewOffset = 0
+        t:write(promptAnsi() .. command .. "\n")
+
+        local name = command
+        local space = string.find(command, " ", 1, true)
+        if space ~= nil then name = string.sub(command, 1, space - 1) end
+
+        local handled = false
+        if name == "clear" then
+            t:clear()
+            t:clearScrollback()
+            handled = true
+        elseif name == "help" then
+            writeHelp()
+            handled = true
+        elseif name == "colors" then
+            writeColors()
+            handled = true
+        elseif name == "history" then
+            writeHistory()
+            handled = true
+        elseif name == "exit" or name == "logout" then
+            closeApp()
+            return
+        end
+
+        if not handled then
+            local output = io.new()
+            local previous = io.stdout
+            io.setstdout(output)
+            local ok, status = pcall(os.execute, command)
+            io.setstdout(previous)
+            local text = tostring(output)
+            if string.sub(text, 1, 1) == "\n" then text = string.sub(text, 2) end
+            if text ~= "" then t:write(text) end
+            if not ok then
+                t:write("\27[1;31m" .. tostring(status) .. "\27[0m\n")
+            end
+        end
+
+        if t.cx ~= 1 then t:write("\n") end
+        t.viewOffset = 0
+        c:display()
+        draw()
+    end
+
+    local function submit()
+        execute(t:submit())
+    end
+
+    local function snapBottom()
+        if t.viewOffset > 0 then t:bottom() end
+    end
+
+    local function complete()
+        local input = t.input
+        local cursor = t.cursor
+        local start = cursor
+        while start > 1 do
+            local ch = string.sub(input, start - 1, start - 1)
+            if ch == " " then break end
+            start = start - 1
+        end
+        local word = string.sub(input, start, cursor - 1)
+        if word == "" then return end
+
+        local directory = nil
+        local base = word
+        local slash = nil
+        local position = 1
+        while true do
+            local found = string.find(word, "/", position, true)
+            if found == nil then break end
+            slash = found
+            position = found + 1
+        end
+
+        local candidates = {}
+        if start == 1 and slash == nil then
+            local entries = io.dirs("/bin")
+            for i = 1, #entries do
+                local name = entries[i]
+                if string.startswith(name, word) then candidates[#candidates + 1] = name end
+            end
+        else
+            if slash ~= nil then
+                directory = string.sub(word, 1, slash)
+                base = string.sub(word, slash + 1)
+            else
+                directory = os.getcwd() or "/"
+            end
+            local entries = io.dirs(directory)
+            for i = 1, #entries do
+                local name = entries[i]
+                if string.startswith(name, base) then candidates[#candidates + 1] = name end
+            end
+        end
+
+        if #candidates == 0 then return end
+        table.sort(candidates)
+        local pick = candidates[1]
+        for i = 2, #candidates do
+            local other = candidates[i]
+            local n = 0
+            while n < #pick and n < #other and
+                string.sub(pick, n + 1, n + 1) == string.sub(other, n + 1, n + 1) do
+                n = n + 1
+            end
+            pick = string.sub(pick, 1, n)
+        end
+
+        local suffix = string.sub(pick, #base + 1)
+        if suffix ~= "" then t:insertText(suffix) end
+        if #candidates == 1 then
+            if string.endswith(pick, "/") then
+                -- Directory: the slash is already part of the candidate.
+            elseif directory ~= nil then
+                -- Path completion: leave the cursor ready for more components.
+            else
+                t:insertText(" ")
+            end
+        end
+    end
+
+    local function onKey(canvas, key, gameAction)
+        if gameAction == action.UP then
+            snapBottom()
+            t:historyPrev()
+            draw()
+        elseif gameAction == action.DOWN then
+            snapBottom()
+            t:historyNext()
+            draw()
+        elseif gameAction == action.LEFT then
+            snapBottom()
+            t:moveInput(-1)
+            draw()
+        elseif gameAction == action.RIGHT then
+            snapBottom()
+            t:moveInput(1)
+            draw()
+        elseif gameAction == action.FIRE then
+            submit()
+        elseif gameAction == action.GAME_A then
+            t:scrollUp(t.rows - 1)
+            draw()
+        elseif gameAction == action.GAME_B then
+            t:scrollDown(t.rows - 1)
+            draw()
+        elseif gameAction == action.GAME_C then
+            snapBottom()
+            t:moveHome()
+            draw()
+        elseif gameAction == action.GAME_D then
+            snapBottom()
+            t:moveEnd()
+            draw()
+        elseif key == 8 or key == -8 then
+            snapBottom()
+            t:backspaceInput()
+            draw()
+        elseif key == 127 then
+            snapBottom()
+            t:deleteInput()
+            draw()
+        elseif key == 9 then
+            snapBottom()
+            complete()
+            draw()
+        elseif key >= 32 and key <= 126 then
+            snapBottom()
+            t:insertChar(string.char(key))
+            draw()
+        end
+    end
+
+    local function openInput()
+        local box = graphics.new("edit", "Command", t.input)
+        local runCommand = graphics.new("command", { label = "Run", type = "ok", priority = 1 })
+        local cancel = graphics.new("command", { label = "Cancel", type = "back", priority = 1 })
+        graphics.addCommand(box, runCommand)
+        graphics.addCommand(box, cancel)
+        graphics.handler(box, {
+            [runCommand] = function(text)
+                t:setInput(text or "")
+                c:display()
+                submit()
+            end,
+            [cancel] = function()
+                c:display()
+            end
+        })
+        graphics.display(box)
+    end
+
+    local function setFont(index)
+        fontIndex = (index - 1) % #FONTS + 1
+        measure()
+        t:resize(cols, rows)
+        draw()
+    end
+
+    app = {
+        canvas = c,
+        term = t,
+        render = draw,
+        submit = submit,
+        execute = execute,
+        key = onKey,
+        prompt = promptAnsi,
+        font = setFont,
+        cols = cols,
+        rows = rows
+    }
+
+    c.keyPressed = onKey
+    c.keyRepeated = function(canvas, key, gameAction)
+        if gameAction ~= action.FIRE then onKey(canvas, key, gameAction) end
+    end
+    c.pointerPressed = function(canvas, x, y)
+        dragging = y
+    end
+    c.pointerDragged = function(canvas, x, y)
+        if dragging == nil then return end
+        local delta = y - dragging
+        if delta >= lineH then
+            t:scrollUp(1)
+            dragging = y
+            draw()
+        elseif delta <= -lineH then
+            t:scrollDown(1)
+            dragging = y
+            draw()
+        end
+    end
+    c.pointerReleased = function()
+        dragging = nil
+    end
+    c.size = function(canvas, width, height)
+        measure()
+        if t ~= nil then t:resize(cols, rows) end
+        draw()
+    end
+
+    c:command("Type", "screen", openInput)
+    c:command("Send", "screen", submit)
+    c:command("PgUp", "screen", function() t:scrollUp(t.rows - 1) draw() end)
+    c:command("PgDn", "screen", function() t:scrollDown(t.rows - 1) draw() end)
+    c:command("Bottom", "screen", function() t:bottom() draw() end)
+    c:command("Clear", "screen", function()
+        t:clear()
+        t:clearScrollback()
+        draw()
+    end)
+    c:command("Font", "screen", function() setFont(fontIndex + 1) end)
+    c:command("Exit", "exit", closeApp)
+
+    c:display()
+
+    if options.demo then
+        t:write("\27[1;36mcterm\27[0m Canvas terminal demo\n")
+        t:write("\27[32mgreen\27[0m \27[31mred\27[0m \27[33myellow\27[0m \27[34mblue\27[0m \27[35mmagenta\27[0m \27[36mcyan\27[0m\n")
+        t:write("style: \27[1mbold\27[0m \27[4munderline\27[0m \27[7mreverse\27[0m \27[2mdim\27[0m\n")
+        t:write("256: \27[38;5;196mred\27[0m \27[38;5;46mgreen\27[0m \27[38;5;21mblue\27[0m\n")
+        t:write("truecolour: \27[38;2;255;128;0morange\27[0m\n")
+        for i = 1, t.rows + 5 do
+            t:write("scrollback line " .. i .. "\n")
+        end
+        t:scrollUp(3)
+        draw()
+    end
+
+    return app
+end
+
+cterm.run = run
+
+-- | Entry point --------------------------------------------------------------
+
+local function main()
+    local demo = nil
+    if arg ~= nil and arg[1] ~= nil then demo = tonumber(arg[1]) end
+    run({ demo = demo ~= nil })
+end
+
+if CTERM_AS_MODULE then
+    return cterm
+end
+
+main()

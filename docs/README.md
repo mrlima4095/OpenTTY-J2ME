@@ -160,7 +160,8 @@ local listing = io.dirs("/bin")
 - `image`, `gauge`, `choice` — additional field types
 - `graphics.canvas` — free-form drawing surface (shapes, text, keys, game loop)
 
-See the [Canvas guide](LUACANVAS.md) for the `graphics.canvas` API.
+See the [Canvas guide](LUACANVAS.md) for the `graphics.canvas` API and the
+[cterm guide](CTERM.md) for the Canvas terminal (`/bin/cterm`).
 
 ### Example
 

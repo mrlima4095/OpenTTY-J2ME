@@ -618,9 +618,9 @@ public class Display {
         }
     }
 
-    // Arrow keys and Enter/Space become the MIDP game keys; printable
-    // characters use their own code (as most devices do for letters), so
-    // `canvas:keyName(k)` stays readable.
+    // Arrow keys and Enter become the MIDP game keys; printable characters
+    // (including Space) use their own code, as most devices do for letters,
+    // so `canvas:keyName(k)` stays readable and canvases can edit text.
     private static int keyCode(KeyEvent ev) {
         switch (ev.getKeyCode()) {
             case KeyEvent.VK_UP: return Canvas.UP;
@@ -628,7 +628,18 @@ public class Display {
             case KeyEvent.VK_LEFT: return Canvas.LEFT;
             case KeyEvent.VK_RIGHT: return Canvas.RIGHT;
             case KeyEvent.VK_ENTER: return Canvas.FIRE;
-            case KeyEvent.VK_SPACE: return Canvas.FIRE;
+            // | (Printable keys reach the canvas as their character code, so
+            // |  text-oriented canvases can implement a real line editor; the
+            // |  keypad still uses FIRE for Enter. Home/End/Page keys map to
+            // |  the game actions canvas apps already understand.)
+            case KeyEvent.VK_SPACE: return ' ';
+            case KeyEvent.VK_BACK_SPACE: return 8;
+            case KeyEvent.VK_DELETE: return 127;
+            case KeyEvent.VK_TAB: return 9;
+            case KeyEvent.VK_HOME: return Canvas.GAME_C;
+            case KeyEvent.VK_END: return Canvas.GAME_D;
+            case KeyEvent.VK_PAGE_UP: return Canvas.GAME_A;
+            case KeyEvent.VK_PAGE_DOWN: return Canvas.GAME_B;
             default: break;
         }
         char ch = ev.getKeyChar();

@@ -3,7 +3,9 @@
 # desktop shim, headless. Stages apps/1.19/lua/*.lua under /mnt/opentty/rocks
 # and loads each payload exactly like `require` does on-device: math, string,
 # graphics, kernel and httpd must return their table, keep the native
-# functions they extend, and expose the helpers the apps call.
+# functions they extend, and expose the helpers the apps call. The cterm
+# Canvas app is staged as cterm-app.lua and loaded in module mode, so the
+# terminal engine and one real canvas frame run in the same shim process.
 #
 # Runs one headless shim process (~30 s, it compiles src/ + pc/j2me first).
 # Usage: tests/lua/run_modules.sh
@@ -29,6 +31,7 @@ for f in "$ROOT"/apps/1.19/lua/*.lua; do
     [ -f "$f" ] || continue
     cp "$f" "$STAGE/" || exit 1
 done
+cp "$ROOT/apps/1.19/sys/cterm" "$STAGE/cterm-app.lua" || exit 1
 
 OPENTTY_JVM_OPTS="-Dopentty.headless=1 -Dopentty.smokeWait=7000" \
     timeout 300 bash pc/run.sh --user opentty --pass opentty --smoke -- \

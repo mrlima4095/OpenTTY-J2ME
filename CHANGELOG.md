@@ -76,5 +76,6 @@ The runtime now follows Lua 5.1 much more closely:
 - New 1.19 catalog apps: `snake`, `life`, `matrix`, `clock`, `paint`, `alert` and the `canvasdemo`
 - Snake: the apple changes color, relocates to a new free cell when eaten (never a board corner) and never moves on its own, plus an attract mode;
 - `paint` draws on a canvas and saves/loads its image
+- `cterm`: a Canvas terminal emulator with ANSI SGR colours (16, 256 and truecolour), a real editable command line with history, a coloured prompt, scrollback (PgUp/PgDn and stylus drag) and shell commands that run in the same scope as `xterm`, so `cd` persists
 - `alert`: alert type (`-t`), timeout (`-m`), ticker (`-k`), button (`-b`) and vibration (`-v`) options; `-g` keeps the alert on screen with the MIDP continuous gauge, `-c` animates a value gauge, and a timed alert exits cleanly
 - `pkg` install screen with a progress gauge and live log, listing only the package names and installing the selection directly

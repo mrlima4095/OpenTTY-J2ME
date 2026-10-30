@@ -438,4 +438,107 @@ if type(uirock) == "table" then
 end
 graphics = real_graphics
 
+-- 20. cterm: the Canvas terminal engine (ANSI, wrapping, scrollback and the
+--     editable command line) plus one real canvas frame.
+CTERM_AS_MODULE = true
+local cterm = load_rock("cterm-app")
+CTERM_AS_MODULE = nil
+check("cterm engine loads", type(cterm) == "table" and type(cterm.new) == "function")
+if type(cterm) == "table" then
+    local T = cterm.new({ cols = 20, rows = 4, scrollback = 3 })
+    T:write("hello")
+    check("cterm writes text", string.sub(T:rowText(T.grid[1]), 1, 5) == "hello",
+        T:rowText(T.grid[1]))
+    T:write("\27[31mR\27[0m")
+    local ch, fg = T:cellAt(6, 1)
+    check("cterm ANSI red", ch == "R" and fg == 1, tostring(fg))
+    local _, resetFg = T:cellAt(7, 1)
+    check("cterm ANSI reset", resetFg == T.defaultFg, tostring(resetFg))
+    T:write("\27[38;5;196mX")
+    local _, colourFg = T:cellAt(7, 1)
+    check("cterm 256 colour", colourFg ~= nil and colourFg < 0, tostring(colourFg))
+    T:write("\27[38;2;10;20;30mT")
+    local _, trueFg = T:cellAt(8, 1)
+    check("cterm truecolour", trueFg == -(10 * 65536 + 20 * 256 + 30 + 1), tostring(trueFg))
+
+    local W = cterm.new({ cols = 5, rows = 3 })
+    W:write("abcdef")
+    check("cterm wraps", string.sub(W:rowText(W.grid[1]), 1, 5) == "abcde" and
+        string.sub(W:rowText(W.grid[2]), 1, 1) == "f", W:screenText())
+
+    local S = cterm.new({ cols = 10, rows = 2, scrollback = 3 })
+    for i = 1, 6 do S:write("L" .. i .. "\n") end
+    check("cterm scrollback", #S.scrollback == 3, tostring(#S.scrollback))
+    check("cterm scrollback text", string.find(S:scrollbackText(), "L5", 1, true) ~= nil)
+    S:scrollUp(2)
+    check("cterm view offset", S.viewOffset == 2, tostring(S.viewOffset))
+    check("cterm view rows", string.find(S:rowText(S:viewRows()[1]), "L4", 1, true) ~= nil,
+        S:rowText(S:viewRows()[1]))
+    S:bottom()
+    check("cterm bottom", S.viewOffset == 0)
+
+    local E = cterm.new({ cols = 20, rows = 3 })
+    E:setInput("hello")
+    E:moveInput(-1)
+    E:insertChar("X")
+    check("cterm insert", E.input == "hellXo", E.input)
+    E:backspaceInput()
+    check("cterm backspace", E.input == "hello", E.input)
+    E:moveHome()
+    E:deleteInput()
+    check("cterm delete", E.input == "ello", E.input)
+    E:moveEnd()
+    E:insertText("!")
+    check("cterm insert text", E.input == "ello!", E.input)
+    E:pushHistory("ls")
+    E:pushHistory("pwd")
+    E:pushHistory("pwd")
+    E:historyPrev()
+    check("cterm history prev", E.input == "pwd", E.input)
+    E:historyPrev()
+    check("cterm history prev 2", E.input == "ls", E.input)
+    E:historyNext()
+    check("cterm history next", E.input == "pwd", E.input)
+
+    local C = cterm.new({ cols = 10, rows = 3 })
+    C:write("abcdef")
+    C:write("\27[3D")
+    C:write("\27[31mX\27[0m")
+    check("cterm cursor movement", string.sub(C:rowText(C.grid[1]), 1, 6) == "abcXef",
+        C:rowText(C.grid[1]))
+    C:write("\27[2K")
+    check("cterm erase line", string.sub(C:rowText(C.grid[1]), 1, 6) == "      ",
+        C:rowText(C.grid[1]))
+    C:write("\27[1;1Habc\rX")
+    check("cterm carriage return", string.sub(C:rowText(C.grid[1]), 1, 3) == "Xbc",
+        C:rowText(C.grid[1]))
+    C:write("\27[2;2H\27[s\27[1;1H\27[uZ")
+    local saved = C:cellAt(2, 2)
+    check("cterm save restore cursor", saved == "Z", tostring(saved))
+    C:write("\27]0;ignored\7ok")
+    check("cterm OSC ignored", string.find(C:allText(), "ok", 1, true) ~= nil)
+
+    local app = cterm.run({ demo = true, cols = 40, rows = 10 })
+    check("cterm canvas app", app ~= nil and app.term ~= nil)
+    if app ~= nil and app.term ~= nil then
+        check("cterm canvas demo", string.find(app.term:allText(), "cterm", 1, true) ~= nil)
+        check("cterm canvas scrollback", #app.term.scrollback > 0,
+            tostring(#app.term.scrollback))
+        app.term:setInput("")
+        app.key(app.canvas, string.byte("a"), 0)
+        check("cterm canvas key", app.term.input == "a", app.term.input)
+        app.term:setInput("na")
+        app.key(app.canvas, 9, 0)
+        check("cterm tab completion", string.startswith(app.term.input, "nano"),
+            app.term.input)
+        app.term:setInput("echo cterm-ok")
+        app.submit()
+        check("cterm command capture", string.find(app.term:allText(), "cterm-ok", 1, true) ~= nil,
+            app.term:allText())
+        -- Do not close the canvas here: close() removes the Lua process that
+        -- owns this test (the xterm shell) when no other screen is registered.
+        app.canvas:stop()
+    end
+end
+
 mark("FAILURES=" .. fails)
