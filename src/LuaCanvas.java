@@ -239,7 +239,41 @@ public class LuaCanvas extends Canvas implements CommandListener {
             else { midlet.destroyApp(true); }
         }
     }
-    public void flush() { repaint(); serviceRepaints(); }
+    // | (Repaint requests: only the LCDUI thread may call serviceRepaints().
+    // | A loop thread blocking there freezes the canvas on some phones, so a
+    // | background flush posts one coalesced repaint request instead.)
+    private Thread uiThread = null;
+    private boolean repaintPending = false, inPaint = false;
+    public void flush() {
+        // serviceRepaints() is illegal inside paint() and blocks off the event
+        // thread, so only the LCDUI thread outside paint() may call it.
+        if (inPaint || uiThread != Thread.currentThread()) { requestRepaint(); return; }
+        repaint(); serviceRepaints();
+    }
+    public void requestRepaint() {
+        if (inPaint) { repaint(); return; }
+        if (uiThread == Thread.currentThread()) { repaint(); serviceRepaints(); return; }
+        synchronized (this) {
+            if (repaintPending) { return; }
+            repaintPending = true;
+        }
+        try { midlet.display.callSerially(new RepaintRunner(this)); }
+        catch (Throwable t) { synchronized (this) { repaintPending = false; } repaint(); }
+    }
+    void repaintFromEventThread() {
+        synchronized (this) { repaintPending = false; }
+        repaint();
+    }
+    // named runner: the SDK preverifier chokes on synthetic anon classes
+    static class RepaintRunner implements Runnable {
+        private LuaCanvas canvas;
+        RepaintRunner(LuaCanvas canvas) { this.canvas = canvas; }
+        public void run() { canvas.repaintFromEventThread(); }
+    }
+    // | Export the frame buffer as a PNG through the guest FS write path.
+    // | MIDP has no standard pixel read, so the device build reports -1; the
+    // | desktop shim patches this method to use java.awt (pc/patch_src.py).
+    public int saveImage(String path, Hashtable scope) { return -1; }
     // |
     // Frame buffer
     public int getCanvasWidth() { ensureBuffer(); return bufferWidth; }
@@ -269,11 +303,15 @@ public class LuaCanvas extends Canvas implements CommandListener {
     // |
     // Paint
     protected void paint(Graphics screenGraphics) {
-        ensureBuffer();
-        // In loop mode the loop thread owns the buffer, so only blit it here:
-        // re-entering Lua from the LCDUI thread would race the loop.
-        if (loopThread == null) { fire(EVENT_NAMES[EVENT_PAINT], paintArgs()); }
-        screenGraphics.drawImage(buffer, 0, 0, Graphics.TOP | Graphics.LEFT);
+        uiThread = Thread.currentThread();
+        inPaint = true;
+        try {
+            ensureBuffer();
+            // In loop mode the loop thread owns the buffer, so only blit it here:
+            // re-entering Lua from the LCDUI thread would race the loop.
+            if (loopThread == null) { fire(EVENT_NAMES[EVENT_PAINT], paintArgs()); }
+            screenGraphics.drawImage(buffer, 0, 0, Graphics.TOP | Graphics.LEFT);
+        } finally { inPaint = false; }
     }
     private Vector paintArgs() {
         Vector args = new Vector();

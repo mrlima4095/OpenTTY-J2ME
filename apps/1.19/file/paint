@@ -10,9 +10,14 @@
 --
 -- Keypad: arrows move the pen, FIRE lifts/lowers the pen,
 --         1 / 3 change the brush size, 5 changes the color, 0 clears.
+--
+-- Commands: Move (arrows move the pencil cursor without drawing),
+--           Save (writes the drawing so it can be reopened), Load (replays it),
+--           Clear, Color, Size, Exit.
 
 local PALETTE = { 0x000000, 0xFF3030, 0x30C030, 0x3060FF, 0xFFAA00, 0xB040C0, 0x00B0B0, 0x808080, 0xFFFFFF }
 local TOOLBAR = 26
+local SAVE_PATH = "/mnt/opentty/paint.txt"
 
 local c = graphics.canvas.new({
     title = "Paint",
@@ -32,39 +37,47 @@ local state = {
     lastX = nil,
     lastY = nil,
     pen = true,
-    strokes = 0
+    strokes = 0,
+    moveMode = false, -- move the pencil cursor without drawing
+    log = {}          -- every stroke, so the drawing can be saved and replayed
 }
 
 local function currentColor() return PALETTE[state.colorIndex] end
 
+-- Pixel positions are kept whole so the saved drawing reloads exactly
+-- (the runtime has no math.floor, so round with the modulo trick).
+local function round(v)
+    local n = v + 0.5
+    return n - n % 1
+end
+
 local function clampY(y)
+    y = round(y)
     if y < 0 then return 0 end
     if y > H - TOOLBAR - 1 then return H - TOOLBAR - 1 end
     return y
 end
 
 local function clampX(x)
+    x = round(x)
     if x < 0 then return 0 end
     if x > W - 1 then return W - 1 end
     return x
 end
 
--- A thick line: draw the same segment offset around the center line.
-local function stroke(x1, y1, x2, y2)
-    c:color(currentColor())
-    local s = state.size - 1
-    for i = -s, s do
-        for j = -s, s do
-            c:line(x1 + i, y1 + j, x2 + i, y2 + j)
+local function drawOp(op)
+    c:color(op.color)
+    if op.kind == "dot" then
+        c:circle(op.x, op.y, op.size, true)
+    else
+        -- A thick line: draw the same segment offset around the center line.
+        local s = op.size - 1
+        for i = -s, s do
+            for j = -s, s do
+                c:line(op.x1 + i, op.y1 + j, op.x2 + i, op.y2 + j)
+            end
         end
     end
-    state.strokes = state.strokes + 1
-end
-
-local function dot(x, y)
-    c:color(currentColor())
-    c:circle(x, y, state.size, true)
-    state.strokes = state.strokes + 1
 end
 
 local function drawToolbar()
@@ -87,21 +100,119 @@ local function drawToolbar()
     c:text("size " .. state.size, W - 4, H - TOOLBAR + 7, "right")
 end
 
-local function clearAll()
+local function hint()
+    if state.moveMode then return "move: arrows move the cursor" end
+    if state.pen then return "draw: arrows draw, FIRE lifts" end
+    return "pen up: arrows move, FIRE draws"
+end
+
+-- Crosshair marking where the pencil is (only in move mode, so it never
+-- smears into the drawing).
+local function drawCursor()
+    local x, y = state.x, state.y
+    c:color(0x000000)
+    c:line(x - 6, y, x + 6, y)
+    c:line(x, y - 6, x, y + 6)
+    c:color(0xFFFFFF)
+    c:rect(x - 2, y - 2, 5, 5, false)
+end
+
+-- Repaint everything from the stroke log (used by move mode and Load).
+local function redraw()
     c:clear()
     c:color(0x909090)
-    c:text("draw: stylus or arrows", 6, 6)
-    state.strokes = 0
+    c:font("monospace medium")
+    c:text(hint(), 6, 6)
+    for i = 1, #state.log do drawOp(state.log[i]) end
     drawToolbar()
+    if state.moveMode then drawCursor() end
     c:repaint()
+end
+
+local function record(op)
+    state.log[#state.log + 1] = op
+    state.strokes = state.strokes + 1
+    drawOp(op)
+end
+
+local function stroke(x1, y1, x2, y2)
+    record({ kind = "line", x1 = x1, y1 = y1, x2 = x2, y2 = y2, color = currentColor(), size = state.size })
+end
+
+local function dot(x, y)
+    record({ kind = "dot", x = x, y = y, color = currentColor(), size = state.size })
+end
+
+local function clearAll()
+    state.log = {}
+    state.strokes = 0
+    redraw()
 end
 
 local function moveBy(dx, dy)
     local nx, ny = clampX(state.x + dx), clampY(state.y + dy)
+    if state.moveMode then
+        -- Move mode: only the cursor moves, nothing is drawn.
+        state.x = nx
+        state.y = ny
+        redraw()
+        return
+    end
     if state.pen then stroke(state.x, state.y, nx, ny) end
     state.x = nx
     state.y = ny
     c:repaint()
+end
+
+local function toggleMoveMode()
+    state.moveMode = not state.moveMode
+    redraw()
+end
+
+-- Save the drawing as a small text file (portable: works on the phone too)
+-- and, when the platform can read the frame buffer, as a PNG as well.
+local function saveDrawing()
+    local text = "# paint drawing v1\n"
+    for i = 1, #state.log do
+        local op = state.log[i]
+        if op.kind == "dot" then
+            text = text .. "D " .. op.x .. " " .. op.y .. " " .. op.color .. " " .. op.size .. "\n"
+        else
+            text = text .. "L " .. op.x1 .. " " .. op.y1 .. " " .. op.x2 .. " " .. op.y2 .. " " .. op.color .. " " .. op.size .. "\n"
+        end
+    end
+    io.write(text, SAVE_PATH)
+    local png = c:saveImage("/mnt/opentty/paint.png")
+    print("paint: saved " .. #state.log .. " strokes to " .. SAVE_PATH .. " (png=" .. tostring(png) .. ")")
+end
+
+local function loadDrawing()
+    local text = io.read(SAVE_PATH)
+    if text == nil or text == "" then
+        print("paint: no saved drawing at " .. SAVE_PATH)
+        return
+    end
+    local lines = string.split(text, "\n")
+    local ops = {}
+    for i = 1, #lines do
+        local line = lines[i]
+        if line ~= "" and string.sub(line, 1, 1) ~= "#" then
+            local p = string.split(line, " ")
+            if p[1] == "D" and #p >= 5 then
+                ops[#ops + 1] = { kind = "dot", x = tonumber(p[2]), y = tonumber(p[3]), color = tonumber(p[4]), size = tonumber(p[5]) }
+            elseif p[1] == "L" and #p >= 7 then
+                ops[#ops + 1] = { kind = "line", x1 = tonumber(p[2]), y1 = tonumber(p[3]), x2 = tonumber(p[4]), y2 = tonumber(p[5]), color = tonumber(p[6]), size = tonumber(p[7]) }
+            end
+        end
+    end
+    if #ops == 0 then
+        print("paint: saved drawing is empty")
+        return
+    end
+    state.log = ops
+    state.strokes = #ops
+    redraw()
+    print("paint: loaded " .. #ops .. " strokes from " .. SAVE_PATH)
 end
 
 local function setColor(index)
@@ -150,7 +261,17 @@ c.keyPressed = function(canvas, k, a)
     elseif a == action.DOWN then moveBy(0, 8)
     elseif a == action.LEFT then moveBy(-8, 0)
     elseif a == action.RIGHT then moveBy(8, 0)
-    elseif a == action.FIRE then state.pen = not state.pen
+    elseif a == action.FIRE then
+        if state.moveMode then
+            state.moveMode = false
+            redraw()
+        else
+            state.pen = not state.pen
+            c:color(0x909090)
+            c:font("monospace medium")
+            c:text(hint(), 6, 6)
+            c:repaint()
+        end
     elseif k == key.NUM1 then setSize(-1)
     elseif k == key.NUM3 then setSize(1)
     elseif k == key.NUM5 then setColor(state.colorIndex + 1)
@@ -180,10 +301,19 @@ c:command("Exit", "exit", function() c:stop() c:close() end)
 c:command("Clear", "screen", function() clearAll() end)
 c:command("Color", "screen", function() setColor(state.colorIndex + 1) end)
 c:command("Size", "screen", function() setSize(state.size >= 6 and -5 or 1) end)
+c:command("Move", "screen", function() toggleMoveMode() end)
+c:command("Save", "screen", function() saveDrawing() end)
+c:command("Load", "screen", function() loadDrawing() end)
 
 c:display()
 
 if tonumber(arg[1] or "") then
     demo()
     print("paint: " .. state.strokes .. " strokes, size " .. state.size)
+    -- Exercise Save/Load (and the PNG export) so the suite covers them.
+    saveDrawing()
+    state.log = {}
+    loadDrawing()
+    io.write("strokes=" .. #state.log .. "\n", "/mnt/opentty/paint-result.txt")
+    print("paint: reloaded " .. #state.log .. " strokes")
 end

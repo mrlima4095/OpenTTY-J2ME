@@ -361,6 +361,18 @@ own thread, so the shell, commands and other processes stay responsive.
 The loop also ends by itself when the owning Lua process disappears (for example
 `os.exit()`), so a game never keeps drawing after its shell command is gone.
 
+### Exporting the buffer
+
+```lua
+local ok = c:saveImage("/mnt/opentty/shot.png")   -- 0 = written, -1 = unsupported
+```
+
+`saveImage` encodes the current buffer as a PNG through the guest file system.
+MIDP has no standard way to read an `Image`'s pixels, so the on-device build
+returns `-1`; the desktop shim (`pc/`) implements it with `java.awt`. Apps that
+must work on both should also save their own drawing data (see the `paint` app,
+which writes a small stroke file that can be replayed).
+
 ---
 
 ## Threading rules
@@ -383,7 +395,11 @@ Rules that keep both modes safe:
 3. Never call `c:loop` **from the LCDUI thread** (a key handler, `paint`): it
    would block the UI. Start it from the Lua thread — a script run by the shell
    already is one — or use `c:animate`, which always spawns its own thread.
-4. `c:flush()` repaints immediately; the loop calls it once per frame.
+4. `c:flush()` requests a repaint; the loop calls it once per frame. On the
+   LCDUI thread it repaints right away; from a background thread it posts one
+   coalesced repaint request (via `Display.callSerially`), so a running loop
+   never blocks the painter or calls `serviceRepaints()` off-thread (which
+   freezes some phones).
 
 ```lua
 -- Safe: script runs on the Lua thread, loop runs in the background.
@@ -448,6 +464,7 @@ before running it on a device.
 | `clip(x, y, w, h)` / `resetClip()` / `clipRect()` | handle / `x, y, w, h` | |
 | `translate(dx, dy)` | handle | |
 | `save()` / `restore()` / `reset()` | handle | state stack |
+| `saveImage(path)` | number | write the buffer as PNG (0 = ok, -1 = unsupported) |
 | `keyDown(code)` | boolean | |
 | `keyName(code)` | string | |
 | `gameAction(code)` | number | |

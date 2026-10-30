@@ -137,7 +137,7 @@ public class Lua {
         funcs = new String[] { "new", "rgb", "on", "off", "display", "close", "title", "fullscreen", "size", "repaint", "flush", "clear",
             "color", "background", "foreground", "font", "metrics", "textWidth", "charWidth", "text", "print", "nl", "backspace", "cursor", "caret",
             "line", "rect", "roundRect", "arc", "circle", "ellipse", "triangle", "polygon", "pixel", "image",
-            "clip", "resetClip", "clipRect", "translate", "save", "restore", "reset",
+            "clip", "resetClip", "clipRect", "translate", "save", "restore", "reset", "saveImage",
             "keyDown", "keyName", "gameAction", "keys", "resetKeys", "waitKey", "pointer",
             "loop", "animate", "stop", "running", "age", "command", "clearCommands" };
         Hashtable canvas = new Hashtable();
@@ -3584,6 +3584,10 @@ public class Lua {
             }
             if (method.equals("translate")) { canvas.translate(canvasInt(args, 1, where), canvasInt(args, 2, where)); return handle; }
             if (method.equals("save")) { canvas.saveState(); return handle; }
+            if (method.equals("saveImage")) {
+                if (args.size() < 2 || !(args.elementAt(1) instanceof String)) { return gotbad(2, where, "path expected"); }
+                return luaNumber(canvas.saveImage((String) args.elementAt(1), father));
+            }
             if (method.equals("restore")) { canvas.restoreState(); return handle; }
             if (method.equals("reset")) { canvas.resetState(); return handle; }
             if (method.equals("keyDown")) { return canvas.isKeyDown(canvasInt(args, 1, where)) ? TRUE : FALSE; }

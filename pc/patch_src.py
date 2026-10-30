@@ -117,6 +117,28 @@ def fix_write_finally(path):
     )])
 
 
+def fix_canvas_save(path):
+    # MIDP cannot read the pixels of an Image, so src/LuaCanvas.saveImage() is
+    # a -1 stub on the device. The desktop shim can, so swap in an AWT-backed
+    # PNG export (used by the paint app's Save command).
+    patch_file(path, [(
+        "    public int saveImage(String path, Hashtable scope) { return -1; }",
+        "    public int saveImage(String path, Hashtable scope) {\n"
+        "        try {\n"
+        "            ensureBuffer();\n"
+        "            java.awt.image.BufferedImage img = new java.awt.image.BufferedImage(bufferWidth, bufferHeight, java.awt.image.BufferedImage.TYPE_INT_ARGB);\n"
+        "            java.awt.Graphics2D g2 = img.createGraphics();\n"
+        "            g2.drawImage(buffer.awt(), 0, 0, null);\n"
+        "            g2.dispose();\n"
+        "            java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();\n"
+        "            javax.imageio.ImageIO.write(img, \"png\", baos);\n"
+        "            return midlet.write(path, baos.toByteArray(), 0, scope);\n"
+        "        } catch (Exception e) { return -1; }\n"
+        "    }",
+        "canvas-save-image",
+    )])
+
+
 def fix_token_index(path):
     # Lua.run() reuses the instance cursor without resetting it, so a second
     # run() on the same Lua (e.g. /bin/lua loading a chunk and the caller
@@ -269,4 +291,5 @@ fix_token_index(lua_)
 fix_exec_debug(lua_)
 fix_exec_dot_shadow(lua_)
 fix_write_finally(open_)
+fix_canvas_save(SRC + "/LuaCanvas.java")
 print("patched", open_, "and", lua_)
