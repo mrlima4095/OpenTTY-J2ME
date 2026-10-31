@@ -1,99 +1,561 @@
 #!/bin/lua
 
+-- PasteBin client for OpenTTY: new pastes, file uploads, and reading/saving
+-- raw pastes. The J2ME runtime has no TLS, so every HTTPS request is handed
+-- to the OpenTTY mirror (server.py, TCP 31522), which performs it and answers
+-- with "<status>\n<body>" (status -1 when the transport itself failed).
+--
+-- Requests are newline framed: `http <url>\n` and `post <url> <length>\n<body>`.
+-- The form body is percent-encoded here and forwarded verbatim, so `&` and `=`
+-- inside a paste survive. The mirror still accepts the 1.18 one-write
+-- `post <url> <data>` form (answered with the bare body, as before).
+--
+-- Settings live in /home/.pastebin (one key=value per line):
+--
+--   api_key=<PasteBin API developer key>   (or $PASTEBIN_API)
+--   mirror=<host[:port]>                   (or $PASTEBIN_MIRROR / $REPO)
+--   api_url=https://pastebin.com/api/api_post.php
+--   raw_url=https://pastebin.com/raw/
+--   expire=N                                (N, 10M, 1H, 1D, 1W, 2W, 1M, 6M, 1Y)
+--   private=1                               (0 public, 1 unlisted, 2 private)
+--   format=text
+--
+-- Usage:
+--   pastebin                 open the graphical client
+--   pastebin <file>          upload a file and print its URL
+--   pastebin view <id|url>   print the raw content of a paste
+--   pastebin key [dev-key]   show or save the API developer key
+--   pastebin config          show the effective settings
+--   pastebin mirror [host]   show or save the mirror address
 
-local PASTEBIN_API = os.getenv("PASTEBIN_API")
-local PROXY = os.getenv("REPO") or "opentty.fun:31522"
-local PROXY_HTTP = "http://opentty.fun/proxy.php?"
+local CONFIG_PATH = "/home/.pastebin"
+local LAST_URL_PATH = "/home/.pastebin.last"
+local DEFAULT_MIRROR = "opentty.fun:31522"
+local DEFAULT_PORT = 31522
+local API_URL = "https://pastebin.com/api/api_post.php"
+local RAW_URL = "https://pastebin.com/raw/"
+local MAX_UPLOAD = 64 * 1024
+local HEX = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F" }
+local EXPIRE_VALUES = { "N", "10M", "1H", "1D", "1W", "2W", "1M", "6M", "1Y" }
 
 local app = {}
 
-app.GetFile = function ()
-    local previous = graphics.getCurrent()
-    local screen = graphics.new("screen", "PasteBin")
-    local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
-    local upload = graphics.new("command", { label = "Upload", type = "ok", priority = 1 })
+-- | Helpers -----------------------------------------------------------------
 
-    graphics.append(screen, { type = "field", label = "File to Upload", value = "" })
+local function isBlank(value)
+    if value == nil then return true end
+    return string.trim(tostring(value)) == ""
+end
+
+local function indexOf(text, wanted)
+    for i = 1, #text do
+        if string.sub(text, i, i) == wanted then return i end
+    end
+    return nil
+end
+
+local function lastIndexOf(text, wanted)
+    local found = nil
+    for i = 1, #text do
+        if string.sub(text, i, i) == wanted then found = i end
+    end
+    return found
+end
+
+local function baseName(path)
+    local text = tostring(path or "")
+    local cut = lastIndexOf(text, "/")
+    if cut then return string.sub(text, cut + 1) end
+    return text
+end
+
+local function safeName(value)
+    local text = tostring(value or "")
+    local out = {}
+    for i = 1, #text do
+        local byte = string.byte(text, i)
+        local keep = (byte >= 48 and byte <= 57) or (byte >= 65 and byte <= 90) or (byte >= 97 and byte <= 122) or byte == 45 or byte == 95 or byte == 46
+        if keep then out[#out + 1] = string.sub(text, i, i) else out[#out + 1] = "_" end
+    end
+    local name = table.concat(out)
+    if name == "" then return "paste" end
+    return name
+end
+
+local function mask(value)
+    local text = tostring(value or "")
+    if #text <= 8 then return "********" end
+    return string.sub(text, 1, 4) .. "..." .. string.sub(text, #text - 3)
+end
+
+-- | Settings -----------------------------------------------------------------
+
+local function parseConfig(text)
+    local conf = {}
+    if isBlank(text) then return conf end
+    local lines = string.split(text, "\n")
+    local total = #lines
+    for i = 1, total do
+        local line = string.trim(lines[i])
+        if line ~= "" and not string.startswith(line, "#") then
+            local at = indexOf(line, "=")
+            if at then
+                local key = string.trim(string.sub(line, 1, at - 1))
+                local value = string.trim(string.sub(line, at + 1))
+                if key ~= "" then conf[key] = value end
+            elseif conf["api_key"] == nil then
+                -- Older versions stored the bare API key in this file.
+                conf["api_key"] = line
+            end
+        end
+    end
+    return conf
+end
+
+local function loadConfig()
+    return parseConfig(io.read(CONFIG_PATH))
+end
+
+local function saveConfig(conf)
+    local order = { "api_key", "mirror", "api_url", "raw_url", "expire", "private", "format" }
+    local lines = {}
+    for i = 1, #order do
+        local key = order[i]
+        local value = conf[key]
+        if value ~= nil and tostring(value) ~= "" then
+            lines[#lines + 1] = key .. "=" .. tostring(value)
+        end
+    end
+    return io.write(table.concat(lines, "\n") .. "\n", CONFIG_PATH)
+end
+
+local function setting(conf, key, variable, fallback)
+    local value = os.getenv(variable)
+    if isBlank(value) then value = conf[key] end
+    if isBlank(value) then return fallback end
+    return string.trim(tostring(value))
+end
+
+local function apiKey(conf)
+    return setting(conf or loadConfig(), "api_key", "PASTEBIN_API", nil)
+end
+
+-- | Mirror -------------------------------------------------------------------
+
+local function normalizeMirror(value)
+    local host = string.trim(tostring(value or ""))
+    if string.startswith(host, "https://") then host = string.sub(host, 9)
+    elseif string.startswith(host, "http://") then host = string.sub(host, 8) end
+    local slash = indexOf(host, "/")
+    if slash then host = string.sub(host, 1, slash - 1) end
+    if host == "" then return DEFAULT_MIRROR end
+    if indexOf(host, ":") == nil then host = host .. ":" .. DEFAULT_PORT end
+    return host
+end
+
+local function mirrorAddress()
+    local value = os.getenv("PASTEBIN_MIRROR")
+    if isBlank(value) then value = os.getenv("REPO") end
+    if isBlank(value) then value = loadConfig().mirror end
+    return normalizeMirror(value)
+end
+
+local function request(command)
+    local address = mirrorAddress()
+    local ok, conn, input, output = pcall(socket.connect, "socket://" .. address)
+    if not ok then return nil, "cannot reach " .. address .. " (" .. tostring(conn) .. ")" end
+
+    local response, failure = nil, nil
+    local sent, sendError = pcall(io.write, command, output)
+    if not sent then
+        failure = "send failed: " .. tostring(sendError)
+    else
+        local read, data = pcall(io.read, input, -1)
+        if read then response = data else failure = "read failed: " .. tostring(data) end
+    end
+    pcall(io.close, conn, input, output)
+
+    if failure then return nil, failure end
+    if response == nil or response == "" then return nil, "empty response from " .. address end
+    return response
+end
+
+-- The mirror answers "<status>\n<body>"; an old mirror only sends the body,
+-- in which case the caller falls back to treating the whole answer as body.
+local function splitResponse(response)
+    local at = indexOf(response, "\n")
+    if at == nil then return nil, response end
+    local status = tonumber(string.sub(response, 1, at - 1))
+    if status == nil or (status ~= -1 and (status < 100 or status > 599)) then return nil, response end
+    return status, string.sub(response, at + 1)
+end
+
+-- | Encoding ----------------------------------------------------------------
+
+local function hex(byte)
+    local low = byte % 16
+    local high = (byte - low) / 16
+    return "%" .. HEX[high + 1] .. HEX[low + 1]
+end
+
+local function urlencode(value)
+    local text = tostring(value or "")
+    local out = {}
+    for i = 1, #text do
+        local byte = string.byte(text, i)
+        local plain = (byte >= 48 and byte <= 57) or (byte >= 65 and byte <= 90) or (byte >= 97 and byte <= 122) or byte == 45 or byte == 46 or byte == 95 or byte == 126
+        if plain then
+            out[#out + 1] = string.sub(text, i, i)
+        elseif byte < 128 then
+            out[#out + 1] = hex(byte)
+        elseif byte < 2048 then
+            out[#out + 1] = hex(192 + (byte - (byte % 64)) / 64) .. hex(128 + (byte % 64))
+        else
+            out[#out + 1] = hex(224 + (byte - (byte % 4096)) / 4096) .. hex(128 + ((byte - (byte % 64)) / 64) % 64) .. hex(128 + (byte % 64))
+        end
+    end
+    return table.concat(out)
+end
+
+-- | PasteBin API ------------------------------------------------------------
+
+local function allowedExpire(value)
+    for i = 1, #EXPIRE_VALUES do
+        if EXPIRE_VALUES[i] == value then return true end
+    end
+    return false
+end
+
+local function upload(content, name)
+    if content == nil or content == "" then return nil, "nothing to upload" end
+    if #content > MAX_UPLOAD then return nil, "content too large (max " .. MAX_UPLOAD .. " bytes)" end
+
+    local conf = loadConfig()
+    local key = apiKey(conf)
+    if key == nil then return nil, "no API key configured (open 'Set API Key' or run 'pastebin key <dev-key>')" end
+
+    local fields = {
+        "api_dev_key=" .. urlencode(key),
+        "api_option=paste",
+        "api_paste_code=" .. urlencode(content),
+        "api_paste_private=" .. urlencode(setting(conf, "private", "PASTEBIN_PRIVATE", "1")),
+        "api_paste_expire_date=" .. urlencode(setting(conf, "expire", "PASTEBIN_EXPIRE", "N")),
+        "api_paste_format=" .. urlencode(setting(conf, "format", "PASTEBIN_FORMAT", "text"))
+    }
+    if not isBlank(name) then fields[#fields + 1] = "api_paste_name=" .. urlencode(name) end
+
+    local body = table.concat(fields, "&")
+    local target = setting(conf, "api_url", "PASTEBIN_API_URL", API_URL)
+    local response, failure = request("post " .. target .. " " .. #body .. "\n" .. body)
+    if response == nil then return nil, failure end
+
+    local status, payload = splitResponse(response)
+    if status == nil then payload = response end
+    payload = string.trim(payload)
+
+    if status ~= nil and (status < 200 or status >= 300) then
+        if status == -1 then return nil, payload end
+        return nil, "HTTP " .. tostring(status) .. ": " .. payload
+    end
+    if payload == "" then return nil, "empty response from PasteBin" end
+    if not (string.startswith(payload, "http://") or string.startswith(payload, "https://")) then
+        return nil, payload
+    end
+    return payload
+end
+
+local function pasteId(value)
+    local text = string.trim(tostring(value or ""))
+    if text == "" then return nil end
+
+    local cut = indexOf(text, "?")
+    if cut then text = string.sub(text, 1, cut - 1) end
+    cut = indexOf(text, "#")
+    if cut then text = string.sub(text, 1, cut - 1) end
+    cut = lastIndexOf(text, "/")
+    if cut then text = string.sub(text, cut + 1) end
+
+    text = string.trim(text)
+    if text == "" then return nil end
+
+    -- Paste IDs are alphanumeric; rejecting anything else keeps the ID safe to
+    -- use on the one-line mirror protocol and as a file name.
+    for i = 1, #text do
+        local byte = string.byte(text, i)
+        local valid = (byte >= 48 and byte <= 57) or (byte >= 65 and byte <= 90) or (byte >= 97 and byte <= 122) or byte == 45 or byte == 95
+        if not valid then return nil end
+    end
+    return text
+end
+
+local function fetch(value)
+    local id = pasteId(value)
+    if id == nil then return nil, "enter a PasteBin URL or paste ID" end
+
+    local conf = loadConfig()
+    local target = setting(conf, "raw_url", "PASTEBIN_RAW_URL", RAW_URL) .. id
+    local response, failure = request("http " .. target .. "\n")
+    if response == nil then return nil, failure end
+
+    local status, payload = splitResponse(response)
+    if status == nil then payload = response end
+
+    if status ~= nil and (status < 200 or status >= 300) then
+        if status == 404 then return nil, "paste not found" end
+        if status == -1 then return nil, payload end
+        return nil, "HTTP " .. tostring(status) .. ": " .. payload
+    end
+    return payload
+end
+
+-- | Screens ------------------------------------------------------------------
+
+local function showAlert(message, back, kind)
+    local alert = graphics.new("alert", "PasteBin", tostring(message), { type = kind or "info", timeout = 4000 })
+    graphics.display(alert, back)
+end
+
+local function uploadScreen(content, name, previous)
+    previous = previous or graphics.getCurrent()
+    local screen = graphics.new("screen", "PasteBin")
+    local status = graphics.new("buffer", { label = "", value = "Uploading to PasteBin...", style = "monospace" })
+    local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
+    local copy = graphics.new("command", { label = "Copy URL", type = "ok", priority = 1 })
+    local switch = graphics.new("command", { label = "Switch to...", type = "screen", priority = 2 })
+    local state = { running = true, url = nil, error = nil }
+
+    graphics.append(screen, status)
     graphics.addCommand(screen, back)
-    graphics.addCommand(screen, upload)
+    graphics.addCommand(screen, copy)
+    graphics.addCommand(screen, switch)
+    graphics.handler(screen, {
+        [back] = function ()
+            state.running = false
+            graphics.display(previous)
+        end,
+        [copy] = function ()
+            if state.url == nil then
+                showAlert(state.error or "The paste is not ready yet.", screen)
+                return
+            end
+            pcall(io.write, state.url .. "\n", LAST_URL_PATH)
+            print(state.url)
+            graphics.display(previous)
+        end,
+        [switch] = graphics.taskmngr
+    })
+    os.setproc("screen", screen)
+    graphics.display(screen)
+
+    java.run(function ()
+        local url, failure = upload(content, name)
+        if not state.running then return end
+        if url == nil then
+            state.error = failure
+            graphics.SetText(status, "Upload failed:\n" .. tostring(failure))
+            graphics.SetTicker(screen, "Upload failed")
+            return
+        end
+        state.url = url
+        graphics.SetText(status, url)
+        graphics.SetTicker(screen, "Paste created")
+        pcall(io.write, url .. "\n", LAST_URL_PATH)
+        print(url)
+    end, "pastebin-upload")
+end
+
+local function viewScreen(id, previous)
+    previous = previous or graphics.getCurrent()
+    local screen = graphics.new("screen", "Paste " .. id)
+    local body = graphics.new("buffer", { label = "", value = "Loading...", style = "monospace" })
+    local path = graphics.new("field", { label = "Save to", value = "/home/paste-" .. safeName(id) .. ".txt", length = 256 })
+    local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
+    local save = graphics.new("command", { label = "Save", type = "ok", priority = 1 })
+    local switch = graphics.new("command", { label = "Switch to...", type = "screen", priority = 2 })
+    local state = { running = true, content = nil }
+
+    graphics.append(screen, body)
+    graphics.append(screen, path)
+    graphics.addCommand(screen, back)
+    graphics.addCommand(screen, save)
+    graphics.addCommand(screen, switch)
+    graphics.handler(screen, {
+        [back] = function ()
+            state.running = false
+            graphics.display(previous)
+        end,
+        [save] = function (target)
+            if state.content == nil then
+                showAlert("The paste is still loading.", screen)
+                return
+            end
+            if isBlank(target) then
+                showAlert("Enter a file to save the paste to.", screen)
+                return
+            end
+            local ok, code = pcall(io.write, state.content, target)
+            if ok and code == 0 then
+                showAlert("Saved to " .. target, screen)
+            else
+                showAlert("Could not save " .. target .. ": " .. tostring(code), screen, "error")
+            end
+        end,
+        [switch] = graphics.taskmngr
+    })
+    os.setproc("screen", screen)
+    graphics.display(screen)
+
+    java.run(function ()
+        local content, failure = fetch(id)
+        if not state.running then return end
+        if content == nil then
+            graphics.SetText(body, "Could not load the paste:\n" .. tostring(failure))
+            graphics.SetTicker(screen, "Paste not loaded")
+            return
+        end
+        state.content = content
+        graphics.SetText(body, content)
+        graphics.SetTicker(screen, "Paste " .. id .. " loaded")
+    end, "pastebin-view")
+end
+
+local function newPaste(previous)
+    previous = previous or graphics.getCurrent()
+    local box = graphics.new("edit", "New Paste", "")
+    local cancel = graphics.new("command", { label = "Cancel", type = "back", priority = 1 })
+    local send = graphics.new("command", { label = "Upload", type = "ok", priority = 1 })
+
+    graphics.addCommand(box, cancel)
+    graphics.addCommand(box, send)
+    graphics.handler(box, {
+        [cancel] = function () graphics.display(previous) end,
+        [send] = function (content)
+            if isBlank(content) then
+                showAlert("The paste is empty.", box)
+                return
+            end
+            uploadScreen(content, "OpenTTY " .. os.date("%Y-%m-%d %H:%M"), previous)
+        end
+    })
+    os.setproc("screen", box)
+    graphics.display(box)
+end
+
+local function uploadFile(previous)
+    previous = previous or graphics.getCurrent()
+    local screen = graphics.new("screen", "Upload File")
+    local path = graphics.new("field", { label = "File", value = "", length = 256 })
+    local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
+    local send = graphics.new("command", { label = "Upload", type = "ok", priority = 1 })
+
+    graphics.append(screen, path)
+    graphics.addCommand(screen, back)
+    graphics.addCommand(screen, send)
     graphics.handler(screen, {
         [back] = function () graphics.display(previous) end,
-        [upload] = function (file)
-            local content = io.read(file)
-            if not content or content == "" then
-                graphics.display(graphics.new("alert", "PasteBin", "Empty content"))
+        [send] = function (target)
+            if isBlank(target) then
+                showAlert("Enter a file to upload.", screen)
+                return
+            end
+            local ok, content = pcall(io.read, target)
+            if not ok then
+                showAlert("Could not read " .. target .. ": " .. tostring(content), screen, "error")
+                return
+            end
+            if isBlank(content) then
+                showAlert(target .. " is empty or does not exist.", screen, "error")
+                return
+            end
+            uploadScreen(content, baseName(target), previous)
+        end
+    })
+    os.setproc("screen", screen)
+    graphics.display(screen)
+end
+
+local function viewPaste(previous)
+    previous = previous or graphics.getCurrent()
+    local screen = graphics.new("screen", "View Paste")
+    local field = graphics.new("field", { label = "Paste URL or ID", value = "", length = 512 })
+    local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
+    local open = graphics.new("command", { label = "Open", type = "ok", priority = 1 })
+
+    graphics.append(screen, field)
+    graphics.addCommand(screen, back)
+    graphics.addCommand(screen, open)
+    graphics.handler(screen, {
+        [back] = function () graphics.display(previous) end,
+        [open] = function (value)
+            local id = pasteId(value)
+            if id == nil then
+                showAlert("Enter a PasteBin URL or paste ID.", screen)
+                return
+            end
+            viewScreen(id, previous)
+        end
+    })
+    os.setproc("screen", screen)
+    graphics.display(screen)
+end
+
+local function configScreen(previous)
+    previous = previous or graphics.getCurrent()
+    local conf = loadConfig()
+    local screen = graphics.new("screen", "PasteBin Settings")
+    local key = graphics.new("field", { label = "API developer key", value = apiKey(conf) or "", length = 256, mode = "password" })
+    local expire = graphics.new("field", { label = "Expire (N,10M,1H,1D,1W,2W,1M,6M,1Y)", value = setting(conf, "expire", "PASTEBIN_EXPIRE", "N"), length = 8 })
+    local private = graphics.new("field", { label = "Visibility (0 public, 1 unlisted, 2 private)", value = setting(conf, "private", "PASTEBIN_PRIVATE", "1"), length = 1, mode = "number" })
+    local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
+    local save = graphics.new("command", { label = "Save", type = "ok", priority = 1 })
+
+    graphics.append(screen, key)
+    graphics.append(screen, expire)
+    graphics.append(screen, private)
+    graphics.addCommand(screen, back)
+    graphics.addCommand(screen, save)
+    graphics.handler(screen, {
+        [back] = function () graphics.display(previous) end,
+        [save] = function (keyValue, expireValue, privateValue)
+            keyValue = string.trim(keyValue or "")
+            if keyValue == "" then
+                showAlert("The API developer key cannot be empty.", screen, "error")
                 return
             end
 
-            app.Paste(content)
-        end
-    })
-end
-
-app.Paste = function (content)
-    local conn, i, o = socket.connect("socket://" .. PROXY)
-
-    io.write("post https://pastebin.com/api/api_post.php api_dev_key=" .. PASTEBIN_API .. "&api_option=paste&api_paste_code=" .. content, o)
-    local res = io.read(i)
-
-    local previous = graphics.getCurrent()
-    local alert = graphics.new("alert", "PasteBin", res)
-    local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
-    local copy = graphics.new("command", { label = "Copy", type = "ok", priority = 1 })
-
-    graphics.addCommand(alert, back)
-    graphics.addCommand(alert, copy)
-    graphics.handler(alert, {
-        [back] = app.main,
-        [copy] = function ()
-            print(res)
-            os.exit(0)
-        end
-    })
-    graphics.display(alert)
-
-    pcall(io.close, conn, i, o)
-end
-
-app.GetPaste = function ()
-    local previous = graphics.getCurrent()
-    local screen = graphics.new("screen", "PasteBin")
-    local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
-    local search = graphics.new("command", { label = "Search", type = "ok", priority = 1 })
-
-    graphics.append(screen, { type = "field", label = "Paste ID", value = "" })
-    graphics.addCommand(screen, back)
-    graphics.addCommand(screen, search)
-    graphics.handler(screen, {
-        [back] = function () graphics.display(previous) end,
-        [search] = function (id)
-            local content, status = socket.http.get(PROXY_HTTP .. "pastebin.com/raw/" .. id)
-
-            if status == 404 then
-                graphics.display(graphics.new("alert", "PasteBin", "Paste not found"))
-            else
-                local view = graphics.new("screen", "PasteBin")
-                local save = graphics.new("command", { label = "Back", type = "back", priority = 1 })
-
-                graphics.append(view, content)
-                graphics.addCommand(view, back)
-                graphics.addCommand(view, save)
-                graphics.handler(view, {
-                    [back] = app.main
-                })
-                graphics.display(view)
+            local cleanExpire = string.upper(string.trim(expireValue or "N"))
+            if not allowedExpire(cleanExpire) then
+                showAlert("Invalid expire value: " .. cleanExpire, screen, "error")
+                return
             end
+
+            local cleanPrivate = string.trim(privateValue or "1")
+            if cleanPrivate ~= "0" and cleanPrivate ~= "1" and cleanPrivate ~= "2" then
+                showAlert("Visibility must be 0, 1 or 2.", screen, "error")
+                return
+            end
+
+            conf["api_key"] = keyValue
+            conf["expire"] = cleanExpire
+            conf["private"] = cleanPrivate
+            local ok, code = pcall(saveConfig, conf)
+            if not ok or code ~= 0 then
+                showAlert("Could not save " .. CONFIG_PATH .. ".", screen, "error")
+                return
+            end
+            os.setenv("PASTEBIN_API", keyValue)
+            showAlert("Settings saved to " .. CONFIG_PATH .. ".", screen)
         end
     })
+    os.setproc("screen", screen)
+    graphics.display(screen)
 end
 
-app.handler = function (opt)
-    if opt == "New Paste" then
-    elseif opt == "Upload File" then
-        app.GetFile()
-    elseif opt == "View Paste" then
-        app.GetPaste()
-    elseif opt == "Config. PasteBin API KEY" then
+local function menuAction(option)
+    if option == "New Paste" then newPaste()
+    elseif option == "Upload File" then uploadFile()
+    elseif option == "View Paste" then viewPaste()
+    elseif option == "Set API Key" or option == "Change API Key" then configScreen()
     end
 end
 
@@ -101,32 +563,156 @@ app.main = function ()
     local previous = graphics.getCurrent()
     local menu = graphics.new("list", "PasteBin")
     local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
-    local select = graphics.new("command", { label = "Open", type = "ok", priority = 1 })
-    local switch = graphics.new("command", { label = "Switch to...", type = "ok", priority = 2 })
+    local open = graphics.new("command", { label = "Open", type = "ok", priority = 1 })
+    local switch = graphics.new("command", { label = "Switch to...", type = "screen", priority = 2 })
 
-    if PASTEBIN_API then
-        graphics.append(menu, "New Paste")
-        graphics.append(menu, "View Paste")
-    else
-        graphics.append(menu, "Config. PasteBin API KEY")
-        graphics.append(menu, "View Paste")
-    end
+    graphics.append(menu, "New Paste")
+    graphics.append(menu, "Upload File")
+    graphics.append(menu, "View Paste")
+    if apiKey(loadConfig()) then graphics.append(menu, "Change API Key") else graphics.append(menu, "Set API Key") end
+
     graphics.addCommand(menu, back)
-    graphics.addCommand(menu, select)
+    graphics.addCommand(menu, open)
     graphics.addCommand(menu, switch)
     graphics.handler(menu, {
         [back] = function ()
-            graphics.display(previous)
+            if previous then graphics.display(previous) end
             os.exit(0)
         end,
-        [select] = app.handler,
-        [graphics.fire] = app.handler,
+        [open] = menuAction,
+        [graphics.fire] = menuAction,
         [switch] = graphics.taskmngr
     })
-    graphics.display(menu)
-
-    os.setproc("name", "pastebin")
     os.setproc("screen", menu)
+    graphics.display(menu)
 end
 
-app.main()
+-- | Command line ------------------------------------------------------------
+
+local function usage()
+    print("OpenTTY PasteBin client")
+    print("  pastebin                 open the graphical client")
+    print("  pastebin <file>          upload a file and print its URL")
+    print("  pastebin view <id|url>   print the raw content of a paste")
+    print("  pastebin key [dev-key]   show or save the API developer key")
+    print("  pastebin config          show the effective settings")
+    print("  pastebin mirror [host]   show or save the mirror address")
+end
+
+local function cliKey(value)
+    local conf = loadConfig()
+    if isBlank(value) then
+        local key = apiKey(conf)
+        if key == nil then
+            print("pastebin: no API key configured")
+            os.exit(1)
+            return
+        end
+        print(key)
+        return
+    end
+    conf["api_key"] = string.trim(value)
+    local code = saveConfig(conf)
+    if code ~= 0 then
+        print("pastebin: cannot write " .. CONFIG_PATH)
+        os.exit(1)
+        return
+    end
+    print("pastebin: API key saved to " .. CONFIG_PATH)
+end
+
+local function cliMirror(value)
+    local conf = loadConfig()
+    if isBlank(value) then
+        print(mirrorAddress())
+        return
+    end
+    conf["mirror"] = normalizeMirror(value)
+    local code = saveConfig(conf)
+    if code ~= 0 then
+        print("pastebin: cannot write " .. CONFIG_PATH)
+        os.exit(1)
+        return
+    end
+    print("pastebin: mirror set to " .. conf["mirror"])
+end
+
+local function cliConfig()
+    local conf = loadConfig()
+    local key = apiKey(conf)
+    print("config: " .. CONFIG_PATH)
+    print("mirror: " .. mirrorAddress())
+    print("api key: " .. (key and mask(key) or "(none)"))
+    print("api url: " .. setting(conf, "api_url", "PASTEBIN_API_URL", API_URL))
+    print("raw url: " .. setting(conf, "raw_url", "PASTEBIN_RAW_URL", RAW_URL))
+    print("expire: " .. setting(conf, "expire", "PASTEBIN_EXPIRE", "N"))
+    print("visibility: " .. setting(conf, "private", "PASTEBIN_PRIVATE", "1"))
+    print("format: " .. setting(conf, "format", "PASTEBIN_FORMAT", "text"))
+end
+
+local function cli()
+    local first = arg[1]
+    if isBlank(first) then
+        app.main()
+    elseif first == "-h" or first == "--help" or first == "help" then
+        usage()
+    elseif first == "view" then
+        if isBlank(arg[2]) then
+            print("pastebin: view: paste URL or ID expected")
+            os.exit(2)
+            return
+        end
+        local content, failure = fetch(arg[2])
+        if content == nil then
+            print("pastebin: " .. tostring(failure))
+            os.exit(1)
+            return
+        end
+        print(content)
+    elseif first == "key" then
+        cliKey(arg[2])
+    elseif first == "mirror" then
+        cliMirror(arg[2])
+    elseif first == "config" then
+        cliConfig()
+    elseif string.startswith(first, "-") then
+        print("pastebin: " .. first .. ": unknown option")
+        usage()
+        os.exit(2)
+    else
+        local ok, content = pcall(io.read, first)
+        if not ok or isBlank(content) then
+            print("pastebin: " .. first .. ": cannot read file")
+            os.exit(1)
+            return
+        end
+        local url, failure = upload(content, baseName(first))
+        if url == nil then
+            print("pastebin: " .. tostring(failure))
+            os.exit(1)
+            return
+        end
+        pcall(io.write, url .. "\n", LAST_URL_PATH)
+        print(url)
+    end
+end
+
+-- Exposed for tests and for scripts that want to build their own UI.
+app.encode = urlencode
+app.parseId = pasteId
+app.upload = upload
+app.fetch = fetch
+app.loadConfig = loadConfig
+app.saveConfig = saveConfig
+app.mirror = mirrorAddress
+app.newPaste = newPaste
+app.uploadFile = uploadFile
+app.viewPaste = viewPaste
+app.configScreen = configScreen
+app.viewScreen = viewScreen
+app.uploadScreen = uploadScreen
+
+if os.getenv("PASTEBIN_AS_MODULE") then return app end
+
+os.setproc("name", "pastebin")
+cli()
