@@ -258,10 +258,13 @@ c:resetKeys()                  -- forget held keys (after a pause)
 `keyPressed` / `keyReleased` / `keyRepeated` instead.
 
 In the desktop shim printable keys (including Space) arrive as their character
-codes, Enter is `FIRE`, Backspace/Delete are `8`/`127`, and Home/End/PageUp/
-PageDown map to `GAME_C`/`GAME_D`/`GAME_A`/`GAME_B`. That is what lets a canvas
-implement a real text line editor (`cterm` does); on a phone keypad, use a
-`graphics.new("edit", ...)` text box for letters.
+codes, Enter is `\n` (`getGameAction` still reports `FIRE`), Backspace/Delete
+are `8`/`127`, and Home/End/PageUp/PageDown map to
+`GAME_C`/`GAME_D`/`GAME_A`/`GAME_B`. That is what lets a canvas implement a
+real text line editor (`cterm` does); on a phone keypad, use a
+`graphics.new("edit", ...)` text box for letters. The shim canvas follows the
+window body (240x320 is only the fallback), so `sizeChanged()` fires with the
+real drawing size and `c:size()` grows with the window.
 
 ---
 

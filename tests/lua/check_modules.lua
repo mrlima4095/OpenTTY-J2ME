@@ -589,6 +589,25 @@ if type(cterm) == "table" then
             tostring(app.term.revision))
         check("cterm typing enables abc", app.qwerty() == true)
 
+        -- In abc mode a printable key is text even when the device also maps
+        -- it to a game action (the desktop shim maps a/s/d/w/q/e/z/c).
+        app.term:setInput("")
+        app.key(app.canvas, string.byte("a"), graphics.canvas.action.LEFT)
+        check("cterm game-key letter types", app.term.input == "a", app.term.input)
+
+        -- Backspace is key code 8 while FIRE is the game action 8: editing
+        -- keys must win, or the phone text box opens instead of deleting.
+        app.key(app.canvas, 8, graphics.canvas.action.FIRE)
+        check("cterm backspace beats fire", app.term.input == "", app.term.input)
+        app.key(app.canvas, string.byte("x"), 0)
+        app.key(app.canvas, -8, 0)
+        check("cterm clear key backspaces", app.term.input == "", app.term.input)
+
+        -- The prompt is the bracketed `[user@host pwd] $` form.
+        local prompt = app.promptInfo().text
+        check("cterm prompt bracketed", string.sub(prompt, 1, 1) == "[" and
+            string.find(prompt, "] ", 1, true) ~= nil, prompt)
+
         -- 123 mode (no keyboard): FIRE opens the phone text box instead of
         -- running an empty line.
         app.qwerty(false)
@@ -625,8 +644,8 @@ if type(cterm) == "table" then
         if narrow ~= nil then
             local info = narrow.promptInfo()
             local charW = narrow.canvas:charWidth("M")
-            check("cterm prompt fits", info.width <= 12 * charW * 0.6 + charW,
-                tostring(info.width) .. " > " .. tostring(12 * charW * 0.6))
+            check("cterm prompt fits", info.width <= 12 * charW * 0.75 + charW,
+                tostring(info.width) .. " > " .. tostring(12 * charW * 0.75))
             check("cterm prompt has path", string.find(narrow.prompt(), "$ ", 1, true) ~= nil or
                 string.find(narrow.prompt(), "# ", 1, true) ~= nil, narrow.prompt())
             narrow.canvas:stop()

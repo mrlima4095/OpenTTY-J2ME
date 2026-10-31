@@ -33,14 +33,14 @@ prints ANSI escape sequences is rendered with colour.
 | Home / End (GAME_C / GAME_D) | start / end of the input line |
 | Left / Right | move the input cursor |
 | FIRE | open the phone text box (`123`) or run the line (`abc`) |
-| Backspace | delete before the cursor |
+| Backspace | delete before the cursor (key code 8 or -8) |
 | Delete | delete at the cursor |
 | Tab | complete a command (`/bin`) or a path |
 | printable | insert at the cursor and switch to `abc` |
 
 Up/Down scroll the terminal instead of walking the history: on a phone the
 scrollback is what the arrows are for. The history is still reachable through
-the **Hist** command.
+the **History** command.
 
 ## Typing modes
 
@@ -63,7 +63,7 @@ still changed for the session.
 | **Type** | open the phone text box for the command line |
 | **Send** | run the current line |
 | **Switch to...** | open the running-apps menu (`graphics.taskmngr`) |
-| **Hist** | pick a previous command from a list |
+| **History** | pick a previous command from a list (runs it) |
 | **Clear** | clear the screen and the scrollback |
 | **Font** | cycle the monospace font size |
 | **QWERTY** | toggle direct typing (`abc` / `123`) |
@@ -151,11 +151,11 @@ Four rules keep the MIDlet's LCDUI event thread free and the battery out of it:
 There is no animation loop and no timer: the app only asks for a repaint when
 the grid or the input line actually changes, so an idle terminal costs nothing.
 
-The prompt is measured with `c:textWidth` per segment instead of
-`#text * charWidth`: phones that fall back to a proportional font for
-`monospace` would otherwise leave a huge gap between the user, `@`, the host
-and the path. When the full `user@host:path$` prompt does not fit in 60% of the
-canvas width it compacts to `path$` and finally to a truncated `...tail$`.
+The prompt is `[user@host pwd] $` (`#` for root) and is written as one plain
+run, so phones that fall back to a proportional font for `monospace` do not
+open a gap between the user, `@`, the host and the path; an executed line
+echoes the prompt and the command in the same run. When the full prompt does
+not fit, it compacts to `[pwd] $` and finally to a truncated `[..tail] $`.
 
 ## Limits
 

@@ -75,6 +75,7 @@ public class Display {
      *  left a large empty margin beside the console JTextArea). */
     private void resetBody() {
         body.removeAll();
+        body.setPreferredSize(null);
         body.setLayout(new java.awt.GridBagLayout());
         bodyGbc = new java.awt.GridBagConstraints();
         bodyGbc.gridx = 0;
@@ -556,13 +557,22 @@ public class Display {
         body.setBackground(java.awt.Color.DARK_GRAY);
         JPanel view = (JPanel) canvasViews.get(canvas);
         if (view == null) { view = new CanvasView(canvas); canvasViews.put(canvas, view); }
+        // Use the whole window body instead of a fixed 240x320 phone frame:
+        // the canvas app gets the real size through sizeChanged() and can
+        // reflow (more columns and rows in cterm).
+        java.awt.Dimension extent = scroll.getViewport().getExtentSize();
+        int cw = extent.width > 240 ? extent.width : 240;
+        int ch = extent.height > 320 ? extent.height : 320;
+        view.setPreferredSize(new Dimension(cw, ch));
         java.awt.GridBagConstraints gbc = new java.awt.GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.weightx = 1.0;
         gbc.weighty = 1.0;
+        gbc.fill = java.awt.GridBagConstraints.BOTH;
         gbc.anchor = java.awt.GridBagConstraints.CENTER;
         body.add(view, gbc);
+        canvas.resize(cw, ch);
         body.validate();
         body.repaint();
         final JPanel target = view;
@@ -584,6 +594,11 @@ public class Display {
             setFocusable(true);
             setPreferredSize(new Dimension(canvas.getWidth(), canvas.getHeight()));
             setMinimumSize(new Dimension(canvas.getWidth(), canvas.getHeight()));
+            addComponentListener(new java.awt.event.ComponentAdapter() {
+                public void componentResized(java.awt.event.ComponentEvent ev) {
+                    canvas.resize(getWidth(), getHeight());
+                }
+            });
             addKeyListener(new KeyAdapter() {
                 public void keyPressed(KeyEvent ev) { dispatchKey(ev, true); }
                 public void keyReleased(KeyEvent ev) { dispatchKey(ev, false); }

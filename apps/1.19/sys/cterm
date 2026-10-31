@@ -16,8 +16,8 @@
 --   PageUp / PageDown page the scrollback (GAME_A / GAME_B)
 --
 -- Commands (soft keys): Type (phone text box), Send, Switch to... (running
--- apps), Hist (history picker), Clear, Font, QWERTY (abc/123 typing mode) and
--- Exit. Drag with the stylus to scroll the scrollback.
+-- apps), History (history picker), Clear, Font, QWERTY (abc/123 typing mode)
+-- and Exit. Drag with the stylus to scroll the scrollback.
 --
 -- On a phone the LCDUI event thread must stay free: the whole screen is
 -- redrawn only when the grid changes, a key press repaints just the input
@@ -1097,7 +1097,9 @@ cterm.has = has
 -- | Canvas application -------------------------------------------------------
 
 local FONTS = { "monospace small", "monospace medium", "monospace large" }
-local PAD = 2
+-- No padding: every pixel the canvas gives us becomes a character cell (a
+-- 240x320 phone gains a column over the old 2 px border).
+local PAD = 0
 local CONFIG = "/home/.ctermrc"
 -- The scrollback keeps 200 rows (~16 KB at 80 columns), so parsing more output
 -- than that only burns CPU on the phone: the extra text scrolls away unseen.
@@ -1218,9 +1220,11 @@ local function run(options)
         history = options.history or 200
     })
 
-    -- | Prompt segments, measured with textWidth instead of `#text * charW`:
-    -- | some phones fall back to a proportional font for "monospace", where a
-    -- | per-character advance leaves a huge gap between user, @ and host.
+    -- | Prompt: `[user@host pwd] $` (or `#` for root). It is one plain string
+    -- | instead of one styled segment per part, because a device that falls
+    -- | back to a proportional font for "monospace" positions each run by its
+    -- | cell count and would open a gap between user, @, the host and the path.
+    -- | Keeping it to one run also makes an executed line render as one string.
     local function promptInfo()
         if promptCache ~= nil then return promptCache end
 
@@ -1229,64 +1233,44 @@ local function run(options)
         local host = hostName()
         local pwd = os.getcwd() or "/"
         local mark = os.getuid() == 0 and "#" or "$"
-        local tail = mark .. " "
-        local limit = floor(t.cols * charW * 0.6)
-        if limit < 1 then limit = 1 end
+        local tail = " " .. mark .. " "
 
-        local function width(list)
-            local total = 0
-            for i = 1, #list do total = total + c:textWidth(list[i].text) end
-            return total
-        end
+        -- Keep the prompt inside 75% of the grid so there is always room to
+        -- type, and compact it on narrow screens.
+        local limit = floor(t.cols * 0.75)
+        if limit < 8 then limit = 8 end
 
-        local segments = {
-            { text = user, fg = 10, bold = true },
-            { text = "@", fg = 8 },
-            { text = host, fg = 14, bold = true },
-            { text = ":", fg = 8 },
-            { text = pwd, fg = 12, bold = true },
-            { text = tail, fg = 11, bold = true }
-        }
-
-        -- On a narrow screen the full user@host:path prompt would leave no
-        -- room to type, so fall back to the path and then to the marker.
-        if width(segments) > limit then
-            if c:textWidth(pwd) + c:textWidth(tail) > limit then
-                local keep = #pwd
-                while keep > 1 do
-                    local candidate = "..." .. string.sub(pwd, #pwd - keep + 1)
-                    if c:textWidth(candidate) + c:textWidth(tail) <= limit then
-                        pwd = candidate
-                        break
-                    end
-                    keep = keep - 1
-                end
+        local head = user .. "@" .. host .. " "
+        local text = "[" .. head .. pwd .. "]" .. tail
+        if #text > limit then
+            -- First keep user@host and shorten only the path.
+            local room = limit - #tail - 2 - #head - 2
+            if room >= 0 then
+                local short = pwd
+                if room < #pwd then short = ".." .. string.sub(pwd, #pwd - room + 1) end
+                text = "[" .. head .. short .. "]" .. tail
+            else
+                text = "[" .. pwd .. "]" .. tail
             end
-            segments = {
-                { text = pwd, fg = 12, bold = true },
-                { text = tail, fg = 11, bold = true }
-            }
         end
+        if #text > limit then
+            local room = limit - #tail - 4 -- two brackets and the ".."
+            if room < 0 then room = 0 end
+            local short = pwd
+            if room < #pwd then short = ".." .. string.sub(pwd, #pwd - room + 1) end
+            text = "[" .. short .. "]" .. tail
+        end
+        if #text > limit then text = tail end
 
-        local total = 0
-        for i = 1, #segments do
-            segments[i].width = c:textWidth(segments[i].text)
-            total = total + segments[i].width
-        end
-        promptCache = { segments = segments, width = total }
+        promptCache = { text = text, width = c:textWidth(text), fg = 14, bold = true }
         return promptCache
     end
 
+    -- | The echoed line shares one SGR state: the caller appends the command
+    -- | and the reset, so the whole `[user@host pwd] $ command` is one run.
     local function promptAnsi()
         local info = promptInfo()
-        local out = ""
-        for i = 1, #info.segments do
-            local segment = info.segments[i]
-            local code = "38;5;" .. segment.fg
-            if segment.bold then code = "1;" .. code end
-            out = out .. "\27[" .. code .. "m" .. segment.text .. "\27[0m"
-        end
-        return out
+        return "\27[1;36m" .. info.text
     end
 
     -- | Grid: one fillRect for the background, then each row's styled runs and
@@ -1366,17 +1350,13 @@ local function run(options)
         c:rect(0, y, W, lineH, true)
 
         local x = PAD
-        for i = 1, #info.segments do
-            local segment = info.segments[i]
-            c:color(colourOf(segment.fg))
-            c:text(segment.text, x, y, "left")
-            if segment.bold then c:text(segment.text, x + 1, y, "left") end
-            x = x + segment.width
-        end
+        c:color(colourOf(info.fg))
+        c:text(info.text, x, y, "left")
+        if info.bold then c:text(info.text, x + 1, y, "left") end
 
         local mode = qwerty and "abc" or "123"
         local modeWidth = c:textWidth(mode) + 4
-        local startX = PAD + info.width
+        local startX = x + info.width
         local available = floor((W - PAD - startX - modeWidth) / charW)
         if available < 1 then available = 1 end
         local offset = 0
@@ -1411,7 +1391,7 @@ local function run(options)
             or drawnRows ~= t.rows or drawnCols ~= t.cols
         local info = promptInfo()
         local mode = qwerty and "abc" or "123"
-        local inputKey = t.input .. "|" .. t.cursor .. "|" .. mode .. "|" .. info.width
+        local inputKey = t.input .. "|" .. t.cursor .. "|" .. mode .. "|" .. info.text
         local needInput = inputKey ~= drawnInput
         if not needGrid and not needInput and not force then return end
 
@@ -1508,7 +1488,9 @@ local function run(options)
 
         t:pushHistory(command)
         t.viewOffset = 0
-        t:write(promptAnsi() .. command .. "\n")
+        -- One run for the whole line: the reset happens after the command, so
+        -- a proportional font cannot open a gap between the prompt and it.
+        t:write(promptAnsi() .. command .. "\27[0m\n")
 
         local name = command
         local space = string.find(command, " ", 1, true)
@@ -1698,21 +1680,30 @@ local function run(options)
             return
         end
         local list = graphics.new("list", "History")
-        local use = graphics.new("command", { label = "Use", type = "ok", priority = 1 })
+        local run = graphics.new("command", { label = "Run", type = "ok", priority = 1 })
         local cancel = graphics.new("command", { label = "Cancel", type = "back", priority = 1 })
-        for i = #t.history, 1, -1 do
+        -- Only the newest entries: building a list of 200 items is what made
+        -- the picker take a moment to appear on a phone.
+        local first = #t.history - 29
+        if first < 1 then first = 1 end
+        for i = #t.history, first, -1 do
             graphics.append(list, t.history[i])
         end
-        graphics.addCommand(list, use)
+        graphics.addCommand(list, run)
         graphics.addCommand(list, cancel)
-        graphics.handler(list, {
-            [use] = function(selected)
-                if selected ~= nil and selected ~= "" then
-                    t:setInput(tostring(selected))
-                end
+        local function runSelected(selected)
+            if selected ~= nil and selected ~= "" then
+                t:setInput(tostring(selected))
+                c:display()
+                submitAsync()
+            else
                 c:display()
                 render()
-            end,
+            end
+        end
+        graphics.handler(list, {
+            [run] = runSelected,
+            [graphics.fire] = runSelected,
             [cancel] = function()
                 c:display()
             end
@@ -1728,8 +1719,38 @@ local function run(options)
         end
     end
 
+    local function insertKey(key)
+        -- A printable key means the device has a real keyboard, so switch to
+        -- direct typing from now on (the mode marker shows abc/123).
+        if not qwerty then setQwerty(true, false) end
+        t:bottom()
+        t:insertChar(string.char(key))
+        render()
+    end
+
     local function onKey(canvas, key, gameAction)
-        if gameAction == action.UP then
+        -- Edit keys first. Backspace is key code 8 (clear is -8) and FIRE is
+        -- the game action 8, so checking the game action here would open the
+        -- text box instead of deleting a character.
+        if key == 8 or key == -8 then
+            t:bottom()
+            t:backspaceInput()
+            render()
+        elseif key == 127 then
+            t:bottom()
+            t:deleteInput()
+            render()
+        elseif key == 9 then
+            t:bottom()
+            complete()
+            render()
+        elseif key == 10 or key == 13 then
+            onFire()
+        elseif qwerty and type(key) == "number" and key >= 32 and key <= 126 then
+            -- In direct typing mode a printable key is text, never a game key:
+            -- the desktop shim maps w/a/s/d/q/e/z/c to game actions for games.
+            insertKey(key)
+        elseif gameAction == action.UP then
             t:scrollUp(1)
             render()
         elseif gameAction == action.DOWN then
@@ -1755,25 +1776,8 @@ local function run(options)
         elseif gameAction == action.GAME_D then
             t:moveEnd()
             render()
-        elseif key == 8 or key == -8 then
-            t:bottom()
-            t:backspaceInput()
-            render()
-        elseif key == 127 then
-            t:bottom()
-            t:deleteInput()
-            render()
-        elseif key == 9 then
-            t:bottom()
-            complete()
-            render()
         elseif type(key) == "number" and key >= 32 and key <= 126 then
-            -- A printable key means the device has a real keyboard, so switch
-            -- to direct typing from now on (the mode marker shows abc/123).
-            if not qwerty then setQwerty(true, false) end
-            t:bottom()
-            t:insertChar(string.char(key))
-            render()
+            insertKey(key)
         end
     end
 
@@ -1850,7 +1854,7 @@ local function run(options)
     c:command("Type", "screen", 1, openInput)
     c:command("Send", "screen", 1, function() submitAsync() end)
     c:command("Switch to...", "screen", 2, function() graphics.taskmngr() end)
-    c:command("Hist", "screen", 2, openHistory)
+    c:command("History", "screen", 2, openHistory)
     c:command("Clear", "screen", 3, function()
         t:clear()
         t:clearScrollback()
