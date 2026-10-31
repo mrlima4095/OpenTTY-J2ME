@@ -316,20 +316,20 @@ local function showAlert(message, back, kind)
     if back then graphics.display(alert, back) else graphics.display(alert) end
 end
 
--- Show a short confirmation in the screen ticker and clear it from a
--- background thread: sleeping on the UI thread would freeze the screen, and
--- leaving the ticker up forever makes the app look stuck. `state.running` is
--- the screen's own flag, so a ticker left behind by a closed screen is never
--- touched (and `""` clears it, see the TICKER native).
-local function flashTicker(screen, state, text, millis)
+-- Show a short confirmation in the screen title and restore it from a
+-- background thread: sleeping on the UI thread would freeze the screen. A
+-- Ticker is not used because removing one leaves an empty band at the top on
+-- some devices; the title row is always there, so nothing reflows.
+-- `state.running` is the screen's own flag, so a closed screen is not touched.
+local function flashTitle(screen, state, text, millis)
     if screen == nil then return end
-    pcall(graphics.SetTicker, screen, tostring(text))
+    local original = graphics.title(screen)
+    if original == nil then original = "" end
+    pcall(graphics.SetTitle, screen, tostring(text))
     java.run(function ()
         java.sleep(millis or 3000)
-        -- nil removes the Ticker (see the TICKER native); an empty string
-        -- would leave an empty strip at the top of the screen.
-        if state == nil or state.running then pcall(graphics.SetTicker, screen, nil) end
-    end, "pastebin-ticker")
+        if state == nil or state.running then pcall(graphics.SetTitle, screen, original) end
+    end, "pastebin-title")
 end
 
 local function uploadScreen(content, name, previous)
@@ -370,12 +370,12 @@ local function uploadScreen(content, name, previous)
         if url == nil then
             state.error = failure
             graphics.SetText(status, "Upload failed:\n" .. tostring(failure))
-            flashTicker(screen, state, "Upload failed")
+            flashTitle(screen, state, "Upload failed")
             return
         end
         state.url = url
         graphics.SetText(status, url)
-        flashTicker(screen, state, "Paste created")
+        flashTitle(screen, state, "Paste created")
         pcall(io.write, url .. "\n", LAST_URL_PATH)
         print(url)
     end, "pastebin-upload")
@@ -427,12 +427,12 @@ local function viewScreen(id, previous)
         if not state.running then return end
         if content == nil then
             graphics.SetText(body, "Could not load the paste:\n" .. tostring(failure))
-            flashTicker(screen, state, "Paste not loaded")
+            flashTitle(screen, state, "Paste not loaded")
             return
         end
         state.content = content
         graphics.SetText(body, content)
-        flashTicker(screen, state, "Paste " .. id .. " loaded")
+        flashTitle(screen, state, "Paste " .. id .. " loaded")
     end, "pastebin-view")
 end
 
