@@ -438,7 +438,46 @@ if type(uirock) == "table" then
 end
 graphics = real_graphics
 
--- 20. cterm: the Canvas terminal engine (ANSI, wrapping, scrollback and the
+-- 20. graphics: LCDUI screens are tables with method syntax (`s:append(...)`,
+--     `s:addCommand(...)`, `s:handler({})` and `s:handler(function)`), while
+--     the natives still accept raw Displayables.
+local handle = graphics.new("screen", "Handle test")
+check("graphics screen handle", type(handle) == "screen", type(handle))
+if type(handle) == "screen" then
+    local methods = pcall(function()
+        handle:append({ type = "text", value = "hello" })
+        local cmd = graphics.new("command", { label = "OK", type = "ok", priority = 1 })
+        handle:addCommand(cmd)
+        handle:handler({ [cmd] = function() end })
+        handle:title("Renamed")
+    end)
+    check("graphics screen methods", methods)
+    check("graphics screen title", handle:title() == "Renamed", tostring(handle:title()))
+
+    local functionHandler = pcall(function()
+        local list = graphics.new("list", "Pick", "implicit")
+        list:append("one")
+        list:append("two")
+        list:addCommand(graphics.new("command", { label = "Select", type = "ok", priority = 1 }))
+        list:handler(function(screen, label) end)
+        list:title("Pick 2")
+    end)
+    check("graphics handler function", functionHandler)
+
+    -- A TextBox handle must still reach the Java TextBox for GetText/SetText.
+    local edit = graphics.new("edit", "Path", "/tmp/one.png")
+    check("graphics edit handle text", graphics.GetText(edit) == "/tmp/one.png", tostring(graphics.GetText(edit)))
+    graphics.SetText(edit, "/tmp/two.png")
+    check("graphics edit handle setText", graphics.GetText(edit) == "/tmp/two.png", tostring(graphics.GetText(edit)))
+
+    local previous = graphics.getCurrent()
+    handle:display()
+    check("graphics getCurrent identity", graphics.getCurrent() == handle)
+    check("graphics raw screen display", pcall(graphics.display, handle))
+    if previous ~= nil then graphics.display(previous) end
+end
+
+-- 21. cterm: the Canvas terminal engine (ANSI, wrapping, scrollback and the
 --     editable command line) plus one real canvas frame.
 CTERM_AS_MODULE = true
 local cterm = load_rock("cterm-app")
@@ -454,6 +493,10 @@ if type(cterm) == "table" then
     check("cterm ANSI red", ch == "R" and fg == 1, tostring(fg))
     local _, resetFg = T:cellAt(7, 1)
     check("cterm ANSI reset", resetFg == T.defaultFg, tostring(resetFg))
+    local R = cterm.new({ cols = 10, rows = 2 })
+    local revision = R.revision
+    R:write("x")
+    check("cterm revision bumps", R.revision > revision, tostring(R.revision))
     T:write("\27[38;5;196mX")
     local _, colourFg = T:cellAt(7, 1)
     check("cterm 256 colour", colourFg ~= nil and colourFg < 0, tostring(colourFg))
@@ -531,10 +574,64 @@ if type(cterm) == "table" then
         app.key(app.canvas, 9, 0)
         check("cterm tab completion", string.startswith(app.term.input, "nano"),
             app.term.input)
+
+        -- Up/Down scroll the terminal itself (the phone UX), not the history.
+        app.term:bottom()
+        app.key(app.canvas, 0, graphics.canvas.action.UP)
+        check("cterm up scrolls", app.term.viewOffset == 1, tostring(app.term.viewOffset))
+        app.key(app.canvas, 0, graphics.canvas.action.DOWN)
+        check("cterm down scrolls", app.term.viewOffset == 0, tostring(app.term.viewOffset))
+
+        -- Typing must not dirty the grid: only the input row is repainted.
+        local revision = app.term.revision
+        app.key(app.canvas, string.byte("z"), 0)
+        check("cterm typing keeps grid", app.term.revision == revision,
+            tostring(app.term.revision))
+        check("cterm typing enables abc", app.qwerty() == true)
+
+        -- 123 mode (no keyboard): FIRE opens the phone text box instead of
+        -- running an empty line.
+        app.qwerty(false)
+        app.term:setInput("")
+        app.fire()
+        check("cterm fire opens text box", app.qwerty() == false)
+        app.canvas:display()
+
+        -- abc mode: FIRE runs the line on a background thread (the event
+        -- thread must stay free on a real phone). This chunk is a top-level
+        -- script, so it does not own the interpreter and java.yield is a
+        -- no-op here; poll with java.sleep until the job has run.
+        app.qwerty(true)
+        app.term:setInput("clear")
+        app.fire()
+        local cleared = false
+        for i = 1, 50 do
+            if string.find(app.term:allText(), "cterm", 1, true) == nil then
+                cleared = true
+                break
+            end
+            java.sleep(100)
+        end
+        check("cterm fire in abc runs", cleared,
+            string.sub(app.term:allText(), 1, 40))
+
         app.term:setInput("echo cterm-ok")
         app.submit()
         check("cterm command capture", string.find(app.term:allText(), "cterm-ok", 1, true) ~= nil,
             app.term:allText())
+
+        -- A narrow screen compacts the prompt (user@host:path does not fit).
+        local narrow = cterm.run({ cols = 12, rows = 4 })
+        if narrow ~= nil then
+            local info = narrow.promptInfo()
+            local charW = narrow.canvas:charWidth("M")
+            check("cterm prompt fits", info.width <= 12 * charW * 0.6 + charW,
+                tostring(info.width) .. " > " .. tostring(12 * charW * 0.6))
+            check("cterm prompt has path", string.find(narrow.prompt(), "$ ", 1, true) ~= nil or
+                string.find(narrow.prompt(), "# ", 1, true) ~= nil, narrow.prompt())
+            narrow.canvas:stop()
+        end
+
         -- Do not close the canvas here: close() removes the Lua process that
         -- owns this test (the xterm shell) when no other screen is registered.
         app.canvas:stop()

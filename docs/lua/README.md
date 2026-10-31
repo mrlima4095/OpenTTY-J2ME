@@ -192,20 +192,41 @@ upvalues are not implemented.
 
 ## `graphics` Library
 
+Screens, lists, text boxes and alerts are returned as **handles**: plain Lua
+tables that answer method calls, so `screen:append(item)`,
+`screen:addCommand(cmd)`, `screen:handler({...})` and `screen:display()` are
+the same as the `graphics.*` functions below. `type(screen)` is still
+`"screen"`, and every function also accepts a raw screen object.
+
+```lua
+local list = graphics.new("list", "Menu", "implicit")
+list:append("Open")
+list:append("Exit")
+local open = graphics.new("command", { label = "Open", type = "ok", priority = 1 })
+list:addCommand(open)
+list:handler(function(screen, label, selected)
+    -- one function for every command: the screen handle, the command label
+    -- and then the field values (a table handler only gets the values)
+    if label == "Open" then print("opening " .. selected) end
+end)
+list:display()
+```
+
 | Function | Description |
 |----------|-------------|
 | `graphics.display(screen)` | Set the current screen |
-| `graphics.new(type, title, ...)` | Create a screen object |
-| `graphics.SetTitle(screen, title)` | Change the screen title |
-| `graphics.SetTicker(screen, ticker)` | Set a screen ticker |
+| `graphics.new(type, title, ...)` | Create a screen object (`screen`/`form`, `list`, `edit`/`textbox`, `alert`, `command`, `buffer`, `field`, `gauge`) |
+| `graphics.title(screen, [title])` / `graphics.SetTitle(screen, title)` | Read / change the screen title |
+| `graphics.ticker(screen, [text])` / `graphics.SetTicker(screen, ticker)` | Read / set a screen ticker |
 | `graphics.SetLabel(field, text)` / `graphics.GetLabel(field)` | Field label |
 | `graphics.GetText(field)` / `graphics.SetText(field, text)` | Field text |
-| `graphics.getCurrent()` | Get the current screen |
+| `graphics.getCurrent()` | Get the current screen handle |
 | `graphics.render(file)` | Render an image from a file |
 | `graphics.append(screen, field)` | Append a field to a screen |
 | `graphics.clear(screen)` | Clear a screen's fields |
 | `graphics.addCommand(screen, command)` | Add a command/button |
-| `graphics.handler(screen, {})` | Set screen button handlers |
+| `graphics.handler(screen, { [cmd] = fn })` | Set screen button handlers |
+| `graphics.handler(screen, fn)` | One handler for every command: `fn(screen, label, ...values)` |
 | `graphics.vibrate(ms)` | Vibrate the device |
 | `graphics.new("gauge", { label, interactive, maxValue, value })` | Standalone gauge |
 | `graphics.SetIndicator(alert, gauge)` | Show a gauge inside an alert |

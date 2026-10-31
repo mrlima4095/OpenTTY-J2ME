@@ -6,15 +6,22 @@
 -- (16/256/truecolour), cursor movement, erase sequences, wrapping,
 -- scrollback, a coloured prompt and an editable command line with history.
 --
--- Keys (desktop shim / keypad):
---   printable  insert at the cursor      Enter / FIRE  run the command
---   Left/Right move the cursor           Up/Down       command history
---   Backspace  delete before the cursor  Delete        delete at the cursor
---   F1 / F2    scrollback up / down      F3 / F4       start / end of line
+-- Keys (phone keypad / desktop shim):
+--   Up/Down    scroll the terminal up / down
+--   Left/Right move the input cursor
+--   FIRE       open the phone text box (123 mode) or run the line (abc mode)
+--   Backspace  delete before the cursor   Delete  delete at the cursor
 --   Tab        complete a command (/bin) or a path
+--   Home / End start / end of the line (GAME_C / GAME_D)
+--   PageUp / PageDown page the scrollback (GAME_A / GAME_B)
 --
--- Commands (soft keys): Type (phone text box), Send, PgUp, PgDn, Bottom,
--- Clear, Font and Exit. Drag with the stylus to scroll the scrollback.
+-- Commands (soft keys): Type (phone text box), Send, Switch to... (running
+-- apps), Hist (history picker), Clear, Font, QWERTY (abc/123 typing mode) and
+-- Exit. Drag with the stylus to scroll the scrollback.
+--
+-- On a phone the LCDUI event thread must stay free: the whole screen is
+-- redrawn only when the grid changes, a key press repaints just the input
+-- row, and shell commands run on a background thread (java.run).
 --
 -- Shell commands run in this process' scope, so `cd` changes the prompt and
 -- the next command's directory. Output is captured through io.setstdout and
@@ -130,9 +137,16 @@ function cterm.new(options)
     self.cursor = 1
     self.histIndex = 0
     self.savedInput = ""
+    -- Bumped by every cell mutation so the canvas only redraws the grid when
+    -- it actually changed (a full grid redraw is expensive on real phones).
+    self.revision = 0
     self:resetAttrs()
     self:clear()
     return self
+end
+
+function Terminal:touch()
+    self.revision = self.revision + 1
 end
 
 function Terminal:blankRowFor(cols)
@@ -164,6 +178,7 @@ function Terminal:attrBits()
 end
 
 function Terminal:clear()
+    self:touch()
     self.grid = {}
     for y = 1, self.rows do
         self.grid[y] = self:blankRow()
@@ -176,11 +191,13 @@ function Terminal:clear()
 end
 
 function Terminal:clearScrollback()
+    self:touch()
     self.scrollback = {}
     self.viewOffset = 0
 end
 
 function Terminal:scroll()
+    self:touch()
     local top = table.remove(self.grid, 1)
     if top ~= nil then
         self.scrollback[#self.scrollback + 1] = top
@@ -204,6 +221,7 @@ function Terminal:putChar(ch)
         self.cx = 1
         self:lineFeed()
     end
+    self:touch()
     local row = self.grid[self.cy]
     row.ch[self.cx] = ch
     row.fg[self.cx] = self.fg
@@ -284,6 +302,7 @@ function Terminal:sgr(params)
 end
 
 function Terminal:eraseLine(mode)
+    self:touch()
     local row = self.grid[self.cy]
     local from, to
     if mode == 1 then
@@ -304,6 +323,7 @@ function Terminal:eraseLine(mode)
 end
 
 function Terminal:eraseDisplay(mode)
+    self:touch()
     if mode == 1 then
         self:eraseLine(1)
         for y = 1, self.cy - 1 do
@@ -343,6 +363,7 @@ end
 function Terminal:insertLines(count)
     if count > self.rows - self.cy + 1 then count = self.rows - self.cy + 1 end
     if count < 1 then return end
+    self:touch()
     for y = self.rows, self.cy + count, -1 do
         self.grid[y] = self.grid[y - count]
     end
@@ -354,6 +375,7 @@ end
 function Terminal:deleteLines(count)
     if count > self.rows - self.cy + 1 then count = self.rows - self.cy + 1 end
     if count < 1 then return end
+    self:touch()
     for y = self.cy, self.rows - count do
         self.grid[y] = self.grid[y + count]
     end
@@ -366,6 +388,7 @@ function Terminal:deleteChars(count)
     local row = self.grid[self.cy]
     if count > self.cols - self.cx + 1 then count = self.cols - self.cx + 1 end
     if count < 1 then return end
+    self:touch()
     for x = self.cx, self.cols - count do
         row.ch[x] = row.ch[x + count]
         row.fg[x] = row.fg[x + count]
@@ -384,6 +407,7 @@ function Terminal:insertChars(count)
     local row = self.grid[self.cy]
     if count > self.cols - self.cx + 1 then count = self.cols - self.cx + 1 end
     if count < 1 then return end
+    self:touch()
     for x = self.cols, self.cx + count, -1 do
         row.ch[x] = row.ch[x - count]
         row.fg[x] = row.fg[x - count]
@@ -704,6 +728,7 @@ end
 
 function Terminal:resize(cols, rows)
     if cols == self.cols and rows == self.rows then return end
+    self:touch()
     local old = self.grid
     local oldRows = self.rows
     local oldCols = self.cols
@@ -770,14 +795,30 @@ cterm.has = has
 
 local FONTS = { "monospace small", "monospace medium", "monospace large" }
 local PAD = 2
+local CONFIG = "/home/.ctermrc"
 local THEME = {
     bg = 0x0C0C0C,
     fg = 0xD3D7CF,
     inputBg = 0x161616,
     cursor = 0xD3D7CF,
     cursorText = 0x0C0C0C,
-    scroll = 0xFCE94F
+    scroll = 0xFCE94F,
+    dim = 0x6E7069
 }
+
+-- | Remember the input mode across runs. `io.read`/`io.write` are wrapped in
+-- | pcall because /home may be read-only in a chroot.
+local function readQwerty()
+    local text = nil
+    pcall(function() text = io.read(CONFIG) end)
+    if type(text) ~= "string" then return false end
+    if string.find(text, "qwerty=1", 1, true) ~= nil then return true end
+    return false
+end
+
+local function writeQwerty(value)
+    pcall(io.write, "qwerty=" .. (value and "1" or "0") .. "\n", CONFIG)
+end
 
 local function run(options)
     options = options or {}
@@ -798,28 +839,45 @@ local function run(options)
         end
     end
 
-    local W, H = c:size()
-    local charW = 6
-    local lineH = 12
-    local cols = 80
-    local rows = 24
+    local W, H = 0, 0
+    local charW, lineH = 6, 12
+    local cols, rows = 80, 24
     local t = nil
     local app = nil
     local dragging = nil
+    local busy = false
+    local qwerty = readQwerty()
+    local promptCache = nil
+    local hostCache = nil
+    local drawnRevision = nil
+    local drawnOffset = nil
+    local drawnRows, drawnCols = nil, nil
+
+    local function hostName()
+        if hostCache == nil then
+            local text = nil
+            pcall(function() text = io.read("/etc/hostname") end)
+            if type(text) == "string" then text = string.trim(text) end
+            if type(text) ~= "string" or text == "" then text = "localhost" end
+            hostCache = text
+        end
+        return hostCache
+    end
 
     local function measure()
         W, H = c:size()
         c:font(FONTS[fontIndex])
         local width = c:charWidth("M")
-        if width == nil or width < 1 then width = 6 end
+        if type(width) ~= "number" or width < 1 then width = 6 end
         charW = width
         local height = c:metrics()
-        if height == nil or height < 1 then height = charW + 2 end
+        if type(height) ~= "number" or height < 1 then height = charW + 2 end
         lineH = height
         cols = floor((W - PAD * 2) / charW)
         rows = floor((H - PAD * 2 - lineH) / lineH)
         if cols < 4 then cols = 4 end
         if rows < 1 then rows = 1 end
+        promptCache = nil
     end
 
     measure()
@@ -833,38 +891,70 @@ local function run(options)
         history = options.history or 200
     })
 
-    local function promptSegments()
+    -- | Prompt segments, measured with textWidth instead of `#text * charW`:
+    -- | some phones fall back to a proportional font for "monospace", where a
+    -- | per-character advance leaves a huge gap between user, @ and host.
+    local function promptInfo()
+        if promptCache ~= nil then return promptCache end
+
         local scope = os.scope() or {}
         local user = scope["USER"] or "user"
-        local host = io.read("/etc/hostname")
-        if host == nil then
-            host = "localhost"
-        else
-            host = string.trim(host)
-        end
-        if host == "" then host = "localhost" end
+        local host = hostName()
         local pwd = os.getcwd() or "/"
-        local budget = t.cols - (#user + #host + 6)
-        if budget < 4 then budget = 4 end
-        if #pwd > budget then
-            pwd = "..." .. string.sub(pwd, #pwd - budget + 4)
-        end
         local mark = os.getuid() == 0 and "#" or "$"
-        return {
+        local tail = mark .. " "
+        local limit = floor(t.cols * charW * 0.6)
+        if limit < 1 then limit = 1 end
+
+        local function width(list)
+            local total = 0
+            for i = 1, #list do total = total + c:textWidth(list[i].text) end
+            return total
+        end
+
+        local segments = {
             { text = user, fg = 10, bold = true },
             { text = "@", fg = 8 },
             { text = host, fg = 14, bold = true },
             { text = ":", fg = 8 },
             { text = pwd, fg = 12, bold = true },
-            { text = mark .. " ", fg = 11, bold = true }
+            { text = tail, fg = 11, bold = true }
         }
+
+        -- On a narrow screen the full user@host:path prompt would leave no
+        -- room to type, so fall back to the path and then to the marker.
+        if width(segments) > limit then
+            if c:textWidth(pwd) + c:textWidth(tail) > limit then
+                local keep = #pwd
+                while keep > 1 do
+                    local candidate = "..." .. string.sub(pwd, #pwd - keep + 1)
+                    if c:textWidth(candidate) + c:textWidth(tail) <= limit then
+                        pwd = candidate
+                        break
+                    end
+                    keep = keep - 1
+                end
+            end
+            segments = {
+                { text = pwd, fg = 12, bold = true },
+                { text = tail, fg = 11, bold = true }
+            }
+        end
+
+        local total = 0
+        for i = 1, #segments do
+            segments[i].width = c:textWidth(segments[i].text)
+            total = total + segments[i].width
+        end
+        promptCache = { segments = segments, width = total }
+        return promptCache
     end
 
     local function promptAnsi()
-        local segments = promptSegments()
+        local info = promptInfo()
         local out = ""
-        for i = 1, #segments do
-            local segment = segments[i]
+        for i = 1, #info.segments do
+            local segment = info.segments[i]
             local code = "38;5;" .. segment.fg
             if segment.bold then code = "1;" .. code end
             out = out .. "\27[" .. code .. "m" .. segment.text .. "\27[0m"
@@ -872,56 +962,16 @@ local function run(options)
         return out
     end
 
-    local function promptWidth()
-        local segments = promptSegments()
-        local width = 0
-        for i = 1, #segments do
-            width = width + #segments[i].text
-        end
-        return width
-    end
-
-    local function drawInput()
-        local y = PAD + t.rows * lineH
-        c:color(THEME.inputBg)
-        c:rect(0, y, W, lineH, true)
-
-        local segments = promptSegments()
-        local x = PAD
-        for i = 1, #segments do
-            local segment = segments[i]
-            c:color(cterm.resolve(segment.fg, 7))
-            c:text(segment.text, x, y, "left")
-            if segment.bold then c:text(segment.text, x + 1, y, "left") end
-            x = x + #segment.text * charW
-        end
-
-        local promptCols = promptWidth()
-        local available = t.cols - promptCols
-        if available < 1 then available = 1 end
-        local offset = 0
-        if t.cursor - 1 > available then offset = t.cursor - 1 - available end
-        local text = string.sub(t.input, offset + 1, offset + available)
-        c:color(THEME.fg)
-        c:text(text, PAD + promptCols * charW, y, "left")
-
-        local cursorX = PAD + (promptCols + (t.cursor - 1 - offset)) * charW
-        if cursorX > W - charW then cursorX = W - charW end
-        if cursorX < 0 then cursorX = 0 end
-        c:color(THEME.cursor)
-        c:rect(cursorX, y + 1, charW, lineH - 2, true)
-        local under = string.sub(t.input, t.cursor, t.cursor)
-        if under ~= "" then
-            c:color(THEME.cursorText)
-            c:text(under, cursorX, y, "left")
-        end
-    end
-
-    local function draw()
-        c:clear()
-        c:font(FONTS[fontIndex])
-
+    -- | Grid: one fillRect for the background, then only the runs that carry
+    -- | content. Blank default cells cost nothing, which keeps a full redraw
+    -- | affordable on a phone.
+    local function drawGrid()
         local visible = t:viewRows()
+        local gridHeight = t.rows * lineH
+
+        c:color(THEME.bg)
+        c:rect(0, PAD, W, gridHeight, true)
+
         for y = 1, t.rows do
             local row = visible[y]
             local py = PAD + (y - 1) * lineH
@@ -931,16 +981,16 @@ local function run(options)
                 local fg = row.fg[x] or t.defaultFg
                 local bg = row.bg[x] or t.defaultBg
                 local at = row.at[x] or 0
-                local effectiveFg, effectiveBg = fg, bg
-                if has(at, AT_REVERSE) then effectiveFg, effectiveBg = bg, fg end
+                local effectiveBg = bg
+                if has(at, AT_REVERSE) then effectiveBg = fg end
                 local start = x
                 while x <= t.cols do
                     local nextFg = row.fg[x] or t.defaultFg
                     local nextBg = row.bg[x] or t.defaultBg
                     local nextAt = row.at[x] or 0
-                    local unusedFg, nextEffectiveBg = nextFg, nextBg
-                    if has(nextAt, AT_REVERSE) then unusedFg, nextEffectiveBg = nextBg, nextFg end
-                    if nextEffectiveBg ~= effectiveBg then break end
+                    local stopBg = nextBg
+                    if has(nextAt, AT_REVERSE) then stopBg = nextFg end
+                    if stopBg ~= effectiveBg then break end
                     x = x + 1
                 end
                 if effectiveBg ~= t.defaultBg then
@@ -956,15 +1006,18 @@ local function run(options)
                 local at = row.at[x] or 0
                 local start = x
                 local text = ""
+                local content = false
                 while x <= t.cols do
                     local nextFg = row.fg[x] or t.defaultFg
                     local nextBg = row.bg[x] or t.defaultBg
                     local nextAt = row.at[x] or 0
                     if nextFg ~= fg or nextBg ~= bg or nextAt ~= at then break end
-                    text = text .. (row.ch[x] or " ")
+                    local ch = row.ch[x] or " "
+                    if ch ~= " " or bg ~= t.defaultBg or at ~= 0 then content = true end
+                    text = text .. ch
                     x = x + 1
                 end
-                if text ~= "" then
+                if content and not has(at, AT_HIDDEN) then
                     local effectiveFg = fg
                     if has(at, AT_REVERSE) then effectiveFg = bg end
                     local colour = cterm.resolve(effectiveFg, t.defaultFg)
@@ -973,7 +1026,7 @@ local function run(options)
                     local tx = PAD + (start - 1) * charW
                     c:text(text, tx, py, "left")
                     if has(at, AT_BOLD) then c:text(text, tx + 1, py, "left") end
-                    if has(at, AT_UNDERLINE) and not has(at, AT_HIDDEN) then
+                    if has(at, AT_UNDERLINE) then
                         c:line(tx, py + lineH - 1, tx + #text * charW - 1, py + lineH - 1)
                     end
                 end
@@ -990,8 +1043,68 @@ local function run(options)
             c:color(THEME.scroll)
             c:text(label, W - 2, 0, "right")
         end
+    end
 
+    -- | Input row: prompt, editable line, block cursor and the mode marker.
+    -- | Redrawn on every key press; it is a handful of calls, unlike the grid.
+    local function drawInput()
+        local y = PAD + t.rows * lineH
+        c:color(THEME.inputBg)
+        c:rect(0, y, W, lineH, true)
+
+        local info = promptInfo()
+        local x = PAD
+        for i = 1, #info.segments do
+            local segment = info.segments[i]
+            c:color(cterm.resolve(segment.fg, 7))
+            c:text(segment.text, x, y, "left")
+            if segment.bold then c:text(segment.text, x + 1, y, "left") end
+            x = x + segment.width
+        end
+
+        local mode = qwerty and "abc" or "123"
+        local modeWidth = c:textWidth(mode) + 4
+        local startX = PAD + info.width
+        local available = floor((W - PAD - startX - modeWidth) / charW)
+        if available < 1 then available = 1 end
+        local offset = 0
+        if t.cursor - 1 > available then offset = t.cursor - 1 - available end
+        local text = string.sub(t.input, offset + 1, offset + available)
+
+        c:color(THEME.fg)
+        c:text(text, startX, y, "left")
+
+        local before = string.sub(text, 1, t.cursor - 1 - offset)
+        local cursorX = startX + c:textWidth(before)
+        if cursorX > W - charW then cursorX = W - charW end
+        if cursorX < 0 then cursorX = 0 end
+        c:color(THEME.cursor)
+        c:rect(cursorX, y + 1, charW, lineH - 2, true)
+        local under = string.sub(t.input, t.cursor, t.cursor)
+        if under ~= "" then
+            c:color(THEME.cursorText)
+            c:text(under, cursorX, y, "left")
+        end
+
+        c:color(THEME.dim)
+        c:text(mode, W - PAD, y, "right")
+    end
+
+    local function render()
+        local needGrid = drawnRevision ~= t.revision or drawnOffset ~= t.viewOffset
+            or drawnRows ~= t.rows or drawnCols ~= t.cols
+        if needGrid then
+            drawGrid()
+            drawnRevision = t.revision
+            drawnOffset = t.viewOffset
+            drawnRows = t.rows
+            drawnCols = t.cols
+        end
         drawInput()
+        if app ~= nil then
+            app.cols = t.cols
+            app.rows = t.rows
+        end
         c:repaint()
     end
 
@@ -999,23 +1112,23 @@ local function run(options)
         t:write("\27[1;36mcterm\27[0m - Canvas terminal emulator\n")
         t:write("\n")
         t:write("\27[1mKeys\27[0m\n")
-        t:write("  Enter / FIRE   run the command\n")
-        t:write("  Left / Right   move the cursor\n")
-        t:write("  Up / Down      command history\n")
+        t:write("  Up / Down      scroll the terminal\n")
+        t:write("  Left / Right   move the input cursor\n")
+        t:write("  FIRE           type a command (abc mode: run it)\n")
         t:write("  Backspace      delete before the cursor\n")
         t:write("  Delete         delete at the cursor\n")
-        t:write("  F1 / F2        scrollback up / down\n")
-        t:write("  F3 / F4        start / end of the line\n")
         t:write("  Tab            complete a command or a path\n")
         t:write("\n")
-        t:write("\27[1mBuilt-in commands\27[0m\n")
+        t:write("\27[1mCommands\27[0m\n")
         t:write("  clear          clear the screen and scrollback\n")
         t:write("  colors         show the ANSI colour palette\n")
         t:write("  history        list the command history\n")
+        t:write("  qwerty         toggle direct typing (abc/123)\n")
         t:write("  help           this text\n")
         t:write("  exit           close cterm\n")
         t:write("\n")
-        t:write("On a phone keypad use \27[1mType\27[0m to enter letters.\n")
+        t:write("In 123 mode FIRE opens the phone text box; in abc mode it runs\n")
+        t:write("the line. Use \27[1mSwitch to...\27[0m for the running apps.\n")
     end
 
     local function writeColors()
@@ -1055,10 +1168,16 @@ local function run(options)
         c:close()
     end
 
+    local function setQwerty(value, persist)
+        qwerty = value and true or false
+        if persist then writeQwerty(qwerty) end
+        render()
+    end
+
     local function execute(command)
         command = string.trim(command or "")
         if command == "" then
-            draw()
+            render()
             return
         end
 
@@ -1084,6 +1203,9 @@ local function run(options)
         elseif name == "history" then
             writeHistory()
             handled = true
+        elseif name == "qwerty" then
+            setQwerty(not qwerty, true)
+            handled = true
         elseif name == "exit" or name == "logout" then
             closeApp()
             return
@@ -1097,6 +1219,9 @@ local function run(options)
             io.setstdout(previous)
             local text = tostring(output)
             if string.sub(text, 1, 1) == "\n" then text = string.sub(text, 2) end
+            if #text > 65536 then
+                text = string.sub(text, 1, 65536) .. "\n[output truncated]\n"
+            end
             if text ~= "" then t:write(text) end
             if not ok then
                 t:write("\27[1;31m" .. tostring(status) .. "\27[0m\n")
@@ -1105,16 +1230,51 @@ local function run(options)
 
         if t.cx ~= 1 then t:write("\n") end
         t.viewOffset = 0
-        c:display()
-        draw()
+        -- The working directory (and maybe the host name) changed.
+        promptCache = nil
+        hostCache = nil
+        -- No c:display() here: this may run on the background thread, and
+        -- present() would call Display.setCurrent() off the event thread.
+        -- The canvas is already current (FIRE/Send run from it) and render()
+        -- posts a coalesced repaint, so only the grid needs updating.
+        render()
     end
 
+    -- | Run a command. On a phone the LCDUI event thread must not run the
+    -- | shell: a slow command would freeze the whole MIDP event loop, so the
+    -- | job is handed to a background thread and the handler returns at once.
+    local function runAsync(command)
+        if busy then return end
+        if command == nil or string.trim(command) == "" then
+            render()
+            return
+        end
+        busy = true
+        local function job()
+            local ok, err = pcall(execute, command)
+            busy = false
+            if not ok then
+                t:write("\27[1;31m" .. tostring(err) .. "\27[0m\n")
+                render()
+            end
+        end
+        local started = false
+        if java ~= nil and java.run ~= nil then
+            started = pcall(java.run, job, "cterm")
+        end
+        if not started then job() end
+    end
+
+    -- | Synchronous path: used by tests and by anything that already runs off
+    -- | the event thread.
     local function submit()
         execute(t:submit())
     end
 
-    local function snapBottom()
-        if t.viewOffset > 0 then t:bottom() end
+    local function submitAsync()
+        if busy then return end
+        local command = t:submit()
+        runAsync(command)
     end
 
     local function complete()
@@ -1187,58 +1347,6 @@ local function run(options)
         end
     end
 
-    local function onKey(canvas, key, gameAction)
-        if gameAction == action.UP then
-            snapBottom()
-            t:historyPrev()
-            draw()
-        elseif gameAction == action.DOWN then
-            snapBottom()
-            t:historyNext()
-            draw()
-        elseif gameAction == action.LEFT then
-            snapBottom()
-            t:moveInput(-1)
-            draw()
-        elseif gameAction == action.RIGHT then
-            snapBottom()
-            t:moveInput(1)
-            draw()
-        elseif gameAction == action.FIRE then
-            submit()
-        elseif gameAction == action.GAME_A then
-            t:scrollUp(t.rows - 1)
-            draw()
-        elseif gameAction == action.GAME_B then
-            t:scrollDown(t.rows - 1)
-            draw()
-        elseif gameAction == action.GAME_C then
-            snapBottom()
-            t:moveHome()
-            draw()
-        elseif gameAction == action.GAME_D then
-            snapBottom()
-            t:moveEnd()
-            draw()
-        elseif key == 8 or key == -8 then
-            snapBottom()
-            t:backspaceInput()
-            draw()
-        elseif key == 127 then
-            snapBottom()
-            t:deleteInput()
-            draw()
-        elseif key == 9 then
-            snapBottom()
-            complete()
-            draw()
-        elseif key >= 32 and key <= 126 then
-            snapBottom()
-            t:insertChar(string.char(key))
-            draw()
-        end
-    end
-
     local function openInput()
         local box = graphics.new("edit", "Command", t.input)
         local runCommand = graphics.new("command", { label = "Run", type = "ok", priority = 1 })
@@ -1249,7 +1357,7 @@ local function run(options)
             [runCommand] = function(text)
                 t:setInput(text or "")
                 c:display()
-                submit()
+                submitAsync()
             end,
             [cancel] = function()
                 c:display()
@@ -1258,22 +1366,118 @@ local function run(options)
         graphics.display(box)
     end
 
+    local function openHistory()
+        if #t.history == 0 then
+            t:write("history: empty\n")
+            render()
+            return
+        end
+        local list = graphics.new("list", "History")
+        local use = graphics.new("command", { label = "Use", type = "ok", priority = 1 })
+        local cancel = graphics.new("command", { label = "Cancel", type = "back", priority = 1 })
+        for i = #t.history, 1, -1 do
+            graphics.append(list, t.history[i])
+        end
+        graphics.addCommand(list, use)
+        graphics.addCommand(list, cancel)
+        graphics.handler(list, {
+            [use] = function(selected)
+                if selected ~= nil and selected ~= "" then
+                    t:setInput(tostring(selected))
+                end
+                c:display()
+                render()
+            end,
+            [cancel] = function()
+                c:display()
+            end
+        })
+        graphics.display(list)
+    end
+
+    local function onFire()
+        if qwerty then
+            submitAsync()
+        else
+            openInput()
+        end
+    end
+
+    local function onKey(canvas, key, gameAction)
+        if gameAction == action.UP then
+            t:scrollUp(1)
+            render()
+        elseif gameAction == action.DOWN then
+            t:scrollDown(1)
+            render()
+        elseif gameAction == action.LEFT then
+            t:moveInput(-1)
+            render()
+        elseif gameAction == action.RIGHT then
+            t:moveInput(1)
+            render()
+        elseif gameAction == action.FIRE then
+            onFire()
+        elseif gameAction == action.GAME_A then
+            t:scrollUp(t.rows - 1)
+            render()
+        elseif gameAction == action.GAME_B then
+            t:scrollDown(t.rows - 1)
+            render()
+        elseif gameAction == action.GAME_C then
+            t:moveHome()
+            render()
+        elseif gameAction == action.GAME_D then
+            t:moveEnd()
+            render()
+        elseif key == 8 or key == -8 then
+            t:bottom()
+            t:backspaceInput()
+            render()
+        elseif key == 127 then
+            t:bottom()
+            t:deleteInput()
+            render()
+        elseif key == 9 then
+            t:bottom()
+            complete()
+            render()
+        elseif type(key) == "number" and key >= 32 and key <= 126 then
+            -- A printable key means the device has a real keyboard, so switch
+            -- to direct typing from now on (the mode marker shows abc/123).
+            if not qwerty then setQwerty(true, false) end
+            t:bottom()
+            t:insertChar(string.char(key))
+            render()
+        end
+    end
+
     local function setFont(index)
         fontIndex = (index - 1) % #FONTS + 1
         measure()
         t:resize(cols, rows)
-        draw()
+        drawnRevision = nil
+        render()
     end
 
     app = {
         canvas = c,
         term = t,
-        render = draw,
+        render = render,
         submit = submit,
         execute = execute,
         key = onKey,
+        fire = onFire,
         prompt = promptAnsi,
+        promptInfo = promptInfo,
         font = setFont,
+        history = openHistory,
+        type = openInput,
+        qwerty = function(value)
+            if value == nil then return qwerty end
+            setQwerty(value, false)
+            return qwerty
+        end,
         cols = cols,
         rows = rows
     }
@@ -1291,11 +1495,11 @@ local function run(options)
         if delta >= lineH then
             t:scrollUp(1)
             dragging = y
-            draw()
+            render()
         elseif delta <= -lineH then
             t:scrollDown(1)
             dragging = y
-            draw()
+            render()
         end
     end
     c.pointerReleased = function()
@@ -1304,21 +1508,22 @@ local function run(options)
     c.size = function(canvas, width, height)
         measure()
         if t ~= nil then t:resize(cols, rows) end
-        draw()
+        drawnRevision = nil
+        render()
     end
 
-    c:command("Type", "screen", openInput)
-    c:command("Send", "screen", submit)
-    c:command("PgUp", "screen", function() t:scrollUp(t.rows - 1) draw() end)
-    c:command("PgDn", "screen", function() t:scrollDown(t.rows - 1) draw() end)
-    c:command("Bottom", "screen", function() t:bottom() draw() end)
-    c:command("Clear", "screen", function()
+    c:command("Type", "screen", 1, openInput)
+    c:command("Send", "screen", 1, function() submitAsync() end)
+    c:command("Switch to...", "screen", 2, function() graphics.taskmngr() end)
+    c:command("Hist", "screen", 2, openHistory)
+    c:command("Clear", "screen", 3, function()
         t:clear()
         t:clearScrollback()
-        draw()
+        render()
     end)
-    c:command("Font", "screen", function() setFont(fontIndex + 1) end)
-    c:command("Exit", "exit", closeApp)
+    c:command("Font", "screen", 3, function() setFont(fontIndex + 1) end)
+    c:command("QWERTY", "screen", 4, function() setQwerty(not qwerty, true) end)
+    c:command("Exit", "screen", 5, closeApp)
 
     c:display()
 
@@ -1332,7 +1537,7 @@ local function run(options)
             t:write("scrollback line " .. i .. "\n")
         end
         t:scrollUp(3)
-        draw()
+        render()
     end
 
     return app

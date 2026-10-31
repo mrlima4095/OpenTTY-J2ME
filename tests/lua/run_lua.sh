@@ -22,7 +22,7 @@ LOG="$ROOT/data/mnt/opentty/runtime-run.log"
 mkdir -p "$ROOT/data/mnt/opentty"
 rm -f "$RESULT" "$LOG"
 
-OPENTTY_JVM_OPTS="-Dopentty.headless=1 -Dopentty.smokeWait=7000" \
+OPENTTY_JVM_OPTS="-Dopentty.headless=1 -Dopentty.smokeWait=7000 -Dopentty.smokeAfter=20000" \
     timeout 300 bash pc/run.sh --user opentty --pass opentty --smoke -- \
     "$HERE/check_runtime.lua" > "$LOG" 2>&1
 status=$?

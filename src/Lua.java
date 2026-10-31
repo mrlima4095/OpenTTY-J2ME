@@ -41,6 +41,14 @@ public class Lua {
     // releases ownership so the other side can run between steps.
     private Thread luaOwner = null;
     private int luaDepth = 0;
+    // | (LCDUI screen handles)
+    // `graphics.new` returns a plain table whose metatable holds the Java
+    // Displayable under __screen and uses the `graphics` table as __index, so
+    // `screen:append(item)`, `screen:addCommand(cmd)` and `screen:handler({})`
+    // are the same calls as `graphics.append(screen, item)`. Every graphics
+    // native accepts both the handle and a raw Displayable. The cache keeps
+    // getCurrent() stable so `graphics.getCurrent() == screen` still holds.
+    private Hashtable screenHandles = new Hashtable();
     // | (LuaFunction)
     public static final int PRINT = 0, ERROR = 1, PCALL = 2, REQUIRE = 3, LOADS = 4, PAIRS = 5, GC = 6, TOSTRING = 7, TONUMBER = 8, SELECT = 9, TYPE = 10, GETPROPERTY = 11, SETMETATABLE = 12, GETMETATABLE = 13, IPAIRS = 14, RANDOM = 15, ASSERT = 16, RAWGET = 17, RAWSET = 18, RAWEQUAL = 19, RAWLEN = 20, NEXT = 21;
     public static final int DEBUG_TRACEBACK = 1100, DEBUG_GETINFO = 1101, DEBUG_GETREGISTRY = 1102;
@@ -132,8 +140,8 @@ public class Lua {
         funcs = new String[] { "register", "unregister", "list", "pending", "setAlarm" }; loaders = new int[] { PUSH_REGISTER, PUSH_UNREGISTER, PUSH_LIST, PUSH_PENDING, PUSH_SET_ALARM };
         for (int i = 0; i< funcs.length; i++) { push.put(funcs[i], new LuaFunction(loaders[i])); } globals.put("push", push);
 
-        funcs = new String[] { "display", "new", "render", "append", "addCommand", "handler", "getCurrent", "SetTitle", "SetTicker", "vibrate", "SetLabel", "SetText", "GetLabel", "GetText", "clear", "taskmngr", "SetIndicator", "SetGauge", "GetGauge" }; 
-        loaders = new int[] { DISPLAY, NEW, RENDER, APPEND, ADDCMD, HANDLER, GETCURRENT, TITLE, TICKER, VIBRATE, SETLABEL, SETTEXT, GETLABEL, GETTEXT, CLEAR_SCREEN, TASKMNGR, SETINDICATOR, SETGAUGE, GETGAUGE };
+        funcs = new String[] { "display", "new", "render", "append", "addCommand", "handler", "getCurrent", "SetTitle", "SetTicker", "vibrate", "SetLabel", "SetText", "GetLabel", "GetText", "clear", "taskmngr", "SetIndicator", "SetGauge", "GetGauge", "title", "ticker" }; 
+        loaders = new int[] { DISPLAY, NEW, RENDER, APPEND, ADDCMD, HANDLER, GETCURRENT, TITLE, TICKER, VIBRATE, SETLABEL, SETTEXT, GETLABEL, GETTEXT, CLEAR_SCREEN, TASKMNGR, SETINDICATOR, SETGAUGE, GETGAUGE, TITLE, TICKER };
         for (int i = 0; i < funcs.length; i++) { graphics.put(funcs[i], new LuaFunction(loaders[i])); } graphics.put("db", midlet.graphics); graphics.put("fire", List.SELECT_COMMAND); graphics.put("CONTINUOUS_IDLE", new Double(Gauge.CONTINUOUS_IDLE)); graphics.put("INCREMENTAL_IDLE", new Double(Gauge.INCREMENTAL_IDLE)); graphics.put("CONTINUOUS_RUNNING", new Double(Gauge.CONTINUOUS_RUNNING)); graphics.put("INCREMENTAL_UPDATING", new Double(Gauge.INCREMENTAL_UPDATING)); globals.put("graphics", graphics);
 
         // Package [graphics.canvas] - free-form drawing surface (see LuaCanvas).
@@ -1994,6 +2002,60 @@ public class Lua {
     // |
     public Object getKernel() { return new LuaFunction(KERNEL); }
     // |
+    // | (Screen handle: table -> Java Displayable, metatable -> handle)
+    // LCDUI screens are handed to Lua as plain tables so scripts can use method
+    // syntax: `s:append(item)`, `s:addCommand(cmd)`, `s:handler({...})`,
+    // `s:display()`. The metatable keeps the Java Displayable under __screen
+    // and exposes the `graphics` table as __index, so every method is the
+    // matching native with the handle as argument #1. Natives accept both the
+    // handle and a raw Displayable (see screenOf), which keeps older scripts
+    // working and lets Java-side screens (boot menu, task manager) mix in.
+    private Object screenHandle(Displayable screen) {
+        if (screen == null) { return null; }
+        Object cached = screenHandles.get(screen);
+        if (cached != null) { return cached; }
+
+        Hashtable handle = new Hashtable();
+        Hashtable meta = new Hashtable();
+        Object graphics = globals.get("graphics");
+        meta.put("__index", graphics instanceof Hashtable ? graphics : new Hashtable());
+        meta.put("__screen", screen);
+        handle.put("__metatable", meta);
+
+        // Screens are created per app; the cache only keeps the identity of
+        // screens a script can still reach, so drop it when it grows.
+        if (screenHandles.size() > 64) { screenHandles.clear(); }
+        screenHandles.put(screen, handle);
+        return handle;
+    }
+    // | (Java Displayable behind a screen handle, or a raw Displayable)
+    private Displayable screenOf(Object value) {
+        if (value instanceof Displayable) { return (Displayable) value; }
+        if (value instanceof Hashtable) {
+            Object meta = ((Hashtable) value).get("__metatable");
+            if (meta instanceof Hashtable) {
+                Object screen = ((Hashtable) meta).get("__screen");
+                if (screen instanceof Displayable) { return (Displayable) screen; }
+            }
+        }
+        return null;
+    }
+    // | (Item/TextBox behind a value: a raw item or the handle wrapping it)
+    // `graphics.new("edit", ...)` returns a TextBox handle, and the item
+    // accessors (GetText/SetText/GetLabel/SetLabel) must still reach the Java
+    // object, so unwrap the handle before the instanceof chain.
+    private Object itemOf(Object value) {
+        if (value instanceof Item || value instanceof TextBox) { return value; }
+        Displayable screen = screenOf(value);
+        return screen != null ? screen : value;
+    }
+    // | (True when a table is a graphics screen handle)
+    private static boolean isScreenTable(Object item) {
+        if (!(item instanceof Hashtable)) { return false; }
+        Object meta = ((Hashtable) item).get("__metatable");
+        return meta instanceof Hashtable && ((Hashtable) meta).get("__screen") instanceof Displayable;
+    }
+    // |
     // Interpreter ownership: script functions take the lock, native ones do
     // not (they never touch the shared parser state).
     private void enterLua() {
@@ -2038,6 +2100,8 @@ public class Lua {
     public class LuaFunction implements Runnable, CommandListener, ItemCommandListener, ItemStateListener {
         private Vector params, bodyTokens, argv;
         private Hashtable closureScope, cmds = null; 
+        // | (handler(screen, function): one function for every command)
+        private LuaFunction defaultFn = null;
         private int MOD = -1;
         public String name = null;
         public String nativeName = null;
@@ -2058,6 +2122,7 @@ public class Lua {
         LuaFunction(Vector params, Vector bodyTokens, Hashtable closureScope) { this.params = params; this.bodyTokens = bodyTokens; this.closureScope = closureScope; }
         LuaFunction(String handler, Object root) { this.handler = handler; this.root = root; }
         LuaFunction(Hashtable cmds) { this.cmds = cmds; }
+        LuaFunction(Hashtable cmds, LuaFunction defaultFn) { this.cmds = cmds; this.defaultFn = defaultFn; }
         LuaFunction(LuaFunction root) { this.root = root; }
         LuaFunction(int type) { this.MOD = type; }
         // |
@@ -2495,7 +2560,7 @@ public class Lua {
                         else if (attribute.equals("handler")) { if (value instanceof LuaFunction) { proc.handler = value; kill = false; } else { return gotbad(1, "setproc", "function expected"); } }
                         else if (attribute.equals("cmd")) { if (value != null) { proc.cmd = toLuaString(value); } else { return gotbad(1, "setproc", "string expected"); } }
                         else if (attribute.equals("sighandler")) { if (value instanceof LuaFunction) { proc.sighandler = value; } else { return gotbad(1, "setproc", "function expected"); } }
-                        else if (attribute.equals("screen")) { if (value instanceof Displayable) { proc.screen = (Displayable) value; } else { return gotbad(1, "setproc", "Displayable expected"); } }
+                        else if (attribute.equals("screen")) { Displayable screen = screenOf(value); if (screen != null) { proc.screen = screen; } else { return gotbad(1, "setproc", "Displayable expected, got " + type(value)); } }
                         else if (attribute.equals("stdout")) { if (value != null) { proc.stdout = value; stdout = value; } }
                         else { if (value == null) { proc.db.remove(attribute); } else { proc.db.put(attribute, value); } }
                     } 
@@ -3154,9 +3219,10 @@ public class Lua {
                     if (args.isEmpty()) { }
                     else {
                         Object screen = args.elementAt(0);
+                        Displayable target = screenOf(screen);
 
-                        if (screen instanceof Alert && args.size() > 1) { kill = false; midlet.display.setCurrent((Alert) screen, (Displayable) args.elementAt(1)); }
-                        else if (screen instanceof Displayable) { kill = false; midlet.display.setCurrent((Displayable) screen); }
+                        if (target instanceof Alert && args.size() > 1) { kill = false; midlet.display.setCurrent((Alert) target, screenOf(args.elementAt(1))); }
+                        else if (target != null) { kill = false; midlet.display.setCurrent(target); }
                         else { return gotbad(1, "display", "screen expected, got " + type(screen)); }
                         break;
                     }
@@ -3186,11 +3252,11 @@ public class Lua {
 
                         Alert alert = new Alert(title, content != null ? toLuaString(content) : "", null, alertType);
                         alert.setTimeout(alertTimeout);
-                        return alert;
+                        return screenHandle(alert);
                     } 
-                    else if (type.equals("edit")) { return new TextBox(title, content != null ? toLuaString(content) : "", 31522, TextField.ANY); } 
-                    else if (type.equals("list")) { return new List(title, (type = content != null ? toLuaString(content) : "implicit").equals("exclusive") ? List.EXCLUSIVE : type.equals("multiple") ? List.MULTIPLE : List.IMPLICIT); } 
-                    else if (type.equals("screen")) { return new Form(title); } 
+                    else if (type.equals("edit") || type.equals("textbox")) { return screenHandle(new TextBox(title, content != null ? toLuaString(content) : "", 31522, TextField.ANY)); } 
+                    else if (type.equals("list")) { return screenHandle(new List(title, (type = content != null ? toLuaString(content) : "implicit").equals("exclusive") ? List.EXCLUSIVE : type.equals("multiple") ? List.MULTIPLE : List.IMPLICIT)); } 
+                    else if (type.equals("screen") || type.equals("form")) { return screenHandle(new Form(title)); } 
                     else if (type.equals("command")) {
                         if (args.elementAt(1) instanceof Hashtable) {
                             Hashtable cmdTable = (Hashtable) args.elementAt(1);
@@ -3254,7 +3320,7 @@ public class Lua {
                 case APPEND:
                     if (args.size() < 2) { return gotbad(1, "append", "wrong number of arguments"); }
                     else {
-                        Object target = args.elementAt(0), itemObj = args.elementAt(1);
+                        Object target = screenOf(args.elementAt(0)), itemObj = args.elementAt(1);
                         
                         if (target instanceof Form) {
                             Form form = (Form) target;
@@ -3337,59 +3403,80 @@ public class Lua {
                 case ADDCMD:
                     if (args.size() < 2) { return gotbad(1, "addCommand", "wrong number of arguments"); }
                     else {
-                        Object target = args.elementAt(0), cmdObj = args.elementAt(1);
+                        Displayable target = screenOf(args.elementAt(0));
+                        Object cmdObj = args.elementAt(1);
                         
-                        if (!(target instanceof Displayable)) { return gotbad(1, "addCommand", "Displayable expected"); }
-                        if (!(cmdObj instanceof Command)) { return gotbad(1, "addCommand", "Command expected"); }
+                        if (target == null) { return gotbad(1, "addCommand", "Displayable expected, got " + type(args.elementAt(0))); }
+                        if (!(cmdObj instanceof Command)) { return gotbad(2, "addCommand", "Command expected, got " + type(cmdObj)); }
                         
-                        ((Displayable) target).addCommand((Command) cmdObj); break;
+                        target.addCommand((Command) cmdObj); break;
                     }
                 case HANDLER:
                     if (args.size() < 2) { return gotbad(1, "handler", "wrong number of arguments"); }
                     else {
-                        Object screen = args.elementAt(0), table = args.elementAt(1);
+                        Displayable screen = screenOf(args.elementAt(0));
+                        Object table = args.elementAt(1);
 
-                        if (!(screen instanceof Displayable)) { return gotbad(1, "handler", "Displayable expected, got " + type(table)); }
-                        if (!(table instanceof Hashtable)) { return gotbad(2, "handler", "Hashtable expected, got " + type(table)); }
-
-                        ((Displayable) screen).setCommandListener(new LuaFunction((Hashtable) table)); break;
+                        if (screen == null) { return gotbad(1, "handler", "Displayable expected, got " + type(args.elementAt(0))); }
+                        if (table instanceof Hashtable) { screen.setCommandListener(new LuaFunction((Hashtable) table)); break; }
+                        // A single function handles every command: it receives
+                        // the screen handle, the command label and then the same
+                        // values a table handler would get.
+                        if (table instanceof LuaFunction) { screen.setCommandListener(new LuaFunction(new Hashtable(), (LuaFunction) table)); break; }
+                        return gotbad(2, "handler", "table or function expected, got " + type(table));
                     }
-                case TITLE: ((Displayable) args.elementAt(0)).setTitle(args.isEmpty() ? null : toLuaString(args.elementAt(1))); break;
-                case TICKER: ((Displayable) args.elementAt(0)).setTicker(args.isEmpty() ? null : new Ticker(toLuaString(args.elementAt(1)))); break;
-                case GETCURRENT: return midlet.display.getCurrent();
+                case TITLE:
+                    if (args.isEmpty()) { break; }
+                    else {
+                        Displayable screen = screenOf(args.elementAt(0));
+                        if (screen == null) { return gotbad(1, "SetTitle", "Displayable expected, got " + type(args.elementAt(0))); }
+                        if (args.size() < 2) { return screen.getTitle(); }
+                        screen.setTitle(toLuaString(args.elementAt(1)));
+                        break;
+                    }
+                case TICKER:
+                    if (args.isEmpty()) { break; }
+                    else {
+                        Displayable screen = screenOf(args.elementAt(0));
+                        if (screen == null) { return gotbad(1, "SetTicker", "Displayable expected, got " + type(args.elementAt(0))); }
+                        if (args.size() < 2) { return screen.getTicker() != null ? screen.getTicker().getString() : null; }
+                        screen.setTicker(new Ticker(toLuaString(args.elementAt(1))));
+                        break;
+                    }
+                case GETCURRENT: return screenHandle(midlet.display.getCurrent());
                 case VIBRATE: midlet.display.vibrate(args.isEmpty() ? new Integer(500) : args.elementAt(0) instanceof Double ? new Integer(((Double) args.elementAt(0)).intValue()) : (Integer) gotbad(1, "vibrate", "number expected")); break;
-                case SETLABEL: if (args.isEmpty()) { break; } else { Item i = args.elementAt(0) instanceof Item ? (Item) args.elementAt(0) : (Item) gotbad(1, "SetLabel", "Item expected"); i.setLabel(args.size() > 1 ? toLuaString(args.elementAt(1)) : null); }
-                case GETLABEL: if (args.isEmpty()) { break; } else { Item i = args.elementAt(0) instanceof Item ? (Item) args.elementAt(0) : (Item) gotbad(1, "GetLabel", "Item expected"); return i.getLabel(); }
+                case SETLABEL: if (args.isEmpty()) { break; } else { Object v = itemOf(args.elementAt(0)); Item i = v instanceof Item ? (Item) v : (Item) gotbad(1, "SetLabel", "Item expected, got " + type(args.elementAt(0))); i.setLabel(args.size() > 1 ? toLuaString(args.elementAt(1)) : null); }
+                case GETLABEL: if (args.isEmpty()) { break; } else { Object v = itemOf(args.elementAt(0)); Item i = v instanceof Item ? (Item) v : (Item) gotbad(1, "GetLabel", "Item expected, got " + type(args.elementAt(0))); return i.getLabel(); }
                 case SETTEXT:
                     if (args.isEmpty()) { break; } 
                     else { 
-                        Object i = args.elementAt(0); 
+                        Object i = itemOf(args.elementAt(0)); 
                         if (i instanceof StringItem) { ((StringItem) i).setText(args.size() > 1 ? toLuaString(args.elementAt(1)) : ""); } 
                         else if (i instanceof TextField) { ((TextField) i).setString(args.size() > 1 ? toLuaString(args.elementAt(1)) : ""); } 
                         else if (i instanceof TextBox) { ((TextBox) i).setString(args.size() > 1 ? toLuaString(args.elementAt(1)) : ""); }
                         else { return gotbad(1, "SetText", "Item expected"); }
                     } 
-                case GETTEXT: if (args.isEmpty()) { break; } else { Object i = args.elementAt(0); return i instanceof StringItem ? ((StringItem) i).getText() : i instanceof TextField ? ((TextField) i).getString() : i instanceof TextBox ? ((TextBox) i).getString() : gotbad(1, "GetText", "Item expected"); } 
+                case GETTEXT: if (args.isEmpty()) { break; } else { Object i = itemOf(args.elementAt(0)); return i instanceof StringItem ? ((StringItem) i).getText() : i instanceof TextField ? ((TextField) i).getString() : i instanceof TextBox ? ((TextBox) i).getString() : gotbad(1, "GetText", "Item expected"); } 
                 case CLEAR_SCREEN:
                     if (args.isEmpty()) { return gotbad(1, "clear", "screen expected, got no value"); }
                     else {
-                        Object screen = args.elementAt(0);
+                        Displayable screen = screenOf(args.elementAt(0));
 
-                        if (screen instanceof Form) { ((Form) args.elementAt(0)).deleteAll(); }
-                        else if (screen instanceof List) { ((List) args.elementAt(0)).deleteAll(); }
-                        else { return gotbad(1, "clear", "screen expected, got" + type(args.elementAt(0))); }
+                        if (screen instanceof Form) { ((Form) screen).deleteAll(); }
+                        else if (screen instanceof List) { ((List) screen).deleteAll(); }
+                        else { return gotbad(1, "clear", "screen expected, got " + type(args.elementAt(0))); }
                         break;
                     }
                 case TASKMNGR: midlet.showTaskManager(); break;
                 case SETINDICATOR:
                     if (args.size() < 2) { return gotbad(1, "SetIndicator", "alert and gauge expected"); }
-                    else if (!(args.elementAt(0) instanceof Alert)) { return gotbad(1, "SetIndicator", "Alert expected"); }
+                    else if (!(screenOf(args.elementAt(0)) instanceof Alert)) { return gotbad(1, "SetIndicator", "Alert expected, got " + type(args.elementAt(0))); }
                     else if (!(args.elementAt(1) instanceof Gauge)) { return gotbad(2, "SetIndicator", "Gauge expected"); }
                     else {
                         // MIDP alerts cannot hold items, but they can show one
                         // non-interactive gauge as their indicator. The indicator
                         // has to be attached before the alert is displayed.
-                        try { ((Alert) args.elementAt(0)).setIndicator((Gauge) args.elementAt(1)); }
+                        try { ((Alert) screenOf(args.elementAt(0))).setIndicator((Gauge) args.elementAt(1)); }
                         catch (Exception e) { return gotbad(1, "SetIndicator", midlet.getCatch(e)); }
                         break;
                     }
@@ -4226,7 +4313,7 @@ public class Lua {
             }
             return ret;
         }
-        public static String type(Object item) { return item == null || item == LUA_NIL ? "nil" : item instanceof String ? "string" : item instanceof Double ? "number" : item instanceof Boolean ? "boolean" : item instanceof LuaFunction ? "function" : item instanceof Hashtable ? "table" : item instanceof InputStream || item instanceof OutputStream || item instanceof StringBuffer || item instanceof StringItem ? "stream" : item instanceof SocketConnection || item instanceof StreamConnection ? "connection" : item instanceof ServerSocketConnection ? "server" : item instanceof Displayable || item instanceof Canvas ? "screen" : item instanceof Image ? "image" : item instanceof Command ? "button" : item instanceof Player ? "audio" : "userdata"; }
+        public static String type(Object item) { return item == null || item == LUA_NIL ? "nil" : item instanceof String ? "string" : item instanceof Double ? "number" : item instanceof Boolean ? "boolean" : item instanceof LuaFunction ? "function" : item instanceof Hashtable ? (Lua.isScreenTable(item) ? "screen" : "table") : item instanceof InputStream || item instanceof OutputStream || item instanceof StringBuffer || item instanceof StringItem ? "stream" : item instanceof SocketConnection || item instanceof StreamConnection ? "connection" : item instanceof ServerSocketConnection ? "server" : item instanceof Displayable || item instanceof Canvas ? "screen" : item instanceof Image ? "image" : item instanceof Command ? "button" : item instanceof Player ? "audio" : "userdata"; }
         private Object gotbad(int pos, String name, String expect) throws Exception { throw new RuntimeException("bad argument #" + pos + " to '" + name + "' (" + expect + ")"); }
         private Object gotbad(String name, String field, String expected) throws Exception { throw new RuntimeException(name + " -> field '" + field + "' (" + expected + ")"); }
         private Object http(String method, String url, String data, Object item, boolean toget) throws Exception {
@@ -4883,7 +4970,7 @@ public class Lua {
                     suPromptForm = null;
                     return;
                 }
-                if (cmds.containsKey(c) && cmds.get(c) instanceof LuaFunction) {
+                if ((cmds != null && cmds.containsKey(c) && cmds.get(c) instanceof LuaFunction) || defaultFn != null) {
                     Vector args = new Vector();
                     if (d instanceof List) {
                         List list = (List) d;
@@ -4908,7 +4995,17 @@ public class Lua {
                         }
                     }
 
-                    ((LuaFunction) cmds.get(c)).call(args);
+                    if (cmds != null && cmds.containsKey(c) && cmds.get(c) instanceof LuaFunction) {
+                        ((LuaFunction) cmds.get(c)).call(args);
+                    } else {
+                        // handler(screen, function): the function gets the screen
+                        // handle, the command label and then the field values.
+                        Vector full = new Vector();
+                        full.addElement(screenHandle(d));
+                        full.addElement(c != null && c.getLabel() != null ? c.getLabel() : "");
+                        for (int i = 0; i < args.size(); i++) { full.addElement(args.elementAt(i)); }
+                        defaultFn.call(full);
+                    }
                 }
             }
             catch (Exception e) { midlet.print(getTraceback(e), stdout); midlet.sys.remove(PID); } 

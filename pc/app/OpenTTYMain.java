@@ -248,7 +248,9 @@ public class OpenTTYMain {
                 SwingUtilities.invokeAndWait(new Runnable() {
                     public void run() { fireCommand(System.getProperty("opentty.cmd", "echo hello opentty desktop"), "smoke"); }
                 });
-                Thread.sleep(4000);
+                // Long suites (tests/lua) need more than the default window;
+                // -Dopentty.smokeAfter=<ms> extends it.
+                Thread.sleep(Long.getLong("opentty.smokeAfter", 4000).longValue());
             } catch (Throwable e) {
                 System.out.println("[smoke] command dispatch failed: " + e);
             }

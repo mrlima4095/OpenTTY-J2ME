@@ -33,7 +33,7 @@ for f in "$ROOT"/apps/1.19/lua/*.lua; do
 done
 cp "$ROOT/apps/1.19/sys/cterm" "$STAGE/cterm-app.lua" || exit 1
 
-OPENTTY_JVM_OPTS="-Dopentty.headless=1 -Dopentty.smokeWait=7000" \
+OPENTTY_JVM_OPTS="-Dopentty.headless=1 -Dopentty.smokeWait=7000 -Dopentty.smokeAfter=20000" \
     timeout 300 bash pc/run.sh --user opentty --pass opentty --smoke -- \
     "$HERE/check_modules.lua" > "$LOG" 2>&1
 status=$?

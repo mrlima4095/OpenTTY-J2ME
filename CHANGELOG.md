@@ -35,6 +35,18 @@ Copyright (C) 2026 - Mr. Lima
 
 - The `nc` (netcat) app is an interactive terminal: explicit client (`nc HOST PORT`) and listener (`nc -l PORT`) modes, send/clear/disconnect commands, a "Switch to..." list that keeps sessions around, and it survives empty reads instead of closing the connection
 - Guest C programs can open sockets now that the ELF socket syscalls reach the host
+- `nginx` actually serves requests: clients are answered in the accept thread
+  (worker threads could never take the interpreter the accept loop held, so
+  every request timed out) and `stop`/`reload` use a control file plus a
+  wake-up connection instead of an `os.request` that deadlocked while the
+  daemon was idle in `accept`
+- `nginx start` seeds `/etc/nginx/{nginx.conf,mime.types,sites-available,sites-enabled}`
+  when missing, so the documented config layout exists on a fresh install;
+  MIME types now use the nginx `"<mime> <extension>"` order, files larger than
+  1 KB are no longer truncated (`io.read(handle)` only returned 1024 bytes),
+  `Content-Length` counts UTF-8 bytes, and request paths are traversal-checked
+  (no more `/../etc/passwd`); adds `index`, HEAD and 405 support, longest-prefix
+  route matching and a `nginx test` report
 
 [ Lua ]
 
@@ -51,6 +63,7 @@ The runtime now follows Lua 5.1 much more closely:
 - `return f()` forwards every result of the call
 - Anonymous function bodies no longer duplicate a nested `end`, so a `local function` inside a table-constructor handler stops ending at the first one-line `if ... end`
 - The interpreter has a single owner: UI callbacks and background jobs take turns instead of corrupting the shared parser state, and `java.yield()` hands control to the other thread
+- LCDUI screens are handles: `graphics.new` returns a table, so `screen:append(item)`, `screen:addCommand(cmd)`, `screen:handler({...})`, `screen:handler(fn)` and `screen:display()` work as methods (`type(screen)` stays `"screen"`, and the `graphics.*` functions still accept the raw screen object); `handler(screen, fn)` installs one function for every command, called as `fn(screen, label, ...values)`
 - `luarocks` package manager (`/bin/luarocks`) with rock payloads for `math`, `string` (patterns, `format`, `rep`, `gsub`, `gmatch`), `graphics`, `kernel` and `httpd`; `require` loads `/lib/<name>.lua` and installed state lives in `/etc/rocks.installed`
 - 14 new rocks in the catalog: `json`, `tablex`, `base64`, `sha1`, `sha256`, `term`, `argparse`, `log`, `config`, `template`, `csv`, `date`, `re` (depends on `string`) and `ui` — JSON/CSV/INI data handling, pure-Lua SHA-1/SHA-256 with HMAC, terminal tables and progress bars, option parsing, levelled logging, Mustache-style templates, date math, pattern helpers and callback-based menus/prompts/file picker
 

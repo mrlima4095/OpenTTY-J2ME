@@ -3,24 +3,24 @@
 
 local previous = graphics.getCurrent() -- Get current screen
 
-local list = graphics.new("form", "Main Menu", "implicit")
-graphics.append(list, "Settings")
-graphics.append(list, "Games")
-graphics.append(list, "Tools")
-graphics.append(list, "Exit")
+local list = graphics.new("list", "Main Menu", "implicit")
+list:append("Settings")
+list:append("Games")
+list:append("Tools")
+list:append("Exit")
 
 local select = graphics.new("command", { label = "Select", type = "ok", priority = 1 })
 local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
-graphics.addCommand(list, select)
-graphics.addCommand(list, back)
+list:addCommand(select)
+list:addCommand(back)
 
-graphics.handler(list, {
-    [select] = function(option)
-        print("Selected: " .. option)
-    end,
-    [back] = function()
+-- One handler for every command: (screen, label, ...values).
+list:handler(function(screen, label, option)
+    if label == "Select" then
+        print("Selected: " .. tostring(option))
+    else
         graphics.display(previous)
     end
-})
+end)
 
-graphics.display(list)
+list:display()
