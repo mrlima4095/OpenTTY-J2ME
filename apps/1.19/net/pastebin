@@ -326,7 +326,9 @@ local function flashTicker(screen, state, text, millis)
     pcall(graphics.SetTicker, screen, tostring(text))
     java.run(function ()
         java.sleep(millis or 3000)
-        if state == nil or state.running then pcall(graphics.SetTicker, screen, "") end
+        -- nil removes the Ticker (see the TICKER native); an empty string
+        -- would leave an empty strip at the top of the screen.
+        if state == nil or state.running then pcall(graphics.SetTicker, screen, nil) end
     end, "pastebin-ticker")
 end
 

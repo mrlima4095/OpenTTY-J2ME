@@ -3449,10 +3449,11 @@ public class Lua {
                         Displayable screen = screenOf(args.elementAt(0));
                         if (screen == null) { return gotbad(1, "SetTicker", "Displayable expected, got " + type(args.elementAt(0))); }
                         if (args.size() < 2) { return screen.getTicker() != null ? screen.getTicker().getString() : null; }
-                        // An empty string clears the ticker: leaving a Ticker
-                        // with no text keeps an empty strip on screen.
-                        String tickerText = toLuaString(args.elementAt(1));
-                        screen.setTicker(tickerText.length() == 0 ? null : new Ticker(tickerText));
+                        // `nil` (or an empty string) removes the ticker: leaving
+                        // a Ticker with no text keeps an empty strip on screen.
+                        Object tickerValue = args.elementAt(1);
+                        String tickerText = tickerValue == null || tickerValue == LUA_NIL ? "" : toLuaString(tickerValue);
+                        setTickerText(screen, tickerText);
                         break;
                     }
                 case GETCURRENT: return screenHandle(midlet.display.getCurrent());
@@ -5052,6 +5053,24 @@ public class Lua {
         private final int value;
         GaugeUpdate(Gauge gauge, int value) { this.gauge = gauge; this.value = value; }
         public void run() { try { gauge.setValue(value); } catch (Exception e) { } }
+    }
+
+    // Displayable.setTicker is only legal on the event thread once the screen
+    // is showing (strict CLDC/MIDP implementations throw IllegalStateException
+    // otherwise, which used to leave the old ticker scrolling forever because
+    // the Lua side guards the call with pcall). Retry through
+    // Display.callSerially when the direct call is rejected.
+    private void setTickerText(Displayable screen, String text) {
+        Ticker ticker = text.length() == 0 ? null : new Ticker(text);
+        try { screen.setTicker(ticker); }
+        catch (RuntimeException e) { midlet.display.callSerially(new TickerUpdate(screen, ticker)); }
+    }
+
+    private class TickerUpdate implements Runnable {
+        private final Displayable screen;
+        private final Ticker ticker;
+        TickerUpdate(Displayable screen, Ticker ticker) { this.screen = screen; this.ticker = ticker; }
+        public void run() { try { screen.setTicker(ticker); } catch (Exception e) { } }
     }
 }
 // |
