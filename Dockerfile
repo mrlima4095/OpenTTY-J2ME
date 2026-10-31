@@ -8,6 +8,14 @@ RUN apk add --no-cache \
     git \
     curl
 
+# GD powers s60img (thumbnail resize + sprite sheets).
+RUN apk add --no-cache freetype libjpeg-turbo libpng \
+    && apk add --no-cache --virtual .gd-build \
+        $PHPIZE_DEPS freetype-dev libjpeg-turbo-dev libpng-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j"$(nproc)" gd \
+    && apk del .gd-build
+
 WORKDIR /app
 
 COPY . .
