@@ -1,0 +1,122 @@
+:root {
+  --bg: #05060a;
+  --panel: #0b1018;
+  --line: #1c2733;
+  --green: #00ff88;
+  --pink: #ff2d95;
+  --text: #c8d6e0;
+  --mono: "Courier New", Monaco, monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #02020b 0%, #071020 100%);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.brand {
+  color: var(--green);
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+nav a {
+  color: var(--text);
+  margin-left: 16px;
+  text-decoration: none;
+  border-bottom: 1px dotted var(--line);
+}
+
+nav a:hover { color: var(--green); border-color: var(--green); }
+
+main {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 28px 20px 60px;
+}
+
+h1 {
+  font-size: 26px;
+  margin: 0 0 10px;
+  color: #ffffff;
+}
+
+h2 {
+  font-size: 15px;
+  margin: 0 0 8px;
+  color: var(--pink);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.lede { color: #93a7b5; margin-top: 0; }
+
+code {
+  color: var(--green);
+  background: rgba(0, 255, 136, 0.06);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+
+.cards article,
+.panel {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 14px 16px;
+  background: var(--panel);
+}
+
+.cards p { margin: 0; color: #93a7b5; }
+
+.panel { margin: 16px 0; }
+
+pre {
+  margin: 0;
+  padding: 10px 12px;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #03060a;
+  color: var(--green);
+  font-size: 13px;
+}
+
+.panel p { color: #93a7b5; margin-bottom: 0; }
+
+footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--line);
+  color: #5d7080;
+  font-size: 13px;
+}
+
+@media (max-width: 520px) {
+  h1 { font-size: 21px; }
+  header { flex-wrap: wrap; }
+}

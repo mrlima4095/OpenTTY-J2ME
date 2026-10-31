@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenTTY LAN Demo</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header>
+  <div class="brand">~/web</div>
+  <nav>
+    <a href="/">index</a>
+    <a href="/about.html">about</a>
+    <a href="/nginx-status">status</a>
+  </nav>
+</header>
+
+<main>
+  <h1>Served by nginx on a J2ME phone</h1>
+  <p class="lede">
+    This page is a static file from <code>/home/web</code> on the device, handed
+    out by the OpenTTY <code>nginx</code> app running on the MIDlet.
+  </p>
+
+  <section class="cards">
+    <article>
+      <h2>Small</h2>
+      <p>No external dependencies. Every byte travels over the phone's Wi-Fi.</p>
+    </article>
+    <article>
+      <h2>Plain</h2>
+      <p>Static files, a few MIME types and a <code>/nginx-status</code> page.</p>
+    </article>
+    <article>
+      <h2>Yours</h2>
+      <p>Drop an <code>index.html</code> in <code>/home/web</code> and reload.</p>
+    </article>
+  </section>
+
+  <section class="panel">
+    <h2>Server status</h2>
+    <pre id="status">loading /nginx-status ...</pre>
+  </section>
+
+  <section class="panel">
+    <h2>How it is wired</h2>
+    <pre>listen 80;
+root /home/web/;
+index index.html;</pre>
+    <p>
+      The config lives in <code>/etc/nginx/nginx.conf</code> and is read at startup;
+      <code>nginx reload</code> picks up edits without dropping the site.
+    </p>
+  </section>
+</main>
+
+<footer>
+  <span id="clock">--:--:--</span>
+  <span>OpenTTY nginx demo</span>
+</footer>
+
+<script src="/app.js"></script>
+</body>
+</html>

@@ -326,6 +326,19 @@ if arg[1] == "--deamon" then
     local requests = 0
     local started_at = os.time()
 
+    -- | This MIDP stack kills the listening socket as soon as the server closes
+    -- | an accepted connection (the next `accept` throws IOException even though
+    -- | the listener was never touched). Answered connections are therefore kept
+    -- | open: the client closes its end once it has the body, which leaves the
+    -- | listener usable. The list only exists so the objects are not collected
+    -- | while the stack may still reference them.
+    local retired, RETIRED_LIMIT = {}, 48
+
+    local function retire(client, input, output)
+        retired[#retired + 1] = { client, input, output }
+        while #retired > RETIRED_LIMIT do table.remove(retired, 1) end
+    end
+
     local function log_error(message)
         pcall(io.write, "[" .. os.date("%H:%M:%S") .. "] [error] " .. message .. "\n", config.error_log, "a")
     end
@@ -464,7 +477,7 @@ if arg[1] == "--deamon" then
 
         local raw = read_request(input)
         if raw == "" then
-            pcall(io.close, client)
+            retire(client, input, output)
             return
         end
 
@@ -537,9 +550,8 @@ if arg[1] == "--deamon" then
         if query ~= "" then logged = path .. "?" .. query end
         log_request(method, logged, code, ip)
 
-        pcall(io.close, output)
-        pcall(io.close, input)
-        pcall(io.close, client)
+        -- Do not close: see the note next to `retired`.
+        retire(client, input, output)
     end
 
     load_config()
@@ -558,20 +570,6 @@ if arg[1] == "--deamon" then
     pcall(io.write, "", STOP_FLAG)
     pcall(io.write, "", RELOAD_FLAG)
 
-    -- | Some MIDP stacks invalidate the listening socket as soon as the
-    -- | accepted connection is closed (`accept` then throws IOException even
-    -- | though the listener was never touched). Re-binding the port after each
-    -- | request keeps the server reachable on such devices.
-    local function bind_listener()
-        pcall(io.close, server_socket)
-        local bound, fresh = pcall(socket.server, config.port)
-        if bound then
-            server_socket = fresh
-            pcall(io.write, os.getpid() .. " " .. tostring(config.port), PID_FILE)
-        end
-        return bound
-    end
-
     java.run(function()
         local failures = 0
 
@@ -584,10 +582,10 @@ if arg[1] == "--deamon" then
                 if flag_set(STOP_FLAG) then
                     pcall(io.write, "", STOP_FLAG)
                     running = false
-                    pcall(io.close, client)
+                    retire(client, input, output)
                 elseif flag_set(RELOAD_FLAG) then
                     pcall(io.write, "", RELOAD_FLAG)
-                    pcall(io.close, client)
+                    retire(client, input, output)
                     load_config()
                 else
                     -- One bad request must never take the server down (a J2ME
@@ -596,29 +594,21 @@ if arg[1] == "--deamon" then
                     local ok, err = pcall(handle_client, client, input, output)
                     if not ok then
                         log_error("request failed: " .. tostring(err))
-                        pcall(io.close, client)
-                        pcall(io.close, input)
-                        pcall(io.close, output)
+                        retire(client, input, output)
                     end
-                end
-
-                if running and not bind_listener() then
-                    failures = failures + 1
-                    log_error("cannot rebind port " .. tostring(config.port))
-                    if failures >= 5 then running = false end
                 end
             elseif aok then
                 java.sleep(10)
             else
-                -- Transient accept errors are retried; a socket that keeps
-                -- failing (closed underneath us) ends the loop after five tries.
+                -- The listener is only usable while no accepted connection is
+                -- closed, so an error here means the socket is gone for good.
+                -- Retry anyway (a reload may have re-created it) and keep the
+                -- daemon registered rather than exiting.
                 failures = failures + 1
-                log_error("accept failed (" .. tostring(failures) .. "): " .. tostring(client))
-                if failures >= 5 then
-                    running = false
-                elseif not bind_listener() then
-                    java.sleep(200)
+                if failures == 1 or failures % 20 == 0 then
+                    log_error("accept failed (" .. tostring(failures) .. "): " .. tostring(client))
                 end
+                java.sleep(500)
             end
         end
 
