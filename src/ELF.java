@@ -800,7 +800,7 @@ public class ELF implements CommandListener, ItemCommandListener, ItemStateListe
             case LIB_UI_CLEAR - LIB_BASE: registers[REG_A0] = uiClear(registers[REG_A0]); break;
             case LIB_UI_WAIT_EVENT - LIB_BASE: registers[REG_A0] = uiWaitEvent(registers[REG_A0]); break;
             case LIB_UI_DESTROY - LIB_BASE: registers[REG_A0] = uiDestroy(registers[REG_A0]); break;
-            case LIB_UI_TASKMNGR - LIB_BASE: midlet.showTaskManager(); registers[REG_A0] = 0; break;
+            case LIB_UI_TASKMNGR - LIB_BASE: midlet.showTaskManager(id); registers[REG_A0] = 0; break;
             case LIB_PROC_SET - LIB_BASE: registers[REG_A0] = procSet(registers[REG_A0], registers[REG_A1]); break;
             case LIB_PROC_SPAWN - LIB_BASE: registers[REG_A0] = procSpawn(registers[REG_A0], registers[REG_A1]); break;
             case LIB_PROC_WAITPID - LIB_BASE: registers[REG_A0] = procWaitpid(registers[REG_A0], registers[REG_A1]); break;

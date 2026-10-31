@@ -3480,7 +3480,7 @@ public class Lua {
                         else { return gotbad(1, "clear", "screen expected, got " + type(args.elementAt(0))); }
                         break;
                     }
-                case TASKMNGR: midlet.showTaskManager(); break;
+                case TASKMNGR: midlet.showTaskManager(id); break;
                 case SETINDICATOR:
                     if (args.size() < 2) { return gotbad(1, "SetIndicator", "alert and gauge expected"); }
                     else if (!(screenOf(args.elementAt(0)) instanceof Alert)) { return gotbad(1, "SetIndicator", "Alert expected, got " + type(args.elementAt(0))); }
@@ -3748,26 +3748,12 @@ public class Lua {
                             if (arg == null || !(arg instanceof Hashtable)) { return new Double(2); }
                             else {
                                 Hashtable info = (Hashtable) arg;
-                                String pid = (String) info.get("pid"), signal = toLuaString(info.get("signal"));
+                                String target = (String) info.get("pid"), signal = toLuaString(info.get("signal"));
 
-                                if (midlet.sys.containsKey(pid)) {
-                                    Process process = (Process) midlet.sys.get(pid);
-
-                                    if (process.uid == uid || uid == 0) {
-                                        if (!signal.equals("9") && process.sighandler != null) {
-                                            try { 
-                                                Vector arguments = new Vector(); arguments.addElement(signal);
-                                                ((LuaFunction) process.sighandler).call(arguments);
-                                            }
-                                            catch (Throwable e) {  }
-                                        }
-
-                                        midlet.sys.remove(pid);
-                                        if (signal.equals("9") && arg.equals("1")) { midlet.destroyApp(true); }
-                                        return new Double(0);
-                                    } else { return new Double(13); }
-                                }
-                                else { return new Double(127); }
+                                if (target == null) { return new Double(2); }
+                                // Shared with the task manager: owner/root only,
+                                // SIGKILL skips the sighandler, SIGTERM runs it.
+                                return new Double(midlet.sendSignal(target, signal, uid));
                             }
                         }
                         else if (payload.equals("proc")) {

@@ -265,7 +265,7 @@ list:display()
 | `graphics.handler(screen, { [command] = fn })` | Set screen command handlers |
 | `graphics.handler(screen, fn)` | One handler for every command: `fn(screen, label, ...values)` |
 | `graphics.vibrate([ms])` | Vibrate the device |
-| `graphics.taskmngr()` | Open the system task manager |
+| `graphics.taskmngr()` | Open the system task manager (Interrupt sends `SIGTERM`, so the target's `sighandler` runs; only the owner or root can signal or switch to a process) |
 | `graphics.fire` | `List.SELECT_COMMAND` handler key |
 | `graphics.new("gauge", { label, interactive, maxValue, value })` | Standalone gauge |
 | `graphics.SetIndicator(alert, gauge)` | Show a gauge inside an alert |

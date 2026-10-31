@@ -221,7 +221,10 @@ if (event.type == LCDUI_EVENT_COMMAND && event.command == tasks) {
 ```
 
 The process remains registered with its current screen. Selecting it in the
-task manager displays that screen again. Interrupting it performs ELF cleanup.
+task manager displays that screen again. Interrupting it sends `SIGTERM` (so
+the target runs its kill handler/cleanup first); a normal user can only
+interrupt or switch to processes owned by the same uid — root may handle any
+process.
 
 ## Process Lifecycle
 

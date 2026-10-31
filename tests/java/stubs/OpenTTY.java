@@ -41,6 +41,7 @@ public class OpenTTY {
     public Vector procEntries(int uid) { return new Vector(); }
     public Vector procDirEntries(String pidStr, int uid) { return new Vector(); }
     public void showTaskManager() { }
+    public void showTaskManager(int callerUid) { }
     public void destroyApp(boolean unconditional) { }
 
     public javax.microedition.lcdui.Image readImg(String filename, Hashtable scope) { return new javax.microedition.lcdui.Image(); }

@@ -26,7 +26,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Hashtable attributes = new Hashtable(), fs = new Hashtable(), sys = new Hashtable(), exited = new Hashtable(), tmp = new Hashtable(), cacheLua = new Hashtable(), graphics = new Hashtable(), servers = new Hashtable(), globals = new Hashtable(), userID = new Hashtable();
     private Hashtable vfsFiles = new Hashtable();
     private boolean vfsReady = false;
-    public String username = read("/home/OpenRMS", globals), build = "2026-1.19-04x60";
+    public String username = read("/home/OpenRMS", globals), build = "2026-1.19-04x61";
     // | (Boot Menu / chroot)
     public String chroot = "";
     public Vector bootEntries = null;
@@ -38,6 +38,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Displayable previous = null;
     public List taskMngr = null;
     private Vector taskMngrPids = null;
+    // UID of the process that opened the task manager: Interrupt checks it
+    // before signalling anyone, so a normal user cannot stop other users'
+    // (or root's) processes.
+    private int taskMngrUid = 1000;
     // |
     // MIDlet Loader
     // | (Triggers)
@@ -247,7 +251,11 @@ public class OpenTTY extends MIDlet implements CommandListener {
         for (Enumeration e = src.keys(); e.hasMoreElements();) { Object k = e.nextElement(); dst.put(k, src.get(k)); }
         return dst;
     }
-    public void showTaskManager() {
+    public void showTaskManager() { showTaskManager(1000); }
+    // `callerUid` is the uid of the Lua/ELF process that asked for the task
+    // manager; it owns the Interrupt permission check.
+    public void showTaskManager(int callerUid) {
+        taskMngrUid = callerUid;
         if (taskMngr == null) {
             taskMngr = new List("Running", List.IMPLICIT);
             taskMngr.addCommand(new Command("Back", Command.BACK, 1));
@@ -273,6 +281,30 @@ public class OpenTTY extends MIDlet implements CommandListener {
 
         display.setCurrent(taskMngr);
     }
+    // Signal delivery shared by the task manager and the `sendsig` kernel
+    // payload (/bin/kill): a process may only be signalled by its owner or by
+    // root (0 = success, 13 = not permitted, 127 = no such process). SIGKILL
+    // (9) terminates at once; every other signal runs the target's Lua
+    // sighandler first. The handler is called with the signal number as its
+    // only argument, the OpenTTY convention for a kill hook.
+    public int sendSignal(String pid, String signal, int uid) {
+        if (pid == null) { return 2; }
+        Process process = (Process) sys.get(pid);
+        if (process == null) { return 127; }
+        if (process.uid != uid && uid != 0) { return 13; }
+
+        if (!"9".equals(signal) && process.sighandler != null) {
+            try { Vector args = new Vector(); args.addElement(signal); ((Lua.LuaFunction) process.sighandler).call(args); }
+            catch (Throwable e) { }
+        }
+
+        if (process.elf != null) { process.elf.kill(); }
+        else if (sys.containsKey(pid)) { sys.remove(pid); }
+
+        // Killing init is killing the MIDlet.
+        if ("9".equals(signal) && "1".equals(pid)) { destroyApp(true); }
+        return 0;
+    }
     public void commandAction(Command c, Displayable d) {
         if (c.getLabel() == "Exit") { destroyApp(true); }
         else if (d == taskMngr) {
@@ -281,13 +313,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 int sel = taskMngr.getSelectedIndex();
                 if (sel >= 0 && sel < taskMngrPids.size()) {
                     String pid = (String) taskMngrPids.elementAt(sel);
-                    Process p = (Process) sys.get(pid);
-                    if (p != null) {
-                        if (p.sighandler != null) { try { Vector sa = new Vector(); sa.addElement("15"); ((Lua.LuaFunction) p.sighandler).call(sa); } catch (Throwable e) { } }
-                        if (p.elf != null) { p.elf.kill(); }
-                        else { sys.remove(pid); }
-                        showTaskManager();
-                    }
+                    // SIGTERM (15), not SIGKILL (9): the target's own
+                    // sighandler runs first, so it can execute its kill hook.
+                    int status = sendSignal(pid, "15", taskMngrUid);
+
+                    if (status == 13) { notice("Interrupt", "Operation not permitted"); }
+                    else if (status == 127) { notice("Interrupt", "No such process"); }
+                    else { showTaskManager(taskMngrUid); }
                 }
             }
             else if (c == List.SELECT_COMMAND) {
@@ -295,7 +327,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
                 if (sel >= 0 && sel < taskMngrPids.size()) {
                     String pid = (String) taskMngrPids.elementAt(sel);
                     Process p = (Process) sys.get(pid);
-                    if (p != null && p.screen != null) { display.setCurrent(p.screen); }
+                    // Attaching to another user's screen would hand over its
+                    // console (commands run with that process' uid), so the
+                    // same owner/root rule as Interrupt applies.
+                    if (p != null && p.screen != null) {
+                        if (p.uid == taskMngrUid || taskMngrUid == 0) { display.setCurrent(p.screen); }
+                        else { notice("Switch", "Operation not permitted"); }
+                    }
                 }
             }
         }
@@ -390,6 +428,10 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // | -=-=-=-=-=-=-=-=-=-=-
     // | (Window-Based Interfaces)
     public int warn(String title, String message) { if (message == null || message.length() == 0) { return 2; } Alert alert = new Alert(title, message, null, AlertType.WARNING); alert.setTimeout(Alert.FOREVER); display.setCurrent(alert); return 0; }
+    // Short alert that returns to `next` by itself (warn() stays up forever
+    // and would strand the task manager's selection).
+    public int notice(String title, String message) { return notice(title, message, taskMngr); }
+    public int notice(String title, String message, Displayable next) { if (message == null || message.length() == 0) { return 2; } Alert alert = new Alert(title, message, null, AlertType.WARNING); alert.setTimeout(2000); display.setCurrent(alert, next); return 0; }
     // |
     public void print(String message, Object stdout) { print(message, stdout, 1000, globals, true); }
     public void print(String message, Object stdout, int id, Hashtable scope) { print(message, stdout, id, scope, true); }
