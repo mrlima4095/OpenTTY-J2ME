@@ -1,4 +1,4 @@
-2os = {
+os = {
     --[=[Execute command in installed shell]=]
     execute = function (command, ...) return 0 end,
     --[=[Get an environment value]=]
