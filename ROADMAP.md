@@ -25,7 +25,6 @@ area; the most concrete, near-term items appear first.
 
 
 
-
 ## Lua J2ME
 
 - [ ] Coroutine support
@@ -34,7 +33,7 @@ area; the most concrete, near-term items appear first.
 - [ ] `collectgarbage` threshold mode
 - [ ] `table.serialize` / `table.unserialize`
 - [ ] Regular expressions
-- [ ] LuaCanvas
+- [x] LuaCanvas
 - [ ] FTP API
 
 ## Kernel
