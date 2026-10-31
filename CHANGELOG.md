@@ -27,6 +27,8 @@ Copyright (C) 2026 - Mr. Lima
 - `>` truncates its target and `>>` appends to it; `> file` no longer prints a leading blank line
 - `fetch` prints `user@host` from the real user name and host name instead of the old `user@localhost`
 - clearer messages from `cat`, `curl` and `nice` when a file, URL or priority is missing
+- Signals follow the caller's permission: `kill` and the task manager's **Interrupt** only reach processes owned by the same uid (root handles any), so a normal user can no longer stop other users' or root's processes, and the task manager also refuses to switch into another user's screen (that console would run commands with its uid); permission failures answer 13 and are reported instead of silently doing nothing
+- The task manager's **Interrupt** sends `SIGTERM` (15) through the same `sendsig` path as `/bin/kill`, so the target's `sighandler` (its kill/cleanup hook) runs before the process is reaped; only `SIGKILL` (9) skips the handler
 
 [ File System ]
 
