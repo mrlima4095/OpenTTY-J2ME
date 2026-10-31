@@ -638,4 +638,131 @@ if type(cterm) == "table" then
     end
 end
 
+-- 22. cterm row model: rows are a `cols`-wide string plus styled runs, so the
+--     writer never touches one table slot per character. These checks pin the
+--     behaviour that model has to keep: exact row width, one run per colour
+--     change, adjacent same-style writes merged, erase/insert/delete/resize
+--     updating both the text and the runs, and escapes split across writes.
+if type(cterm) == "table" then
+    local T = cterm.new({ cols = 12, rows = 3 })
+
+    T:write("\27[31mab\27[0mcd")
+    local row1 = T:rowText(T.grid[1])
+    check("cterm row width", #row1 == 12, tostring(#row1))
+    check("cterm row text", string.sub(T:rowText(T.grid[1]), 1, 4) == "abcd",
+        T:rowText(T.grid[1]))
+    check("cterm run count", #T.grid[1].runs == 1, tostring(#T.grid[1].runs))
+    local ch, fg = T:cellAt(2, 1)
+    check("cterm run style", ch == "b" and fg == 1, tostring(ch) .. "/" .. tostring(fg))
+    local _, plainFg = T:cellAt(4, 1)
+    check("cterm run ends", plainFg == T.defaultFg, tostring(plainFg))
+
+    -- Two writes in the same style at adjacent columns stay one run.
+    local M = cterm.new({ cols = 12, rows = 2 })
+    M:write("\27[32mab")
+    M:write("cd\27[0m")
+    check("cterm runs merge", #M.grid[1].runs == 1, tostring(#M.grid[1].runs))
+    check("cterm merged text", string.sub(M:rowText(M.grid[1]), 1, 4) == "abcd",
+        M:rowText(M.grid[1]))
+
+    -- Attribute bits reach the runs.
+    local A = cterm.new({ cols = 12, rows = 2 })
+    A:write("\27[1mB\27[0m\27[4mU\27[0m\27[7mR\27[0m\27[2mD\27[0m\27[8mH\27[0m")
+    local _, _, _, atB = A:cellAt(1, 1)
+    local _, _, _, atU = A:cellAt(2, 1)
+    local _, _, _, atR = A:cellAt(3, 1)
+    local _, _, _, atD = A:cellAt(4, 1)
+    local _, _, _, atH = A:cellAt(5, 1)
+    check("cterm bold bit", atB == 1, tostring(atB))
+    check("cterm underline bit", atU == 2, tostring(atU))
+    check("cterm reverse bit", atR == 4, tostring(atR))
+    check("cterm dim bit", atD == 8, tostring(atD))
+    check("cterm hidden bit", atH == 16, tostring(atH))
+    local _, _, _, atPlain = A:cellAt(6, 1)
+    check("cterm attrs reset", atPlain == 0, tostring(atPlain))
+
+    -- Background colour is tracked separately from the foreground.
+    local B = cterm.new({ cols = 12, rows = 2 })
+    B:write("\27[44mxx\27[0m")
+    local _, bgFg, bgBg = B:cellAt(1, 1)
+    check("cterm background", bgBg == 4 and bgFg == B.defaultFg,
+        tostring(bgFg) .. "/" .. tostring(bgBg))
+
+    -- An escape sequence split across two writes must still parse.
+    local P = cterm.new({ cols = 12, rows = 2 })
+    P:write("\27[3")
+    P:write("1mX")
+    local _, partFg = P:cellAt(1, 1)
+    check("cterm split escape", partFg == 1, tostring(partFg))
+
+    -- A sequence split inside the introducer too.
+    P:write("\27")
+    P:write("[1mY")
+    local _, escFg = P:cellAt(2, 1)
+    check("cterm split introducer", escFg == 1, tostring(escFg))
+
+    -- Insert and delete characters move the text and the runs together.
+    local I = cterm.new({ cols = 10, rows = 2 })
+    I:write("\27[31mabcd\27[0m")
+    I:write("\27[1;1H\27[2@")
+    check("cterm insert chars text", string.sub(I:rowText(I.grid[1]), 1, 6) == "  abcd",
+        I:rowText(I.grid[1]))
+    local _, movedFg = I:cellAt(3, 1)
+    check("cterm insert chars runs", movedFg == 1, tostring(movedFg))
+    I:write("\27[1;1H\27[2P")
+    check("cterm delete chars text", string.sub(I:rowText(I.grid[1]), 1, 4) == "abcd",
+        I:rowText(I.grid[1]))
+    local _, backFg = I:cellAt(1, 1)
+    check("cterm delete chars runs", backFg == 1, tostring(backFg))
+
+    -- Erase in line / display must drop the runs with the text.
+    local E = cterm.new({ cols = 10, rows = 3 })
+    E:write("\27[41mabcdef\27[0m")
+    E:write("\27[1;3H\27[K")
+    local erased = E.grid[1].runs
+    check("cterm erase right", #erased == 1 and erased[1].width == 2,
+        tostring(#erased) .. "/" .. tostring(erased[1] and erased[1].width))
+    E:write("\27[2J")
+    check("cterm erase display", E.grid[1].text == string.rep(" ", 10) and
+        #E.grid[1].runs == 0, tostring(#E.grid[1].runs))
+
+    -- Resize keeps the visible text and clips the runs to the new width.
+    local Z = cterm.new({ cols = 10, rows = 2 })
+    Z:write("\27[35mabcdefghij\27[0m")
+    Z:resize(6, 2)
+    local resized = Z:rowText(Z.grid[1])
+    check("cterm resize text", #resized == 6 and string.sub(resized, 1, 6) == "abcdef",
+        resized)
+    check("cterm resize runs", #Z.grid[1].runs == 1 and Z.grid[1].runs[1].width == 6,
+        tostring(#Z.grid[1].runs))
+    local _, resizeFg = Z:cellAt(6, 1)
+    check("cterm resize style", resizeFg == 5, tostring(resizeFg))
+
+    -- A wrapped coloured line keeps its style on the next row.
+    local W2 = cterm.new({ cols = 5, rows = 3 })
+    W2:write("\27[33mabcdefg\27[0m")
+    local _, wrapFg = W2:cellAt(1, 2)
+    check("cterm wrap keeps style", wrapFg == 3, tostring(wrapFg))
+
+    -- Coloured output scrolling into the scrollback keeps its runs.
+    local S2 = cterm.new({ cols = 10, rows = 2, scrollback = 5 })
+    for i = 1, 4 do S2:write("\27[31mline" .. i .. "\27[0m\n") end
+    local oldest = S2.scrollback[1]
+    check("cterm scrollback runs", oldest ~= nil and #oldest.runs == 1,
+        oldest ~= nil and tostring(#oldest.runs) or "nil")
+
+    -- Repeated coloured lines must not grow the run list per row.
+    local L = cterm.new({ cols = 40, rows = 3, scrollback = 8 })
+    for i = 1, 20 do
+        L:write("\27[1;32muser@host\27[0m \27[38;5;12m/home/user\27[0m$ ls\n")
+    end
+    local worst = 0
+    for y = 1, L.rows do
+        if #L.grid[y].runs > worst then worst = #L.grid[y].runs end
+    end
+    check("cterm runs bounded", worst <= 6, tostring(worst))
+    local _, promptFg = L:cellAt(1, 1)
+    check("cterm prompt style", promptFg == 2, tostring(promptFg))
+end
+
 mark("FAILURES=" .. fails)

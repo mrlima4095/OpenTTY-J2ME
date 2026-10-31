@@ -92,9 +92,12 @@ programs, pipes and redirections included).
 The file has two halves. The first is a plain Lua engine (`cterm.new`) with no
 dependency on the canvas:
 
-- a `cols × rows` cell grid with per-cell foreground, background and attribute
-  bits (bold, underline, reverse, dim, hidden) and a `revision` counter bumped
-  by every cell mutation;
+- a `cols × rows` grid where each row is a string of exactly `cols` characters
+  plus a list of styled runs (`{ x, width, fg, bg, at }`, with the attribute
+  bits bold, underline, reverse, dim and hidden). Writing text splices the row
+  string and appends or updates one run instead of touching one table slot per
+  character, which is what makes output affordable on a phone; a `revision`
+  counter is bumped once per write;
 - ANSI parsing: SGR (including `38;5;n`, `48;5;n`, `38;2;r;g;b`), cursor
   movement (`A B C D E F G H f d`), erase (`J K X`), insert/delete lines and
   characters (`L M @ P`), scroll (`S T`), save/restore (`s u`) and cursor
@@ -104,6 +107,14 @@ dependency on the canvas:
   `deleteInput`, `moveInput`, `moveHome`, `moveEnd`, history navigation);
 - `screenText`, `scrollbackText`, `allText`, `rowText` and `cellAt` for tests
   and diagnostics.
+
+Text is parsed in runs: `write` finds the next newline or escape with
+`string.find` and hands the plain text between them to `writeText`, so a
+control-free chunk costs a few native string operations. CSI sequences are
+located by scanning for their final byte eight bytes at a time. Parsed CSI
+parameters and SGR state transitions are cached (coloured output repeats the
+same sequences on every line), and the attribute state is a single `bits`
+number, so a cached transition is just `(fg, bg, bits)` before and after.
 
 The second half (`cterm.run`) owns the canvas: it measures the font, creates
 the grid, draws background runs and text runs, paints the prompt and cursor,
@@ -123,16 +134,22 @@ print(t:screenText())
 
 ## Staying responsive on a phone
 
-Three rules keep the MIDlet's LCDUI event thread free:
+Four rules keep the MIDlet's LCDUI event thread free and the battery out of it:
 
 - The grid is redrawn only when the terminal changed: `Terminal.revision` is
-  bumped by every cell mutation, so `render()` compares it (plus the scroll
-  offset and the geometry) before repainting the whole screen.
+  bumped once per write, so `render()` compares it (plus the scroll offset and
+  the geometry) before repainting the whole screen. A repaint replays the rows'
+  runs, so it never scans cells.
+- The input row is keyed by `(input, cursor, mode, prompt width)`, so a key that
+  changes nothing costs no drawing and no repaint at all.
 - A key press repaints only the input row (prompt, line, cursor, mode marker),
   which is a handful of canvas calls instead of a full grid pass.
 - Shell commands run on a background thread (`java.run`), so a slow command
   never freezes the event loop. The canvas is already current, so the job only
   posts a repaint; `c:display()` is left to the UI callbacks.
+
+There is no animation loop and no timer: the app only asks for a repaint when
+the grid or the input line actually changes, so an idle terminal costs nothing.
 
 The prompt is measured with `c:textWidth` per segment instead of
 `#text * charWidth`: phones that fall back to a proportional font for
@@ -144,7 +161,8 @@ canvas width it compacts to `path$` and finally to a truncated `...tail$`.
 
 - Output is captured when the command finishes, not streamed line by line, so
   a long-running command does not repaint until it returns. Output is capped at
-  64 KB (`[output truncated]`).
+  16 KB (`[output truncated]`): the scrollback only keeps 200 rows, so parsing
+  more text than that would only burn CPU on the phone.
 - There is no wide-character cell model: every Unicode code unit occupies one
   monospace cell.
 - Scrollback defaults to 200 rows (`scrollback = n` in `cterm.run`/`cterm.new`).
@@ -158,5 +176,9 @@ parser, wrapping, scrollback, line editing and one real headless canvas frame
 (including a captured `echo`), plus the phone behaviour: Up/Down scrolling, the
 grid revision not changing while typing, FIRE opening the text box in `123`
 mode, FIRE running the line on the background thread in `abc` mode, and the
-prompt fitting on a narrow canvas. `tests/lua/run_modules.sh` stages the app as
+prompt fitting on a narrow canvas. The row model has its own block: exact row
+width, one run per colour change, adjacent same-style writes merging, the
+attribute bits, erase/insert/delete/resize updating text and runs together,
+escapes split across two writes, and coloured lines staying at a handful of
+runs after scrolling. `tests/lua/run_modules.sh` stages the app as
 `cterm-app.lua` in the same headless shim run as the rock payloads.

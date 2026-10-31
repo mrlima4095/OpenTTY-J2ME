@@ -73,18 +73,200 @@ local function splitPlain(text, separator)
     end
 end
 
-local function newRow(cols, fg, bg)
-    if fg == nil then fg = 7 end
-    if bg == nil then bg = 0 end
-    local row = { ch = {}, fg = {}, bg = {}, at = {} }
-    for x = 1, cols do
-        row.ch[x] = " "
-        row.fg[x] = fg
-        row.bg[x] = bg
-        row.at[x] = 0
+-- | Byte -> one-character string cache. A cell holds a single character, and
+-- | `string.sub(text, i, i)` would allocate a new string for every byte of the
+-- | output; with the cache the printable path of `write` allocates nothing.
+local CHARS = {}
+for byte = 32, 126 do CHARS[byte] = string.char(byte) end
+
+local function charOf(byte)
+    local ch = CHARS[byte]
+    if ch == nil then
+        ch = string.char(byte)
+        CHARS[byte] = ch
     end
-    return row
+    return ch
 end
+
+-- | A row is sparse: a missing cell means a space in the default colours, so
+-- | blank rows (clear, scroll, resize) cost nothing to create and the writer
+-- | only pays for the cells it actually touches.
+-- | Rows ---------------------------------------------------------------------
+-- A row is a string of exactly `cols` characters plus a list of styled runs
+-- (`{ x, width, fg, bg, at }`). Writing text is a handful of native string
+-- operations per run instead of one table store per character: a native call
+-- costs ~20 us on the phone, and a screenful of output is a few thousand
+-- characters, so the difference is what makes a command feel instant.
+local SPACES = {}
+local SPACE_BLOCK = ""
+for i = 1, 256 do SPACE_BLOCK = SPACE_BLOCK .. " " end
+
+local function spaces(count)
+    if count < 1 then return "" end
+    local text = SPACES[count]
+    if text == nil then
+        if count <= 256 then
+            text = string.sub(SPACE_BLOCK, 1, count)
+        else
+            text = SPACE_BLOCK .. spaces(count - 256)
+        end
+        SPACES[count] = text
+    end
+    return text
+end
+
+local function newRow(cols, fg, bg)
+    return { text = spaces(cols), runs = {} }
+end
+
+-- | Recompute each run's slice of the row text. Runs are few (one per colour
+-- | change), so this keeps the list and the string in sync after any edit.
+local function refreshRuns(row)
+    local runs = row.runs
+    for i = 1, #runs do
+        local run = runs[i]
+        run.text = string.sub(row.text, run.x, run.x + run.width - 1)
+    end
+end
+
+-- | Style [from, to], dropping the runs it overlaps. Adjacent runs with the
+-- | same style merge, and default (unstyled) cells carry no run at all, so a
+-- | plain screen stores nothing.
+local function pushRun(kept, run)
+    local last = kept[#kept]
+    if last ~= nil and last.x + last.width == run.x and
+       last.fg == run.fg and last.bg == run.bg and last.at == run.at then
+        last.width = last.width + run.width
+        last.text = nil
+    else
+        kept[#kept + 1] = run
+    end
+end
+
+local function styleRange(row, from, to, fg, bg, at, defFg, defBg)
+    local runs = row.runs
+    local count = #runs
+    local styled = fg ~= defFg or bg ~= defBg or at ~= 0
+
+    -- Appending after the last run is what normal left-to-right output does,
+    -- and it needs no rebuild: one merge check and at most one new run.
+    local tail = runs[count]
+    if tail == nil or tail.x + tail.width - 1 < from then
+        if not styled then return end
+        if tail ~= nil and tail.fg == fg and tail.bg == bg and tail.at == at
+           and tail.x + tail.width == from then
+            tail.width = tail.width + to - from + 1
+            tail.text = string.sub(row.text, tail.x, tail.x + tail.width - 1)
+        else
+            runs[count + 1] = { x = from, width = to - from + 1, fg = fg, bg = bg,
+                at = at, text = string.sub(row.text, from, to) }
+        end
+        return
+    end
+
+    local kept = {}
+    local push = pushRun
+
+    local i, count = 1, #runs
+    while i <= count and runs[i].x + runs[i].width - 1 < from do
+        push(kept, runs[i])
+        i = i + 1
+    end
+    if i <= count and runs[i].x < from then
+        local run = runs[i]
+        push(kept, { x = run.x, width = from - run.x, fg = run.fg, bg = run.bg, at = run.at })
+        i = i + 1
+    end
+    if styled then
+        push(kept, { x = from, width = to - from + 1, fg = fg, bg = bg, at = at })
+    end
+    while i <= count and runs[i].x <= to do
+        local run = runs[i]
+        local runEnd = run.x + run.width - 1
+        if runEnd > to then
+            push(kept, { x = to + 1, width = runEnd - to, fg = run.fg, bg = run.bg, at = run.at })
+        end
+        i = i + 1
+    end
+    while i <= count do
+        push(kept, runs[i])
+        i = i + 1
+    end
+    row.runs = kept
+    refreshRuns(row)
+end
+
+-- | Replace [x, x + #segment - 1] with `segment` in the given style.
+local function rowWrite(row, x, segment, fg, bg, at, defFg, defBg, cols)
+    local width = #segment
+    if width < 1 then return end
+    local last = x + width - 1
+    if last > cols then
+        width = cols - x + 1
+        if width < 1 then return end
+        segment = string.sub(segment, 1, width)
+        last = cols
+    end
+    local text = row.text
+    row.text = string.sub(text, 1, x - 1) .. segment .. string.sub(text, last + 1)
+    local runs = row.runs
+    local count = #runs
+    if count == 0 then
+        if fg ~= defFg or bg ~= defBg or at ~= 0 then
+            runs[1] = { x = x, width = width, fg = fg, bg = bg, at = at, text = segment }
+        end
+        return
+    end
+    -- Overwriting exactly one existing run (a redraw, a spinner, a progress
+    -- bar) only updates that run; the list keeps its shape.
+    for i = 1, count do
+        local run = runs[i]
+        if run.x == x and run.width == width then
+            if fg == defFg and bg == defBg and at == 0 then
+                table.remove(runs, i)
+            else
+                run.fg = fg
+                run.bg = bg
+                run.at = at
+                run.text = segment
+            end
+            return
+        end
+        if run.x > x then break end
+    end
+    styleRange(row, x, last, fg, bg, at, defFg, defBg)
+end
+
+-- | Move the runs at or after `from` by `delta` columns (insert/delete chars),
+-- | splitting the run that crosses `from` and clamping to the row.
+local function shiftRuns(row, from, delta, cols)
+    local runs = row.runs
+    local kept = {}
+    for i = 1, #runs do
+        local run = runs[i]
+        local runEnd = run.x + run.width - 1
+        local x, e
+        if runEnd < from then
+            x, e = run.x, runEnd
+        elseif run.x >= from then
+            x, e = run.x + delta, runEnd + delta
+        else
+            kept[#kept + 1] = { x = run.x, width = from - run.x, fg = run.fg, bg = run.bg, at = run.at }
+            x, e = from + delta, runEnd + delta
+        end
+        if x < 1 then x = 1 end
+        if e > cols then e = cols end
+        if e >= x then
+            kept[#kept + 1] = { x = x, width = e - x + 1, fg = run.fg, bg = run.bg, at = run.at }
+        end
+    end
+    row.runs = kept
+end
+
+-- Parsed CSI parameter lists, keyed by the raw parameter string: coloured
+-- output repeats the same SGR sequences line after line, so parsing them once
+-- (two splitPlain passes and a tonumber per parameter) pays for itself.
+local PARAM_CACHE, PARAM_CACHE_SIZE = {}, 0
 
 local CUBE = { 0, 95, 135, 175, 215, 255 }
 
@@ -157,24 +339,13 @@ function Terminal:blankRow()
     return self:blankRowFor(self.cols)
 end
 
+-- | Attributes live in one number (`self.bits`), so a whole SGR state is
+-- | (fg, bg, bits) and can be cached as a triple. The bits are set and cleared
+-- | with plain arithmetic: `bits % (2 * bit) < bit` tests whether it is set.
 function Terminal:resetAttrs()
     self.fg = self.defaultFg
     self.bg = self.defaultBg
-    self.bold = false
-    self.underline = false
-    self.reverse = false
-    self.dim = false
-    self.hidden = false
-end
-
-function Terminal:attrBits()
-    local bits = 0
-    if self.bold then bits = bits + AT_BOLD end
-    if self.underline then bits = bits + AT_UNDERLINE end
-    if self.reverse then bits = bits + AT_REVERSE end
-    if self.dim then bits = bits + AT_DIM end
-    if self.hidden then bits = bits + AT_HIDDEN end
-    return bits
+    self.bits = 0
 end
 
 function Terminal:clear()
@@ -222,62 +393,61 @@ function Terminal:putChar(ch)
         self:lineFeed()
     end
     self:touch()
-    local row = self.grid[self.cy]
-    row.ch[self.cx] = ch
-    row.fg[self.cx] = self.fg
-    row.bg[self.cx] = self.bg
-    row.at[self.cx] = self:attrBits()
+    rowWrite(self.grid[self.cy], self.cx, ch, self.fg, self.bg, self.bits,
+        self.defaultFg, self.defaultBg, self.cols)
     self.cx = self.cx + 1
 end
 
 function Terminal:sgr(params)
-    if #params == 0 then
+    local count = #params
+    if count == 0 then
         self:resetAttrs()
         return
     end
+    local fg, bg, bits = self.fg, self.bg, self.bits
     local i = 1
-    while i <= #params do
-        local code = tonumber(params[i]) or 0
+    while i <= count do
+        local code = params[i] or 0
         if code == 0 then
-            self:resetAttrs()
+            fg, bg, bits = self.defaultFg, self.defaultBg, 0
         elseif code == 1 then
-            self.bold = true
+            if bits % 2 == 0 then bits = bits + AT_BOLD end
         elseif code == 2 then
-            self.dim = true
+            if bits % 16 < 8 then bits = bits + AT_DIM end
         elseif code == 4 then
-            self.underline = true
+            if bits % 4 < 2 then bits = bits + AT_UNDERLINE end
         elseif code == 7 then
-            self.reverse = true
+            if bits % 8 < 4 then bits = bits + AT_REVERSE end
         elseif code == 8 then
-            self.hidden = true
+            if bits % 32 < 16 then bits = bits + AT_HIDDEN end
         elseif code == 21 then
-            self.bold = false
+            if bits % 2 >= 1 then bits = bits - AT_BOLD end
         elseif code == 22 then
-            self.bold = false
-            self.dim = false
+            if bits % 2 >= 1 then bits = bits - AT_BOLD end
+            if bits % 16 >= 8 then bits = bits - AT_DIM end
         elseif code == 24 then
-            self.underline = false
+            if bits % 4 >= 2 then bits = bits - AT_UNDERLINE end
         elseif code == 27 then
-            self.reverse = false
+            if bits % 8 >= 4 then bits = bits - AT_REVERSE end
         elseif code == 28 then
-            self.hidden = false
+            if bits % 32 >= 16 then bits = bits - AT_HIDDEN end
         elseif code >= 30 and code <= 37 then
-            self.fg = code - 30
+            fg = code - 30
         elseif code == 39 then
-            self.fg = self.defaultFg
+            fg = self.defaultFg
         elseif code >= 40 and code <= 47 then
-            self.bg = code - 40
+            bg = code - 40
         elseif code == 49 then
-            self.bg = self.defaultBg
+            bg = self.defaultBg
         elseif code >= 90 and code <= 97 then
-            self.fg = code - 90 + 8
+            fg = code - 90 + 8
         elseif code >= 100 and code <= 107 then
-            self.bg = code - 100 + 8
+            bg = code - 100 + 8
         elseif code == 38 or code == 48 then
             local mode = params[i + 1]
             if mode == 5 then
                 local value = colour256(params[i + 2] or 0)
-                if code == 38 then self.fg = value else self.bg = value end
+                if code == 38 then fg = value else bg = value end
                 i = i + 2
             elseif mode == 2 then
                 local r = params[i + 2]
@@ -289,21 +459,20 @@ function Terminal:sgr(params)
                     b = params[i + 5]
                     i = i + 1
                 end
-                r = tonumber(r) or 0
-                g = tonumber(g) or 0
-                b = tonumber(b) or 0
-                local value = -((r * 65536 + g * 256 + b) + 1)
-                if code == 38 then self.fg = value else self.bg = value end
+                local value = -(((r or 0) * 65536 + (g or 0) * 256 + (b or 0)) + 1)
+                if code == 38 then fg = value else bg = value end
                 i = i + 4
             end
         end
         i = i + 1
     end
+    self.fg = fg
+    self.bg = bg
+    self.bits = bits
 end
 
 function Terminal:eraseLine(mode)
     self:touch()
-    local row = self.grid[self.cy]
     local from, to
     if mode == 1 then
         from, to = 1, self.cx
@@ -314,48 +483,29 @@ function Terminal:eraseLine(mode)
     end
     if from < 1 then from = 1 end
     if to > self.cols then to = self.cols end
-    for x = from, to do
-        row.ch[x] = " "
-        row.fg[x] = self.defaultFg
-        row.bg[x] = self.defaultBg
-        row.at[x] = 0
-    end
+    if to < from then return end
+    rowWrite(self.grid[self.cy], from, spaces(to - from + 1), self.defaultFg,
+        self.defaultBg, 0, self.defaultFg, self.defaultBg, self.cols)
 end
 
 function Terminal:eraseDisplay(mode)
     self:touch()
+    -- Whole rows are replaced by blank ones instead of being cleared cell by
+    -- cell: a sparse row is free, a cols-wide loop is not.
     if mode == 1 then
         self:eraseLine(1)
         for y = 1, self.cy - 1 do
-            local row = self.grid[y]
-            for x = 1, self.cols do
-                row.ch[x] = " "
-                row.fg[x] = self.defaultFg
-                row.bg[x] = self.defaultBg
-                row.at[x] = 0
-            end
+            self.grid[y] = self:blankRow()
         end
     elseif mode == 2 or mode == 3 then
         for y = 1, self.rows do
-            local row = self.grid[y]
-            for x = 1, self.cols do
-                row.ch[x] = " "
-                row.fg[x] = self.defaultFg
-                row.bg[x] = self.defaultBg
-                row.at[x] = 0
-            end
+            self.grid[y] = self:blankRow()
         end
         if mode == 3 then self.scrollback = {} end
     else
         self:eraseLine(0)
         for y = self.cy + 1, self.rows do
-            local row = self.grid[y]
-            for x = 1, self.cols do
-                row.ch[x] = " "
-                row.fg[x] = self.defaultFg
-                row.bg[x] = self.defaultBg
-                row.at[x] = 0
-            end
+            self.grid[y] = self:blankRow()
         end
     end
 end
@@ -385,44 +535,53 @@ function Terminal:deleteLines(count)
 end
 
 function Terminal:deleteChars(count)
-    local row = self.grid[self.cy]
-    if count > self.cols - self.cx + 1 then count = self.cols - self.cx + 1 end
+    local cols = self.cols
+    if count > cols - self.cx + 1 then count = cols - self.cx + 1 end
     if count < 1 then return end
     self:touch()
-    for x = self.cx, self.cols - count do
-        row.ch[x] = row.ch[x + count]
-        row.fg[x] = row.fg[x + count]
-        row.bg[x] = row.bg[x + count]
-        row.at[x] = row.at[x + count]
-    end
-    for x = self.cols - count + 1, self.cols do
-        row.ch[x] = " "
-        row.fg[x] = self.defaultFg
-        row.bg[x] = self.defaultBg
-        row.at[x] = 0
-    end
+    local row = self.grid[self.cy]
+    local text = row.text
+    row.text = string.sub(text, 1, self.cx - 1) .. string.sub(text, self.cx + count) .. spaces(count)
+    shiftRuns(row, self.cx + count, -count, cols)
+    styleRange(row, cols - count + 1, cols, self.defaultFg, self.defaultBg, 0, self.defaultFg, self.defaultBg)
 end
 
 function Terminal:insertChars(count)
-    local row = self.grid[self.cy]
-    if count > self.cols - self.cx + 1 then count = self.cols - self.cx + 1 end
+    local cols = self.cols
+    if count > cols - self.cx + 1 then count = cols - self.cx + 1 end
     if count < 1 then return end
     self:touch()
-    for x = self.cols, self.cx + count, -1 do
-        row.ch[x] = row.ch[x - count]
-        row.fg[x] = row.fg[x - count]
-        row.bg[x] = row.bg[x - count]
-        row.at[x] = row.at[x - count]
-    end
-    for x = self.cx, self.cx + count - 1 do
-        row.ch[x] = " "
-        row.fg[x] = self.defaultFg
-        row.bg[x] = self.defaultBg
-        row.at[x] = 0
-    end
+    local row = self.grid[self.cy]
+    local text = row.text
+    row.text = string.sub(text, 1, self.cx - 1) .. spaces(count) .. string.sub(text, self.cx, cols - count)
+    shiftRuns(row, self.cx, count, cols)
+    styleRange(row, self.cx, self.cx + count - 1, self.defaultFg, self.defaultBg, 0, self.defaultFg, self.defaultBg)
 end
 
+-- | SGR state cache. Coloured output repeats the same handful of sequences on
+-- | every line, always from the same state, so remembering (fg, bg, bits)
+-- | before and after a sequence turns a parse into a table lookup. Each
+-- | sequence keeps the last few transitions it was seen with, because a reset
+-- | can follow different attributes.
+local SGR_CACHE, SGR_CACHE_SIZE = {}, 0
+
 function Terminal:handleCSI(buffer, final)
+    if final == "m" then
+        local entries = SGR_CACHE[buffer]
+        if entries ~= nil then
+            local fg, bg, bits = self.fg, self.bg, self.bits
+            for k = 1, #entries do
+                local entry = entries[k]
+                if entry[1] == fg and entry[2] == bg and entry[3] == bits then
+                    self.fg = entry[4]
+                    self.bg = entry[5]
+                    self.bits = entry[6]
+                    return
+                end
+            end
+        end
+    end
+
     local private = false
     local first = string.sub(buffer, 1, 1)
     if first == "?" or first == ">" or first == "!" then
@@ -430,15 +589,24 @@ function Terminal:handleCSI(buffer, final)
         buffer = string.sub(buffer, 2)
     end
 
-    local params = {}
-    if buffer ~= "" then
-        local parts = splitPlain(buffer, ";")
-        for i = 1, #parts do
-            local sub = splitPlain(parts[i], ":")
-            for j = 1, #sub do
-                params[#params + 1] = tonumber(sub[j])
+    local params = PARAM_CACHE[buffer]
+    if params == nil then
+        params = {}
+        if buffer ~= "" then
+            local parts = splitPlain(buffer, ";")
+            for i = 1, #parts do
+                local sub = splitPlain(parts[i], ":")
+                for j = 1, #sub do
+                    params[#params + 1] = tonumber(sub[j])
+                end
             end
         end
+        if PARAM_CACHE_SIZE >= 256 then
+            PARAM_CACHE = {}
+            PARAM_CACHE_SIZE = 0
+        end
+        PARAM_CACHE[buffer] = params
+        PARAM_CACHE_SIZE = PARAM_CACHE_SIZE + 1
     end
 
     local firstParam = params[1]
@@ -446,7 +614,23 @@ function Terminal:handleCSI(buffer, final)
     if count < 1 then count = 1 end
 
     if final == "m" then
+        local fg, bg, bits = self.fg, self.bg, self.bits
         self:sgr(params)
+        local entries = SGR_CACHE[buffer]
+        if entries == nil then
+            if SGR_CACHE_SIZE >= 256 then
+                SGR_CACHE, SGR_CACHE_SIZE = {}, 0
+            end
+            entries = {}
+            SGR_CACHE[buffer] = entries
+            SGR_CACHE_SIZE = SGR_CACHE_SIZE + 1
+        end
+        local used = #entries
+        if used >= 4 then
+            entries[1], entries[2], entries[3] = entries[2], entries[3], entries[4]
+            used = 3
+        end
+        entries[used + 1] = { fg, bg, bits, self.fg, self.bg, self.bits }
     elseif final == "A" then
         self.cy = clamp(self.cy - count, 1, self.rows)
     elseif final == "B" then
@@ -481,14 +665,9 @@ function Terminal:handleCSI(buffer, final)
     elseif final == "@" then
         self:insertChars(count)
     elseif final == "X" then
-        local row = self.grid[self.cy]
         local last = clamp(self.cx + count - 1, self.cx, self.cols)
-        for x = self.cx, last do
-            row.ch[x] = " "
-            row.fg[x] = self.defaultFg
-            row.bg[x] = self.defaultBg
-            row.at[x] = 0
-        end
+        rowWrite(self.grid[self.cy], self.cx, spaces(last - self.cx + 1), self.defaultFg,
+            self.defaultBg, 0, self.defaultFg, self.defaultBg, self.cols)
     elseif final == "S" then
         for i = 1, count do self:scroll() end
     elseif final == "T" then
@@ -509,12 +688,130 @@ function Terminal:handleCSI(buffer, final)
     end
 end
 
+-- | Next byte that `write` has to handle one by one, or n + 1 when the rest
+-- | of the text is plain. `extra` also looks for CR/BS/TAB, which most output
+-- | does not contain.
+local function nextControl(text, from, n, extra)
+    local stop = n + 1
+    local found = string.find(text, "\n", from, true)
+    if found ~= nil and found < stop then stop = found end
+    found = string.find(text, "\27", from, true)
+    if found ~= nil and found < stop then stop = found end
+    if extra then
+        found = string.find(text, "\t", from, true)
+        if found ~= nil and found < stop then stop = found end
+        found = string.find(text, "\r", from, true)
+        if found ~= nil and found < stop then stop = found end
+        found = string.find(text, "\b", from, true)
+        if found ~= nil and found < stop then stop = found end
+    end
+    return stop
+end
+
+-- | Position and byte of the final byte of a CSI sequence (0x40..0x7E). One
+-- | `string.byte` call covers eight characters, and the scan itself is plain
+-- | Lua comparisons, so a colour sequence costs a couple of native calls
+-- | instead of one per parameter character. Returns nil when the text ends
+-- | before the sequence does.
+local function csiFinal(text, from, n)
+    local j = from
+    while j <= n do
+        local e = j + 7
+        if e > n then e = n end
+        local b1, b2, b3, b4, b5, b6, b7, b8 = string.byte(text, j, e)
+        if b1 >= 64 then return j, b1 end
+        if b2 ~= nil and b2 >= 64 then return j + 1, b2 end
+        if b3 ~= nil and b3 >= 64 then return j + 2, b3 end
+        if b4 ~= nil and b4 >= 64 then return j + 3, b4 end
+        if b5 ~= nil and b5 >= 64 then return j + 4, b5 end
+        if b6 ~= nil and b6 >= 64 then return j + 5, b6 end
+        if b7 ~= nil and b7 >= 64 then return j + 6, b7 end
+        if b8 ~= nil and b8 >= 64 then return j + 7, b8 end
+        j = j + 8
+    end
+    return nil
+end
+
 function Terminal:write(text)
     text = tostring(text or "")
+    local n = #text
+    if n == 0 then return end
+    -- One revision bump per write instead of one per character: the canvas only
+    -- needs to know that the grid changed.
+    self:touch()
+
+    local extra = string.find(text, "\t", 1, true) ~= nil
+        or string.find(text, "\r", 1, true) ~= nil
+        or string.find(text, "\b", 1, true) ~= nil
+    local cols = self.cols
     local i = 1
-    while i <= #text do
-        local byte = string.byte(text, i)
-        if self.esc == "osc" then
+    while i <= n do
+        local esc = self.esc
+        if esc == nil then
+            local stop = nextControl(text, i, n, extra)
+            if stop > i then
+                self:writeText(string.sub(text, i, stop - 1))
+                i = stop
+            end
+            if i <= n then
+                local byte = string.byte(text, i)
+                if byte == 27 then
+                    -- Consume the introducer in the same step: the next byte
+                    -- decides whether this is CSI, OSC or a two-byte escape.
+                    local after = string.byte(text, i + 1)
+                    if after == 91 then
+                        self.esc = "csi"
+                        self.escBuf = ""
+                        i = i + 2
+                    elseif after == 93 then
+                        self.esc = "osc"
+                        i = i + 2
+                    elseif after == nil then
+                        self.esc = "esc"
+                        i = i + 1
+                    else
+                        self.esc = nil
+                        i = i + 2
+                    end
+                elseif byte == 10 then
+                    self:lineFeed()
+                    self.cx = 1
+                    i = i + 1
+                elseif byte == 13 then
+                    self.cx = 1
+                    i = i + 1
+                elseif byte == 8 then
+                    if self.cx > 1 then self.cx = self.cx - 1 end
+                    i = i + 1
+                elseif byte == 9 then
+                    local stopColumn = (floor((self.cx - 1) / 8) + 1) * 8 + 1
+                    self.cx = clamp(stopColumn, 1, cols)
+                    i = i + 1
+                else
+                    -- BEL and the other C0 controls are ignored.
+                    i = i + 1
+                end
+            end
+        elseif esc == "csi" then
+            local pos, byte = csiFinal(text, i, n)
+            if pos == nil then
+                -- The sequence continues in the next write: keep what we have.
+                self.escBuf = self.escBuf .. string.sub(text, i)
+                i = n + 1
+            else
+                local buffer = self.escBuf
+                if pos > i then buffer = buffer .. string.sub(text, i, pos - 1) end
+                local ch = CHARS[byte]
+                if ch == nil then ch = charOf(byte) end
+                self:handleCSI(buffer, ch)
+                self.esc = nil
+                self.escBuf = ""
+                i = pos + 1
+            end
+        elseif esc == "osc" then
+            -- Titles and other string sequences are rare, so this stays a
+            -- simple byte walk (BEL or ESC \ ends it).
+            local byte = string.byte(text, i)
             if byte == 7 then
                 self.esc = nil
             elseif byte == 27 and string.byte(text, i + 1) == 92 then
@@ -522,17 +819,9 @@ function Terminal:write(text)
                 i = i + 1
             end
             i = i + 1
-        elseif self.esc == "csi" then
-            local ch = string.sub(text, i, i)
-            if byte >= 64 and byte <= 126 then
-                self:handleCSI(self.escBuf, ch)
-                self.esc = nil
-                self.escBuf = ""
-            else
-                self.escBuf = self.escBuf .. ch
-            end
-            i = i + 1
-        elseif self.esc == "esc" then
+        else
+            -- ESC was the last byte of the previous chunk.
+            local byte = string.byte(text, i)
             if byte == 91 then
                 self.esc = "csi"
                 self.escBuf = ""
@@ -542,42 +831,41 @@ function Terminal:write(text)
                 self.esc = nil
             end
             i = i + 1
-        else
-            local ch = string.sub(text, i, i)
-            if byte == 27 then
-                self.esc = "esc"
-            elseif byte == 10 then
-                self:lineFeed()
-                self.cx = 1
-            elseif byte == 13 then
-                self.cx = 1
-            elseif byte == 8 then
-                if self.cx > 1 then self.cx = self.cx - 1 end
-            elseif byte == 9 then
-                local stop = (floor((self.cx - 1) / 8) + 1) * 8 + 1
-                self.cx = clamp(stop, 1, self.cols)
-            elseif byte < 32 then
-                -- BEL and the other C0 controls are ignored.
-            else
-                self:putChar(ch)
-            end
-            i = i + 1
         end
     end
 end
 
-function Terminal:rowText(row)
-    local out = {}
-    for x = 1, self.cols do
-        out[x] = row.ch[x] or " "
+-- | Write a plain (control-free) run of text at the cursor, wrapping at the
+-- | right margin. Each row segment is one string splice, not a cell loop.
+function Terminal:writeText(segment)
+    local cols = self.cols
+    local i, n = 1, #segment
+    while i <= n do
+        local cx = self.cx
+        if cx > cols then
+            self.cx = 1
+            self:lineFeed()
+            cx = 1
+        end
+        local room = cols - cx + 1
+        local take = n - i + 1
+        if take > room then take = room end
+        local chunk = take == n and i == 1 and segment or string.sub(segment, i, i + take - 1)
+        rowWrite(self.grid[self.cy], cx, chunk, self.fg, self.bg, self.bits,
+            self.defaultFg, self.defaultBg, cols)
+        self.cx = cx + take
+        i = i + take
     end
-    return table.concat(out)
+end
+
+function Terminal:rowText(row)
+    return row.text
 end
 
 function Terminal:screenText()
     local lines = {}
     for y = 1, self.rows do
-        lines[y] = self:rowText(self.grid[y])
+        lines[y] = self.grid[y].text
     end
     return table.concat(lines, "\n")
 end
@@ -585,7 +873,7 @@ end
 function Terminal:scrollbackText()
     local lines = {}
     for y = 1, #self.scrollback do
-        lines[y] = self:rowText(self.scrollback[y])
+        lines[y] = self.scrollback[y].text
     end
     return table.concat(lines, "\n")
 end
@@ -593,10 +881,10 @@ end
 function Terminal:allText()
     local lines = {}
     for y = 1, #self.scrollback do
-        lines[#lines + 1] = self:rowText(self.scrollback[y])
+        lines[#lines + 1] = self.scrollback[y].text
     end
     for y = 1, self.rows do
-        lines[#lines + 1] = self:rowText(self.grid[y])
+        lines[#lines + 1] = self.grid[y].text
     end
     return table.concat(lines, "\n")
 end
@@ -604,7 +892,16 @@ end
 function Terminal:cellAt(x, y)
     local row = self.grid[y]
     if row == nil then return nil end
-    return row.ch[x], row.fg[x], row.bg[x], row.at[x]
+    if x < 1 or x > #row.text then return nil end
+    local ch = string.sub(row.text, x, x)
+    local runs = row.runs
+    for i = 1, #runs do
+        local run = runs[i]
+        if x >= run.x and x < run.x + run.width then
+            return ch, run.fg, run.bg, run.at
+        end
+    end
+    return ch, self.defaultFg, self.defaultBg, 0
 end
 
 function Terminal:viewRows()
@@ -730,8 +1027,7 @@ function Terminal:resize(cols, rows)
     if cols == self.cols and rows == self.rows then return end
     self:touch()
     local old = self.grid
-    local oldRows = self.rows
-    local oldCols = self.cols
+    local oldRows, oldCols = self.rows, self.cols
     local dropped = oldRows - rows
     if dropped > 0 then
         for y = 1, dropped do
@@ -748,14 +1044,21 @@ function Terminal:resize(cols, rows)
         local source = old[sourceY]
         local row = self:blankRowFor(cols)
         if source ~= nil then
-            for x = 1, cols do
-                if x <= oldCols then
-                    row.ch[x] = source.ch[x] or " "
-                    row.fg[x] = source.fg[x] or self.defaultFg
-                    row.bg[x] = source.bg[x] or self.defaultBg
-                    row.at[x] = source.at[x] or 0
+            local text = source.text
+            if oldCols > cols then text = string.sub(text, 1, cols) end
+            if cols > #text then text = text .. spaces(cols - #text) end
+            row.text = text
+            local runs, kept = source.runs, {}
+            for i = 1, #runs do
+                local run = runs[i]
+                if run.x <= cols then
+                    local width = run.width
+                    if run.x + width - 1 > cols then width = cols - run.x + 1 end
+                    kept[#kept + 1] = { x = run.x, width = width, fg = run.fg, bg = run.bg, at = run.at }
                 end
             end
+            row.runs = kept
+            refreshRuns(row)
         end
         grid[y] = row
     end
@@ -796,6 +1099,9 @@ cterm.has = has
 local FONTS = { "monospace small", "monospace medium", "monospace large" }
 local PAD = 2
 local CONFIG = "/home/.ctermrc"
+-- The scrollback keeps 200 rows (~16 KB at 80 columns), so parsing more output
+-- than that only burns CPU on the phone: the extra text scrolls away unseen.
+local OUTPUT_LIMIT = 16384
 local THEME = {
     bg = 0x0C0C0C,
     fg = 0xD3D7CF,
@@ -852,6 +1158,27 @@ local function run(options)
     local drawnRevision = nil
     local drawnOffset = nil
     local drawnRows, drawnCols = nil, nil
+    local drawnInput = nil
+
+    -- | Colour caches: `cterm.resolve` and `cterm.dimColor` are pure functions
+    -- | of the palette, so resolving a value once per frame becomes a lookup.
+    local COLOURS, DIMS = {}, {}
+    local function colourOf(value)
+        local rgb = COLOURS[value]
+        if rgb == nil then
+            rgb = cterm.resolve(value, t.defaultFg)
+            COLOURS[value] = rgb
+        end
+        return rgb
+    end
+    local function dimOf(rgb)
+        local dim = DIMS[rgb]
+        if dim == nil then
+            dim = cterm.dimColor(rgb)
+            DIMS[rgb] = dim
+        end
+        return dim
+    end
 
     local function hostName()
         if hostCache == nil then
@@ -962,75 +1289,61 @@ local function run(options)
         return out
     end
 
-    -- | Grid: one fillRect for the background, then only the runs that carry
-    -- | content. Blank default cells cost nothing, which keeps a full redraw
-    -- | affordable on a phone.
+    -- | Grid: one fillRect for the background, then each row's styled runs and
+    -- | the plain text between them. The runs are maintained by the writer, so
+    -- | a repaint (scrolling, a key press, a resize) never scans cells.
+    local function drawRow(row, py)
+        local runs = row.runs
+        local text = row.text
+        local defBg = t.defaultBg
+        local x = 1
+        for i = 1, #runs do
+            local run = runs[i]
+            if run.x > x then
+                local gap = string.sub(text, x, run.x - 1)
+                if gap ~= spaces(#gap) then
+                    c:color(THEME.fg)
+                    c:text(gap, PAD + (x - 1) * charW, py, "left")
+                end
+            end
+            local at = run.at
+            local fg, bg = run.fg, run.bg
+            if at % 8 >= 4 then fg, bg = bg, fg end -- AT_REVERSE
+            if bg ~= defBg then
+                c:color(colourOf(bg))
+                c:rect(PAD + (run.x - 1) * charW, py, run.width * charW, lineH, true)
+            end
+            if at % 32 < 16 then -- not AT_HIDDEN
+                local colour = colourOf(fg)
+                if at % 16 >= 8 then colour = dimOf(colour) end -- AT_DIM
+                c:color(colour)
+                local tx = PAD + (run.x - 1) * charW
+                local runText = run.text
+                c:text(runText, tx, py, "left")
+                if at % 2 >= 1 then c:text(runText, tx + 1, py, "left") end -- AT_BOLD
+                if at % 4 >= 2 then -- AT_UNDERLINE
+                    c:line(tx, py + lineH - 1, tx + #runText * charW - 1, py + lineH - 1)
+                end
+            end
+            x = run.x + run.width
+        end
+        if x <= #text then
+            local tail = string.sub(text, x)
+            if tail ~= spaces(#tail) then
+                c:color(THEME.fg)
+                c:text(tail, PAD + (x - 1) * charW, py, "left")
+            end
+        end
+    end
+
     local function drawGrid()
         local visible = t:viewRows()
-        local gridHeight = t.rows * lineH
 
         c:color(THEME.bg)
-        c:rect(0, PAD, W, gridHeight, true)
+        c:rect(0, PAD, W, t.rows * lineH, true)
 
         for y = 1, t.rows do
-            local row = visible[y]
-            local py = PAD + (y - 1) * lineH
-
-            local x = 1
-            while x <= t.cols do
-                local fg = row.fg[x] or t.defaultFg
-                local bg = row.bg[x] or t.defaultBg
-                local at = row.at[x] or 0
-                local effectiveBg = bg
-                if has(at, AT_REVERSE) then effectiveBg = fg end
-                local start = x
-                while x <= t.cols do
-                    local nextFg = row.fg[x] or t.defaultFg
-                    local nextBg = row.bg[x] or t.defaultBg
-                    local nextAt = row.at[x] or 0
-                    local stopBg = nextBg
-                    if has(nextAt, AT_REVERSE) then stopBg = nextFg end
-                    if stopBg ~= effectiveBg then break end
-                    x = x + 1
-                end
-                if effectiveBg ~= t.defaultBg then
-                    c:color(cterm.resolve(effectiveBg, t.defaultBg))
-                    c:rect(PAD + (start - 1) * charW, py, (x - start) * charW, lineH, true)
-                end
-            end
-
-            x = 1
-            while x <= t.cols do
-                local fg = row.fg[x] or t.defaultFg
-                local bg = row.bg[x] or t.defaultBg
-                local at = row.at[x] or 0
-                local start = x
-                local text = ""
-                local content = false
-                while x <= t.cols do
-                    local nextFg = row.fg[x] or t.defaultFg
-                    local nextBg = row.bg[x] or t.defaultBg
-                    local nextAt = row.at[x] or 0
-                    if nextFg ~= fg or nextBg ~= bg or nextAt ~= at then break end
-                    local ch = row.ch[x] or " "
-                    if ch ~= " " or bg ~= t.defaultBg or at ~= 0 then content = true end
-                    text = text .. ch
-                    x = x + 1
-                end
-                if content and not has(at, AT_HIDDEN) then
-                    local effectiveFg = fg
-                    if has(at, AT_REVERSE) then effectiveFg = bg end
-                    local colour = cterm.resolve(effectiveFg, t.defaultFg)
-                    if has(at, AT_DIM) then colour = cterm.dimColor(colour) end
-                    c:color(colour)
-                    local tx = PAD + (start - 1) * charW
-                    c:text(text, tx, py, "left")
-                    if has(at, AT_BOLD) then c:text(text, tx + 1, py, "left") end
-                    if has(at, AT_UNDERLINE) then
-                        c:line(tx, py + lineH - 1, tx + #text * charW - 1, py + lineH - 1)
-                    end
-                end
-            end
+            drawRow(visible[y], PAD + (y - 1) * lineH)
         end
 
         if t.viewOffset > 0 then
@@ -1047,16 +1360,15 @@ local function run(options)
 
     -- | Input row: prompt, editable line, block cursor and the mode marker.
     -- | Redrawn on every key press; it is a handful of calls, unlike the grid.
-    local function drawInput()
+    local function drawInput(info)
         local y = PAD + t.rows * lineH
         c:color(THEME.inputBg)
         c:rect(0, y, W, lineH, true)
 
-        local info = promptInfo()
         local x = PAD
         for i = 1, #info.segments do
             local segment = info.segments[i]
-            c:color(cterm.resolve(segment.fg, 7))
+            c:color(colourOf(segment.fg))
             c:text(segment.text, x, y, "left")
             if segment.bold then c:text(segment.text, x + 1, y, "left") end
             x = x + segment.width
@@ -1090,9 +1402,19 @@ local function run(options)
         c:text(mode, W - PAD, y, "right")
     end
 
-    local function render()
+    -- | Redraw what changed and ask for a repaint. Both halves are skipped when
+    -- | nothing did: the grid keeps a revision and the input row is keyed by
+    -- | (input, cursor, mode, prompt width), so a repeated key that does not
+    -- | move anything costs no drawing and no repaint at all.
+    local function render(force)
         local needGrid = drawnRevision ~= t.revision or drawnOffset ~= t.viewOffset
             or drawnRows ~= t.rows or drawnCols ~= t.cols
+        local info = promptInfo()
+        local mode = qwerty and "abc" or "123"
+        local inputKey = t.input .. "|" .. t.cursor .. "|" .. mode .. "|" .. info.width
+        local needInput = inputKey ~= drawnInput
+        if not needGrid and not needInput and not force then return end
+
         if needGrid then
             drawGrid()
             drawnRevision = t.revision
@@ -1100,7 +1422,10 @@ local function run(options)
             drawnRows = t.rows
             drawnCols = t.cols
         end
-        drawInput()
+        if needInput or force then
+            drawInput(info)
+            drawnInput = inputKey
+        end
         if app ~= nil then
             app.cols = t.cols
             app.rows = t.rows
@@ -1219,8 +1544,8 @@ local function run(options)
             io.setstdout(previous)
             local text = tostring(output)
             if string.sub(text, 1, 1) == "\n" then text = string.sub(text, 2) end
-            if #text > 65536 then
-                text = string.sub(text, 1, 65536) .. "\n[output truncated]\n"
+            if #text > OUTPUT_LIMIT then
+                text = string.sub(text, 1, OUTPUT_LIMIT) .. "\n[output truncated]\n"
             end
             if text ~= "" then t:write(text) end
             if not ok then
@@ -1457,6 +1782,7 @@ local function run(options)
         measure()
         t:resize(cols, rows)
         drawnRevision = nil
+        drawnInput = nil
         render()
     end
 
@@ -1509,6 +1835,15 @@ local function run(options)
         measure()
         if t ~= nil then t:resize(cols, rows) end
         drawnRevision = nil
+        drawnInput = nil
+        render()
+    end
+
+    -- The buffer is recreated with the canvas; a system repaint after the app
+    -- comes back must not blit a stale grid.
+    c.show = function()
+        drawnRevision = nil
+        drawnInput = nil
         render()
     end
 
