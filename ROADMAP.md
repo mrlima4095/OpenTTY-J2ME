@@ -5,14 +5,9 @@ area; the most concrete, near-term items appear first.
 
 ## Releases
 
-### 1.18.1 — current
+### 1.19.1
 
-- Network Controller
-
-### 1.18.2 — planned (10/02/2026)
-
-- Applications Menu-like `/bin/init`
-- OpenSSH J2ME
+- Zip API
 
 ---
 
@@ -25,6 +20,7 @@ area; the most concrete, near-term items appear first.
 
 
 
+
 ## Lua J2ME
 
 - [ ] Coroutine support
@@ -33,7 +29,7 @@ area; the most concrete, near-term items appear first.
 - [ ] `collectgarbage` threshold mode
 - [ ] `table.serialize` / `table.unserialize`
 - [ ] Regular expressions
-- [x] LuaCanvas
+- [ ] LuaCanvas
 - [ ] FTP API
 
 ## Kernel
@@ -49,7 +45,6 @@ area; the most concrete, near-term items appear first.
 - [ ] Plugins
 - [ ] Bluetooth API
 - [ ] Power / backlight API
-- [ ] ZIP-mountable filesystem
 - [ ] Permission system
 - [ ] Groups
 - [ ] i18n translations
