@@ -26,10 +26,12 @@ Copyright (C) 2026 - Mr. Lima
 
 [ File System ]
 
+- `/home` folders are real folders: only `/home/` itself keeps plain record stores, while files and nested folders inside `/home/<dir>/` use the same paged VFS as `/bin` (an RMS name cannot hold `/`, so writing a file inside a folder used to fail with `IOException`); folders come back after a restart, `rm` of a folder wipes the whole tree, and `ls /home` lists each entry once
 - `mkdir` now works in `/tmp` and `/home` (it only accepted the in-memory mounts before)
 - `ls` no longer duplicates entries and listing `/mnt` no longer throws `SecurityException` on phones whose file system is restricted
 - `_UID` stays in sync across `su` and nested scopes, so `/proc/<pid>` reports the owner of the process that is actually running
 - File reads return bytes verbatim: `io.read`/`require` no longer unescape `\n`/`\t`/`\.`, so Lua sources with backslashes and binary data survive
+- `io.write`, `os.remove` and `io.dirs` resolve relative paths against the shell PWD, so `cd /home/x` followed by a bare `note.txt` reaches `/home/x/note.txt` instead of silently doing nothing
 
 [ Network ]
 

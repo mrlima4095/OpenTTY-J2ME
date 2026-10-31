@@ -29,6 +29,14 @@ public class OpenTTY {
     public boolean isPureText(byte[] data) { return false; }
     public int vfsDirIndex(String dir) { return -1; }
     public Vector listVfsFiles(String dir) { return new Vector(); }
+    // Mirrors the real helper: a mounted /home folder is a directory.
+    public boolean isHomeDirectory(String path) {
+        if (path == null || !path.startsWith("/home/")) { return false; }
+        String dir = path;
+        while (dir.length() > 1 && dir.endsWith("/")) { dir = dir.substring(0, dir.length() - 1); }
+        if (dir.length() <= 6) { return false; }
+        return fs.containsKey(dir + "/");
+    }
     public String[] procFiles() { return new String[0]; }
     public Vector procEntries(int uid) { return new Vector(); }
     public Vector procDirEntries(String pidStr, int uid) { return new Vector(); }

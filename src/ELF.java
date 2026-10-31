@@ -3284,7 +3284,7 @@ public class ELF implements CommandListener, ItemCommandListener, ItemStateListe
                 dirExists = conn.exists() && conn.isDirectory();
                 conn.close();
             } catch (Exception e) { dirExists = false; }
-        } else if (midlet.fs.containsKey(fullPath)) { dirExists = true; }
+        } else if (midlet.fs.containsKey(fullPath) || midlet.isHomeDirectory(fullPath)) { dirExists = true; }
         
         if (dirExists) { scope.put("PWD", fullPath); registers[REG_A0] = 0; }
         else { registers[REG_A0] = -2; }
@@ -3465,7 +3465,7 @@ public class ELF implements CommandListener, ItemCommandListener, ItemStateListe
                         conn.close();
                     } catch (Exception e) { isDir = false; }
                 }
-                else if (midlet.vfsDirIndex(dir) != -1) { isDir = true; }
+                else if (midlet.vfsDirIndex(dir) != -1 || midlet.isHomeDirectory(dir)) { isDir = true; }
                 else if (midlet.fs.containsKey(fullPath) || midlet.fs.containsKey(dir + "/")) { isDir = true; }
                 
                 if (isDir) {
@@ -3632,6 +3632,7 @@ public class ELF implements CommandListener, ItemCommandListener, ItemStateListe
         if (path == null || path.length() == 0) return false;
         if (path.equals("/") || path.equals("/home/") || path.equals("/tmp/") || path.equals("/bin/") || path.equals("/etc/") || path.equals("/lib/") || path.equals("/boot/")) { return true; }
         if (midlet.fs.containsKey(path) || midlet.fs.containsKey(path + "/")) { return true; }
+        if (midlet.isHomeDirectory(path)) { return true; }
         if (path.startsWith("/mnt/")) {
             try {
                 FileConnection conn = (FileConnection) Connector.open("file:///" + path.substring(5), Connector.READ);
@@ -3849,7 +3850,7 @@ public class ELF implements CommandListener, ItemCommandListener, ItemStateListe
         while (p.length() > 1 && p.endsWith("/")) { p = p.substring(0, p.length() - 1); }
 
         if (p.equals("/") || p.equals("/bin") || p.equals("/etc") || p.equals("/lib") || p.equals("/root") || p.equals("/boot") || p.equals("/dev") || p.equals("/proc") || p.equals("/tmp") || p.equals("/home") || p.equals("/mnt")) { return true; }
-        if (midlet.fs.containsKey(p + "/")) { return true; }
+        if (midlet.fs.containsKey(p + "/") || midlet.isHomeDirectory(p)) { return true; }
         if (p.startsWith("/proc/")) { return midlet.sys.containsKey(p.substring(6)); }
         if (p.startsWith("/mnt/")) {
             // No try/finally here: the MIDP preverifier gives up on a `return`

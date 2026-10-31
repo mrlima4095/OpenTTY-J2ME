@@ -25,9 +25,17 @@ several storage backends: **RMS RecordStores** (`/home/`, `/bin/`, `/etc/`,
 
 ### `/home/` — User storage
 
-- **Backend**: RMS RecordStores
+- **Backend**: plain RMS RecordStores directly under `/home/`; everything
+  inside a folder (`/home/<dir>/...`) uses the paged VFS stores
 - **Permissions**: read/write for the current user
 - Persistent across sessions; user-specific data.
+- A record store name cannot contain `/`, so a direct child of `/home/` is one
+  record store named after the entry. A file keeps its data in record 1; an
+  empty store is a folder marker (`mkdir` creates one). Files and nested
+  folders inside a folder go through the same paged stores as `/bin` and
+  survive restarts (the marker store plus `/etc/vfs.conf`).
+- Removing a folder clears its pages, drops the nested mounts and deletes the
+  marker store, so `rm /home/<dir>` removes the whole tree.
 
 ### `/root/` — Root home
 
@@ -107,7 +115,9 @@ rm -r /bin/tools          # Remove a VFS subdirectory (root)
 
 ## Special Features
 
-- **VFS subdirectories**: `/bin|etc|lib|boot/...` folders persist into `/etc/vfs.conf`
+- **VFS subdirectories**: `/bin|etc|lib|boot/...` folders persist into `/etc/vfs.conf`;
+  `/home/<dir>/` uses the same paged stores (only `/home/` itself holds plain
+  record stores)
 - **Mount system**: create virtual directories via configuration
 - **Path resolution**: automatic path completion
 - **Storage management**: multiple physical files in a single RecordStore; memory
@@ -131,5 +141,6 @@ rmsfix swap /bin/ /home/backup/     # Backup system files
 - Large files are limited by available memory
 - Device security may restrict some operations
 
-> `io.dirs(path)` returns entries only for `/tmp/`, `/mnt/<sub>`, and exactly
-> `/bin/`, `/etc/`, `/lib/`, `/boot/`, `/home/`. Any other path yields an empty table.
+> `io.dirs(path)` returns entries only for `/tmp/`, `/mnt/<sub>`, the paged VFS
+> subdirectories (`/bin|etc|lib|boot|home/<dir>/`), and exactly `/bin/`,
+> `/etc/`, `/lib/`, `/boot/`, `/home/`. Any other path yields an empty table.

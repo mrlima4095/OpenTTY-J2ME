@@ -459,5 +459,30 @@ check("function iterators return multiple values",
     table.concat(keys, "") == "ab" and values[1] == 1 and values[2] == 2,
     table.concat(keys, "") .. "/" .. tostring(values[1]) .. tostring(values[2]))
 
+-- 24. /home folders: only direct children keep plain record stores (a record
+--     store name cannot hold '/'), so files inside /home/<dir>/ must go
+--     through the paged VFS instead of failing with an IOException.
+local function homeCount(dir, name)
+    local n = 0
+    local t = io.dirs(dir)
+    if t then for i = 1, #t do if t[i] == name then n = n + 1 end end end
+    return n
+end
+os.remove("/home/hpcheck")
+check("mkdir /home/hpcheck", os.mkdir("/home/hpcheck") == 0)
+check("/home lists the folder once", homeCount("/home", "hpcheck") == 1, tostring(homeCount("/home", "hpcheck")))
+check("write inside a /home folder", io.write("paged", "/home/hpcheck/note.txt") == 0)
+check("read inside a /home folder", io.read("/home/hpcheck/note.txt") == "paged", io.read("/home/hpcheck/note.txt"))
+check("folder listing shows the file once", homeCount("/home/hpcheck", "note.txt") == 1, tostring(homeCount("/home/hpcheck", "note.txt")))
+check("writing the folder marker is refused", io.write("x", "/home/hpcheck") == 21)
+check("mkdir inside a /home folder", os.mkdir("/home/hpcheck/sub") == 0)
+check("write in a nested folder", io.write("deep", "/home/hpcheck/sub/deep.txt") == 0)
+check("read in a nested folder", io.read("/home/hpcheck/sub/deep.txt") == "deep", io.read("/home/hpcheck/sub/deep.txt"))
+check("remove a file in a /home folder", os.remove("/home/hpcheck/note.txt") == 0)
+check("removed file is gone", io.read("/home/hpcheck/note.txt") == "", io.read("/home/hpcheck/note.txt"))
+check("remove a /home folder tree", os.remove("/home/hpcheck") == 0)
+check("removed folder leaves /home", homeCount("/home", "hpcheck") == 0, tostring(homeCount("/home", "hpcheck")))
+check("removed folder contents are gone", io.read("/home/hpcheck/sub/deep.txt") == "", io.read("/home/hpcheck/sub/deep.txt"))
+
 mark("FAILURES=" .. fails)
 canvas:close()
