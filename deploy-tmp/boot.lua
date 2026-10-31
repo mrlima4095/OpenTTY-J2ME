@@ -97,14 +97,4 @@ note("pid", os.getpid("nginxd"))
 note("pidfile", io.read("/tmp/nginx.pid"))
 note("fail", io.read("/tmp/nginx.fail"))
 
--- Self-test: three requests in a row prove that the server survives the end of
--- a connection (the listener must stay usable between them).
-local url = "http://127.0.0.1:" .. tostring(port) .. "/"
-for i = 1, 3 do
-    local ok, body = pcall(socket.http.get, url)
-    local size = "nil"
-    if body then size = #body end
-    note("selftest " .. i, tostring(ok) .. " bytes=" .. tostring(size))
-end
-
 note("error log", io.read("/tmp/nginx-error.log"))
