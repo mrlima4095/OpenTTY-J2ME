@@ -16,6 +16,10 @@ Copyright (C) 2026 - Mr. Lima
   headless smoke run exercises the boot/login/console path
 - `bench/` benchmark twins: eight identical tests in Lua and in a RISC-V ELF,
   with matching checksums and a best-of-N comparison
+- Process IDs are allocated sequentially (last PID + 1) instead of random
+  four-digit numbers: `init` keeps PID 1, the first guest process starts at 2,
+  and the embedded MIDPlay host owns PID 2 so its first guest process starts
+  at 3
 
 [ Shell ]
 
