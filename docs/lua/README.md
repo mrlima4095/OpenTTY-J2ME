@@ -7,7 +7,7 @@ and standard libraries adapted for the J2ME environment.
 ## Highlights
 
 - **Complete language**: functions, tables, loops, and protected error handling
-  (`pcall`, `xpcall`-style tracebacks)
+  (`pcall` returns Lua tracebacks)
 - **J2ME optimized**: tuned for low-heap devices
 - **Native libraries**: adapted versions of `os`, `io`, `string`, `table`, ...
 - **Graphics**: full integration with J2ME UI (Form, List, Alert, TextBox)
@@ -37,22 +37,29 @@ and standard libraries adapted for the J2ME environment.
 | `error(msg)` | Throw an error with a message |
 | `assert(v [, msg])` | Raise an error if `v` is falsy, return all args otherwise |
 | `pcall(f, ...)` | Call a function in protected mode |
-| `require(mod)` | Load a Lua module |
-| `load(string)` | Load and compile Lua code |
+| `require(mod)` | Load a rock from `/lib` (or an exact path) and cache it in `package.loaded` |
+| `load(code [, scope [, name]])` | Compile **and run** a chunk, returning its results |
+| `loadstring(...)` | Alias of `load` |
 | `pairs(t)` | Iterate over table key/value pairs |
 | `ipairs(t)` | Iterate over an array part |
-| `collectgarbage(opt)` | Control garbage collection |
+| `next(t [, key])` | Next key/value pair, or `nil` at the end |
+| `unpack(t [, i [, j]])` | Unpack an array range into multiple values |
+| `collectgarbage(opt)` | Control garbage collection (also `free`/`total`/`count` in KB) |
 | `tostring(v)` | Convert a value to string |
 | `tonumber(v[, base])` | Convert a value to number |
-| `select(index, ...)` | Select arguments |
-| `type(v)` | Return the value's type |
-| `getAppProperty(key)` | Get an application property |
+| `select(index, ...)` | Select arguments (`"#"` returns the count) |
+| `type(v)` | Return the value's type (`stream`, `screen`, `image`, ...) |
+| `getAppProperty(key)` | Get an application property (`/name` reads a system property) |
 | `setmetatable(t, mt)` | Attach (or clear, with `nil`) a metatable |
 | `getmetatable(t)` | Return the table's metatable |
 | `rawget(t, k)` | Read `k` without consulting `__index` |
 | `rawset(t, k, v)` | Write `k` without consulting `__newindex` |
 | `rawequal(a, b)` | Compare two values without `__eq` |
 | `rawlen(t)` | Sequence length without `__len` |
+
+`arg` holds the current process arguments (`arg[0]` is the program path).
+`_G` is the global table, `_VERSION` is `"Lua J2ME"`, and `package.loaded` is
+the module cache used by `require`.
 
 ## Metatables
 
@@ -116,52 +123,69 @@ upvalues are not implemented.
 
 | Function | Description |
 |----------|-------------|
-| `os.execute(cmd)` | Execute a system command |
+| `os.execute(cmd [, builtin])` | Execute a shell command (supports `>`, `>>`, `&&` and `&`) |
 | `os.request(pid, payload, args)` | Send a request to a service (kernel) |
-| `os.getenv(var)` / `os.setenv(var, val)` | Get / set environment variables |
-| `os.exit(code)` | Terminate the current process |
-| `os.date()` / `os.clock()` | Current date / elapsed time |
-| `os.getpid()` | Current process ID |
-| `os.setproc(attr, val)` | Set process properties (e.g. `name`) |
-| `os.getproc(pid, field)` | Get process information |
-| `os.getuid([procname])` | Get a user ID or a PID by process name |
-| `os.getcwd()` / `os.chdir(path)` | Get / change working directory |
+| `os.getenv([var])` / `os.setenv(var, val)` | Get one or all / set environment variables |
+| `os.exit([code])` | Terminate the current process |
+| `os.date([fmt [, secs]])` / `os.clock()` | Format a date / milliseconds since start |
+| `os.time([fields])` | Unix seconds, or the time described by a table |
+| `os.getpid([name])` | Current PID, or the PID of a named process |
+| `os.setproc(attr, val)` | Set process attributes (`name`, `handler`, `cmd`, `screen`, ...) |
+| `os.getproc([pid [, field]])` | Process table, or one field of a process |
+| `os.getuid([username])` | Current uid, or the uid of a user |
+| `os.getcwd()` / `os.chdir([path])` | Get / change working directory |
 | `os.open(uri)` | Ask the device to open a URI |
-| `os.scope(...)` | Get or change scope |
-| `os.su(user, password)` | Switch the current user |
+| `os.scope([table])` | Get or change scope |
+| `os.su(user [, password])` | Switch the current user |
 | `os.remove(file)` | Remove a file or directory |
-| `os.join(file)` | Get the absolute path of a file |
+| `os.join(file)` | Resolve a path against the PWD |
 | `os.mkdir(dir)` | Create a directory |
+
+`os.date` supports the `%Y %y %m %d %e %H %I %M %S %j %A %a %B %b %p %Z %%`
+fields. `os.time` accepts `year`, `month` (1-12), `day`, `hour`, `min` and
+`sec`. Relative paths in `os.remove`/`os.mkdir` follow the PWD.
+
+A service is a process with a handler installed by `os.setproc("handler", fn)`;
+`os.request` calls it with `(payload, args, scope, pid, uid)`. The `/bin/init`
+kernel is PID 1.
 
 ## `io` Library
 
 | Function | Description |
 |----------|-------------|
-| `io.read([source])` | Read from a file, stream, or `-1` to EOF |
-| `io.write(data, [target])` | Write to a file / stream |
-| `io.close(stream)` | Close a stream |
-| `io.open(file)` | Open a file |
-| `io.popen(program, args, sudo, stdout, scope)` | Run a program |
-| `io.dirs(path)` | List the contents of a directory |
+| `io.read([source [, length]])` | Read a file, stream or the current stdout |
+| `io.write(data [, target [, mode]])` | Write to a file / stream (`"a"` appends) |
+| `io.close(...)` | Close streams, sockets, servers or players |
+| `io.open([file])` | Open a file, or an in-memory output buffer with no argument |
+| `io.popen(program, args, sudo, stdout, scope, stream)` | Run a program (returns status + output) |
+| `io.dirs([path])` | List the contents of a directory |
 | `io.setstdout(file)` | Redirect the program's stdout |
 | `io.mount(struct)` | Mount a filesystem structure |
-| `io.copy(stream, file)` | Copy a stream to a file |
+| `io.new()` | Create an in-memory `StringBuffer` stream |
+| `io.copy(source, target)` | Copy a file / stream / buffer |
 
-> `io.dirs(path)` returns entries only for `/tmp/`, `/mnt/<sub>`, and exactly
-> `/bin/`, `/etc/`, `/lib/`, `/boot/`, `/home/`. Any other path yields an empty table.
+`io.stdout` is the current output sink. Relative paths in `io.read`,
+`io.write` and `io.dirs` are resolved against the PWD.
+
+> `io.dirs(path)` returns entries for `/tmp/`, `/mnt/<sub>`, `/proc`, the paged
+> VFS directories under `/bin`, `/etc`, `/lib`, `/boot` and `/home` (including
+> nested `/home/<user>/...` folders), and the mount points themselves. Other
+> paths yield an empty table.
 
 ## `string` Library
 
-> **Reduced library.** The following functions are **not** available:
-> `format`, `rep`, `gsub`, `gmatch`. Use the native `startswith` / `endswith`
-> instead of reimplementing them.
+> **Reduced native library.** `format`, `rep`, `gsub`, `gmatch`, `lpad`,
+> `rpad`, `join`, `lines`, `replace` and `text2note` are provided by the
+> shipped `string` rock (`require("string")`), which also replaces `find` and
+> `match` with a Lua pattern engine. Native `find`/`match` are plain substring
+> searches.
 
 | Function | Description |
 |----------|-------------|
 | `string.upper(s)` / `string.lower(s)` | Case conversion |
 | `string.len(s)` | String length |
-| `string.find(s, pattern)` | Find a pattern |
-| `string.match(s, pattern)` | Match a pattern |
+| `string.find(s, needle [, init])` | Find a plain substring |
+| `string.match(s, needle [, init])` | Return the plain substring |
 | `string.reverse(s)` | Reverse a string |
 | `string.sub(s, i, j)` | Substring |
 | `string.hash(s)` | Hash code |
@@ -184,11 +208,22 @@ upvalues are not implemented.
 | `table.insert(t, [pos], value)` | Insert an element |
 | `table.concat(t, [sep], [i], [j])` | Concatenate elements |
 | `table.remove(t, [pos])` | Remove an element |
-| `table.sort(t)` | Sort a table |
-| `table.move(t, f, t, len)` | Move elements |
+| `table.sort(t [, comparator])` | Sort a table |
+| `table.move(t, from, to, len [, a])` | Move elements |
 | `table.unpack(t, [i], [j])` | Unpack a table |
 | `table.pack(...)` | Pack arguments |
 | `table.decode(str)` | Decode a string to a table |
+
+## `math` Library
+
+The runtime itself only exposes `math.random([m [, n]])`: no argument returns a
+float in `[0, 1)`, `random(n)` returns `1..n` and `random(m, n)` returns `m..n`.
+The shipped `math` rock (`require("math")`) adds `pi`, `e`, `huge`, `abs`,
+`sqrt`, `pow`, `factorial`, `fmod`, `floor`, `ceil`, `trunc`, `round`, `modf`,
+`sign`, `exp`, `log`, `log10`, `log2`, the trigonometric functions, `min`,
+`max`, `clamp`, `gcd`, `lcm`, `hypot`, `isclose` and `tointeger`. It is
+implemented with pure arithmetic because Lua J2ME has no `inf`/`nan` literals
+and no float library.
 
 ## `graphics` Library
 
@@ -214,25 +249,47 @@ list:display()
 
 | Function | Description |
 |----------|-------------|
-| `graphics.display(screen)` | Set the current screen |
-| `graphics.new(type, title, ...)` | Create a screen object (`screen`/`form`, `list`, `edit`/`textbox`, `alert`, `command`, `buffer`, `field`, `gauge`) |
-| `graphics.title(screen, [title])` / `graphics.SetTitle(screen, title)` | Read / change the screen title |
-| `graphics.ticker(screen, [text])` / `graphics.SetTicker(screen, ticker)` | Read / set a screen ticker |
+| `graphics.display(screen [, next])` | Set the current screen (alerts may name the next screen) |
+| `graphics.new(type, titleOrOptions, ...)` | Create a screen, command or item |
+| `graphics.title(screen [, title])` | Read / change the screen title |
+| `graphics.SetTitle(screen [, title])` | Read / change the screen title |
+| `graphics.ticker(screen [, text])` | Read / set a screen ticker |
+| `graphics.SetTicker(screen [, text])` | Read / set a screen ticker |
 | `graphics.SetLabel(field, text)` / `graphics.GetLabel(field)` | Field label |
 | `graphics.GetText(field)` / `graphics.SetText(field, text)` | Field text |
 | `graphics.getCurrent()` | Get the current screen handle |
 | `graphics.render(file)` | Render an image from a file |
-| `graphics.append(screen, field)` | Append a field to a screen |
-| `graphics.clear(screen)` | Clear a screen's fields |
+| `graphics.append(screen, field [, image])` | Append an item/row to a screen |
+| `graphics.clear(screen)` | Clear a Form or List |
 | `graphics.addCommand(screen, command)` | Add a command/button |
-| `graphics.handler(screen, { [cmd] = fn })` | Set screen button handlers |
+| `graphics.handler(screen, { [command] = fn })` | Set screen command handlers |
 | `graphics.handler(screen, fn)` | One handler for every command: `fn(screen, label, ...values)` |
-| `graphics.vibrate(ms)` | Vibrate the device |
+| `graphics.vibrate([ms])` | Vibrate the device |
+| `graphics.taskmngr()` | Open the system task manager |
+| `graphics.fire` | `List.SELECT_COMMAND` handler key |
 | `graphics.new("gauge", { label, interactive, maxValue, value })` | Standalone gauge |
 | `graphics.SetIndicator(alert, gauge)` | Show a gauge inside an alert |
 | `graphics.SetGauge(gauge, value)` / `graphics.GetGauge(gauge)` | Update / read a gauge |
 | `graphics.CONTINUOUS_RUNNING` (and `CONTINUOUS_IDLE`, `INCREMENTAL_IDLE`, `INCREMENTAL_UPDATING`) | Continuous-indicator values |
 | `graphics.db` | Screens database |
+
+`graphics.new` types:
+
+| Type | Arguments | Result |
+|------|-----------|--------|
+| `"screen"` / `"form"` | `(title)` | `Form` (handle) |
+| `"list"` | `(title [, "implicit"/"exclusive"/"multiple"])` | `List` (handle) |
+| `"edit"` / `"textbox"` | `(title [, text])` | `TextBox` (handle) |
+| `"alert"` | `(title, text [, { type, timeout }])` | `Alert` (handle) |
+| `"command"` | `({ label, type, priority })` | `Command` |
+| `"buffer"` | `({ label, value, layout, style })` | `StringItem` |
+| `"field"` | `({ label, value, length, mode })` | `TextField` |
+| `"gauge"` | `({ label, interactive, maxValue, value })` | `Gauge` |
+
+`graphics.append` accepts a plain string, an item from `graphics.new`, or a
+table with `type = "image"`, `"text"`, `"item"`, `"choice"`, `"field"`,
+`"spacer"` or `"gauge"`. For a `List` the optional third argument is the row
+image.
 
 ### `graphics.canvas`
 
@@ -264,37 +321,40 @@ rules and the `canvasdemo` example app.
 | `socket.http.get(url, headers)` | HTTP GET |
 | `socket.http.post(url, data, headers)` | HTTP POST |
 | `socket.http.rget(url, headers)` | HTTP GET returning a stream |
+| `socket.http.rpost(url, data, headers)` | HTTP POST returning a stream |
 
 ## `java` Library
 
 | Function | Description |
 |----------|-------------|
 | `java.class(name)` | Check whether a class exists |
-| `java.getName()` | JVM name |
+| `java.getName()` | JVM name and version |
 | `java.run(function, name)` | Run a function on another thread |
+| `java.thread()` | Current thread name |
+| `java.sleep(ms)` | Sleep the current thread |
+| `java.yield([ms])` | Release the interpreter so UI callbacks can run |
 | `java.delete(table, field)` | Delete a table field in Java |
 | `java.midlet.username` | Default username |
-| `java.midlet.cache` | Files cached in the MIDlet |
 | `java.midlet.build` | MIDlet build code |
-| `java.midlet.uptime` | MIDlet uptime |
+| `java.midlet.lite` | Whether this build uses the lite ELF interpreter |
+| `java.midlet.uptime()` | MIDlet uptime in milliseconds |
 
 ## `base64` Library
 
 | Function | Description |
 |----------|-------------|
-| `base64.encode(s)` | Encode a string |
-| `base64.decode(s)` | Decode a string |
+| `base64.encode(stringOrTable)` | Encode a string or a byte array |
+| `base64.decode(s [, asStream])` | Decode to a byte table (or a stream) |
 
 ## `push` Library (PushRegistry)
 
 | Function | Description |
 |----------|-------------|
-| `push.register(conn, filter, midlet, sender)` | Register a connection |
+| `push.register(conn, filter, midlet [, sender])` | Register a connection (`sender` is ignored) |
 | `push.unregister(conn)` | Unregister a connection |
 | `push.list(filter)` | List connections (`*` for all) |
-| `push.pending()` | Check for active connections |
+| `push.pending()` | Check for pending push activation |
 | `push.setAlarm(midletClass, time)` | Set a MIDlet alarm |
-| `push.getAlarm(midletClass)` | View an alarm |
 
 ---
 
@@ -323,7 +383,7 @@ print(table.concat(t, ", "))
 ```lua
 graphics.display(graphics.new("alert", "Welcome", "Hello Lua J2ME!"))
 
-local form = graphics.new("form", "My Form")
+local form = graphics.new("screen", "My Form")
 graphics.append(form, { type = "text", value = "Welcome!", layout = "default" })
 graphics.append(form, { type = "image", img = "/icon.png" })
 graphics.append(form, { type = "field", label = "Username:", value = "" })
@@ -367,7 +427,7 @@ continuous running indicator and `-c` animates a value gauge.
 ### List
 
 ```lua
-local list = graphics.new("form", "Main Menu", "implicit")
+local list = graphics.new("list", "Main Menu", "implicit")
 for _, item in ipairs({ "Settings", "Games", "Tools", "Exit" }) do
     graphics.append(list, item)
 end
@@ -389,6 +449,6 @@ graphics.display(list)
 
 - **Performance**: slower than native Lua because of the JVM.
 - **Memory**: severe constraints on small heaps.
-- **Libraries**: reduced functionality compared to full Lua (notably the
-  `string` library).
+- **Libraries**: reduced functionality compared to full Lua; the shipped
+  `string` and `math` rocks restore most of the standard behavior.
 - **Platform**: restricted to the J2ME ecosystem.

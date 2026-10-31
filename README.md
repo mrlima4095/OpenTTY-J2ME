@@ -141,25 +141,26 @@ Install additional tools from the app store with `pkg install <name>`
 
 | Module | Purpose | Selected functions |
 |--------|---------|--------------------|
-| `os` | System operations | `execute`, `getenv`, `setenv`, `exit`, `date`, `getuid`, `su`, `request`, `setproc`, `getproc`, `mkdir`, `remove` |
-| `io` | Input / output | `read`, `write`, `open`, `close`, `dirs`, `popen`, `copy`, `mount` |
+| `os` | System operations | `execute`, `getenv`, `setenv`, `exit`, `date`, `time`, `getuid`, `su`, `request`, `setproc`, `getproc`, `mkdir`, `remove` |
+| `io` | Input / output | `read`, `write`, `open`, `close`, `dirs`, `popen`, `copy`, `mount`, `new`, `setstdout` |
 | `string` | String manipulation | `upper`, `lower`, `sub`, `find`, `match`, `reverse`, `byte`, `char`, `split`, `hash`, `startswith` |
-| `table` | Table manipulation | `insert`, `remove`, `concat`, `sort`, `pack`, `unpack`, `decode` |
-| `socket` | Networking | `connect`, `server`, `accept`, `http.get`, `http.post`, `peer`, `device` |
-| `graphics` | User interface | `display`, `new`, `append`, `addCommand`, `handler`, `render`, `vibrate` |
-| `java` | Java integration | `class`, `getName`, `run`, `delete`, `midlet.*` |
+| `table` | Table manipulation | `insert`, `remove`, `concat`, `sort`, `move`, `pack`, `unpack`, `decode` |
+| `socket` | Networking | `connect`, `server`, `accept`, `http.get`, `http.post`, `http.rget`, `http.rpost`, `peer`, `device` |
+| `graphics` | User interface | `display`, `new`, `append`, `addCommand`, `handler`, `title`, `ticker`, `render`, `vibrate`, `taskmngr`, `canvas` |
+| `java` | Java integration | `class`, `getName`, `run`, `thread`, `sleep`, `yield`, `delete`, `midlet.*` |
 | `base64` | Base64 encoding | `encode`, `decode` |
-| `push` | PushRegistry | `register`, `unregister`, `list`, `pending`, `setAlarm`, `getAlarm` |
-| `audio` | Audio (MMAPI) | `load`, `play`, `pause`, `volume`, `duration` |
+| `push` | PushRegistry | `register`, `unregister`, `list`, `pending`, `setAlarm` |
+| `audio` | Audio (MMAPI) | `load`, `play`, `pause`, `volume`, `duration`, `time` |
 
-> **Note on `string`:** this implementation does **not** provide `string.format`,
-> `string.rep`, `string.gsub`, or `string.gmatch`. Use the native
+> **Note on `string`:** the native library does **not** provide `string.format`,
+> `string.rep`, `string.gsub`, or `string.gmatch`; the shipped `string` rock
+> (`require("string")`) adds them plus a Lua pattern engine. Use the native
 > `string.startswith` / `string.endswith` rather than reimplementing them.
 
 ### UI Example
 
 ```lua
-local form = graphics.new("form", "My App")
+local form = graphics.new("screen", "My App")
 
 graphics.append(form, { type = "field", label = "Name:", value = "" })
 graphics.append(form, { type = "choice", label = "Options:",
