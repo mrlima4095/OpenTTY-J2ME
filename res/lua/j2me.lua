@@ -1160,11 +1160,15 @@ graphics = {
     --- (alias "textbox") for a TextBox, "alert" for an Alert, "command" for a
     --- Command, "buffer" for a StringItem, "field" for a TextField and
     --- "gauge" for a Gauge. Screens come back as handles (see ScreenHandle).
+    ---@overload fun(kind: "command", options: table): ScreenCommand
+    ---@overload fun(kind: "buffer", options: table): ScreenItem
+    ---@overload fun(kind: "field", options: table): ScreenItem
+    ---@overload fun(kind: "gauge", options: table): ScreenItem
     ---@param kind string
     ---@param titleOrOptions string|table
     ---@param content? string|table
     ---@param options? table
-    ---@return ScreenHandle|ScreenCommand|ScreenItem
+    ---@return ScreenHandle
     new = function(kind, titleOrOptions, content, options) return {} end,
 
     --- Load an image from a file path.
