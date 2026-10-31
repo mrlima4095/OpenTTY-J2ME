@@ -1,0 +1,164 @@
+#!/bin/lua
+-- spooky - the Halloween hub: countdown to October 31 and the spooky apps.
+--
+-- Usage:
+--   spooky             open the Halloween menu
+--   spooky list        print the apps and the countdown, then return
+--   spooky <app> ...   run one spooky app (pumpkin, ghost, scare)
+--   spooky -h          show this help
+
+os.setproc("name", "spooky")
+
+local APPS = {
+    { name = "pumpkin", description = "Print a jack-o'-lantern" },
+    { name = "ghost", description = "Print a friendly ghost" },
+    { name = "scare", description = "Jump scare on the canvas" }
+}
+
+local DAYS_IN_MONTH = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 }
+
+local function isLeapYear(year)
+    return (year % 4 == 0 and year % 100 ~= 0) or (year % 400 == 0)
+end
+
+-- Day of the year (1-based) for a date, without os.time arithmetic.
+local function dayOfYear(year, month, day)
+    local total = day
+    for i = 1, month - 1 do total = total + DAYS_IN_MONTH[i] end
+    if month > 2 and isLeapYear(year) then total = total + 1 end
+    return total
+end
+
+local function halloweenDay(year)
+    return dayOfYear(year, 10, 31)
+end
+
+local function daysToHalloween()
+    local year = tonumber(os.date("%Y")) or 2026
+    local month = tonumber(os.date("%m")) or 1
+    local day = tonumber(os.date("%d")) or 1
+    local today = dayOfYear(year, month, day)
+    local target = halloweenDay(year)
+
+    if today == target then return 0 end
+    if today < target then return target - today end
+
+    local total = isLeapYear(year) and 366 or 365
+    return (total - today) + halloweenDay(year + 1)
+end
+
+local function countdownText()
+    local days = daysToHalloween()
+
+    if days == 0 then
+        return "Happy Halloween! The system is the Spooky Edition tonight."
+    elseif days == 1 then
+        return "1 day to Halloween."
+    end
+    return days .. " days to Halloween."
+end
+
+local function findApp(name)
+    for i = 1, #APPS do
+        if APPS[i].name == name then return APPS[i] end
+    end
+    return nil
+end
+
+local function runApp(name, arguments)
+    local ok, status, output = pcall(io.popen, "/bin/" .. name, arguments or "")
+    if not ok then return 1, "" end
+    return status, tostring(output or "")
+end
+
+local function printList()
+    print("Halloween")
+    for i = 1, #APPS do
+        local app = APPS[i]
+        local pad = 10 - #app.name
+        if pad < 0 then pad = 0 end
+        print("  " .. app.name .. string.sub("          ", 1, pad) .. app.description)
+    end
+    print(countdownText())
+end
+
+local function usage()
+    print("spooky [list | <app> [args]]")
+    print("  list   print the Halloween apps and the countdown")
+    print("  app    run pumpkin, ghost or scare")
+    print("  (no argument opens the Halloween menu)")
+end
+
+-- Plain shell modes: they print and return, so scripts can use them.
+if #arg > 0 then
+    local command = arg[1]
+
+    if command == "-h" or command == "--help" then
+        usage()
+        return 0
+    elseif command == "list" then
+        printList()
+        return 0
+    end
+
+    if findApp(command) == nil then
+        print("spooky: " .. command .. ": not found")
+        usage()
+        return 127
+    end
+
+    local arguments = ""
+    for i = 2, #arg do arguments = arguments .. " " .. arg[i] end
+    local status, output = runApp(command, string.trim(arguments))
+    if output ~= "" then print(output) end
+    return status
+end
+
+-- Menu mode.
+local list = graphics.new("list", "Halloween")
+for i = 1, #APPS do graphics.append(list, APPS[i].name) end
+graphics.SetTicker(list, countdownText())
+
+local launch = graphics.new("command", { label = "Launch", type = "ok", priority = 1 })
+local quit = graphics.new("command", { label = "Quit", type = "exit", priority = 1 })
+local switch = graphics.new("command", { label = "Switch to...", type = "screen", priority = 2 })
+
+local function showOutput(name, text)
+    local title = string.upper(string.sub(name, 1, 1)) .. string.sub(name, 2)
+    local screen = graphics.new("screen", title)
+    graphics.append(screen, graphics.new("buffer", { label = "", value = text, style = "monospace" }))
+
+    local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
+    graphics.addCommand(screen, back)
+    graphics.handler(screen, function(s, label) graphics.display(list) end)
+    graphics.display(screen)
+end
+
+local function launchApp(name)
+    if name == nil or name == "" then return end
+    if findApp(name) == nil then return end
+
+    -- The scare draws on its own canvas; a short run returns to this menu.
+    if name == "scare" then
+        runApp("scare", "45")
+        graphics.display(list)
+        return
+    end
+
+    local status, output = runApp(name, "")
+    if output == "" then output = "spooky: " .. name .. " produced no output" end
+    showOutput(name, output)
+end
+
+graphics.addCommand(list, launch)
+graphics.addCommand(list, quit)
+graphics.addCommand(list, switch)
+graphics.handler(list, {
+    [launch] = launchApp,
+    [graphics.fire] = launchApp,
+    [quit] = os.exit,
+    [switch] = graphics.taskmngr
+})
+
+os.setproc("screen", list)
+graphics.display(list)

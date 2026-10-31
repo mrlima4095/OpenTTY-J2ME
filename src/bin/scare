@@ -1,0 +1,126 @@
+#!/bin/lua
+-- scare - a jump scare drawn on graphics.canvas, with a vibration.
+--
+-- The face flashes between a pale mask on black and a black silhouette on
+-- white, shakes for a couple of frames and fades back to the previous screen.
+--
+-- Usage:
+--   scare                play for about two seconds and return
+--   scare 40             run 40 frames and return (used by the test suite)
+--   scare -n             no vibration
+--   scare -h             show this help
+
+os.setproc("name", "scare")
+
+local function usage()
+    print("scare [frames] [-n]")
+    print("  Draw a jump scare on the canvas. frames defaults to 60.")
+    print("  -n, --no-vibrate   do not vibrate")
+end
+
+local limit, vibrate = nil, true
+for i = 1, #arg do
+    local token = arg[i]
+    if token == "-h" or token == "--help" then
+        usage()
+        return 0
+    elseif token == "-n" or token == "--no-vibrate" then
+        vibrate = false
+    else
+        local n = tonumber(token)
+        if n ~= nil and n > 0 then limit = n end
+    end
+end
+
+if limit == nil then limit = 60 end
+
+local c = graphics.canvas.new({
+    title = "Boo!",
+    background = 0x000000,
+    foreground = 0xFFFFFF,
+    font = "monospace medium"
+})
+
+local W, H = c:size()
+local CX, CY = W / 2, H / 2 - 10
+local R = (W < H and W or H) / 3
+R = R - R % 1
+if R < 40 then R = 40 end
+
+local function drawFace(flash, jx, jy)
+    local cx, cy = CX + jx, CY + jy
+
+    -- Head: a pale mask, or a black silhouette when the lightning flashes.
+    c:color(flash and 0x000000 or 0xE6DFC0)
+    c:ellipse(cx - R, cy - R * 1.15, R * 2, R * 2.3, true)
+
+    -- Sunken eye sockets.
+    c:color(0x000000)
+    c:circle(cx - R * 0.42, cy - R * 0.38, R * 0.24, true)
+    c:circle(cx + R * 0.42, cy - R * 0.38, R * 0.24, true)
+
+    -- Glowing pupils.
+    c:color(flash and 0x000000 or 0xFF1A1A)
+    c:circle(cx - R * 0.42, cy - R * 0.38, R * 0.09, true)
+    c:circle(cx + R * 0.42, cy - R * 0.38, R * 0.09, true)
+
+    -- Nose.
+    c:color(0x000000)
+    c:triangle(cx, cy, cx - R * 0.08, cy + R * 0.18, cx + R * 0.08, cy + R * 0.18, true)
+
+    -- Open mouth with sharp teeth.
+    c:ellipse(cx - R * 0.5, cy + R * 0.3, R, R * 0.8, true)
+    c:color(flash and 0x000000 or 0xFFFFFF)
+    for i = 0, 3 do
+        local tx = cx - R * 0.42 + i * R * 0.28
+        c:triangle(tx, cy + R * 0.32, tx + R * 0.14, cy + R * 0.32, tx + R * 0.07, cy + R * 0.5, true)
+    end
+end
+
+local function draw(frame)
+    local flash = frame == 1 or frame % 31 == 0 or frame % 31 == 1
+    c:background(flash and 0xFFFFFF or 0x000000)
+    c:clear()
+
+    if not flash then
+        c:color(0x2A0000)
+        c:circle(CX, CY, R + 18, false)
+        c:color(0x550000)
+        c:circle(CX, CY, R + 10, false)
+    end
+
+    -- Shake every few frames, still between flashes.
+    local jx, jy = 0, 0
+    if frame % 7 >= 2 then
+        jx = math.random(5) - 3
+        jy = math.random(5) - 3
+    end
+
+    drawFace(flash, jx, jy)
+
+    c:font("monospace bold large")
+    c:color(flash and 0x000000 or 0xFF3030)
+    c:text("BOO!", CX, H - 24, "center")
+end
+
+if vibrate then pcall(graphics.vibrate, 400) end
+
+c:command("Exit", "exit", function(canvas)
+    canvas:stop()
+    canvas:close()
+end)
+
+c:display()
+
+local frames = 0
+c:loop(function(canvas, dt)
+    frames = frames + 1
+    draw(frames)
+    if frames >= limit then return false end
+end, 33)
+
+-- Print before close(): close() hands the screen back and unregisters this
+-- process, so the shell output has to be flushed first.
+print("scare: " .. frames .. " frames")
+c:close()
+os.exit(0)

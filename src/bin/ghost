@@ -1,0 +1,121 @@
+#!/bin/lua
+-- ghost - print a friendly ghost, optionally with a speech bubble.
+--
+-- Usage:
+--   ghost            print a random ghost
+--   ghost "text"     the ghost says the text in a speech bubble
+--   ghost -h         show this help
+--
+-- Pure ASCII on purpose: the J2ME fonts do not guarantee any Unicode glyph.
+
+os.setproc("name", "ghost")
+
+local PHRASES = {
+    "Boo!",
+    "I am the ghost of your battery.",
+    "Do not fear the dark.",
+    "Somebody turned off the lights.",
+    "I have been here since 1.18.",
+    "Your candy is safe with me."
+}
+
+-- Eyes are one character each; the mouth is always seven characters wide.
+local FACES = {
+    { "o", "o", "\\_____/" },
+    { "^", "^", "\\_____/" },
+    { "-", "-", "\\ o o /" },
+    { "O", "O", "\\_____/" }
+}
+
+local DASHES = "____________________________________________________________"
+local SPACES = "                                                            "
+
+local function spaces(n)
+    if n <= 0 then return "" end
+    return string.sub(SPACES, 1, n)
+end
+
+local function dashes(n)
+    if n <= 0 then return "" end
+    return string.sub(DASHES, 1, n)
+end
+
+-- Greedy word wrap. string.format/rep are not available in this runtime.
+local function wrap(text, width)
+    local words = string.split(text, " ")
+    local lines = {}
+    local line = ""
+
+    for i = 1, #words do
+        local word = words[i]
+
+        if word ~= "" then
+            if line == "" then
+                line = word
+            elseif #line + 1 + #word <= width then
+                line = line .. " " .. word
+            else
+                table.insert(lines, line)
+                line = word
+            end
+        end
+    end
+
+    if line ~= "" then table.insert(lines, line) end
+    if #lines == 0 then lines[1] = "" end
+    return lines
+end
+
+local function bubble(text)
+    local lines = wrap(text, 34)
+    local width = 0
+
+    for i = 1, #lines do
+        local n = #lines[i]
+        if n > width then width = n end
+    end
+
+    print(" " .. dashes(width + 2))
+    for i = 1, #lines do
+        local line = lines[i]
+        print("| " .. line .. spaces(width - #line) .. " |")
+    end
+    print(" " .. dashes(width + 2))
+end
+
+local function art(eyeLeft, eyeRight, mouth)
+    return {
+        "      .-\"\"\"-.",
+        "    .'  " .. eyeLeft .. " " .. eyeRight .. "  '.",
+        "   /     ^     \\",
+        "  |   " .. mouth .. "   |",
+        "  |             |",
+        "   \\   ~   ~   /",
+        "    '-._____.-'"
+    }
+end
+
+local function usage()
+    print("ghost [text]")
+    print("  Print a random ghost. With text, the ghost says it inside a")
+    print("  speech bubble.")
+end
+
+local args = {}
+for i = 1, #arg do args[#args + 1] = arg[i] end
+
+if #args == 1 and (args[1] == "-h" or args[1] == "--help") then
+    usage()
+    return 0
+end
+
+local text = string.trim(table.concat(args, " "))
+local face = FACES[math.random(#FACES)]
+
+if text == "" then text = PHRASES[math.random(#PHRASES)] end
+bubble(text)
+
+local lines = art(face[1], face[2], face[3])
+for i = 1, #lines do print(lines[i]) end
+
+return 0
