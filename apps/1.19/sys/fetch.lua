@@ -103,6 +103,9 @@ if hostname == "" then hostname = "localhost" end
 local user = current_user()
 local type_ = env("TYPE", "OpenTTY")
 local version_ = env("VERSION", "unknown")
+local patch = env("PATCH", "")
+local os_line = type_ .. " " .. version_
+if patch ~= "" then os_line = os_line .. " (" .. patch .. ")" end
 local config = env("CONFIG", "CLDC-1.0")
 local profile = env("PROFILE", "MIDP-2.0")
 local build = prop("MIDlet-Build", env("MIDlet-Build", ""))
@@ -112,7 +115,7 @@ print("")
 logo()
 print("")
 
-print("OS       : " .. type_ .. " " .. version_)
+print("OS       : " .. os_line)
 print("Host     : " .. hostname)
 if build ~= "" then print("Kernel   : " .. build) end
 print("Uptime   : " .. uptime_text())

@@ -17,6 +17,8 @@ elseif arg[1] == "-m" then
     print(os.getenv("PROFILE"))
 elseif arg[1] == "-p" then
     print(os.getenv("CONFIG"))
+elseif arg[1] == "-c" or arg[1] == "--codename" then
+    print(os.getenv("PATCH") or "")
 elseif arg[1] == "-n" then
     print(os.getenv("HOSTNAME") or "localhost")
 else

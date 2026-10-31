@@ -13,7 +13,12 @@ if arg[1] then
     end
 end
 
-for k,v in pairs({ ["PATCH"] = "RISC-V Revival", ["VERSION"] = getAppProperty("MIDlet-Version"), ["RELEASE"] = "beta", ["SHELL"] = "/bin/sh" }) do os.setenv(k, v) end
+-- Halloween: for one night the system reports itself as the Spooky Edition
+-- (motd, /etc/os-release, `fetch` and `uname -c` all read this back).
+local patch = "RISC-V Revival"
+if os.date("%m%d") == "1031" then patch = "Spooky Edition" end
+
+for k,v in pairs({ ["PATCH"] = patch, ["VERSION"] = getAppProperty("MIDlet-Version"), ["RELEASE"] = "beta", ["SHELL"] = "/bin/sh" }) do os.setenv(k, v) end
 for k,v in pairs({ ["TYPE"] = "platform", ["CONFIG"] = "configuration", ["PROFILE"] = "profiles", ["LOCALE"] = "locale" }) do os.setenv(k, getAppProperty("/microedition." .. v)) end
 
 io.mount(io.read("/etc/fstab"))
