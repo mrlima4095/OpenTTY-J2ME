@@ -7,7 +7,21 @@ public abstract class Canvas extends Displayable {
         KEY_NUM4 = 52, KEY_NUM5 = 53, KEY_NUM6 = 54, KEY_NUM7 = 55, KEY_NUM8 = 56, KEY_NUM9 = 57;
     public static final int KEY_POUND = 35, KEY_STAR = 42;
 
+    // | (Canvas size: a phone screen by default; the desktop shim follows the
+    // | window body so a canvas app uses all the space the window gives it.)
+    private int width = 240, height = 320;
+
     protected Canvas() { }
+
+    public int getWidth() { return width; }
+    public int getHeight() { return height; }
+    public void resize(int w, int h) {
+        if (w <= 0 || h <= 0) { return; }
+        if (w == width && h == height) { return; }
+        width = w;
+        height = h;
+        sizeChanged(w, h);
+    }
 
     public void repaint() { Display.repaintCanvas(this); }
     public void repaint(int x, int y, int w, int h) { Display.repaintCanvas(this); }
