@@ -312,7 +312,22 @@ end
 
 local function showAlert(message, back, kind)
     local alert = graphics.new("alert", "PasteBin", tostring(message), { type = kind or "info", timeout = 4000 })
-    graphics.display(alert, back)
+    back = back or graphics.getCurrent()
+    if back then graphics.display(alert, back) else graphics.display(alert) end
+end
+
+-- Show a short confirmation in the screen ticker and clear it from a
+-- background thread: sleeping on the UI thread would freeze the screen, and
+-- leaving the ticker up forever makes the app look stuck. `state.running` is
+-- the screen's own flag, so a ticker left behind by a closed screen is never
+-- touched (and `""` clears it, see the TICKER native).
+local function flashTicker(screen, state, text, millis)
+    if screen == nil then return end
+    pcall(graphics.SetTicker, screen, tostring(text))
+    java.run(function ()
+        java.sleep(millis or 3000)
+        if state == nil or state.running then pcall(graphics.SetTicker, screen, "") end
+    end, "pastebin-ticker")
 end
 
 local function uploadScreen(content, name, previous)
@@ -353,12 +368,12 @@ local function uploadScreen(content, name, previous)
         if url == nil then
             state.error = failure
             graphics.SetText(status, "Upload failed:\n" .. tostring(failure))
-            graphics.SetTicker(screen, "Upload failed")
+            flashTicker(screen, state, "Upload failed")
             return
         end
         state.url = url
         graphics.SetText(status, url)
-        graphics.SetTicker(screen, "Paste created")
+        flashTicker(screen, state, "Paste created")
         pcall(io.write, url .. "\n", LAST_URL_PATH)
         print(url)
     end, "pastebin-upload")
@@ -410,12 +425,12 @@ local function viewScreen(id, previous)
         if not state.running then return end
         if content == nil then
             graphics.SetText(body, "Could not load the paste:\n" .. tostring(failure))
-            graphics.SetTicker(screen, "Paste not loaded")
+            flashTicker(screen, state, "Paste not loaded")
             return
         end
         state.content = content
         graphics.SetText(body, content)
-        graphics.SetTicker(screen, "Paste " .. id .. " loaded")
+        flashTicker(screen, state, "Paste " .. id .. " loaded")
     end, "pastebin-view")
 end
 
@@ -503,9 +518,12 @@ local function configScreen(previous)
     previous = previous or graphics.getCurrent()
     local conf = loadConfig()
     local screen = graphics.new("screen", "PasteBin Settings")
+    -- Plain text fields: constraint flags are the one thing a device's LCDUI
+    -- implementation can reject at construction time, and they add nothing
+    -- here (the values are validated on Save), so only the key is masked.
     local key = graphics.new("field", { label = "API developer key", value = apiKey(conf) or "", length = 256, mode = "password" })
     local expire = graphics.new("field", { label = "Expire (N,10M,1H,1D,1W,2W,1M,6M,1Y)", value = setting(conf, "expire", "PASTEBIN_EXPIRE", "N"), length = 8 })
-    local private = graphics.new("field", { label = "Visibility (0 public, 1 unlisted, 2 private)", value = setting(conf, "private", "PASTEBIN_PRIVATE", "1"), length = 1, mode = "number" })
+    local private = graphics.new("field", { label = "Visibility (0 public, 1 unlisted, 2 private)", value = setting(conf, "private", "PASTEBIN_PRIVATE", "1"), length = 8 })
     local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
     local save = graphics.new("command", { label = "Save", type = "ok", priority = 1 })
 
@@ -552,10 +570,22 @@ local function configScreen(previous)
 end
 
 local function menuAction(option)
-    if option == "New Paste" then newPaste()
-    elseif option == "Upload File" then uploadFile()
-    elseif option == "View Paste" then viewPaste()
-    elseif option == "Set API Key" or option == "Change API Key" then configScreen()
+    local action, name
+    if option == "New Paste" then action, name = newPaste, "New Paste"
+    elseif option == "Upload File" then action, name = uploadFile, "Upload File"
+    elseif option == "View Paste" then action, name = viewPaste, "View Paste"
+    elseif option == "Set API Key" or option == "Change API Key" then action, name = configScreen, "Settings"
+    end
+    if action == nil then return end
+
+    -- An uncaught error inside a command handler makes the runtime kill the
+    -- process (the app "dies" back to the shell), so report the failure
+    -- instead of letting it escape.
+    local ok, err = pcall(action)
+    if not ok then
+        local message = "Could not open " .. name .. ":\n" .. tostring(err)
+        print("pastebin: " .. message)
+        showAlert(message, graphics.getCurrent(), "error")
     end
 end
 

@@ -254,7 +254,7 @@ list:display()
 | `graphics.title(screen [, title])` | Read / change the screen title |
 | `graphics.SetTitle(screen [, title])` | Read / change the screen title |
 | `graphics.ticker(screen [, text])` | Read / set a screen ticker |
-| `graphics.SetTicker(screen [, text])` | Read / set a screen ticker |
+| `graphics.SetTicker(screen [, text])` | Read / set a screen ticker (`""` clears it) |
 | `graphics.SetLabel(field, text)` / `graphics.GetLabel(field)` | Field label |
 | `graphics.GetText(field)` / `graphics.SetText(field, text)` | Field text |
 | `graphics.getCurrent()` | Get the current screen handle |

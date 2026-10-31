@@ -3449,7 +3449,10 @@ public class Lua {
                         Displayable screen = screenOf(args.elementAt(0));
                         if (screen == null) { return gotbad(1, "SetTicker", "Displayable expected, got " + type(args.elementAt(0))); }
                         if (args.size() < 2) { return screen.getTicker() != null ? screen.getTicker().getString() : null; }
-                        screen.setTicker(new Ticker(toLuaString(args.elementAt(1))));
+                        // An empty string clears the ticker: leaving a Ticker
+                        // with no text keeps an empty strip on screen.
+                        String tickerText = toLuaString(args.elementAt(1));
+                        screen.setTicker(tickerText.length() == 0 ? null : new Ticker(tickerText));
                         break;
                     }
                 case GETCURRENT: return screenHandle(midlet.display.getCurrent());
