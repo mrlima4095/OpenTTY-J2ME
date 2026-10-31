@@ -316,7 +316,10 @@ end
 
 if arg[1] == "--deamon" then
     os.setproc("name", "nginxd")
-    os.setproc(false)
+    -- | Do not call `os.setproc(false)`: it sets the kill flag, and `run()`
+    -- | then drops the process from the process table as soon as the chunk
+    -- | returns, while the accept thread it started keeps serving. Staying
+    -- | registered keeps `ps`, `nginx status` and `nginx stop` working.
 
     local running = true
     local config = default_config()
@@ -471,6 +474,24 @@ if arg[1] == "--deamon" then
         return data
     end
 
+    -- | A single large socket write throws IOException on this MIDP stack (a
+    -- | 2 KB stylesheet was already enough), so the response leaves in small
+    -- | pieces instead of one `io.write`.
+    local WRITE_CHUNK = 512
+
+    local function write_response(output, text)
+        local total = string.len(text)
+        local offset = 1
+
+        while offset <= total do
+            local piece = string.sub(text, offset, offset + WRITE_CHUNK - 1)
+            if not pcall(io.write, piece, output) then return false end
+            offset = offset + WRITE_CHUNK
+        end
+
+        return true
+    end
+
     local function handle_client(client, input, output)
         local ip = "127.0.0.1"
         pcall(function() ip = socket.peer(client) end)
@@ -542,7 +563,7 @@ if arg[1] == "--deamon" then
 
         requests = requests + 1
         local response = build_response(code, body, content_type, extra, method == "HEAD")
-        if not pcall(io.write, response, output) then
+        if not write_response(output, response) then
             log_error("failed to write the response to " .. ip)
         end
 
@@ -684,7 +705,19 @@ if command == "start" then
     pcall(io.write, "", FAIL_FILE)
 
     print("nginx: starting server...")
-    os.request("1", "serve", os.join(arg[0]))
+    -- | Started as a plain background process: an `os.request(1, "serve")`
+    -- | daemon cannot open a server socket on this MIDP stack (every bind
+    -- | fails with IOException, while the same bind works from a normal
+    -- | process). The shell runs `cmd &` on its own thread and returns here.
+    -- | The command goes by name because the shell resolves relative names
+    -- | against /bin and does not accept an absolute path here.
+    local name = os.join(arg[0])
+    local slash = string.find(name, "/")
+    while slash do
+        name = string.sub(name, slash + 1)
+        slash = string.find(name, "/")
+    end
+    pcall(os.execute, name .. " --deamon &")
     java.sleep(400)
 
     pid = os.getpid("nginxd")
