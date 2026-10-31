@@ -2596,7 +2596,12 @@ public class Lua {
                         else if (user.equals("root") && midlet.passwd(query)) { id = 0; father.put("USER", "root"); father.put("PWD", "/home/"); syncUid(); return new Double(0); }
                         else { return new Double(13); }
                     }
-                case REMOVE: return args.isEmpty() ? (Double) gotbad(1, "remove", "string expected, got no value") : new Double(midlet.deleteFile(toLuaString(args.elementAt(0)), id, father));
+                case REMOVE: {
+                    if (args.isEmpty()) { return gotbad(1, "remove", "string expected, got no value"); }
+                    String rmpath = toLuaString(args.elementAt(0));
+                    if (rmpath.length() > 0 && !rmpath.startsWith("/")) { rmpath = midlet.joinpath(rmpath, father); }
+                    return new Double(midlet.deleteFile(rmpath, id, father));
+                }
                 case SCOPE:
                     if (args.isEmpty()) { return father; }
                     else {
@@ -2635,6 +2640,8 @@ public class Lua {
                             }
                             catch (Exception e) { return e instanceof SecurityException ? 13 : 1; }
                             finally { if (fc != null) { try { fc.close(); } catch (Exception e) { } } }
+                        } else if (dir.startsWith("/home/")) {
+                            return new Double(midlet.makeVirtualDir(dir, id));
                         } else if (midlet.vfsDirIndex(dir) != -1) {
                             if (dir.startsWith("/bin/") || dir.startsWith("/etc/") || dir.startsWith("/lib/") || dir.startsWith("/root/") || dir.startsWith("/boot/")) {
                                 if (id != 0) { return new Double(13); }
@@ -2642,7 +2649,7 @@ public class Lua {
                             if (midlet.fs.containsKey(dir)) { return new Double(128); }
                             midlet.registerVfsDir(dir);
                             return new Double(0);
-                        } else if (dir.startsWith("/tmp/") || dir.startsWith("/home/")) {
+                        } else if (dir.startsWith("/tmp/")) {
                             return new Double(midlet.makeVirtualDir(dir, id));
                         } else { return new Double(5); }
                     }
@@ -2719,6 +2726,8 @@ public class Lua {
                                 return new Double(0);
                             }
                             if (filename.equals("/dev/stdin")) return new Double(0);
+                            // Relative names follow the shell PWD, like `read` does.
+                            if (filename.length() > 0 && !filename.startsWith("/")) { filename = midlet.joinpath(filename, father); }
                             return new Double(midlet.write(filename, mode ? midlet.getcontent(filename, father) + content : content, id, father));
                         }
                     }
@@ -3857,6 +3866,7 @@ public class Lua {
                             if (uid == 0) {
                                 if (arg == null || arg.equals("")) { return new Double(2); }
                                 else if (arg.equals("/bin/") || arg.equals("/etc/") || arg.equals("/lib/") || arg.equals("/boot/")) { midlet.clearVfsDirectory(toLuaString(arg)); }
+                                else if (toLuaString(arg).startsWith("/home/")) { return new Double(midlet.removeVirtualDir(toLuaString(arg))); }
                                 else { String r = toLuaString(arg); int rmi = midlet.vfsDirIndex(r); if (rmi != -1 && rmi >= 6) { String sd = r.endsWith("/") ? r : r + "/"; midlet.clearVfsDirectory(sd); if (midlet.fs.containsKey(sd)) { int base = sd.lastIndexOf('/', sd.length() - 2); String parent = sd.substring(0, base + 1); String entry = sd.substring(base + 1, sd.length() - 1) + "/"; Vector struct = (Vector) midlet.fs.get(parent); if (struct != null) { struct.removeElement(entry); } midlet.fs.remove(sd); midlet.unpersistVfsMount(sd); } } else { return new Double(5); } }
                             } else { return new Double(13); }
                         }
@@ -4716,7 +4726,7 @@ public class Lua {
             
             Hashtable list = new Hashtable();
             if (pwd.startsWith("/")) { }
-            else { pwd = ((String) father.get("PWD")) + pwd; }
+            else { pwd = midlet.joinpath(pwd, father); }
             if (pwd.endsWith("/")) { } 
             else { pwd = pwd + "/"; }
 
@@ -4901,7 +4911,7 @@ public class Lua {
                     return new Double(0);
                 }
 
-                if (midlet.fs.containsKey(target)) { father.put("PWD", target); return new Double(0); }
+                if (midlet.fs.containsKey(target) || midlet.isHomeDirectory(target)) { father.put("PWD", target); return new Double(0); }
                 else {
                     String chk = midlet.redirect(target);
                     if (chk.startsWith("/mnt/")) {

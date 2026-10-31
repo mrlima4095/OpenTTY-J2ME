@@ -48,7 +48,18 @@ text; translate existing non-English content when you touch it.
 - `table.remove` captures the length before shifting: `table.remove(t, 1)` returns the old head and moves every element; `tests/lua/check_runtime.lua` guards it.
 - `#f()` on a call result is unreliable (it can return `1` or throw): assign the result to a local first (`local plain = T.strip(text)` then `return #plain`). `table[field]` inside an `and`/`or` chain can also read nil, so copy the key to a local (`local name = node.name`) before `t[name]`. Both shapes are avoided in the rock payloads.
 - File reads return bytes verbatim: `io.read`/`require` use `OpenTTY.envVars`, which only expands `$VAR`, and `Lua.toLuaString` no longer calls `escape()`. `OpenTTY.escape` (decodes `\n`, `\t`, `\\`, `\.`) belongs to command-line expansion only (`midlet.env`); applying it to values corrupted every Lua source that contained `"\\"`.
-- `io.dirs(path)` returns entries only for `/tmp/`, `/mnt/<sub>` (real FS), and exactly `/bin/`, `/etc/`, `/lib/`, `/boot/`, `/home/`; any other path yields an empty table.
+- `io.dirs(path)` returns entries only for `/tmp/`, `/mnt/<sub>` (real FS), the
+  paged VFS subdirectories (`/bin|etc|lib|boot|home/<dir>/`), and exactly
+  `/bin/`, `/etc/`, `/lib/`, `/boot/`, `/home/`; any other path yields an empty
+  table.
+- `/home` storage: only direct children of `/home/` are plain record stores
+  (record 1 = file data, an empty store = folder marker); files and nested
+  folders inside `/home/<dir>/` use the paged VFS stores because an RMS name
+  cannot contain `/`. `restoreHomeDirs()` remounts the markers at boot,
+  `makeVirtualDir`/`removeVirtualDir` create and wipe the whole tree, and
+  `isHomeDirectory`/`isHomeRootEntry`/`homeStoreIsDirectory` decide which
+  backend a `/home` path belongs to (mirrored in `tests/java/stubs/OpenTTY.java`
+  for the ELF suite).
 - `string.startswith`/`endswith` are native — don't shadow them with Lua reimplementations.
 - Daemon convention (matches how `os.request(1, "serve", path)` spawns services in `Lua.java`): daemon apps must check `arg[1] == "--deamon"` (**the typo is the convention** — other daemons in `apps/` use it), name themselves with `os.setproc("name", ...)`, and end with a top-level `return function(payload, args, scope, pid, uid) ... end` as the handler.
 - `/bin/init` is PID 1 with the kernel handler: `os.request(1, payload, arg)` implements `sendsig`, `serve`, `rms`, `user`/`useradd`/`userdel`, `setsh`, `netsh`, etc.

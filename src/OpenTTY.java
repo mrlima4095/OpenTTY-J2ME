@@ -26,7 +26,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Hashtable attributes = new Hashtable(), fs = new Hashtable(), sys = new Hashtable(), exited = new Hashtable(), tmp = new Hashtable(), cacheLua = new Hashtable(), graphics = new Hashtable(), servers = new Hashtable(), globals = new Hashtable(), userID = new Hashtable();
     private Hashtable vfsFiles = new Hashtable();
     private boolean vfsReady = false;
-    public String username = read("/home/OpenRMS", globals), build = "2026-1.19-04x54";
+    public String username = read("/home/OpenRMS", globals), build = "2026-1.19-04x55";
     // | (Boot Menu / chroot)
     public String chroot = "";
     public Vector bootEntries = null;
@@ -191,6 +191,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     }
     private void bootKernel(String root, String init) {
         try {
+            restoreHomeDirs();
             String[] parts = splitArgs(init != null ? init : "");
             String program = parts.length > 0 ? parts[0] : init;
             Hashtable args = new Hashtable(); args.put(new Double(0), program);
@@ -400,6 +401,14 @@ public class OpenTTY extends MIDlet implements CommandListener {
     // | (Read) 
     public InputStream getInputStream(String filename, Hashtable scope) throws Exception {
         if ((filename = redirect(solvepath(filename, scope))).startsWith("/home/")) {
+            // Direct children of /home are plain record stores (that is what
+            // `ls /home` lists); anything inside a /home folder lives in the
+            // paged VFS stores, because a record store name cannot hold '/'.
+            if (!isHomeRootEntry(filename)) {
+                byte[] page = readVfsFile(filename);
+                return page == null ? null : new ByteArrayInputStream(page);
+            }
+
             RecordStore rs = null;
             try {
                 rs = RecordStore.openRecordStore(filename.substring(6), false);
@@ -498,7 +507,21 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public int write(String filename, byte[] data, int id, Hashtable scope) {
         if ((filename = redirect(solvepath(filename, scope))) == null || filename.length() == 0) { return 2; } 
         else if (filename.startsWith("/mnt/")) { FileConnection fs = null; OutputStream out = null; try { fs = (FileConnection) Connector.open("file:///" + filename.substring(5), Connector.READ_WRITE); if (!fs.exists()) { fs.create(); } out = fs.openOutputStream(); out.write(data); out.flush(); } catch (Exception e) { return (e instanceof SecurityException) ? 13 : 1; } finally { out.close(); fs.close(); } } 
-        else if (filename.startsWith("/home/")) { return writeRMS(filename.substring(6), data, 1); } 
+        else if (filename.startsWith("/home/")) {
+            String rel = filename.substring(6);
+            if (rel.length() == 0 || rel.endsWith("/")) { return 2; }
+
+            if (rel.indexOf('/') < 0) {
+                // A folder is an empty record store: writing into it would turn
+                // the marker into a file.
+                if (homeStoreIsDirectory(rel)) { return 21; }
+                return writeRMS(rel, data, 1);
+            }
+
+            String parent = filename.substring(0, filename.lastIndexOf('/'));
+            if (!isHomeDirectory(parent)) { return 127; }
+            return writeVfsFile(filename, data);
+        } 
         else if (filename.startsWith("/bin/") || filename.startsWith("/etc/") || filename.startsWith("/lib/") || filename.startsWith("/root/") || filename.startsWith("/boot/")) {
             String full = filename;
             int slash = filename.lastIndexOf('/');
@@ -524,16 +547,24 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public int deleteFile(String filename, int id, Hashtable scope) { 
         if ((filename = redirect(solvepath(filename, scope))) == null || filename.length() == 0) { return 2; } 
         else if (filename.startsWith("/home/")) { 
-            try { 
-                filename = filename.substring(6); 
-                if (filename.equals("")) { return 2; }
-                if (filename.equals("OpenRMS")) { return 13; } 
-                
-                if (fs.containsKey("/home/" + filename + "/")) { return removeVirtualDir("/home/" + filename); }
-                RecordStore.deleteRecordStore(filename); 
-            } 
-            catch (RecordStoreNotFoundException e) { return 127; } 
-            catch (Exception e) { return 1; } 
+            String rel = filename.substring(6);
+            while (rel.length() > 0 && rel.endsWith("/")) { rel = rel.substring(0, rel.length() - 1); }
+            if (rel.length() == 0) { return 2; }
+            if (rel.equals("OpenRMS")) { return 13; } 
+
+            String target = "/home/" + rel;
+            if (fs.containsKey(target + "/")) { return removeVirtualDir(target); }
+
+            if (rel.indexOf('/') >= 0) {
+                int vfsStatus = deleteVfsFile(target);
+                return vfsStatus == 5 ? 127 : vfsStatus;
+            }
+
+            int status;
+            try { RecordStore.deleteRecordStore(rel); status = 0; }
+            catch (RecordStoreNotFoundException e) { status = 127; }
+            catch (Exception e) { status = 1; }
+            return status;
         }
         else if (filename.startsWith("/mnt/")) { 
             try { 
@@ -592,12 +623,58 @@ public class OpenTTY extends MIDlet implements CommandListener {
         else if (dir.equals("/root")) { return 6; }
         else if (dir.equals("/boot")) { return 7; }
         else if (dir.equals("/dev") || dir.equals("/proc") || dir.equals("/tmp") || dir.equals("/home") || dir.equals("/mnt")) { return -1; }
-        else if (dir.startsWith("/bin/") || dir.startsWith("/lib/") || dir.startsWith("/etc/") || dir.startsWith("/root/") || dir.startsWith("/boot/")) {
+        else if (dir.startsWith("/bin/") || dir.startsWith("/lib/") || dir.startsWith("/etc/") || dir.startsWith("/root/") || dir.startsWith("/boot/") || dir.startsWith("/home/")) {
             int h = dir.hashCode();
             if (h < 0) { h = -h; }
             return VFS_RESERVED + (h % VFS_HASH_MOD);
         }
         return -1;
+    }
+    // | (/home entries: `<name>` is a plain record store. A store with no
+    // |  records is a folder (mkdir creates it empty; files always keep record
+    // |  1), and everything inside a folder uses the paged stores above.)
+    public boolean isHomeRootEntry(String path) {
+        if (path == null || !path.startsWith("/home/")) { return false; }
+        return path.indexOf('/', 6) < 0;
+    }
+    public boolean homeEntryExists(String name) {
+        RecordStore rs = null;
+        boolean exists = false;
+        try { rs = RecordStore.openRecordStore(name, false); exists = true; }
+        catch (Exception e) { exists = false; }
+        finally { try { if (rs != null) { rs.closeRecordStore(); } } catch (Exception e) { } }
+        return exists;
+    }
+    public boolean homeStoreIsDirectory(String name) {
+        RecordStore rs = null;
+        boolean directory = false;
+        try { rs = RecordStore.openRecordStore(name, false); directory = rs.getNumRecords() == 0; }
+        catch (Exception e) { directory = false; }
+        finally { try { if (rs != null) { rs.closeRecordStore(); } } catch (Exception e) { } }
+        return directory;
+    }
+    public boolean isHomeDirectory(String path) {
+        if (path == null || !path.startsWith("/home/")) { return false; }
+        String dir = path;
+        while (dir.length() > 1 && dir.endsWith("/")) { dir = dir.substring(0, dir.length() - 1); }
+        if (dir.equals("/home") || dir.length() <= 6) { return false; }
+        if (fs.containsKey(dir + "/")) { return true; }
+        return isHomeRootEntry(dir) && homeStoreIsDirectory(dir.substring(6));
+    }
+    // | (Empty record stores under /home are folders: mount them again at boot
+    // |  so `ls`/`cd` work after a restart. Nested folders come from /etc/vfs.conf.)
+    public void restoreHomeDirs() {
+        if (!fs.containsKey("/home/")) { Vector home = new Vector(); home.addElement(".."); fs.put("/home/", home); }
+
+        String[] stores = null;
+        try { stores = RecordStore.listRecordStores(); } catch (Exception e) { stores = null; }
+        if (stores == null) { return; }
+
+        for (int i = 0; i < stores.length; i++) {
+            String name = stores[i];
+            if (name == null || name.startsWith("OpenRMS") || name.indexOf('/') >= 0) { continue; }
+            if (homeStoreIsDirectory(name)) { mountDirPath("/home/" + name + "/"); }
+        }
     }
     // | (Writable directories: /tmp is RAM, /home is RMS-backed. Both are
     // |  listed through `fs` like the VFS mounts so cd/ls/rm work on them.)
@@ -618,13 +695,24 @@ public class OpenTTY extends MIDlet implements CommandListener {
             String rel = dir.substring(6);
             if (rel.length() == 0) { return 2; }
 
+            // Nested folders are paged like the /bin subs: only /home/<name>
+            // itself keeps a plain record store.
+            if (rel.indexOf('/') >= 0) {
+                String parent = dir.substring(0, dir.lastIndexOf('/'));
+                if (!isHomeDirectory(parent)) { return 127; }
+                if (fs.containsKey(key)) { return 128; }
+                registerVfsDir(key);
+                return 0;
+            }
+
+            if (fs.containsKey(key) || homeEntryExists(rel)) { return 128; }
+
+            // An empty record store marks the folder: files always keep record
+            // 1, and `ls /home` lists the marker with listRecordStores().
             // No `return` inside a try/finally: the MIDP preverifier fails on it.
             RecordStore rs = null;
             int status = 0;
-            try {
-                rs = RecordStore.openRecordStore(rel, false);
-                status = 128; // the record store (directory) already exists
-            } catch (RecordStoreNotFoundException e) { status = 0; }
+            try { rs = RecordStore.openRecordStore(rel, true); }
             catch (Exception e) { status = 1; }
             if (rs != null) { try { rs.closeRecordStore(); } catch (Exception e) { } }
             if (status != 0) { return status; }
@@ -647,7 +735,9 @@ public class OpenTTY extends MIDlet implements CommandListener {
         Vector struct = (Vector) fs.get(parent);
         if (struct != null) {
             String entry = dir.substring(dir.lastIndexOf('/', dir.length() - 2) + 1);
-            if (!struct.contains(entry)) { struct.addElement(entry); }
+            // /home children are listed by their record store name; adding the
+            // "name/" form here would print every folder twice in `ls /home`.
+            if (!parent.equals("/home/") && !struct.contains(entry)) { struct.addElement(entry); }
         }
     }
     public int removeVirtualDir(String dir) {
@@ -662,11 +752,16 @@ public class OpenTTY extends MIDlet implements CommandListener {
             for (Enumeration e = tmp.keys(); e.hasMoreElements();) { String k = (String) e.nextElement(); if (k.startsWith(prefix)) { dead.addElement(k); } }
             for (int i = 0; i < dead.size(); i++) { tmp.remove(dead.elementAt(i)); }
         } else if (dir.startsWith("/home/")) {
-            String prefix = dir.substring(6) + "/";
-            String[] stores = RecordStore.listRecordStores();
-            if (stores != null) {
-                for (int i = 0; i < stores.length; i++) { if (stores[i].startsWith(prefix)) { try { RecordStore.deleteRecordStore(stores[i]); } catch (Exception e) { } } }
-            }
+            // Contents live in the paged stores; the folder itself is the empty
+            // record store that `ls /home` lists.
+            Vector mounts = new Vector();
+            for (Enumeration e = fs.keys(); e.hasMoreElements();) { String k = (String) e.nextElement(); if (k.startsWith(key) && k.endsWith("/")) { mounts.addElement(k); } }
+
+            clearVfsDirectory(key);
+            for (int i = 0; i < mounts.size(); i++) { unpersistVfsMount((String) mounts.elementAt(i)); }
+
+            String rel = dir.substring(6);
+            if (rel.indexOf('/') < 0 && homeStoreIsDirectory(rel)) { try { RecordStore.deleteRecordStore(rel); } catch (Exception e) { } }
         }
 
         Vector nested = new Vector();
