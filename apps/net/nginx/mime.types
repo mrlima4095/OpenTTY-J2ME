@@ -1,5 +1,6 @@
 # OpenTTY Nginx MIME Types
-# /etc/nginx/mime.types
+# /etc/nginx/mime.types - <mime-type> <extension> ...
+# The legacy "<extension> <mime-type>" order is still accepted.
 
 text/html html htm
 text/css css
