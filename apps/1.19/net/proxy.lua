@@ -41,6 +41,7 @@ local function app()
 
     pcall(io.close, conn, i, o)
     print("WebProxy -> Server disconnected")
+    os.exit()
 end
 
 if password and password ~= "" then java.run(app, "WebProxy")
