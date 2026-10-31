@@ -11,4 +11,5 @@ MIDlet-Info-URL: https://github.com/mrlima4095/OpenTTY-J2ME
 MIDlet-Proxy: http://opentty.fun/proxy.php?
 LGE-MIDlet-Allowed-background: YES
 LGE-MIDlet-Exit: MINIMIZE
+MIDlet-Permissions: javax.microedition.io.Connector.socket, javax.microedition.io.Connector.serversocket
 

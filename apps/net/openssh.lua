@@ -20,6 +20,13 @@
 --
 -- Installed at /bin/sshd. The first run creates /etc/sshd, a Lua file that
 -- returns the configuration table.
+--
+-- Real-device notes: port 2222 is used by default because phones usually
+-- refuse privileged ports. The JAD must request
+-- javax.microedition.io.Connector.socket (and serversocket) or the device
+-- denies the connection. Keep the MIDlet in the background while serving;
+-- some stacks close the listening socket when the app is paused, and the
+-- accept loop rebinds when it notices.
 
 local version = "1.1.0"
 
@@ -94,9 +101,12 @@ end
 local function ensure_config()
     local content = io.read("/etc/sshd")
     if content == nil or content == "" then
-        pcall(io.write, DEFAULT_CONFIG, "/etc/sshd")
+        -- 0 means the write succeeded; a non-root start gets 13 here and keeps
+        -- the built-in defaults instead of the file.
+        local ok, status = pcall(io.write, DEFAULT_CONFIG, "/etc/sshd")
+        if not ok or status ~= 0 then return {}, false end
     end
-    return load_config() or {}
+    return load_config() or {}, true
 end
 
 local function port_of(cfg)
@@ -124,16 +134,30 @@ local function port_suffix(port)
     return ", port " .. tostring(port)
 end
 
--- Wake the accept loop up so it can read a control flag.
+-- Wake the accept loop up so it can read a control flag. Loopback is the
+-- fastest route, but a few phone stacks refuse socket://127.0.0.1, so the
+-- device's own name/IP (HOSTNAME, e.g. from /etc/hostname) is the fallback.
 local function poke(port)
     if port == nil then return false end
-    local ok, conn, input, output = pcall(socket.connect, "socket://127.0.0.1:" .. tostring(port))
-    if not ok or conn == nil then return false end
-    pcall(io.write, CONTROL .. "\n", output)
-    pcall(io.close, output)
-    pcall(io.close, input)
-    pcall(io.close, conn)
-    return true
+
+    local hosts = { "127.0.0.1" }
+    local name = os.getenv("HOSTNAME")
+    if name ~= nil and name ~= "" and name ~= "localhost" and name ~= "127.0.0.1" then
+        hosts[#hosts + 1] = name
+    end
+
+    for i = 1, #hosts do
+        local ok, conn, input, output = pcall(socket.connect, "socket://" .. hosts[i] .. ":" .. tostring(port))
+        if ok and conn ~= nil then
+            pcall(io.write, CONTROL .. "\n", output)
+            pcall(io.close, output)
+            pcall(io.close, input)
+            pcall(io.close, conn)
+            return true
+        end
+    end
+
+    return false
 end
 
 -- Read one CRLF/LF terminated line from a client. Each session keeps its own
@@ -254,12 +278,23 @@ if arg[1] == "--deamon" then
             local prompt = tostring(user) .. "@opentty" .. (os.getuid() == 0 and "#" or "$")
 
             while running do
+                -- Stop/reload flags are written before the CLI's wake-up
+                -- connection, so an active session notices them too.
+                if flag_set(STOP_FLAG) or flag_set(RELOAD_FLAG) then
+                    handle_control()
+                end
+
                 write(prompt .. " ")
                 local line = read_line(state, 2048)
                 if line == nil then break end
                 line = string.trim(line)
 
-                if line == "" then
+                if line == CONTROL then
+                    -- Stop/reload also work while a session is open: the CLI's
+                    -- wake-up connection is a normal client up to this line.
+                    handle_control()
+                    if not running then break end
+                elseif line == "" then
                     -- keep prompting
                 elseif line == "exit" or line == "logout" or line == "quit" or line == "bye" or line == "exit 0" then
                     break
@@ -450,7 +485,11 @@ if command == "start" then
     -- Launch the daemon as a plain background process (the accept loop runs
     -- inside that chunk). `serve` is not used on purpose: its chunk would
     -- return while a java.run accept thread is still sharing the interpreter.
-    local configured = port_of(load_config() or {})
+    local cfg, seeded = ensure_config()
+    if not seeded then
+        print("sshd: warning: cannot write /etc/sshd (run as root); using defaults")
+    end
+    local configured = port_of(cfg or {})
     print("sshd: starting server...")
     -- "." runs this same file through popen instead of looking it up in /bin,
     -- so `sshd start` also works from a copy outside /bin. The command is not
@@ -547,8 +586,12 @@ elseif command == "config" then
     os.exit(0)
 
 elseif command == "password" then
+    local generated = arg[2]
+    if generated == nil or generated == "" then
+        generated = string.uuid()
+    end
     print("sshd: add this line to /etc/sshd, then run 'sshd reload':")
-    print("    password = \"" .. tostring(arg[2] or "change-me") .. "\",")
+    print("    password = \"" .. tostring(generated) .. "\",")
     os.exit(0)
 
 elseif command == "help" or command == "--help" then
