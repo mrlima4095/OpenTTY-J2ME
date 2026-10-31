@@ -44,7 +44,7 @@ The runtime now follows Lua 5.1 much more closely:
 
 - Numbers: decimal exponents (`1e3`, `1E+2`, `1e-2`), leading and trailing dots (`.5`, `5.`), subtraction written without spaces (`x-1`), unary minus binding below `^` (`-2^2 == -4`) and right-associative `^`
 - Strings: real escape decoding (`\n`, `\t`, `\r`, `\a`, `\b`, `\f`, `\v`, `\\`, `\"`, `\'`, `\ddd`, `\xXX`, `\z` and escaped newlines) plus long brackets of any level (`[==[ ... ]==]`) in strings and comments
-- Tables: `;`-separated fields, multi-assignment to indexed targets (`t[i], t[j] = t[j], t[i]`), identity comparison (`{} == {}` is false) and `__eq` only firing when both tables share the same handler 
+- Tables: `;`-separated fields, multi-assignment to indexed targets (`t[i], t[j] = t[j], t[i]`), identity comparison (`{} == {}` is false) and `__eq` only firing when both tables share the same handler
 - Functions: `function t:m()` with the implicit `self`, call sugar `f{...}` / `f"text"`, varargs and call results carried as value lists (`f(...)`, `return ...`, `{...}`, `{ f() }`, `select`)
 - Loops: generic `for` over iterator closures and over an explist (`for k in next, t do`)
 - Libraries: new globals `unpack`, `loadstring` and `next`; `tonumber(s, base)`; floored `%`; `table.insert(t, pos, v)` argument order, `table.remove` with correct shifting, `table.sort` with a comparator; `string.byte` ranges returning every value; `os.clock()` returning a number and `os.date`/`os.time` formatting real timestamps instead of `Date.toString()`
@@ -54,7 +54,7 @@ The runtime now follows Lua 5.1 much more closely:
 - Anonymous function bodies no longer duplicate a nested `end`, so a `local function` inside a table-constructor handler stops ending at the first one-line `if ... end`
 - The interpreter has a single owner: UI callbacks and background jobs take turns instead of corrupting the shared parser state, and `java.yield()` hands control to the other thread
 - `luarocks` package manager (`/bin/luarocks`) with rock payloads for `math`, `string` (patterns, `format`, `rep`, `gsub`, `gmatch`), `graphics`, `kernel` and `httpd`; `require` loads `/lib/<name>.lua` and installed state lives in `/etc/rocks.installed`
-- 14 new rocks in the catalog: `json`, `tablex`, `base64`, `sha1`, `sha256`, `term`, `argparse`, `log`, `config`, `template`, `csv`, `date`, `re` (depends on `string`) and `ui` — JSON/CSV/INI data handling, pure-Lua SHA-1/SHA-256 with HMAC, terminal tables and progress bars, option parsing, levelled logging, Mustache-style templates, date math, pattern helpers and callback-based menus/prompts/file picker
+- 14 new rocks in the catalog: `json`, `tablex`, `base64`, `sha1`, `sha256`, `term`, `argparse`, `log`, `config`, `template`, `csv`, `date`, `re` (depends on `string`) and `ui` — JSON/CSV/INI data handling, pure-Lua SHA-1/SHA-256 with HMAC, terminal tables and progress bars, option parsing, levelled logging, Mustache-style templates, date math, pattern helpers and callback-based menus/prompts/file picker; they install through `luarocks install` into `/lib/<name>.lua` and are listed in `docs/LUAROCKS.md`
 
 [ ELF ]
 
@@ -63,21 +63,22 @@ The runtime now follows Lua 5.1 much more closely:
 - Guest C library grew `strstr`, `strrchr`, `strcasecmp`, `strncasecmp`, `strtol` and `strtoul`, and the heap is a real first-fit allocator again: blocks split on allocation, merge with their free neighbours on `free` (double frees are ignored), a block at the bump pointer is released back to the region, and `realloc` resizes in place when the neighbour allows it
 - LCDUI widget parity with the Lua `graphics` package: alerts (plus `show_alert` and a ticker), gauges, spacers, images, choice groups, buttons with item commands, fonts, layouts, labels, `delete` / `insert_text` / `size`, list selection and vibration, with a showcase in `res/apps/src/lcdui-demo.c`
 - Correct RISC-V `struct stat` layout (`st_mode` at 8, `st_size` at 32, `st_blksize` / `st_blocks`, directories detected from the VFS), so `stat`/`ls -l` inside guest programs stops reporting garbage
-- One-time hint when the guest runs out of memory: instead of a silent 0 from `malloc`, the console explains how to raise the guest RAM with `os.request(1, "memory", 1024)` 
+- One-time hint when the guest runs out of memory: instead of a silent 0 from `malloc`, the console explains how to raise the guest RAM with `os.request(1, "memory", 1024)`
 - `gethostname` / `uname -n` resolve the host name from `/etc/hostname`, the real machine name (desktop shim) or the `localhost` seed, and `sethostname` persists it back to `/etc/hostname`
 
 [ Graphics ]
 
-- `graphics.canvas`: a persistent off-screen drawing surface with colors, fonts, shapes, cursor/print, clip/translate/save-restore, held keys, pointer input, LCDUI commands and a frame loop (`runLoop`/`animate`), plus the `canvasdemo` app and `docs/LUACANVAS.md`; in loop mode the LCDUI thread only blits the buffer and events are pumped by the loop thread 
+- `graphics.canvas`: a persistent off-screen drawing surface with colors, fonts, shapes, cursor/print, clip/translate/save-restore, held keys, pointer input, LCDUI commands and a frame loop (`runLoop`/`animate`), plus the `canvasdemo` app and `docs/LUACANVAS.md`; in loop mode the LCDUI thread only blits the buffer and events are pumped by the loop thread
 - Canvas repaints from the LCDUI thread with one coalesced request from a background flush, so drawing no longer freezes the phone
 - `graphics.new("gauge")`, `graphics.SetIndicator` / `SetGauge` / `GetGauge` and the `CONTINUOUS_*` constants for gauges, matching LCDUI behavior
 - Font specs and image loading follow the real MIDP 2.0 API again, so text sizes and bundled images render on devices
+- Desktop shim canvases receive printable keys (including Space), Backspace/Delete/Tab and Home/End/PageUp/PageDown, with Enter still mapped to `FIRE`, so a canvas can host a real text line editor (`cterm` does; see `docs/LUACANVAS.md`)
 
 [ Apps & Games ]
 
-- New 1.19 catalog apps: `snake`, `life`, `matrix`, `clock`, `paint`, `alert` and the `canvasdemo`
-- Snake: the apple changes color, relocates to a new free cell when eaten (never a board corner) and never moves on its own, plus an attract mode;
+- New 1.19 catalog apps: `snake`, `life`, `matrix`, `clock`, `paint`, `alert`, `pkg`, `cterm` and the `canvasdemo`
+- Snake: the apple changes color, relocates to a new free cell when eaten (never a board corner) and never moves on its own, plus an attract mode; `life` was retuned with it
 - `paint` draws on a canvas and saves/loads its image
-- `cterm`: a Canvas terminal emulator with ANSI SGR colours (16, 256 and truecolour), a real editable command line with history, a coloured prompt, scrollback (PgUp/PgDn and stylus drag) and shell commands that run in the same scope as `xterm`, so `cd` persists
+- `cterm`: a Canvas terminal (unlike `xterm`'s LCDUI Form) that paints a monospace cell grid and renders ANSI SGR output — 16/256/truecolour, bold, dim, underline, reverse and hidden, cursor movement, erase, insert/delete lines and characters, scroll and save/restore, wrapping, CR/LF/BS/TAB and a capped scrollback; its in-canvas command line has cursor movement, Backspace/Delete, Up/Down history, Tab completion of `/bin` commands and paths and a coloured `user@host:/path` prompt, built-ins (`clear`, `colors`, `history`, `help`, `exit`) and everything else run through `os.execute` in the same scope as `xterm`, so `cd` persists; PgUp/PgDn, stylus drag, a Font command and a Type box cover keypads without letters; `cterm 1` draws a deterministic demo frame and `CTERM_AS_MODULE` returns the engine without a UI (see `docs/CTERM.md`)
 - `alert`: alert type (`-t`), timeout (`-m`), ticker (`-k`), button (`-b`) and vibration (`-v`) options; `-g` keeps the alert on screen with the MIDP continuous gauge, `-c` animates a value gauge, and a timed alert exits cleanly
 - `pkg` install screen with a progress gauge and live log, listing only the package names and installing the selection directly
