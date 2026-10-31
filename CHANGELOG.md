@@ -53,6 +53,12 @@ Copyright (C) 2026 - Mr. Lima
   `Content-Length` counts UTF-8 bytes, and request paths are traversal-checked
   (no more `/../etc/passwd`); adds `index`, HEAD and 405 support, longest-prefix
   route matching and a `nginx test` report
+- `nginx` survives a bad client on phones whose MIDP stack invalidates the
+  listening socket once the accepted connection is closed: requests run under
+  `pcall`, a failed `accept` is logged and retried instead of ending the daemon,
+  and the port is re-bound after every request; the daemon chunk also returns a
+  handler (`stop`/`reload`/`status`) so `init` keeps the process and its socket
+  alive after the chunk finishes
 
 [ Lua ]
 

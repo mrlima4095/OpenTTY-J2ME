@@ -558,11 +558,29 @@ if arg[1] == "--deamon" then
     pcall(io.write, "", STOP_FLAG)
     pcall(io.write, "", RELOAD_FLAG)
 
+    -- | Some MIDP stacks invalidate the listening socket as soon as the
+    -- | accepted connection is closed (`accept` then throws IOException even
+    -- | though the listener was never touched). Re-binding the port after each
+    -- | request keeps the server reachable on such devices.
+    local function bind_listener()
+        pcall(io.close, server_socket)
+        local bound, fresh = pcall(socket.server, config.port)
+        if bound then
+            server_socket = fresh
+            pcall(io.write, os.getpid() .. " " .. tostring(config.port), PID_FILE)
+        end
+        return bound
+    end
+
     java.run(function()
+        local failures = 0
+
         while running do
             local aok, client, input, output = pcall(socket.accept, server_socket)
 
             if aok and client then
+                failures = 0
+
                 if flag_set(STOP_FLAG) then
                     pcall(io.write, "", STOP_FLAG)
                     running = false
@@ -572,12 +590,35 @@ if arg[1] == "--deamon" then
                     pcall(io.close, client)
                     load_config()
                 else
-                    handle_client(client, input, output)
+                    -- One bad request must never take the server down (a J2ME
+                    -- read on a half-closed socket throws, and an exception here
+                    -- would end the accept thread and the whole daemon).
+                    local ok, err = pcall(handle_client, client, input, output)
+                    if not ok then
+                        log_error("request failed: " .. tostring(err))
+                        pcall(io.close, client)
+                        pcall(io.close, input)
+                        pcall(io.close, output)
+                    end
+                end
+
+                if running and not bind_listener() then
+                    failures = failures + 1
+                    log_error("cannot rebind port " .. tostring(config.port))
+                    if failures >= 5 then running = false end
                 end
             elseif aok then
                 java.sleep(10)
             else
-                running = false
+                -- Transient accept errors are retried; a socket that keeps
+                -- failing (closed underneath us) ends the loop after five tries.
+                failures = failures + 1
+                log_error("accept failed (" .. tostring(failures) .. "): " .. tostring(client))
+                if failures >= 5 then
+                    running = false
+                elseif not bind_listener() then
+                    java.sleep(200)
+                end
             end
         end
 
@@ -587,7 +628,25 @@ if arg[1] == "--deamon" then
         pcall(os.request, "1", "sendsig", { pid = os.getpid(), signal = "9" })
     end, "nginx-accept")
 
-    return nil
+    -- Stay registered as a service: returning a handler keeps the process (and
+    -- its listening socket) alive after the chunk finishes.
+    return function(payload, args, scope, pid, uid)
+        local event = tostring(payload)
+
+        if event == "stop" then
+            running = false
+            poke(config.port)
+            return "stopping"
+        elseif event == "reload" then
+            load_config()
+            return "reloaded"
+        elseif event == "status" then
+            local _, port = read_pidfile()
+            return "running (pid " .. tostring(os.getpid()) .. port_suffix(port) .. ")"
+        end
+
+        return "ok"
+    end
 end
 
 -- Command line ----------------------------------------------------------
