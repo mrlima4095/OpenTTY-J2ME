@@ -1,5 +1,5 @@
 -- rock: name=ui
--- rock: version=1.0.0
+-- rock: version=1.0.1
 -- rock: description=Callback-based menus, prompts, confirms, alerts and a file picker
 -- rock: here=/lib/ui.lua
 
@@ -71,7 +71,7 @@ end
 -- One editable text field. `on_submit` receives the typed string.
 function U.prompt(title, label, options)
     options = options or {}
-    local form = graphics.new("form", title or "Input", "implicit")
+    local form = graphics.new("screen", title or "Input")
     graphics.append(form, {
         type = "field",
         label = label or "Value",

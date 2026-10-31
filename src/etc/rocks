@@ -21,6 +21,6 @@ return {
         ["tablex"] = { version = "1.0.0", remote = "lua/tablex.lua", here = "/lib/tablex.lua", description = "Table helpers: deepcopy, merge, map/filter/reduce, sortby, keys, range", depends = {} },
         ["template"] = { version = "1.0.0", remote = "lua/template.lua", here = "/lib/template.lua", description = "Mustache-style templates: variables, sections, comments and partials", depends = {} },
         ["term"] = { version = "1.0.0", remote = "lua/term.lua", here = "/lib/term.lua", description = "Terminal helpers: ANSI colors, tables, progress bars and boxes", depends = {} },
-        ["ui"] = { version = "1.0.0", remote = "lua/ui.lua", here = "/lib/ui.lua", description = "Callback-based menus, prompts, confirms, alerts and a file picker", depends = {} },
+        ["ui"] = { version = "1.0.1", remote = "lua/ui.lua", here = "/lib/ui.lua", description = "Callback-based menus, prompts, confirms, alerts and a file picker", depends = {} },
     }
 }

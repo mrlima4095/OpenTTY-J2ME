@@ -93,20 +93,23 @@ See the dedicated [File System guide](FILESYS.md) for a complete reference.
 
 | Library | Main Functions |
 |---------|----------------|
-| `os` | `execute`, `getenv`, `setenv`, `exit`, `date`, `getuid`, `su`, `setproc`, `getproc`, `request`, `mkdir`, `remove` |
-| `io` | `read`, `write`, `open`, `close`, `popen`, `dirs`, `copy`, `mount` |
+| `os` | `execute`, `getenv`, `setenv`, `exit`, `date`, `time`, `getuid`, `su`, `setproc`, `getproc`, `request`, `mkdir`, `remove` |
+| `io` | `read`, `write`, `open`, `close`, `popen`, `dirs`, `copy`, `mount`, `new`, `setstdout` |
 | `string` | `sub`, `find`, `match`, `upper`, `lower`, `byte`, `char`, `split`, `hash`, `startswith`, `endswith` |
-| `table` | `insert`, `remove`, `sort`, `concat`, `pack`, `unpack`, `decode` |
-| `socket` | `connect`, `server`, `accept`, `http.get`, `http.post`, `peer`, `device` |
-| `graphics` | `display`, `new`, `append`, `addCommand`, `handler`, `render`, `vibrate` |
+| `table` | `insert`, `remove`, `sort`, `concat`, `move`, `pack`, `unpack`, `decode` |
+| `socket` | `connect`, `server`, `accept`, `http.get`, `http.post`, `http.rget`, `http.rpost`, `peer`, `device` |
+| `graphics` | `display`, `new`, `append`, `addCommand`, `handler`, `title`, `ticker`, `render`, `vibrate`, `taskmngr`, `canvas` |
+| `java` | `class`, `getName`, `run`, `thread`, `sleep`, `yield`, `delete`, `midlet.*` |
+| `debug` | `traceback`, `getinfo`, `getregistry` |
 | `base64` | `encode`, `decode` |
-| `push` | `register`, `unregister`, `list`, `pending`, `setAlarm`, `getAlarm` |
-| `audio` | `load`, `play`, `pause`, `volume`, `duration` |
+| `push` | `register`, `unregister`, `list`, `pending`, `setAlarm` |
+| `audio` | `load`, `play`, `pause`, `volume`, `duration`, `time` |
 
-> **Important:** this Lua implementation has a **reduced `string` library**. It
-> does **not** provide `string.format`, `string.rep`, `string.gsub`, or
-> `string.gmatch`. Use the native `string.startswith`/`string.endswith` instead
-> of shadowing them.
+> **Important:** the **native `string` library is reduced**: it does **not**
+> provide `string.format`, `string.rep`, `string.gsub`, or `string.gmatch`. The
+> shipped `string` rock (`require("string")`) adds them plus a Lua pattern
+> engine. Use the native `string.startswith`/`string.endswith` instead of
+> shadowing them.
 
 See the [Lua reference](lua/README.md) for the full function list and examples.
 
@@ -166,7 +169,7 @@ See the [Canvas guide](LUACANVAS.md) for the `graphics.canvas` API and the
 ### Example
 
 ```lua
-local form = graphics.new("form", "Registration")
+local form = graphics.new("screen", "Registration")
 
 graphics.append(form, { type = "field", label = "Name:", length = 50 })
 graphics.append(form, {

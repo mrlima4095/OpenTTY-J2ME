@@ -18,7 +18,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public boolean useCache = true, debug = false;
     // |
     // System Objects
-    public int lastID = 1000, memory_size = 512;
+    public int lastID = 1000, lastPid = 1, memory_size = 512;
     public Random random = new Random();
     public Runtime runtime = Runtime.getRuntime();
     public Object shell;
@@ -26,7 +26,7 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public Hashtable attributes = new Hashtable(), fs = new Hashtable(), sys = new Hashtable(), exited = new Hashtable(), tmp = new Hashtable(), cacheLua = new Hashtable(), graphics = new Hashtable(), servers = new Hashtable(), globals = new Hashtable(), userID = new Hashtable();
     private Hashtable vfsFiles = new Hashtable();
     private boolean vfsReady = false;
-    public String username = read("/home/OpenRMS", globals), build = "2026-1.19-04x55";
+    public String username = read("/home/OpenRMS", globals), build = "2026-1.19-04x56";
     // | (Boot Menu / chroot)
     public String chroot = "";
     public Vector bootEntries = null;
@@ -374,7 +374,13 @@ public class OpenTTY extends MIDlet implements CommandListener {
     public String[] splitArgs(String input) { Vector result = new Vector(); StringBuffer current = new StringBuffer(); boolean inDoubleQuotes = false, inSingleQuotes = false, escaped = false; for (int i = 0; i < input.length(); i++) { char c = input.charAt(i); if (escaped) { current.append(c); escaped = false; continue; } if (c == '\\') { if (inDoubleQuotes || inSingleQuotes) { escaped = true; } else { current.append(c); } continue; } if (c == '"' && !inSingleQuotes) { inDoubleQuotes = !inDoubleQuotes; current.append(c); continue; } if (c == '\'' && !inDoubleQuotes) { inSingleQuotes = !inSingleQuotes; current.append(c); continue; } if (c == ' ' && !inDoubleQuotes && !inSingleQuotes) { if (current.length() > 0) { result.addElement(current.toString()); current.setLength(0); } continue; } current.append(c); } if (current.length() > 0) { result.addElement(current.toString()); } String[] array = new String[result.size()]; for (int i = 0; i < result.size(); i++) { array[i] = getpattern((String) result.elementAt(i)); } return array; }
     // |
     // | (Generators)
-    public String genpid() { return String.valueOf(1000 + random.nextInt(9000)); }
+    // Sequential PID allocation: each process gets the last PID + 1. init is
+    // PID 1, so the first guest process starts at 2 (or at 3 when the embedded
+    // MIDPlay host already owns PID 2).
+    public String genpid() {
+        do { lastPid++; } while (lastPid < 1 || sys.containsKey(String.valueOf(lastPid)));
+        return String.valueOf(lastPid);
+    }
     // | (User Manager)
     public int getUserID(String user) { return user.equals("root") ? 0 : user.equals(username) ? 1000 : userID.containsKey(user) ? ((Integer) userID.get(user)).intValue() : -1; }
     public String getUser(int uid) { if (uid == 0) { return "root"; } else if (uid == 1000) { return username; } for (Enumeration keys = sys.keys(); keys.hasMoreElements();) { String user = (String) keys.nextElement(); Integer id = (Integer) userID.get(user); if (id.intValue() == uid) { return user; } } return null; }

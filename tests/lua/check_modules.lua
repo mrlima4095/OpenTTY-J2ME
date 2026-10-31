@@ -418,7 +418,7 @@ if type(uirock) == "table" then
     local typed
     local form = U.prompt("Name", "Your name", { on_submit = function(value) typed = value end })
     form.handler[form.commands[1]]("ana")
-    check("ui prompt", form.kind == "form" and form.items[1].type == "field" and typed == "ana")
+    check("ui prompt", form.kind == "screen" and form.items[1].type == "field" and typed == "ana")
 
     local answered
     local confirm = U.confirm("Sure?", "Delete?", { on_yes = function() answered = "yes" end })

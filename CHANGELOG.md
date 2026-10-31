@@ -16,6 +16,10 @@ Copyright (C) 2026 - Mr. Lima
   headless smoke run exercises the boot/login/console path
 - `bench/` benchmark twins: eight identical tests in Lua and in a RISC-V ELF,
   with matching checksums and a best-of-N comparison
+- Process IDs are allocated sequentially (last PID + 1) instead of random
+  four-digit numbers: `init` keeps PID 1, the first guest process starts at 2,
+  and the embedded MIDPlay host owns PID 2 so its first guest process starts
+  at 3
 
 [ Shell ]
 
@@ -68,6 +72,8 @@ The runtime now follows Lua 5.1 much more closely:
 - LCDUI screens are handles: `graphics.new` returns a table, so `screen:append(item)`, `screen:addCommand(cmd)`, `screen:handler({...})`, `screen:handler(fn)` and `screen:display()` work as methods (`type(screen)` stays `"screen"`, and the `graphics.*` functions still accept the raw screen object); `handler(screen, fn)` installs one function for every command, called as `fn(screen, label, ...values)`
 - `luarocks` package manager (`/bin/luarocks`) with rock payloads for `math`, `string` (patterns, `format`, `rep`, `gsub`, `gmatch`), `graphics`, `kernel` and `httpd`; `require` loads `/lib/<name>.lua` and installed state lives in `/etc/rocks.installed`
 - 14 new rocks in the catalog: `json`, `tablex`, `base64`, `sha1`, `sha256`, `term`, `argparse`, `log`, `config`, `template`, `csv`, `date`, `re` (depends on `string`) and `ui` — JSON/CSV/INI data handling, pure-Lua SHA-1/SHA-256 with HMAC, terminal tables and progress bars, option parsing, levelled logging, Mustache-style templates, date math, pattern helpers and callback-based menus/prompts/file picker; they install through `luarocks install` into `/lib/<name>.lua` and are listed in `docs/LUAROCKS.md`
+- `res/lua/j2me.lua` is a complete LuaDoc stub of the runtime (globals, `os`, `io`, `table`, `string`, `math`, `debug`, `socket`, `audio`, `base64`, `push`, `java`, `graphics` and `graphics.canvas`) for editor hints and autocomplete: it covers the screen handles and their methods, `graphics.title`/`ticker`, `handler(screen, fn)` and the rock-provided `string`/`math` extensions, and `docs/lua/README.md` was refreshed to match the current API
+- `ui` rock: `ui.prompt` builds its form with the explicit `graphics.new("screen", ...)` type and drops the stray list-mode argument (ui 1.0.1)
 
 [ ELF ]
 
