@@ -45,23 +45,30 @@ if hostname == "" then hostname = string.trim(io.read("/etc/hostname") or "") en
 if hostname == "" then hostname = "localhost" end
 
 local user = currentUser()
-local lines = {
-    user .. "@" .. hostname,
-    "",
-    "Host     : " .. hostname,
-    "User     : " .. user,
-    "OpenTTY  : " .. env("VERSION", "unknown") .. " (" .. env("CONFIG", "CLDC-1.0") .. "/" .. env("PROFILE", "MIDP-2.0") .. ")",
-    "Build    : " .. tostring(java.midlet.build or "unknown"),
-    "Uptime   : " .. uptimeText(),
-    "Memory   : " .. tostring(collectgarbage("count")) .. "Kb used, " .. tostring(collectgarbage("free")) .. "Kb free"
-}
 
-local status = nil
+-- Uptime and memory are read every time the text is built, so a failed login
+-- shows fresh values.
+local function infoText()
+    return table.concat({
+        user .. "@" .. hostname,
+        "",
+        "Host     : " .. hostname,
+        "User     : " .. user,
+        "OpenTTY  : " .. env("VERSION", "unknown") .. " (" .. env("CONFIG", "CLDC-1.0") .. "/" .. env("PROFILE", "MIDP-2.0") .. ")",
+        "Build    : " .. tostring(java.midlet.build or "unknown"),
+        "Uptime   : " .. uptimeText(),
+        "Memory   : " .. tostring(collectgarbage("count")) .. "Kb used, " .. tostring(collectgarbage("free")) .. "Kb free"
+    }, "\n")
+end
 
 local function refresh()
-    local text = table.concat(lines, "\n")
-    if status ~= nil then text = text .. "\n\n" .. status end
-    graphics.SetText(info, text)
+    graphics.SetText(info, infoText())
+end
+
+-- Timed alert: it dismisses itself after 5 seconds and falls back to the
+-- lock form. Failures never touch the information StringItem.
+local function warn(message)
+    graphics.display(graphics.new("alert", "Login failed", message, { type = "error", timeout = 5000 }), screen)
 end
 
 -- Back to the terminal (or whatever was on screen when the lock started).
@@ -76,8 +83,8 @@ end
 local function closeMIDlet()
     local ok, result = pcall(os.request, 1, "sendsig", { pid = "1", signal = "9" })
     if not ok or result ~= 0 then
-        status = "Cannot close OpenTTY (permission denied)."
         refresh()
+        warn("Cannot close OpenTTY (permission denied).")
     end
 end
 
@@ -90,8 +97,8 @@ graphics.handler(screen, {
         secret = string.trim(secret or "")
 
         if secret == "" then
-            status = "Password required."
             refresh()
+            warn("Password required.")
             return
         end
 
@@ -102,8 +109,8 @@ graphics.handler(screen, {
         end
 
         graphics.SetText(password, "")
-        status = "Permission denied: wrong password."
         refresh()
+        warn("Permission denied: wrong password.")
         pcall(graphics.vibrate, 200)
     end,
     [quit] = closeMIDlet
