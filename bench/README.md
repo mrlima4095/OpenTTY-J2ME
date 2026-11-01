@@ -1,10 +1,14 @@
-# bench/ — Lua vs RISC-V ELF benchmark twins
+# bench/ — Lua vs RISC-V ELF benchmark twins, plus the Lua Canvas benchmark
 
 Two programs that do **exactly the same work**: `bench.lua` (run by
 `src/Lua.java`) and `bench.c` (built for the RISC-V emulator in
 `src/ELF.java`). Every test prints `name n=<size> ms=<time> checksum=<value>`;
 the checksums must match between the two reports, otherwise the comparison is
 meaningless.
+
+`canvas.lua` (+ `run_canvas.sh`) is a third program: a benchmark of the
+`graphics.canvas` drawing API itself, described in
+[Lua Canvas benchmark](#lua-canvas-benchmark-canvaslua) below.
 
 ## Tests
 
@@ -102,3 +106,102 @@ Two real bugs in `src/Lua.java` surfaced here and are fixed:
 - `string.byte(s, i)` ignored the start index for the default end (it kept
   `end = 1`), so any `i > 1` returned `nil`. With two arguments the end now
   defaults to the start, as in Lua 5.x.
+
+## Lua Canvas benchmark (`canvas.lua`)
+
+`bench/canvas.lua` measures the `graphics.canvas` API (see
+[`docs/LUACANVAS.md`](../docs/LUACANVAS.md)): what one call costs from Lua,
+through the native dispatch in `src/Lua.java` and the `ensureBuffer()` guard in
+`src/LuaCanvas.java`, down to the MIDP `Graphics` call. One persistent 240x320
+canvas is reused by every test (the headless default size of the shim), and
+each test grows its own batch until it has run for at least 25 ms, because
+`os.clock()` ticks in milliseconds and a single primitive is far below that.
+
+```sh
+bench/run_canvas.sh            # scale=1, passes=4
+bench/run_canvas.sh 2 6        # bigger starting batches, more warm-up
+```
+
+The raw report lands in `data/mnt/opentty/bench-canvas.txt` (the console log in
+`.../bench-canvas.log`); the runner prints it and then a best-pass table. The
+shim never exits on its own after a scripted command, so the runner polls the
+report for the `done` marker and stops the JVM as soon as the suite finished.
+
+### Tests
+
+| Test | Call | What it exercises |
+| --- | --- | --- |
+| `native_call` | `c:color()` | marshalling + a native return value, no drawing |
+| `color` | `c:color(0xRRGGBB)` | `ensureBuffer` + `Graphics.setColor` |
+| `clear` | `c:clear()` | full-canvas background `fillRect` |
+| `clear_rect` | `c:clear(x,y,w,h)` | small fill (HUD-style erase) |
+| `pixel` | `c:pixel(x,y)` | one `drawLine` of a single pixel |
+| `line` | `c:line(x1,y1,x2,y2)` | `drawLine` |
+| `rect` | `c:rect(...,true)` | `fillRect` |
+| `circle` | `c:circle(...,true)` | `fillArc` (full sweep) |
+| `polygon` | `c:polygon(t,true)` | caller-built table + Java scanline fill |
+| `text` | `c:text(s,x,y)` | `drawString` |
+| `print` | `c:print(s)` | cursor text: `charWidth` + `drawChar` per char |
+| `metrics` | `c:metrics()` + `c:textWidth` | font metrics |
+| `state` | `c:save()` + `c:restore()` | state stack push/pop |
+| `clip` | `c:clip()` + `c:resetClip()` | clip change |
+| `keys` | `c:keys()` | held-key table (polled every game frame) |
+| `new` | `graphics.canvas.new` | handle + metatable + off-screen `Image` |
+| `frame` | a full game frame | clear + HUD text + 24 shapes + paddle |
+
+### Measured result
+
+Desktop shim, OpenJDK 21 (JIT enabled), AMD EPYC 9354P, headless, 240x320,
+scale 1, best of 8 passes (2026-11-01). The host is shared, so a single run
+moves by up to ~2x between tests; the shape of the table is what to read.
+
+| Test | n | ms | us/call | fps |
+| --- | --- | --- | --- | --- |
+| `native_call` | 20000 | 40 | 2.0 | - |
+| `color` | 20000 | 49 | 2.5 | - |
+| `clear` | 5000 | 38 | 7.6 | - |
+| `clear_rect` | 9090 | 27 | 3.0 | - |
+| `pixel` | 8333 | 26 | 3.1 | - |
+| `line` | 8332 | 46 | 5.5 | - |
+| `rect` | 10000 | 47 | 4.7 | - |
+| `circle` | 6250 | 42 | 6.7 | - |
+| `polygon` | 3125 | 29 | 9.3 | - |
+| `text` | 5000 | 25 | 5.0 | - |
+| `print` | 5000 | 39 | 7.8 | - |
+| `metrics` | 7142 | 25 | 3.5 | - |
+| `state` | 6250 | 26 | 4.2 | - |
+| `clip` | 7142 | 25 | 3.5 | - |
+| `keys` | 16666 | 44 | 2.6 | - |
+| `new` | 40 | 2 | 50.0 | - |
+| `frame` | 250 | 35 | 140.0 | 7143 |
+
+Reading the table: ~2.0 us is the floor of *any* canvas call — the Lua
+interpreter plus the native dispatch — so `color`, `keys`, `clip`, `metrics`
+and `state` are essentially free, and the pixel work only shows up where the
+fill area is large (`clear` 7.6 us for 76800 pixels, `circle` 6.7 us for a
+filled disc). `print` costs ~0.5 us per character because `LuaCanvas` draws
+character by character (`charWidth` + `drawChar`), and `polygon` carries both a
+table allocation and the Java scanline fill. A whole 27-call game frame is
+~140 us warm, three orders of magnitude below the 33 ms frame budget of the
+loop.
+
+Caveats, because they matter:
+
+- **This is the desktop shim, not a phone.** HotSpot compiles the interpreter's
+  Java, and the shim's `Graphics` is a `BufferedImage` — a CLDC/MIDP VM
+  interprets the Lua and the device rasterizes into its own frame buffer. The
+  per-call floor will be higher on hardware; the ratios between calls should
+  hold.
+- **No blit is measured.** Nothing here calls `flush()`/`repaint()`, and
+  headless mode never paints, so the buffer-to-screen transfer (the part that
+  actually limits fps on a phone) is outside these numbers.
+- **Canvas size matters for the pixel-bound tests.** 240x320 is the shim's
+  headless default; `clear`, `circle` and `frame` grow with the real window or
+  screen size, the call-bound tests do not.
+- **The first pass is warm-up.** A cold `frame` batch measured 1050 us/frame
+  against 140 us warm; that is why the runner reports the best pass and why
+  `passes` defaults to 4.
+- **1 ms resolution.** Each test re-runs its batch with a bigger `n` until it
+  clears 25 ms, so the reported `us/call` comes from a batch long enough to
+  time; `new` is capped at 40 canvases (memory) and stays at 2 ms, which is
+  coarse.

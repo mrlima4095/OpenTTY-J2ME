@@ -448,6 +448,11 @@ io.write("frames=" .. n .. "\n", "/mnt/opentty/result.txt")
 `tests/` uses this recipe, and it is the recommended way to validate a game
 before running it on a device.
 
+For per-call drawing costs (native dispatch, `ensureBuffer`, the MIDP
+`Graphics` call, whole frames per second), `bench/canvas.lua` is the same idea
+as a benchmark: `bench/run_canvas.sh` runs it headless and prints a
+best-pass table (see [`bench/README.md`](../bench/README.md)).
+
 ---
 
 ## Method reference
