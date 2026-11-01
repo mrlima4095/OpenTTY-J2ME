@@ -1131,8 +1131,18 @@ public class ELF implements CommandListener, ItemCommandListener, ItemStateListe
             else if (token.equals("medium")) { size = Font.SIZE_MEDIUM; }
             else if (token.equals("large")) { size = Font.SIZE_LARGE; }
         }
-        Font font = Font.getFont(face, style, size);
+        // Some devices throw IllegalArgumentException instead of substituting a
+        // font when the combination is missing (monospace medium on Series 40),
+        // so drop the face, then the style, then the size before giving up.
+        Font font = tryFont(face, style, size);
+        if (font == null && face != Font.FACE_SYSTEM) { font = tryFont(Font.FACE_SYSTEM, style, size); }
+        if (font == null && style != Font.STYLE_PLAIN) { font = tryFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, size); }
+        if (font == null && size != Font.SIZE_MEDIUM) { font = tryFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_MEDIUM); }
         return font == null ? Font.getDefaultFont() : font;
+    }
+    private Font tryFont(int face, int style, int size) {
+        try { return Font.getFont(face, style, size); }
+        catch (Throwable t) { return null; }
     }
     private AlertType uiAlertType(int type) {
         switch (type) {
@@ -1304,7 +1314,11 @@ public class ELF implements CommandListener, ItemCommandListener, ItemStateListe
     private int uiSetFont(int handle, int specPtr) {
         Object object = uiObject(handle);
         if (!(object instanceof StringItem)) { return -1; }
-        ((StringItem) object).setFont(uiFont(specPtr));
+        StringItem item = (StringItem) object;
+        try { item.setFont(uiFont(specPtr)); }
+        catch (Throwable t) {
+            try { item.setFont(Font.getDefaultFont()); } catch (Throwable ignored) { return -1; }
+        }
         return 0;
     }
     private int uiSetLayout(int handle, int layout) {

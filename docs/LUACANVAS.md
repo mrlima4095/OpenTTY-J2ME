@@ -124,6 +124,11 @@ Font specs are case-insensitive words separated by spaces:
 
 Anything unknown falls back to the default font. A numeric face/style/size triple
 also works: `c:font(graphics.canvas.fonts.MONOSPACE, graphics.canvas.fonts.BOLD, graphics.canvas.fonts.LARGE)`.
+When the phone has no font for a combination (some Series 40 and Sagem devices
+reject `monospace medium` with `IllegalArgumentException`), the face, then the
+style, then the size is dropped until the phone accepts one, and a font the
+device refuses to apply falls back to the default font, so drawing never throws.
+`c:font()` still reports the spec you asked for.
 
 ---
 

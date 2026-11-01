@@ -5,6 +5,14 @@
 
 local version = "1.0.0"
 
+-- The runtime has no math.floor (that lives in the optional `math` rock), so
+-- the DNS header fields -- always non-negative -- use the modulo trick.
+local function floor(x)
+    local n = x % 1
+    if n ~= 0 and x < 0 then return x - n - 1 end
+    return x - n
+end
+
 if arg[1] == "--deamon" then
     os.setproc("name", "dnsd")
     os.setproc(false)
@@ -62,19 +70,19 @@ if arg[1] == "--deamon" then
     local function build_dns_response(query_id, answers, qname, qtype)
         local resp = {}
 
-        table.insert(resp, math.floor(query_id / 256))
+        table.insert(resp, floor(query_id / 256))
         table.insert(resp, query_id % 256)
 
         local flags = 0x8180
         if #answers == 0 then
             flags = 0x8183
         end
-        table.insert(resp, math.floor(flags / 256))
+        table.insert(resp, floor(flags / 256))
         table.insert(resp, flags % 256)
 
         table.insert(resp, 0)
         table.insert(resp, 1)
-        table.insert(resp, math.floor(#answers / 256))
+        table.insert(resp, floor(#answers / 256))
         table.insert(resp, #answers % 256)
         table.insert(resp, 0)
         table.insert(resp, 0)
@@ -94,7 +102,7 @@ if arg[1] == "--deamon" then
         elseif qtype == "CNAME" then type_num = 5
         elseif qtype == "TXT" then type_num = 16
         end
-        table.insert(resp, math.floor(type_num / 256))
+        table.insert(resp, floor(type_num / 256))
         table.insert(resp, type_num % 256)
         table.insert(resp, 0)
         table.insert(resp, 1)
@@ -114,12 +122,12 @@ if arg[1] == "--deamon" then
             elseif ans.type == "CNAME" then atype = 5
             elseif ans.type == "TXT" then atype = 16
             end
-            table.insert(resp, math.floor(atype / 256))
+            table.insert(resp, floor(atype / 256))
             table.insert(resp, atype % 256)
             table.insert(resp, 0)
             table.insert(resp, 1)
-            table.insert(resp, math.floor(ans.ttl / 65536))
-            table.insert(resp, math.floor(ans.ttl / 256) % 256)
+            table.insert(resp, floor(ans.ttl / 65536))
+            table.insert(resp, floor(ans.ttl / 256) % 256)
             table.insert(resp, ans.ttl % 256)
             table.insert(resp, 0)
             table.insert(resp, 4)

@@ -287,7 +287,7 @@ public class LuaCanvas extends Canvas implements CommandListener {
         bufferHeight = h;
         buffer = Image.createImage(w, h);
         g = buffer.getGraphics();
-        g.setFont(font);
+        applyFont();
         g.setColor(background);
         g.fillRect(0, 0, w, h);
         g.setColor(color);
@@ -332,7 +332,18 @@ public class LuaCanvas extends Canvas implements CommandListener {
         font = value == null ? Font.getDefaultFont() : value;
         fontSpec = spec == null ? "medium" : spec;
         ensureBuffer();
-        g.setFont(font);
+        applyFont();
+    }
+    // | (Some devices throw IllegalArgumentException from Graphics.setFont()
+    // | for a combination that Font.getFont() accepted -- monospace medium on
+    // | Series 40, for instance -- instead of substituting a font. Keep the
+    // | requested spec but draw with the default font so the app still runs.)
+    private void applyFont() {
+        try { g.setFont(font); }
+        catch (Throwable t) {
+            font = Font.getDefaultFont();
+            try { g.setFont(font); } catch (Throwable ignored) { }
+        }
     }
     public Font getFontValue() { return font; }
     public String getFontSpec() { return fontSpec; }
@@ -358,7 +369,7 @@ public class LuaCanvas extends Canvas implements CommandListener {
         g.setColor(color);
         fontSpec = (String) state[7];
         font = (Font) state[8];
-        g.setFont(font);
+        applyFont();
     }
     public void resetState() {
         ensureBuffer();
@@ -368,7 +379,7 @@ public class LuaCanvas extends Canvas implements CommandListener {
         g.setColor(color);
         font = Font.getDefaultFont();
         fontSpec = "medium";
-        g.setFont(font);
+        applyFont();
         savedStates.removeAllElements();
     }
     // |
@@ -443,7 +454,7 @@ public class LuaCanvas extends Canvas implements CommandListener {
         ensureBuffer();
         if (text == null) { return; }
         g.setColor(color);
-        g.setFont(font);
+        applyFont();
         for (int i = 0; i < text.length(); i++) {
             char ch = text.charAt(i);
             if (ch == '\n') { newLine(); continue; }
@@ -582,8 +593,23 @@ public class LuaCanvas extends Canvas implements CommandListener {
             else if (token.equals("medium") || token.equals("normal")) { size = Font.SIZE_MEDIUM; }
             else if (token.equals("large") || token.equals("big")) { size = Font.SIZE_LARGE; }
         }
-        Font value = Font.getFont(face, style, size);
+        Font value = safeFont(face, style, size);
         return value == null ? Font.getDefaultFont() : value;
+    }
+    // | (Font.getFont() throws IllegalArgumentException on devices that have no
+    // | font for the requested combination (monospace medium is a common gap on
+    // | Series 40 and Sagem phones). Degrade instead of crashing: drop the face,
+    // | then the style, then the size, and finally fall back to the default.)
+    public static Font safeFont(int face, int style, int size) {
+        Font value = tryFont(face, style, size);
+        if (value == null && face != Font.FACE_SYSTEM) { value = tryFont(Font.FACE_SYSTEM, style, size); }
+        if (value == null && style != Font.STYLE_PLAIN) { value = tryFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, size); }
+        if (value == null && size != Font.SIZE_MEDIUM) { value = tryFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_MEDIUM); }
+        return value;
+    }
+    private static Font tryFont(int face, int style, int size) {
+        try { return Font.getFont(face, style, size); }
+        catch (Throwable t) { return null; }
     }
     private static String[] splitSpaces(String text) {
         Vector parts = new Vector();

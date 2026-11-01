@@ -60,6 +60,14 @@ local function held(a, b, c)
     return false
 end
 
+-- The runtime has no math.floor (that lives in the optional `math` rock), so
+-- round down with the modulo trick. Scores are never negative here.
+local function floor(x)
+    local n = x % 1
+    if n ~= 0 and x < 0 then return x - n - 1 end
+    return x - n
+end
+
 local function draw()
     canvas:clear()
 
@@ -105,7 +113,7 @@ local function step(c, dt)
 
         -- Paddle hit: bounce and score.
         if game.ballY >= H - 26 and game.ballY <= H - 18 and game.ballX >= game.paddleX and game.ballX <= game.paddleX + PADDLE_W then
-            game.vy = -BALL_SPEED - math.floor(game.score / 5)
+            game.vy = -BALL_SPEED - floor(game.score / 5)
             game.score = game.score + 1
         end
 

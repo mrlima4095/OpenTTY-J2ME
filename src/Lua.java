@@ -3303,7 +3303,7 @@ public class Lua {
                             String layout = getFieldValue(field, "layout", "default");
                             StringItem si = new StringItem(getFieldValue(field, "label", ""), getFieldValue(field, "value", ""), layout.equals("link") ? StringItem.HYPERLINK : layout.equals("button") ? StringItem.BUTTON : Item.LAYOUT_DEFAULT);
                             
-                            si.setFont(genFont(getFieldValue(field, "style", "default")));
+                            setItemFont(si, getFieldValue(field, "style", "default"));
                             return si;
                         }
                     }
@@ -3350,7 +3350,7 @@ public class Lua {
                                     String layout = getFieldValue(field, "layout", "default");
                                     StringItem si = new StringItem(getFieldValue(field, "label", ""), getFieldValue(field, "value", ""), layout.equals("link") ? StringItem.HYPERLINK : layout.equals("button") ? StringItem.BUTTON : Item.LAYOUT_DEFAULT);
                                     
-                                    si.setFont(genFont(getFieldValue(field, "style", "default")));
+                                    setItemFont(si, getFieldValue(field, "style", "default"));
                                     form.append(si);
                                 }
                                 else if (type.equals("item")) {
@@ -3358,7 +3358,7 @@ public class Lua {
 
                                     Command RUN = new Command(getFieldValue(field, "label", (String) gotbad("append", "item", "missing label")), Command.ITEM, 1); 
                                     StringItem s = new StringItem(null, getFieldValue(field, "label", ""), StringItem.BUTTON); 
-                                    s.setFont(genFont(field.containsKey("style") ? toLuaString(field.get("style")) : "default"));
+                                    setItemFont(s, field.containsKey("style") ? toLuaString(field.get("style")) : "default");
                                     s.setLayout(Item.LAYOUT_EXPAND | Item.LAYOUT_NEWLINE_AFTER | Item.LAYOUT_NEWLINE_BEFORE); 
                                     s.addCommand(RUN); 
                                     s.setDefaultCommand(RUN); 
@@ -3964,7 +3964,7 @@ public class Lua {
                     int face = ((Double) spec).intValue();
                     int style = args.size() > 2 && args.elementAt(2) instanceof Double ? ((Double) args.elementAt(2)).intValue() : Font.STYLE_PLAIN;
                     int size = args.size() > 3 && args.elementAt(3) instanceof Double ? ((Double) args.elementAt(3)).intValue() : Font.SIZE_MEDIUM;
-                    Font value = Font.getFont(face, style, size);
+                    Font value = LuaCanvas.safeFont(face, style, size);
                     canvas.setFontValue(value == null ? Font.getDefaultFont() : value, "custom");
                 }
                 else { return gotbad(2, where, "font spec string or face number expected, got " + type(spec)); }
@@ -4392,7 +4392,16 @@ public class Lua {
         public int getNumber(String s, int fallback) { try { return Integer.valueOf(s); } catch (Exception e) { return fallback; } } 
     
         private String getFieldValue(Hashtable table, String key, String fallback) { Object val = table.get(key); return val != null ? toLuaString(val) : fallback; }
-        private Font genFont(String params) { if (params == null || params.length() == 0 || params.equals("default")) { return Font.getDefaultFont(); } int face = Font.FACE_SYSTEM, style = Font.STYLE_PLAIN, size = Font.SIZE_MEDIUM; String[] tokens = midlet.split(params, ' '); for (int i = 0; i < tokens.length; i++) { String token = tokens[i].toLowerCase(); if (token.equals("system")) { face = Font.FACE_SYSTEM; } else if (token.equals("monospace")) { face = Font.FACE_MONOSPACE; } else if (token.equals("proportional")) { face = Font.FACE_PROPORTIONAL; } else if (token.equals("bold")) { style |= Font.STYLE_BOLD; } else if (token.equals("italic")) { style |= Font.STYLE_ITALIC; } else if (token.equals("ul") || token.equals("underline") || token.equals("underlined")) { style |= Font.STYLE_UNDERLINED; } else if (token.equals("small")) { size = Font.SIZE_SMALL; } else if (token.equals("medium")) { size = Font.SIZE_MEDIUM; } else if (token.equals("large")) { size = Font.SIZE_LARGE; } } Font f = Font.getFont(face, style, size); return f == null ? Font.getDefaultFont() : f; }
+        // | (One parser for every font spec: LuaCanvas.parseFont also degrades
+        // | gracefully when the device has no font for the combination.)
+        private Font genFont(String params) { return LuaCanvas.parseFont(params); }
+        // | (A device can reject a font combination on StringItem.setFont() the
+        // | same way Graphics.setFont() does: fall back to the default font.)
+        private void setItemFont(StringItem item, String spec) {
+            if (item == null) { return; }
+            try { item.setFont(LuaCanvas.parseFont(spec)); }
+            catch (Throwable t) { try { item.setFont(Font.getDefaultFont()); } catch (Throwable ignored) { } }
+        }
 
         public void run() { if (root instanceof LuaFunction) { Vector arg = new Vector(); try { ((LuaFunction) root).call(arg); } catch (Throwable e) { if (!silent) { midlet.print(getTraceback(e), stdout, id, father); } } } }
 
