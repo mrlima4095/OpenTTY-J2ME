@@ -57,37 +57,55 @@ to `/tmp/bench-<lang>.txt`.
 ## Measured result
 
 Desktop shim, OpenJDK 21 (JIT enabled), AMD EPYC 9354P, scale 4, passes 3,
-fastest pass per test (2026-10-28):
+fastest pass per test (2026-11-02, build 04x67):
 
 | Test | n | C/RV32 | Lua | C speedup |
 | --- | --- | --- | --- | --- |
-| `sum_loop` | 60000 | 7 ms | 146 ms | 20.9x |
-| `calls` | 60000 | 20 ms | 202 ms | 10.1x |
-| `fib` | 23 | 25 ms | 218 ms | 8.7x |
-| `sieve` | 60000 | 49 ms | 479 ms | 9.8x |
-| `sort` | 1600 | 249 ms | 2851 ms | 11.4x |
-| `string` | 2400 | 7 ms | 38 ms | 5.4x |
-| `array` | 40000 | 27 ms | 265 ms | 9.8x |
-| `alloc` | 8000 | 38 ms | 294 ms | 7.7x |
-| **total** | | **421 ms** | **4493 ms** | **10.7x** |
+| `sum_loop` | 60000 | 9 ms | 27 ms | 3.0x |
+| `calls` | 60000 | 18 ms | 70 ms | 3.9x |
+| `fib` | 23 | 25 ms | 76 ms | 3.0x |
+| `sieve` | 60000 | 44 ms | 113 ms | 2.6x |
+| `sort` | 1600 | 241 ms | 601 ms | 2.5x |
+| `string` | 2400 | 12 ms | 9 ms | 0.8x |
+| `array` | 40000 | 27 ms | 56 ms | 2.1x |
+| `alloc` | 8000 | 32 ms | 70 ms | 2.2x |
+| **total** | | **408 ms** | **1022 ms** | **2.5x** |
 
 All eight checksums matched (`24600 24600 28657 905207 810680 771809 459946
 319232`).
 
-Reading the table: the ELF side wins every CPU-bound test by roughly one order
-of magnitude, and the tightest arithmetic loop (`sum_loop`) wins the most.
-Where the work goes through the host anyway (`string`, whose bytes are copied
-by Java on both sides) the gap shrinks to ~5x.
+Before 04x67 the same command, on the same host and in the same session, read
+**935 ms** (C) vs **10 956 ms** (Lua) — an 11.7x gap. Two changes closed most
+of it:
+
+- **Emulator**: the process-liveness probe (`midlet.sys.containsKey(pid)`, a
+  synchronized `Hashtable` lookup) ran once per guest instruction. It is now
+  sampled every 1024 instructions (a killed process still stops within
+  microseconds) — C/RV32 went from 935 ms to 408 ms (**2.3x**), and the
+  profile went from "half the time in the loop guard" to almost all of it in
+  decode+execute.
+- **Lua interpreter**: `peek()`/`consume()` went through `Vector`'s
+  synchronized `size()` + `elementAt()` on every token, and every single-target
+  assignment (`i = i + 1`) allocated two `Vector`s plus their `Object[10]`
+  backing arrays. `TokenList` now keeps the tokens in a plain `Token[]`,
+  single-value assignments skip the result list, a shared EOF token replaces
+  the `Token` allocated past the end, and the per-statement liveness probe is
+  sampled too. Lua went from 10 956 ms to 1022 ms (**10.7x**).
+
+Reading the table: on the JVM the two runtimes are now in the same ballpark —
+the C twin is still ahead on tight loops, and `string` is outright faster in
+Lua because the work happens in Java (`String.concat`) instead of guest code.
 
 Caveats, because they matter:
 
 - **This is the desktop shim, not a phone.** HotSpot compiles both runtimes;
-  a CLDC/MIDP VM interprets bytecode, and the emulator pays several method
-  calls plus a `Hashtable` lookup (`midlet.sys.containsKey(pid)`) per guest
-  instruction, which no inlining hides. Expect the ELF advantage to *grow* on
-  a real device. Not measured here.
+  a CLDC/MIDP VM interprets bytecode. There the missing `Vector` locking and
+  the removed per-statement `Hashtable` lookup should help the Lua side *more*
+  than the numbers above suggest (a CLDC monitor is far more expensive than a
+  HotSpot one), while the emulator still pays several method calls per guest
+  instruction. Not measured on hardware.
 - **Best of N is reported.** A single cold pass is dominated by JVM warm-up:
-  the first C pass in a fresh JVM measured 532 ms against 421 ms warm, and
+  the first C pass in a fresh JVM measured 977 ms against 409 ms warm, and
   individual tests moved by 2-6x between cold and warm runs.
 - **1 ms resolution.** `os.clock()` (Lua) and the `gettimeofday` syscall (C)
   both tick in milliseconds, so small tests are coarse — use `scale` to make

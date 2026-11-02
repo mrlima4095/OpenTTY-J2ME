@@ -19,6 +19,8 @@ public class Lua {
     public String PID = "";
     private long uptime = System.currentTimeMillis();
     private int id = 1000, tokenIndex, loopDepth = 0;
+    // | (Statement counter for the throttled process-liveness probe)
+    private int statementCount = 0;
     public Hashtable globals = new Hashtable(), father, requireCache = new Hashtable(), labels = new Hashtable();
     public Vector tokens;
     public String currentSource = "";
@@ -83,6 +85,30 @@ public class Lua {
     }
     // |
     public static class Token { int type; Object value; int offset; Token(int type, Object value) { this.type = type; this.value = value; this.offset = -1; } Token(int type, Object value, int offset) { this.type = type; this.value = value; this.offset = offset; } public String toString() { return "Token(type=" + type + ", value=" + value + ")"; } }
+    // | (Array-backed token list)
+    // Every peek()/consume() used to go through Vector's synchronized size()
+    // plus elementAt(), and the profiler showed that pair as the interpreter's
+    // single biggest cost (about a third of the samples in bench/bench.lua).
+    // A token list is owned by exactly one interpreter (the luaOwner lock in
+    // LuaFunction.call serializes execution), so a plain Token[] behind the
+    // same Vector API is safe and much cheaper on a CLDC VM.
+    public static class TokenList extends Vector {
+        private Token[] items = new Token[16];
+        private int count = 0;
+        public void addElement(Object value) {
+            if (count == items.length) { Token[] grown = new Token[count * 2]; System.arraycopy(items, 0, grown, 0, count); items = grown; }
+            items[count++] = (Token) value;
+        }
+        public Object elementAt(int index) { return items[index]; }
+        public Object get(int index) { return items[index]; }
+        public int size() { return count; }
+        public boolean isEmpty() { return count == 0; }
+        public void removeAllElements() { for (int i = 0; i < count; i++) { items[i] = null; } count = 0; }
+        public void copyInto(Object[] target) { System.arraycopy(items, 0, target, 0, count); }
+    }
+    // | (The EOF token has no position, so one shared instance serves every
+    // |  peek/consume past the end instead of allocating a Token each time.)
+    private static final Token EOF_TOKEN = new Token(EOF, "EOF");
     // |
     public static class Frame { public String name; public String source; public int line; Frame(String n, String s, int l) { name = n; source = s; line = l; } }
     // | (error() with a table/result value: pcall hands the value back as is)
@@ -463,7 +489,7 @@ public class Lua {
     public Vector tokenize(String code) throws Exception {
         if (midlet.cacheLua.containsKey(code)) { return (Vector) midlet.cacheLua.get(code); }
 
-        Vector tokens = new Vector();
+        Vector tokens = new TokenList();
         int i = 0;
         if (code.startsWith("#!")) {
             while (i < code.length() && code.charAt(i) != '\n') { i++; }
@@ -562,9 +588,9 @@ public class Lua {
         if (midlet.useCache) { if (midlet.cacheLua.size() > 100) { midlet.cacheLua.clear(); } midlet.cacheLua.put(code, tokens); }
         return tokens;
     }
-    public Token peek() { if (tokenIndex < tokens.size()) { return (Token) tokens.elementAt(tokenIndex); } return new Token(EOF, "EOF"); }
-    public Token peekNext() { if (tokenIndex + 1 < tokens.size()) { return (Token) tokens.elementAt(tokenIndex + 1); } return new Token(EOF, "EOF"); }
-    private Token consume() { if (tokenIndex < tokens.size()) { return (Token) tokens.elementAt(tokenIndex++); } return new Token(EOF, "EOF"); }
+    public Token peek() { if (tokenIndex < tokens.size()) { return (Token) tokens.elementAt(tokenIndex); } return EOF_TOKEN; }
+    public Token peekNext() { if (tokenIndex + 1 < tokens.size()) { return (Token) tokens.elementAt(tokenIndex + 1); } return EOF_TOKEN; }
+    private Token consume() { if (tokenIndex < tokens.size()) { return (Token) tokens.elementAt(tokenIndex++); } return EOF_TOKEN; }
     private Token consume(int expectedType) throws Exception { Token token = peek(); if (token.type == expectedType) { tokenIndex++; return token; } throw new Exception("Expected token type " + expectedType + " but got " + token.type + " with value " + token.value); }
     // |
     // Statements
@@ -572,12 +598,20 @@ public class Lua {
         Token current = peek();
 
         if (status != 0) { silent = true; midlet.sys.remove(PID); throw new Error(); }
-        if (midlet.sys.containsKey(PID)) { } else { silent = true; throw new Error("Process killed"); } 
+        // The liveness probe is a synchronized Hashtable lookup; checking it on
+        // every statement is pure overhead when the answer is always "still
+        // alive". Sampling it every 64 statements still stops a killed script
+        // within microseconds.
+        if ((statementCount++ & 0x3F) == 0 && !midlet.sys.containsKey(PID)) { silent = true; throw new Error("Process killed"); } 
 
         if (current.type == IDENTIFIER) {
-            boolean patternIsMultiAssign = isMultiAssignStatement();
-
+            // A multi-target assignment needs a `,` before the `=`. When the
+            // token after the name is already `=` or `(` the lookahead cannot
+            // find one, so skip the scan (it ran for every identifier
+            // statement, i.e. on every assignment and every call).
             Token next = peekNext();
+            boolean patternIsMultiAssign = (next.type == ASSIGN || next.type == LPAREN) ? false : isMultiAssignStatement();
+
             if (!patternIsMultiAssign && next.type == LPAREN) { String funcName = (String) consume(IDENTIFIER).value; callFunction(funcName, scope); return null; }
             if (patternIsMultiAssign) {
                 // varlist = explist, where a var is `name` or `name.field` /
@@ -632,8 +666,7 @@ public class Lua {
                 else { return postfix(indexValue(targetTable, key), scope); }
             } 
             else if (peek().type == COLON) {
-                Object self = unwrap(scope.get(varName));
-                if (self == null && globals.containsKey(varName)) { self = unwrap(globals.get(varName)); }
+                Object self = lookup(scope, varName);
                 if (self == null) { throw new Exception("attempt to call method on nil value: " + varName); }
 
                 consume(COLON);
@@ -649,8 +682,7 @@ public class Lua {
             else {
                 if (peek().type == ASSIGN) {
                     consume(ASSIGN);
-                    Vector assignValues = readAssignValues(scope);
-                    assignVariable(scope, varName, assignValues.isEmpty() ? null : assignValues.elementAt(0));
+                    assignVariable(scope, varName, readSingleValue(scope));
                     return null;
                 } 
                 else if (peek().type == LPAREN) { return callFunction(varName, scope); } 
@@ -739,7 +771,7 @@ public class Lua {
                     }
                     consume(DO);
 
-                    Vector bodyTokens = new Vector();
+                    Vector bodyTokens = new TokenList();
                     int depth = 1;
                     while (depth > 0) {
                         Token tk = consume();
@@ -807,7 +839,7 @@ public class Lua {
                     if (peek().type == COMMA) { consume(COMMA); iterControl = firstValue(expression(scope)); }
                     consume(DO);
 
-                    Vector bodyTokens = new Vector();
+                    Vector bodyTokens = new TokenList();
                     int depth2 = 1;
                     while (depth2 > 0) {
                         Token tk = consume();
@@ -1074,8 +1106,7 @@ public class Lua {
                 consume(COLON);
                 key = (String) consume(IDENTIFIER).value;
                 if (!isTableAssignment) {
-                    targetTable = unwrap(scope.get(funcName));
-                    if (targetTable == null && globals.containsKey(funcName)) { targetTable = unwrap(globals.get(funcName)); }
+                    targetTable = lookup(scope, funcName);
                     if (!(targetTable instanceof Hashtable)) { throw new Exception("Attempt to index non-table value in method definition: " + funcName); }
                 }
                 isTableAssignment = true; isMethodDefinition = true;
@@ -1095,7 +1126,7 @@ public class Lua {
             }
             consume(RPAREN);
 
-            Vector bodyTokens = new Vector();
+            Vector bodyTokens = new TokenList();
             int depth = 1;
             while (depth > 0) {
                 Token token = consume();
@@ -1140,7 +1171,7 @@ public class Lua {
                 }
                 consume(RPAREN);
     
-                Vector bodyTokens = new Vector();
+                Vector bodyTokens = new TokenList();
                 int depth = 1;
                 while (depth > 0) {
                     Token token = consume();
@@ -1172,34 +1203,33 @@ public class Lua {
                 return null;
             } 
             else {
-                Vector varNames = new Vector();
+                String firstName = (String) ((Token) consume(IDENTIFIER)).value;
 
-                varNames.addElement(((Token) consume(IDENTIFIER)).value);
-                while (peek().type == COMMA) { consume(COMMA); varNames.addElement(((Token) consume(IDENTIFIER)).value); }
+                if (peek().type == COMMA) {
+                    Vector varNames = new Vector();
+                    varNames.addElement(firstName);
+                    while (peek().type == COMMA) { consume(COMMA); varNames.addElement(((Token) consume(IDENTIFIER)).value); }
 
-                if (peek().type == ASSIGN) {
+                    if (peek().type == ASSIGN) {
+                        consume(ASSIGN);
+                        Vector assignValues = readAssignValues(scope);
+
+                        for (int i = 0; i < varNames.size(); i++) {
+                            String v = (String) varNames.elementAt(i);
+                            Object val = i < assignValues.size() ? assignValues.elementAt(i) : null;
+                            scope.put(v, val == null ? LUA_NIL : val);
+                        }
+                    }
+                    else { for (int i = 0; i < varNames.size(); i++) { String v = (String) varNames.elementAt(i); scope.put(v, LUA_NIL); } }
+                }
+                else if (peek().type == ASSIGN) {
+                    // `local name = expr` is the other very hot statement, so it
+                    // skips the explist Vector as well.
                     consume(ASSIGN);
-                    Vector values = new Vector();
-                    values.addElement(expression(scope));
-                    while (peek().type == COMMA) { consume(COMMA); values.addElement(expression(scope)); }
-        
-                    Vector assignValues = new Vector();
-                    for (int i = 0; i < values.size(); i++) {
-                        Object v = values.elementAt(i);
-                        if (i == values.size() - 1 && v instanceof Vector) {
-                            Vector expanded = (Vector) v;
-                            for (int j = 0; j < expanded.size(); j++) { assignValues.addElement(expanded.elementAt(j)); }
-                        } else { assignValues.addElement(firstValue(v)); }
-                    }
-
-
-                    for (int i = 0; i < varNames.size(); i++) {
-                        String v = (String) varNames.elementAt(i);
-                        Object val = i < assignValues.size() ? assignValues.elementAt(i) : null;
-                        scope.put(v, val == null ? LUA_NIL : val);
-                    }
-                } 
-                else { for (int i = 0; i < varNames.size(); i++) { String v = (String) varNames.elementAt(i); scope.put(v, LUA_NIL); } }
+                    Object value = readSingleValue(scope);
+                    scope.put(firstName, value == null ? LUA_NIL : value);
+                }
+                else { scope.put(firstName, LUA_NIL); }
 
                 return null;
             }
@@ -1208,7 +1238,7 @@ public class Lua {
         else if (current.type == DO) {
             consume(DO);
             
-            Vector bodyTokens = new Vector();
+            Vector bodyTokens = new TokenList();
             int depth = 1;
             while (depth > 0) {
                 Token token = consume();
@@ -1515,9 +1545,7 @@ public class Lua {
         else if (current.type == LENGTH) { consume(LENGTH); Object val = factor(scope); if (hasMeta(val, "__len")) { return callMeta("__len", new Object[] { val }); } else if (val == null || val instanceof Boolean) { if (suppress > 0) { return null; } throw new RuntimeException("attempt to get length of a " + (val == null ? "nil" : "boolean") + " value"); } else if (val instanceof String) { return luaNumber(((String) val).length()); } else if (val instanceof Hashtable) { int size = luaLength((Hashtable) val); if (val == globals.get("arg") && size > 0) { size -= 1; } return luaNumber(size); } else if (val instanceof Vector) { return luaNumber(((Vector) val).size()); } else if (val instanceof InputStream) { return luaNumber(((InputStream) val).available()); } else { return luaNumber(0); } }
         else if (current.type == IDENTIFIER) {
             String name = (String) consume(IDENTIFIER).value;
-            Object value = unwrap(scope.get(name));
-            if (value == null && scope == globals == false) { }
-            if (value == null && globals.containsKey(name)) { value = unwrap(globals.get(name)); }
+            Object value = lookup(scope, name);
             return postfix(value, scope);
         }
         else if (current.type == FUNCTION) {
@@ -1539,7 +1567,7 @@ public class Lua {
             consume(RPAREN);
 
             // In the anonymous function part
-            Vector bodyTokens = new Vector();
+            Vector bodyTokens = new TokenList();
             int depth = 1;
             while (depth > 0) {
                 Token token = consume();
@@ -1655,8 +1683,7 @@ public class Lua {
         Vector args = new Vector();
         readCallArgs(args, scope);
 
-        Object  funcObj = unwrap(scope.get(funcName));
-        if (funcObj == null && globals.containsKey(funcName)) { funcObj = unwrap(globals.get(funcName)); }
+        Object  funcObj = lookup(scope, funcName);
 
         if (suppress > 0) { return null; }
         if (isCallable(funcObj)) { return callValue(funcObj, args); }
@@ -1765,8 +1792,7 @@ public class Lua {
     private Object callMethod(Object self, String varName, Object methodObj, String methodName, Hashtable scope) throws Exception {
         if (methodObj == null) {
             methodObj = resolveMethod(self);
-            Object table = unwrap(scope.get(varName));
-            if (table == null && globals.containsKey(varName)) table = unwrap(globals.get(varName));
+            Object table = lookup(scope, varName);
             Object key = null;
             
             while (peek().type == DOT || peek().type == LBRACKET) {
@@ -1811,6 +1837,15 @@ public class Lua {
         if (current != null) { current.put(name, stored); }
         else { globals.put(name, stored); }
     }
+    // | (Scope lookup. A ScopeTable already falls back to its parent chain and
+    // |  then to globals, so a failed lookup there means "absent" — the old
+    // |  containsKey+get pair on globals was two wasted hash lookups on every
+    // |  global read. A raw Hashtable scope still needs the fallback.)
+    private Object lookup(Hashtable scope, String name) {
+        Object value = unwrap(scope.get(name));
+        if (value == null && !(scope instanceof ScopeTable)) { value = unwrap(globals.get(name)); }
+        return value;
+    }
     // | Keep the numeric identity in the scope in sync with the interpreter's
     // | uid, so OpenTTY permission checks and /proc see the same user.
     private void syncUid() {
@@ -1818,8 +1853,7 @@ public class Lua {
         if (proc != null) { proc.uid = id; }
     }
     private Object[] resolveTableAndKey(String varName, Hashtable scope) throws Exception {
-        Object table = unwrap(scope.get(varName));
-        if (table == null && globals.containsKey(varName)) table = unwrap(globals.get(varName));
+        Object table = lookup(scope, varName);
         Object key = null;
     
         while (peek().type == DOT || peek().type == LBRACKET) {
@@ -1869,17 +1903,30 @@ public class Lua {
         values.addElement(expression(scope));
         while (peek().type == COMMA) { consume(COMMA); values.addElement(expression(scope)); }
 
-        Vector assignValues = new Vector();
-        for (int i = 0; i < values.size(); i++) {
+        // Expand a trailing call's results in place; every other expression
+        // contributes its first value only. One Vector per explist is enough
+        // (the previous version allocated a second one just to copy into).
+        int count = values.size();
+        for (int i = 0; i < count; i++) {
             Object v = values.elementAt(i);
 
-            if (i == values.size() - 1 && v instanceof Vector) {
+            if (i == count - 1 && v instanceof Vector) {
                 Vector expanded = (Vector) v;
-                for (int j = 0; j < expanded.size(); j++) { assignValues.addElement(expanded.elementAt(j)); }
+                values.setElementAt(expanded.isEmpty() ? null : expanded.elementAt(0), i);
+                for (int j = 1; j < expanded.size(); j++) { values.addElement(expanded.elementAt(j)); }
             }
-            else { assignValues.addElement(firstValue(v)); }
+            else { values.setElementAt(firstValue(v), i); }
         }
-        return assignValues;
+        return values;
+    }
+    // | (Single-target assignment / `local name = ...`: only the first value
+    // |  is used, so the result list is not built at all. This is the hottest
+    // |  statement in every script (`i = i + 1`), and the two Vectors plus
+    // |  their Object[10] backings dominated the allocation profile.)
+    private Object readSingleValue(Hashtable scope) throws Exception {
+        Object value = firstValue(expression(scope));
+        while (peek().type == COMMA) { consume(COMMA); expression(scope); }
+        return value;
     }
     // |
     private void collectLabels() throws Exception {
