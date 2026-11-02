@@ -1983,13 +1983,7 @@ public class ELF implements CommandListener, ItemCommandListener, ItemStateListe
             }
             
             int instructionCount = 0;
-            while (running && pc < memory.length - 3) {
-                // Process liveness is a synchronized Hashtable lookup, and doing
-                // it once per instruction cost more than decode+execute itself
-                // (about half of the emulator time in bench/bench.c). Checking
-                // every 1024 instructions keeps a killed process from running
-                // for more than a few microseconds.
-                if ((instructionCount & 0x3FF) == 0 && !midlet.sys.containsKey(pid)) { break; }
+            while (running && pc < memory.length - 3 && midlet.sys.containsKey(pid)) {
                 if (instructionCount++ > 200000000) {
                     if (midlet.debug) midlet.print("DEBUG: Stopping after 200000000 instructions", stdout, id, scope);
                     break;
