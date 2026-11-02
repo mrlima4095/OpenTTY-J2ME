@@ -32,6 +32,11 @@
  * All existing ops (search, user, userpins, userboards, board, boardpins, pin)
  * continue to work ANONYMOUSLY — no cookies needed for those.
  *
+ * The "related" op returns pins related to one pin. When logged in it uses
+ * Pinterest's RelatedModulesResource; anonymously it falls back to a pin search
+ * built from the supplied title/description, because that resource requires a
+ * session and answers HTTP 412 otherwise.
+ *
  * The "home" op uses the same internal resources as userpins but filtered
  * to the authenticated user's feed.
  *
@@ -288,7 +293,7 @@ function pin_curl($url, $extra_headers = array()) {
  * for anonymous calls; if a session token is set (via login) the handler
  * header includes it so Pinterest treats the request as logged‑in.
  */
-function pin_api($resource, $handler, $options) {
+function pin_api_try($resource, $handler, $options) {
     $data = json_encode(array('options' => $options, 'context' => array()));
     $url = 'https://www.pinterest.com/resource/' . $resource . '/get/?source_id=&data=' . rawurlencode($data);
     $extra = array(
@@ -298,17 +303,35 @@ function pin_api($resource, $handler, $options) {
         'Referer: https://www.pinterest.com/',
     );
     $body = pin_curl($url, $extra);
-    if ($body === false) { pin_fail('pinterest request failed'); }
+    if ($body === false) { return null; }
     $json = json_decode($body, true);
-    if (!is_array($json) || !isset($json['resource_response'])) {
-        pin_fail('bad resource response');
-    }
+    if (!is_array($json) || !isset($json['resource_response'])) { return null; }
     $rr = $json['resource_response'];
-    if (($rr['status'] ?? '') !== 'success') {
-        $msg = $rr['error']['message'] ?? ($rr['message'] ?? 'resource error');
-        pin_fail('pinterest: ' . $msg);
-    }
+    if (($rr['status'] ?? '') !== 'success') { return null; }
     return $rr;
+}
+
+function pin_api($resource, $handler, $options) {
+    $rr = pin_api_try($resource, $handler, $options);
+    if ($rr === null) { pin_fail('pinterest request failed'); }
+    return $rr;
+}
+
+/** Recursively collects pin-looking objects from a related/module response. */
+function pin_collect_related($node, &$out, &$seen, $limit, $skipId) {
+    if (!is_array($node) || count($out) >= $limit) { return; }
+    $id = isset($node['id']) ? pin_numeric_id($node) : '';
+    if ($id !== '' && isset($node['images']) && !isset($seen[$id]) && $id !== $skipId) {
+        $seen[$id] = true;
+        $out[] = pin_compact_pin($node);
+        if (count($out) >= $limit) { return; }
+    }
+    foreach ($node as $value) {
+        if (is_array($value)) {
+            pin_collect_related($value, $out, $seen, $limit, $skipId);
+            if (count($out) >= $limit) { return; }
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -414,7 +437,7 @@ if ($n > 25) { $n = 25; }
 $bm = isset($_GET['bm']) ? (string)$_GET['bm'] : '';
 $cache_key = $_SERVER['QUERY_STRING'] ?? $op;
 
-$no_cache = in_array($op, array('login', 'logout', 'me', 'home', 'qrstart', 'qrpoll'), true) || pin_logged_user() !== '';
+$no_cache = in_array($op, array('login', 'logout', 'me', 'home', 'qrstart', 'qrpoll', 'related'), true) || pin_logged_user() !== '';
 $cached = $no_cache ? null : pin_cache_get($cache_key);
 if ($cached !== null) { echo $cached; exit; }
 
@@ -533,6 +556,54 @@ case 'pin': {
     $d = $rr['data'] ?? array();
     if (!is_array($d) || empty($d['id'])) { pin_fail('pin not found'); }
     pin_emit('pin', array(pin_compact_pin($d)), '');
+    break;
+}
+
+case 'related': {
+    $id = trim((string)($_GET['id'] ?? ''));
+    $q = trim((string)($_GET['q'] ?? ''));
+    $items = array();
+    $seen = array();
+    $logged = pin_logged_user() !== '';
+    if ($logged && $id !== '' && ctype_digit($id)) {
+        // Pinterest has changed the option name over time; try both shapes.
+        foreach (array('pin_id', 'id') as $idKey) {
+            $options = array($idKey => $id, 'page_size' => $n);
+            if ($bm !== '') { $options['bookmarks'] = array($bm); }
+            $rr = pin_api_try('RelatedModulesResource', 'www/pin/[id].js', $options);
+            if ($rr !== null) {
+                pin_collect_related($rr['data'] ?? array(), $items, $seen, $n, $id);
+                if (count($items) > 0) { break; }
+            }
+        }
+    }
+    if (count($items) === 0) {
+        // Anonymous fallback: Pinterest rejects RelatedModulesResource without a
+        // session, so search for the pin's own title/description instead.
+        if ($q === '' && $id !== '') {
+            $pin = pin_api_try('PinResource', 'www/pin/[id].js', array('id' => $id));
+            if ($pin !== null && is_array($pin['data'] ?? null)) {
+                $d = $pin['data'];
+                $q = trim((string)($d['grid_title'] ?? ($d['title'] ?? '')));
+                $desc = trim((string)($d['description'] ?? ''));
+                if ($desc !== '') { $q = $q === '' ? $desc : $q . ' ' . $desc; }
+            }
+        }
+        if ($q === '') { pin_fail('related needs q'); }
+        $options = array('query' => $q, 'scope' => 'pins', 'page_size' => $n);
+        if ($bm !== '') { $options['bookmarks'] = array($bm); }
+        $rr = pin_api('BaseSearchResource', 'www/search-index/search-page.v2.ts', $options);
+        $results = $rr['data']['results'] ?? array();
+        foreach ($results as $r) {
+            if (($r['type'] ?? '') === 'promotion' || !empty($r['is_promoted'])) { continue; }
+            $rid = pin_numeric_id($r);
+            if ($rid === '' || $rid === $id || isset($seen[$rid])) { continue; }
+            $seen[$rid] = true;
+            $items[] = pin_compact_pin($r);
+            if (count($items) >= $n) { break; }
+        }
+    }
+    pin_emit('pins', $items, '');
     break;
 }
 

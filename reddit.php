@@ -16,15 +16,22 @@
  * Ops:
  *   search    &type=subreddits|users|posts &q=... [&sub=...] [&n=] [&bm=]
  *   subposts  &sub=... [&sort=new|top] [&n=] [&bm=]
- *   userposts &u=... [&n=] [&bm=]
+ *   userposts &u=... [&sort=new|top] [&n=] [&bm=]
  *   post      &id=...
- *   comments  &id=... [&n=]
+ *   comments  &id=... [&sort=new|old|top] [&n=] [&bm=]
  *   subreddit &s=...
  *   user      &u=...
  *   translate &tl=<lang> &q=...
  *
  * Posts are paginated by the created_utc of the oldest item of the page: the
  * client sends it back as bm, the proxy maps it to Arctic Shift's before param.
+ * Comments are paginated the same way, except when sorting oldest-first (bm is
+ * then mapped to after). Gallery posts carry their full-size image list in gi.
+ *
+ * Type=posts without a subreddit uses Reddit's public search RSS (Arctic Shift
+ * refuses global title searches). Reddit rate limits that feed hard, so results
+ * are cached per query/page for a few minutes and a clear error is returned
+ * instead of an empty list when the feed is throttled.
  *
  * The archive takes a while to ingest brand-new posts and their comments, so
  * when a post has no comments in the archive yet the comments op falls back to
@@ -187,6 +194,7 @@ function rs_parse_rss_comments($body) {
         if ($text === '') { continue; }
         $created = strtotime((string)$entry->updated);
         $rows[] = array(
+            'id' => substr($eid, 3),
             'b' => $text,
             'a' => $author,
             'sc' => 0,
@@ -207,6 +215,102 @@ function rs_html_text($html) {
     $s = trim(preg_replace("/\n{3,}/", "\n\n", $s));
     if ($s === '[removed]' || $s === '[deleted]') { return ''; }
     return $s;
+}
+
+/**
+ * Global post search uses Reddit's public Atom feed: Arctic Shift does not
+ * support a keyword search without an author or subreddit. The feed is heavily
+ * rate limited, so requests are spaced out across every client; results are
+ * cached per query/page by rs_rss_search_posts().
+ */
+function rs_rss_search_throttle_ok() {
+    $file = sys_get_temp_dir() . '/redditrss_search_last';
+    $fp = @fopen($file, 'c+');
+    if (!$fp) { return true; }
+    $ok = false;
+    if (flock($fp, LOCK_EX)) {
+        $last = (int)trim((string)stream_get_contents($fp));
+        $now = time();
+        if ($last === 0 || ($now - $last) >= 5) {
+            rewind($fp);
+            ftruncate($fp, 0);
+            fwrite($fp, (string)$now);
+            $ok = true;
+        }
+        flock($fp, LOCK_UN);
+    }
+    fclose($fp);
+    return $ok;
+}
+
+function rs_rss_search_posts($query, $n, $after) {
+    $key = 'rss_posts:' . $query . ':' . $n . ':' . $after;
+    $cached = rs_cache_get($key);
+    if ($cached !== null) {
+        $rows = json_decode($cached, true);
+        return is_array($rows) ? $rows : null;
+    }
+    if (!rs_rss_search_throttle_ok()) { return null; }
+    $url = 'https://www.reddit.com/search.rss?q=' . urlencode($query)
+         . '&limit=' . $n . '&sort=relevance&t=all';
+    if ($after !== '') { $url .= '&after=' . rawurlencode($after); }
+    $body = rs_fetch_text($url, 'application/atom+xml, application/xml, text/xml');
+    if ($body === null) { return null; }
+    $rows = rs_parse_rss_posts($body);
+    rs_cache_put($key, json_encode($rows));
+    return $rows;
+}
+
+function rs_parse_rss_posts($body) {
+    $xml = @simplexml_load_string($body);
+    if ($xml === false) { return array(); }
+    $rows = array();
+    foreach ($xml->entry as $entry) {
+        $eid = (string)$entry->id;
+        if (strpos($eid, 't3_') === 0) { $eid = substr($eid, 3); }
+        if ($eid === '') { continue; }
+        $author = (string)$entry->author->name;
+        if (strpos($author, '/u/') === 0) { $author = substr($author, 3); }
+        $link = (string)$entry->link['href'];
+        $permalink = $link;
+        $marker = 'reddit.com';
+        $at = strpos($link, $marker);
+        if ($at !== false) { $permalink = substr($link, $at + strlen($marker)); }
+        $sub = '';
+        if (isset($entry->category)) {
+            $attrs = $entry->category->attributes();
+            $sub = (string)($attrs['term'] ?? '');
+        }
+        $text = rs_html_text((string)$entry->content);
+        // The Atom body ends with Reddit's boilerplate ("submitted by ...").
+        $text = preg_replace('/\s*submitted by\s+.*$/is', '', $text);
+        $created = strtotime((string)$entry->published);
+        if ($created === false) { $created = strtotime((string)$entry->updated); }
+        $thumb = '';
+        $media = $entry->children('http://search.yahoo.com/mrss/');
+        if (isset($media->thumbnail)) {
+            $attrs = $media->thumbnail->attributes();
+            $thumb = (string)($attrs['url'] ?? '');
+        }
+        $rows[] = array(
+            'id' => $eid,
+            'ti' => (string)$entry->title,
+            'au' => $author,
+            'sr' => $sub,
+            'ct' => $created === false ? time() : $created,
+            'sc' => 0,
+            'nc' => 0,
+            'tx' => rs_trim(trim($text), 6000),
+            'u'  => $link,
+            'ns' => 0,
+            'th' => $thumb,
+            'pl' => $permalink,
+            'fl' => '',
+            'sf' => trim($text) === '' ? 0 : 1,
+            'gi' => array(),
+        );
+    }
+    return $rows;
 }
 
 function rs_fetch_retry($url, $attempts = 2) {
@@ -294,7 +398,30 @@ function rs_clean_text($s) {
 // ---------------------------------------------------------------------------
 // Compaction
 
+/** Full-size image URLs of a Reddit gallery post, in gallery order. */
+function rs_gallery($p) {
+    $out = array();
+    $meta = isset($p['media_metadata']) && is_array($p['media_metadata'])
+        ? $p['media_metadata'] : array();
+    $items = isset($p['gallery_data']['items']) && is_array($p['gallery_data']['items'])
+        ? $p['gallery_data']['items'] : array();
+    foreach ($items as $item) {
+        $mid = (string)($item['media_id'] ?? '');
+        if ($mid === '' || !isset($meta[$mid]) || !is_array($meta[$mid])) { continue; }
+        $sizes = $meta[$mid]['s'] ?? null;
+        if (!is_array($sizes)) { continue; }
+        $url = (string)($sizes['u'] ?? ($sizes['gif'] ?? ''));
+        if ($url === '') { continue; }
+        $out[] = html_entity_decode($url, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        if (count($out) >= 20) { break; }
+    }
+    return $out;
+}
+
 function rs_post($p) {
+    $gallery = rs_gallery($p);
+    $thumb = rs_thumb($p);
+    if ($thumb === '' && count($gallery) > 0) { $thumb = $gallery[0]; }
     return array(
         'id' => (string)($p['id'] ?? ''),
         'ti' => (string)($p['title'] ?? ''),
@@ -306,10 +433,11 @@ function rs_post($p) {
         'tx' => rs_trim(rs_clean_text($p['selftext'] ?? ''), 6000),
         'u'  => (string)($p['url'] ?? ''),
         'ns' => !empty($p['over_18']) ? 1 : 0,
-        'th' => rs_thumb($p),
+        'th' => $thumb,
         'pl' => (string)($p['permalink'] ?? ''),
         'fl' => (string)($p['link_flair_text'] ?? ''),
         'sf' => !empty($p['is_self']) ? 1 : 0,
+        'gi' => $gallery,
     );
 }
 
@@ -374,6 +502,7 @@ function rs_sub_by_name($name, $prefix) {
 
 function rs_comment($c, $depth) {
     return array(
+        'id' => (string)($c['id'] ?? ''),
         'b'  => rs_trim(rs_clean_text($c['body'] ?? ''), 4000),
         'a'  => (string)($c['author'] ?? ''),
         'sc' => (int)($c['score'] ?? 0),
@@ -384,9 +513,10 @@ function rs_comment($c, $depth) {
 
 /**
  * Turns Arctic Shift's flat comment list into a threaded, depth-annotated order.
- * Comments whose parent is missing from the page are treated as top level.
+ * Comments whose parent is missing from the page are treated as top level. Sorts
+ * roots/siblings by score (top) or by creation time (new/old).
  */
-function rs_thread($flat, $linkId, $max) {
+function rs_thread($flat, $linkId, $max, $sort = 'top') {
     $byId = array();
     foreach ($flat as $c) {
         if (isset($c['id'])) { $byId[(string)$c['id']] = $c; }
@@ -407,22 +537,27 @@ function rs_thread($flat, $linkId, $max) {
             $children[$pid][] = $c;
         }
     }
+    $cmp = function ($a, $b) use ($sort) {
+        if ($sort === 'new') {
+            return ((int)($b['created_utc'] ?? 0)) <=> ((int)($a['created_utc'] ?? 0));
+        }
+        if ($sort === 'old') {
+            return ((int)($a['created_utc'] ?? 0)) <=> ((int)($b['created_utc'] ?? 0));
+        }
+        return ((int)($b['score'] ?? 0)) <=> ((int)($a['score'] ?? 0));
+    };
     $out = array();
-    $emit = function ($node, $depth) use (&$emit, &$out, &$children, $max) {
+    $emit = function ($node, $depth) use (&$emit, &$out, &$children, $max, $cmp) {
         if (count($out) >= $max) { return; }
         $out[] = rs_comment($node, $depth);
         $id = (string)$node['id'];
         if (isset($children[$id])) {
             $kids = $children[$id];
-            usort($kids, function ($a, $b) {
-                return ((int)($b['score'] ?? 0)) <=> ((int)($a['score'] ?? 0));
-            });
+            usort($kids, $cmp);
             foreach ($kids as $k) { $emit($k, $depth + 1); }
         }
     };
-    usort($roots, function ($a, $b) {
-        return ((int)($b['score'] ?? 0)) <=> ((int)($a['score'] ?? 0));
-    });
+    usort($roots, $cmp);
     foreach ($roots as $r) { $emit($r, 0); }
     return $out;
 }
@@ -465,19 +600,39 @@ case 'search': {
         exit;
     }
 
-    // type=posts: keyword search inside a subreddit (Arctic Shift requires one).
+    // type=posts: with a subreddit, use Arctic Shift's title search; without one,
+    // use Reddit's public search RSS (the archive refuses global title searches).
     $sub = rs_str('sub', 100);
-    if ($sub === '') { rs_fail('posts search needs a subreddit'); }
+    if ($sub === '') {
+        $after = '';
+        if ($bm !== '') {
+            $after = 't3_' . (strpos($bm, 't3_') === 0 ? substr($bm, 3) : $bm);
+        }
+        $items = rs_rss_search_posts($q, $n, $after);
+        if ($items === null) {
+            rs_fail('Reddit search is rate limited right now. Try again in a minute.', 503);
+        }
+        $nx = '';
+        if (count($items) >= $n && count($items) > 0) {
+            $nx = (string)($items[count($items) - 1]['id'] ?? '');
+        }
+        echo json_encode(array('ok' => 1, 'it' => $items, 'nx' => $nx));
+        exit;
+    }
     $url = RS_BASE . '/api/posts/search?limit=' . $n . '&sort=desc'
          . '&subreddit=' . urlencode($sub)
          . '&title=' . urlencode($q);
-    if ($bm !== '') { $url .= '&before=' . urlencode($bm); }
+    if ($bm !== '') { $url .= '&before=' . (intval($bm) + 1); }
     $data = rs_fetch_retry($url, 3);
     if ($data !== null && isset($data['data'])) {
         $items = array();
-        $last = '';
-        foreach ($data['data'] as $p) { $items[] = rs_post($p); $last = (string)($p['created_utc'] ?? ''); }
-        $nx = (count($items) >= $n && $last !== '') ? $last : '';
+        $oldest = 0;
+        foreach ($data['data'] as $p) {
+            $items[] = rs_post($p);
+            $ct = (int)($p['created_utc'] ?? 0);
+            if ($ct > 0 && ($oldest === 0 || $ct < $oldest)) { $oldest = $ct; }
+        }
+        $nx = (count($items) >= $n && $oldest > 0) ? (string)$oldest : '';
         echo json_encode(array('ok' => 1, 'it' => $items, 'nx' => $nx));
         exit;
     }
@@ -520,13 +675,17 @@ case 'subposts': {
     }
     $url = RS_BASE . '/api/posts/search?limit=' . $n . '&sort=desc'
          . '&subreddit=' . urlencode($sub);
-    if ($bm !== '') { $url .= '&before=' . urlencode($bm); }
+    if ($bm !== '') { $url .= '&before=' . (intval($bm) + 1); }
     $data = rs_fetch($url);
     if ($data === null || !isset($data['data'])) { rs_fail('upstream error'); }
     $items = array();
-    $last = '';
-    foreach ($data['data'] as $p) { $items[] = rs_post($p); $last = (string)($p['created_utc'] ?? ''); }
-    $nx = (count($items) >= $n && $last !== '') ? $last : '';
+    $oldest = 0;
+    foreach ($data['data'] as $p) {
+        $items[] = rs_post($p);
+        $ct = (int)($p['created_utc'] ?? 0);
+        if ($ct > 0 && ($oldest === 0 || $ct < $oldest)) { $oldest = $ct; }
+    }
+    $nx = (count($items) >= $n && $oldest > 0) ? (string)$oldest : '';
     echo json_encode(array('ok' => 1, 'it' => $items, 'nx' => $nx));
     exit;
 }
@@ -536,15 +695,32 @@ case 'userposts': {
     if ($u === '') { rs_fail('missing user'); }
     $n = rs_n('n');
     $bm = rs_str('bm', 20);
-    $url = RS_BASE . '/api/posts/search?limit=' . $n . '&sort=desc'
+    $sort = rs_str('sort', 10);
+    // "top" ranks a larger recent window by score; both sorts keep paging by
+    // the oldest created_utc of the fetched window.
+    $limit = $sort === 'top' ? min($n * 3, 150) : $n;
+    $url = RS_BASE . '/api/posts/search?limit=' . $limit . '&sort=desc'
          . '&author=' . urlencode($u);
-    if ($bm !== '') { $url .= '&before=' . urlencode($bm); }
+    if ($bm !== '') { $url .= '&before=' . (intval($bm) + 1); }
     $data = rs_fetch($url);
     if ($data === null || !isset($data['data'])) { rs_fail('upstream error'); }
+    $rows = $data['data'];
+    $oldest = 0;
+    foreach ($rows as $p) {
+        $ct = (int)($p['created_utc'] ?? 0);
+        if ($ct > 0 && ($oldest === 0 || $ct < $oldest)) { $oldest = $ct; }
+    }
+    if ($sort === 'top') {
+        usort($rows, function ($a, $b) {
+            return ((int)($b['score'] ?? 0)) <=> ((int)($a['score'] ?? 0));
+        });
+    }
     $items = array();
-    $last = '';
-    foreach ($data['data'] as $p) { $items[] = rs_post($p); $last = (string)($p['created_utc'] ?? ''); }
-    $nx = (count($items) >= $n && $last !== '') ? $last : '';
+    foreach ($rows as $p) {
+        $items[] = rs_post($p);
+        if (count($items) >= $n) { break; }
+    }
+    $nx = (count($rows) >= $limit && $oldest > 0) ? (string)$oldest : '';
     echo json_encode(array('ok' => 1, 'it' => $items, 'nx' => $nx));
     exit;
 }
@@ -565,25 +741,58 @@ case 'comments': {
     $id = rs_str('id', 20);
     if ($id === '') { rs_fail('missing id'); }
     $n = rs_n('n', 50);
+    $bm = rs_str('bm', 20);
+    $sort = rs_str('sort', 10);
+    if ($sort !== 'new' && $sort !== 'old' && $sort !== 'top') { $sort = 'top'; }
     $linkId = 't3_' . $id;
-    $url = RS_BASE . '/api/comments/search?limit=' . $n . '&link_id=' . urlencode($linkId);
+    // "top" ranks a larger window of the requested time slice by score; new/old
+    // return the page in chronological order.
+    $limit = $sort === 'top' ? min($n * 3, 150) : $n;
+    $url = RS_BASE . '/api/comments/search?limit=' . $limit
+         . '&link_id=' . urlencode($linkId)
+         . '&sort=' . ($sort === 'old' ? 'asc' : 'desc');
+    if ($bm !== '') {
+        if ($sort === 'old') {
+            $url .= '&after=' . (intval($bm) - 1);
+        } else {
+            $url .= '&before=' . (intval($bm) + 1);
+        }
+    }
     $data = rs_fetch($url);
     $thread = array();
-    if ($data !== null && isset($data['data'])) {
-        $thread = rs_thread($data['data'], $linkId, $n);
+    $nx = '';
+    if ($data !== null && isset($data['data']) && is_array($data['data'])) {
+        $flat = $data['data'];
+        $thread = rs_thread($flat, $linkId, $sort === 'top' ? $n : $limit, $sort);
+        if (count($flat) >= $limit) {
+            $edge = 0;
+            foreach ($flat as $c) {
+                $ct = (int)($c['created_utc'] ?? 0);
+                if ($ct <= 0) { continue; }
+                if ($edge === 0) {
+                    $edge = $ct;
+                } else if ($sort === 'old' ? ($ct > $edge) : ($ct < $edge)) {
+                    $edge = $ct;
+                }
+            }
+            if ($edge > 0) { $nx = (string)$edge; }
+        }
     }
     $pending = 0;
-    if (count($thread) === 0) {
+    if (count($thread) === 0 && $bm === '') {
         // Brand-new posts are often not in the archive yet; use Reddit's public
         // comment RSS instead. null means the throttled feed was not consulted.
         $rss = rs_rss_comments($id);
         if ($rss === null) {
             $pending = 1;
         } else {
+            if ($sort === 'old') {
+                $rss = array_reverse($rss);
+            }
             $thread = $rss;
         }
     }
-    echo json_encode(array('ok' => 1, 'it' => $thread, 'nx' => '', 'pd' => $pending));
+    echo json_encode(array('ok' => 1, 'it' => $thread, 'nx' => $nx, 'pd' => $pending));
     exit;
 }
 
