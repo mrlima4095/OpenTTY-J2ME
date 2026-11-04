@@ -20,10 +20,13 @@ const S60IMG_MAX_BYTES = 4194304;     // 4 MiB per source image
 const S60IMG_MAX_SIDE = 6000;         // reject absurd source dimensions
 const S60IMG_CONNECT_TIMEOUT = 4;
 const S60IMG_TIMEOUT = 8;
-const S60IMG_CONCURRENCY = 6;
+const S60IMG_CONCURRENCY = 12;
 const S60IMG_RATE_LIMIT = 240;        // requests per IP per window
 const S60IMG_RATE_WINDOW = 60;
-const S60IMG_MAX_URLS = 64;
+const S60IMG_MAX_URLS = 256;
+// Total bytes a single sprite may keep in memory. Individual images are still
+// capped by S60IMG_MAX_BYTES; this keeps a 256-cell sheet within memory_limit.
+const S60IMG_SPRITE_BUDGET = 67108864; // 64 MiB
 const S60IMG_MIN_SIZE = 16;
 const S60IMG_MAX_SIZE = 600;
 const S60IMG_MAX_COLS = 16;
@@ -252,9 +255,11 @@ function s60img_download(string $url): ?string
  * @param string[] $urls
  * @return array<string, string|null> map of the original URL to its body
  */
-function s60img_download_many(array $urls): array
+function s60img_download_many(array $urls, int $budget = 0): array
 {
     $results = [];
+    $used = 0;
+    $exhausted = false;
     $multi = curl_multi_init();
     if ($multi === false) {
         foreach ($urls as $url) {
@@ -275,8 +280,16 @@ function s60img_download_many(array $urls): array
     }
 
     $active = [];
-    $startNext = function () use (&$targets, &$active, &$results, $multi): void {
-        if (count($active) >= S60IMG_CONCURRENCY) {
+    $startNext = function () use (
+        &$targets,
+        &$active,
+        &$results,
+        &$used,
+        &$exhausted,
+        $budget,
+        $multi
+    ): void {
+        if (count($active) >= S60IMG_CONCURRENCY || $exhausted) {
             return;
         }
         foreach ($targets as $original => $target) {
@@ -285,6 +298,11 @@ function s60img_download_many(array $urls): array
             }
             if ($target === '' || isset($active[$original]) || array_key_exists($original, $results)) {
                 continue;
+            }
+            if ($budget > 0 && $used >= $budget) {
+                // Memory budget reached: leave the remaining cells transparent.
+                $exhausted = true;
+                return;
             }
             $ch = curl_init();
             if ($ch === false) {
@@ -302,6 +320,8 @@ function s60img_download_many(array $urls): array
 
     $startNext();
     $guard = 0;
+    // The guard counts loop iterations, so it must scale with the batch size.
+    $maxGuard = count($targets) * 4 + 200;
     do {
         curl_multi_exec($multi, $running);
         while (($info = curl_multi_info_read($multi)) !== false) {
@@ -318,14 +338,20 @@ function s60img_download_many(array $urls): array
             }
             $code = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
             $body = (string) curl_multi_getcontent($ch);
-            $results[$original] =
+            $ok =
                 $info['result'] === CURLE_OK
                 && $code >= 200
                 && $code < 300
                 && $body !== ''
-                && strlen($body) <= S60IMG_MAX_BYTES
-                    ? $body
-                    : null;
+                && strlen($body) <= S60IMG_MAX_BYTES;
+            if ($ok && $budget > 0 && $used + strlen($body) > $budget) {
+                $ok = false;
+                $exhausted = true;
+            }
+            $results[$original] = $ok ? $body : null;
+            if ($ok) {
+                $used += strlen($body);
+            }
             unset($active[$original]);
             curl_multi_remove_handle($multi, $ch);
             curl_close($ch);
@@ -335,7 +361,7 @@ function s60img_download_many(array $urls): array
             curl_multi_select($multi, 0.5);
         }
         // Safety net: never spin forever if libcurl misbehaves.
-        if (++$guard > 200) {
+        if (++$guard > $maxGuard) {
             break;
         }
     } while ($running > 0 || count($active) > 0);

@@ -12,6 +12,10 @@ declare(strict_types=1);
 
 require __DIR__ . '/lib.php';
 
+// A 256-cell sheet may need several download waves; the default 30 s limit is
+// not enough on a cold cache.
+@set_time_limit(120);
+
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
     header('Allow: POST');
     s60img_fail(405, 'Method not allowed');
@@ -20,7 +24,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
 s60img_rate_limit();
 s60img_gc();
 
-$raw = file_get_contents('php://input', false, null, 0, 262144);
+// 256 URLs at up to 2048 bytes each still fit comfortably; 1 MiB leaves room.
+$raw = file_get_contents('php://input', false, null, 0, 1048576);
 if ($raw === false || trim($raw) === '') {
     s60img_fail(400, 'Missing JSON body');
 }
@@ -72,7 +77,7 @@ if ($cached !== null) {
     exit;
 }
 
-$bodies = s60img_download_many($urls);
+$bodies = s60img_download_many($urls, S60IMG_SPRITE_BUDGET);
 
 $canvas = imagecreatetruecolor($cellWidth * $cols, $cellHeight * $rows);
 imagealphablending($canvas, false);

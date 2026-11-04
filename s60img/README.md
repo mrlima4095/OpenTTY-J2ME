@@ -28,10 +28,12 @@ Corpo:
 
 Responde **um PNG** com as imagens em grade (linha por linha, `cols` colunas).
 Células que falharam ficam transparentes para o cliente continuar fatiando por
-offset fixo. Máximo de 64 URLs; `width`/`height` de 16 a 600; `cols` de 1 a 16.
+offset fixo. Máximo de 256 URLs; `width`/`height` de 16 a 600; `cols` de 1 a 16.
 
 - Cache do PNG final por 6 horas, somente quando todas as origens carregaram.
-- Download em paralelo (`curl_multi`, 6 conexões).
+- Download em paralelo (`curl_multi`, 12 conexões).
+- Orçamento de **64 MiB** por folha: se as imagens somarem mais que isso, as
+  células restantes ficam transparentes em vez de estourar o `memory_limit`.
 
 ## Configuração no MIDPlay
 
