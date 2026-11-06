@@ -11,13 +11,57 @@ local app = {
     switchCmd = graphics.new("command", { label = "Switch to...", type = "screen", priority = 2 })
 }
 
-if arg[1] then
-    app.content = io.read(os.join(arg[1]))
-    app.editor = graphics.new("edit", "Nano - " .. arg[1])
-    graphics.SetText(app.editor, app.content)
-else
-    print("nano: usage: nano [file]")
-    os.exit(2)
+function app.write(content, path)
+    app.content = content
+    app.path = path or app.path
+
+    local status = io.write(content, os.join(app.path))
+    if status > 0 then graphics.display(graphics.new("alert", "Nano", libcore.errormsg(status))) end
+    return tonumber(status)
+end
+
+-- Pede o caminho do arquivo numa tela de textbox (usada quando ainda nao ha nome).
+function app.askPath(content, onDone)
+    local screen = graphics.new("screen", "Nano - Save as")
+    local save = graphics.new("command", { label = "Save", type = "ok", priority = 1 })
+    local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
+
+    graphics.append(screen, { type = "field", label = "File path", value = app.path or "", length = 256 })
+    graphics.addCommand(screen, back)
+    graphics.addCommand(screen, save)
+    graphics.handler(screen, {
+        [back] = function ()
+            if onDone then
+                onDone(false)
+            else
+                graphics.display(app.editor)
+            end
+        end,
+        [save] = function (path)
+            if not path or path == "" then
+                graphics.display(graphics.new("alert", "Nano", "Type a file path"))
+                return
+            end
+
+            local status = app.write(content, path)
+            pcall(graphics.SetTitle, app.editor, "Nano - " .. path)
+
+            if onDone then
+                onDone(true, status)
+            else
+                graphics.display(app.editor)
+            end
+        end
+    })
+
+    graphics.display(screen)
+end
+
+function app.saveContent(content)
+    if app.path then
+        return app.write(content)
+    end
+    app.askPath(content)
 end
 
 function app.quit(content)
@@ -35,36 +79,50 @@ function app.quit(content)
             os.exit(0)
         end,
         [app.save] = function ()
-            graphics.display(previous)
-            os.exit(app.write(content))
+            if app.path then
+                graphics.display(previous)
+                os.exit(app.write(content))
+            else
+                app.askPath(content, function (ok, status)
+                    graphics.display(previous)
+                    os.exit(ok and (status or 0) or 0)
+                end)
+            end
         end
     })
 
     graphics.display(quest)
 end
-function app.write(content)
-    app.content = content
-    local status = io.write(content, os.join(arg[1]))
 
-    if status > 0 then graphics.display(graphics.new("alert", "Nano", libcore.errormsg(status))) end
-    return tonumber(status)
+function app.open(path)
+    app.path = path
+    app.content = path and io.read(os.join(path)) or ""
+
+    app.editor = graphics.new("edit", "Nano - " .. (path or "Untitled"))
+    graphics.SetText(app.editor, app.content)
+    os.setproc("screen", app.editor)
+
+    graphics.addCommand(app.editor, app.back)
+    graphics.addCommand(app.editor, app.save)
+    graphics.addCommand(app.editor, app.clear)
+    graphics.addCommand(app.editor, app.switchCmd)
+    if os.getenv("J2EMU") then
+        graphics.addCommand(app.editor, app.new_line)
+    end
+    graphics.handler(app.editor, {
+        [app.back] = app.quit,
+        [app.clear] = function () graphics.SetText(app.editor, "") end,
+        [app.new_line] = function () graphics.SetText(app.editor, graphics.GetText(app.editor) .. "\n") end,
+        [app.save] = app.saveContent,
+        [app.switchCmd] = graphics.taskmngr
+    })
+    graphics.display(app.editor)
 end
 
 os.setproc("name", "nano")
-os.setproc("screen", app.editor)
 
-graphics.addCommand(app.editor, app.back)
-graphics.addCommand(app.editor, app.save)
-graphics.addCommand(app.editor, app.clear)
-graphics.addCommand(app.editor, app.switchCmd)
-if os.getenv("J2EMU") then
-    graphics.addCommand(app.editor, app.new_line)
+if arg[1] then
+    app.open(arg[1])
+else
+    app.open()
 end
-graphics.handler(app.editor, {
-    [app.back] = app.quit,
-    [app.clear] = function () graphics.SetText(app.editor, "") end,
-    [app.new_line] = function () graphics.SetText(app.editor, graphics.GetText(app.editor) .. "\n") end,
-    [app.save] = app.write,
-    [app.switchCmd] = graphics.taskmngr
-})
-graphics.display(app.editor)
