@@ -7,9 +7,42 @@ local app = {
     back = graphics.new("command", { label = "Back", type = "back", priority = 1 }),
     clear = graphics.new("command", { label = "Clear", type = "screen", priority = 1 }),
     save = graphics.new("command", { label = "Save", type = "screen", priority = 1 }),
+    open = graphics.new("command", { label = "Open", type = "screen", priority = 1 }),
     new_line = graphics.new("command", { label = "New Line", type = "screen", priority = 1 }),
     switchCmd = graphics.new("command", { label = "Switch to...", type = "screen", priority = 2 })
 }
+
+-- | Path helpers for the mini file explorer (directories keep a trailing "/").
+local function normalizeDir(path)
+    if not path or path == "" then return "/" end
+    if string.sub(path, -1) ~= "/" then path = path .. "/" end
+    return path
+end
+
+local function joinDir(base, name)
+    base = normalizeDir(base)
+    if base == "/" then return "/" .. name end
+    return base .. name
+end
+
+local function parentDir(path)
+    path = normalizeDir(path)
+    if path == "/" then return "/" end
+    local trimmed = string.sub(path, 1, -2) -- drop trailing slash
+    local slash = string.find(trimmed, "/[^/]*$")
+    if not slash or slash <= 1 then return "/" end
+    return string.sub(trimmed, 1, slash - 1)
+end
+
+-- io.dirs returns a table with at least one entry for a real directory.
+local function isDir(path)
+    if string.sub(path, -1) == "/" then return true end
+    local entries = io.dirs(path)
+    if type(entries) == "table" then
+        for _ in pairs(entries) do return true end
+    end
+    return false
+end
 
 function app.write(content, path)
     app.content = content
@@ -94,6 +127,125 @@ function app.quit(content)
     graphics.display(quest)
 end
 
+-- Carrega um arquivo no editor atual (usado pelo Open).
+function app.loadFile(path)
+    local content = io.read(path)
+    if content == nil then
+        graphics.display(graphics.new("alert", "Nano", "Cannot open: " .. path))
+        return false
+    end
+
+    app.path = path
+    app.content = content
+    pcall(graphics.SetTitle, app.editor, "Nano - " .. path)
+    graphics.SetText(app.editor, content)
+    graphics.display(app.editor)
+    return true
+end
+
+-- Mini explorador de arquivos para escolher o arquivo a abrir.
+function app.pickFile(onPick)
+    local explorer = graphics.new("list", "Nano - Open")
+    local openCmd = graphics.new("command", { label = "Open", type = "ok", priority = 1 })
+    local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
+
+    local cwd = normalizeDir(os.getcwd and os.getcwd() or "/")
+
+    local function populate(dir)
+        cwd = normalizeDir(dir)
+        graphics.clear(explorer)
+        graphics.SetTitle(explorer, "Open: " .. cwd)
+        graphics.append(explorer, "..")
+
+        local entries = io.dirs(cwd)
+        local names = {}
+        if type(entries) == "table" then
+            for _, name in pairs(entries) do
+                table.insert(names, tostring(name))
+            end
+            table.sort(names)
+            for i = 1, #names do
+                graphics.append(explorer, names[i])
+            end
+        end
+    end
+
+    local function navigate(item)
+        if not item or item == "" then return end
+        if item == ".." then
+            populate(parentDir(cwd))
+            return
+        end
+
+        local target = joinDir(cwd, item)
+        if isDir(target) then
+            populate(target)
+        elseif onPick then
+            onPick(target)
+        end
+    end
+
+    graphics.addCommand(explorer, openCmd)
+    graphics.addCommand(explorer, back)
+    graphics.handler(explorer, {
+        [openCmd] = navigate,
+        [graphics.fire] = navigate,
+        [back] = function ()
+            if app.editor then graphics.display(app.editor) end
+        end
+    })
+
+    os.setproc("screen", explorer)
+    populate(cwd)
+    graphics.display(explorer)
+end
+
+-- Comando "Open": se o buffer tiver modificacoes, pergunta se quer salvar antes.
+function app.openCommand()
+    local current = app.editor and graphics.GetText(app.editor) or ""
+
+    local function proceed()
+        app.pickFile(function (path)
+            app.loadFile(path)
+        end)
+    end
+
+    if app.content == current then
+        proceed()
+        return
+    end
+
+    local quest = graphics.new("alert", "Nano", "Save modified buffer first?")
+    local saveBtn = graphics.new("command", { label = "Save", type = "ok", priority = 1 })
+    local discard = graphics.new("command", { label = "Discard", type = "screen", priority = 1 })
+    local cancel = graphics.new("command", { label = "Cancel", type = "back", priority = 1 })
+    graphics.addCommand(quest, saveBtn)
+    graphics.addCommand(quest, discard)
+    graphics.addCommand(quest, cancel)
+    graphics.handler(quest, {
+        [saveBtn] = function ()
+            if app.path then
+                local status = tonumber(app.write(current)) or 0
+                if status > 0 then return end
+                proceed()
+            else
+                app.askPath(current, function (ok, status)
+                    if ok and not (tonumber(status) and tonumber(status) > 0) then
+                        proceed()
+                    end
+                end)
+            end
+        end,
+        [discard] = function ()
+            proceed()
+        end,
+        [cancel] = function ()
+            if app.editor then graphics.display(app.editor) end
+        end
+    })
+    graphics.display(quest)
+end
+
 function app.open(path)
     app.path = path
     app.content = path and io.read(os.join(path)) or ""
@@ -104,6 +256,7 @@ function app.open(path)
 
     graphics.addCommand(app.editor, app.back)
     graphics.addCommand(app.editor, app.save)
+    graphics.addCommand(app.editor, app.open)
     graphics.addCommand(app.editor, app.clear)
     graphics.addCommand(app.editor, app.switchCmd)
     if os.getenv("J2EMU") then
@@ -114,6 +267,7 @@ function app.open(path)
         [app.clear] = function () graphics.SetText(app.editor, "") end,
         [app.new_line] = function () graphics.SetText(app.editor, graphics.GetText(app.editor) .. "\n") end,
         [app.save] = app.saveContent,
+        [app.open] = function () app.openCommand() end,
         [app.switchCmd] = graphics.taskmngr
     })
     graphics.display(app.editor)
