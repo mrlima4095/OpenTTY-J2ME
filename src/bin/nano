@@ -7,7 +7,7 @@ local app = {
     back = graphics.new("command", { label = "Back", type = "back", priority = 1 }),
     clear = graphics.new("command", { label = "Clear", type = "screen", priority = 1 }),
     save = graphics.new("command", { label = "Save", type = "screen", priority = 1 }),
-    open = graphics.new("command", { label = "Open", type = "screen", priority = 1 }),
+    openCmd = graphics.new("command", { label = "Open", type = "screen", priority = 1 }),
     new_line = graphics.new("command", { label = "New Line", type = "screen", priority = 1 }),
     switchCmd = graphics.new("command", { label = "Switch to...", type = "screen", priority = 2 })
 }
@@ -256,7 +256,7 @@ function app.open(path)
 
     graphics.addCommand(app.editor, app.back)
     graphics.addCommand(app.editor, app.save)
-    graphics.addCommand(app.editor, app.open)
+    graphics.addCommand(app.editor, app.openCmd)
     graphics.addCommand(app.editor, app.clear)
     graphics.addCommand(app.editor, app.switchCmd)
     if os.getenv("J2EMU") then
@@ -267,7 +267,7 @@ function app.open(path)
         [app.clear] = function () graphics.SetText(app.editor, "") end,
         [app.new_line] = function () graphics.SetText(app.editor, graphics.GetText(app.editor) .. "\n") end,
         [app.save] = app.saveContent,
-        [app.open] = function () app.openCommand() end,
+        [app.openCmd] = function () app.openCommand() end,
         [app.switchCmd] = graphics.taskmngr
     })
     graphics.display(app.editor)
