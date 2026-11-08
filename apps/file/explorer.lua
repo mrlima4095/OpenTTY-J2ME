@@ -45,27 +45,51 @@ local function parentOf(path)
     return "/"
 end
 
+-- Diretórios aparecem com "/" no final; nomes terminados em "/" já são pasta.
 local function isDirectory(path)
     if path == "" or path == "/" then return true end
+    if string.sub(path, -1) == "/" then return true end
     if path == "/mnt" or string.startswith(path, "/mnt/") then return true end
     return countEntries(io.dirs(path)) > 0
 end
 
-local function showFile(path)
+-- Visualizador de reserva, usado só se o nano não puder ser executado.
+local function viewFallback(path)
     local content = io.read(path)
     if content == nil or content == "" then
         content = "(empty file)"
     end
-    viewing = path
 
     local box = graphics.new("edit", path, content)
     local close = graphics.new("command", { label = "Close", type = "back", priority = 1 })
     graphics.addCommand(box, close)
     graphics.handler(box, {
-        [close] = function() populate(cwd) end,
-        [graphics.fire] = function() populate(cwd) end,
+        [close] = function() graphics.display(explorer) end,
+        [graphics.fire] = function() graphics.display(explorer) end,
     })
     graphics.display(box)
+end
+
+-- Arquivos de texto são abertos no nano.
+local function showFile(path)
+    viewing = path
+
+    local ok, res = pcall(io.popen, "/bin/nano", '"' .. path .. '"', false)
+    local status = 0
+    if not ok then
+        status = 1
+    elseif type(res) == "table" then
+        status = tonumber(res[1]) or 0
+    else
+        status = tonumber(res) or 0
+    end
+
+    if status ~= 0 then
+        viewFallback(path)
+    else
+        populate(cwd)
+        graphics.display(explorer)
+    end
 end
 
 populate = function(dir)
@@ -76,7 +100,7 @@ populate = function(dir)
     if cwd == "" or cwd == "/" then
         graphics.SetTitle(explorer, ROOT_TITLE)
         for i = 1, #ROOTS do
-            graphics.append(explorer, ROOTS[i])
+            graphics.append(explorer, ROOTS[i] .. "/")
         end
         return
     end
@@ -92,13 +116,21 @@ populate = function(dir)
         end
         table.sort(names)
         for i = 1, #names do
-            graphics.append(explorer, names[i])
+            local name = names[i]
+            if name ~= ".." and string.sub(name, -1) ~= "/" and isDirectory(join(cwd, name)) then
+                name = name .. "/"
+            end
+            graphics.append(explorer, name)
         end
     end
 end
 
 local function navigate(item)
     if item == nil or item == "" then return end
+
+    local isDirItem = string.sub(item, -1) == "/"
+    if isDirItem then item = string.sub(item, 1, -2) end
+    if item == "" then return end
 
     if item == ".." then
         local up = parentOf(cwd)
@@ -109,7 +141,7 @@ local function navigate(item)
     local target = join(cwd, item)
 
     -- Itens da raiz são pontos de montagem/virtuais: sempre diretórios.
-    if cwd == "" or cwd == "/" or isDirectory(target) then
+    if cwd == "" or cwd == "/" or isDirItem or isDirectory(target) then
         populate(target)
     else
         showFile(target)
