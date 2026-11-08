@@ -3,7 +3,6 @@
 local ROOT_TITLE = "Explorer"
 local ROOTS = { "bin", "dev", "etc", "home", "lib", "mnt", "proc", "tmp" }
 
-local parent = nil
 local cwd = "/"
 local viewing = nil
 
@@ -12,6 +11,9 @@ local open = graphics.new("command", { label = "Open", type = "ok", priority = 1
 local back = graphics.new("command", { label = "Back", type = "back", priority = 1 })
 local quit = graphics.new("command", { label = "Quit", type = "exit", priority = 1 })
 local switch = graphics.new("command", { label = "Switch to...", type = "screen", priority = 2 })
+
+-- Declarada antes de showFile, que a usa nos handlers (antes virava nil global).
+local populate
 
 local function join(base, name)
     if base == "" or base == "/" then return "/" .. name end
@@ -24,6 +26,29 @@ local function countEntries(t)
     local n = 0
     for _ in pairs(t) do n = n + 1 end
     return n
+end
+
+local function parentOf(path)
+    if path == nil or path == "" or path == "/" then return nil end
+    local p = path
+    if string.sub(p, -1) == "/" then p = string.sub(p, 1, -2) end
+    if p == "" then return nil end
+    local i = #p
+    while i > 0 do
+        if string.sub(p, i, i) == "/" then
+            local dir = string.sub(p, 1, i - 1)
+            if dir == "" then return "/" end
+            return dir
+        end
+        i = i - 1
+    end
+    return "/"
+end
+
+local function isDirectory(path)
+    if path == "" or path == "/" then return true end
+    if path == "/mnt" or string.startswith(path, "/mnt/") then return true end
+    return countEntries(io.dirs(path)) > 0
 end
 
 local function showFile(path)
@@ -43,7 +68,7 @@ local function showFile(path)
     graphics.display(box)
 end
 
-local function populate(dir)
+populate = function(dir)
     cwd = dir or "/"
     viewing = nil
     graphics.clear(explorer)
@@ -76,24 +101,15 @@ local function navigate(item)
     if item == nil or item == "" then return end
 
     if item == ".." then
-        if parent then populate(parent) end
+        local up = parentOf(cwd)
+        if up then populate(up) end
         return
     end
 
     local target = join(cwd, item)
-    local isDir = false
 
-    if cwd == "" or cwd == "/" then
-        isDir = true
-    elseif cwd == "/mnt/" or string.startswith(cwd, "/mnt/") then
-        isDir = true
-    else
-        local sub = io.dirs(target)
-        if countEntries(sub) > 0 then isDir = true end
-    end
-
-    if isDir then
-        parent = cwd
+    -- Itens da raiz são pontos de montagem/virtuais: sempre diretórios.
+    if cwd == "" or cwd == "/" or isDirectory(target) then
         populate(target)
     else
         showFile(target)
@@ -103,11 +119,10 @@ end
 local function goUp()
     if viewing then
         populate(cwd)
-    elseif parent then
-        populate(parent)
-    elseif cwd ~= "/" then
-        populate("/")
+        return
     end
+    local up = parentOf(cwd)
+    if up then populate(up) end
 end
 
 local start = arg[1]
