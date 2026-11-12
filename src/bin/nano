@@ -76,7 +76,7 @@ function app.askPath(content, onDone)
                 return
             end
 
-            local status = app.write(content, path)
+            local status = app.write(content, os.joinpath(path))
             pcall(graphics.SetTitle, app.editor, "Nano - " .. path)
 
             if onDone then
